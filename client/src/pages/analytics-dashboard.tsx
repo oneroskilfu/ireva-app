@@ -35,6 +35,7 @@ interface InvestmentWithProperty extends Investment {
 interface AnalyticsData {
   totalInvested: number;
   totalProjectedReturns: number;
+  avgReturnRate: number;
   portfolioAllocation: {
     name: string;
     value: number;
@@ -217,7 +218,7 @@ function AnalyticsDashboard() {
             />
             <StatCard 
               title="Avg. Return Rate" 
-              value={`${(analyticsData.totalProjectedReturns / analyticsData.totalInvested * 100).toFixed(1)}%`}
+              value={`${analyticsData.avgReturnRate.toFixed(1)}%`}
               icon={<Activity className="h-5 w-5 text-blue-500" />}
               color="text-blue-500"
               trend={{ value: 2.1, label: "from previous quarter" }}
@@ -495,7 +496,7 @@ function AnalyticsDashboard() {
                         </div>
                         <div>
                           <p className="font-medium text-lg text-emerald-600">
-                            {(analyticsData.totalProjectedReturns / analyticsData.totalInvested * 100).toFixed(1)}%
+                            {analyticsData.avgReturnRate.toFixed(1)}%
                           </p>
                           <p className="text-muted-foreground">Average Return</p>
                         </div>

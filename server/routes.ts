@@ -807,6 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate projected returns based on property target returns
       const totalProjectedReturns = investmentsWithProperties.reduce((sum, inv) => {
+        if (!inv.property) return sum;
         const targetReturn = parseFloat(inv.property.targetReturn);
         return sum + (inv.amount * targetReturn / 100);
       }, 0);
@@ -822,6 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       investmentsWithProperties.forEach(inv => {
+        if (!inv.property) return;
         const returnRate = parseFloat(inv.property.targetReturn);
         
         if (returnRate < 10) {
@@ -835,6 +837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Portfolio allocation by property type
       const allocationByType = investmentsWithProperties.reduce((acc, inv) => {
+        if (!inv.property) return acc;
         const type = inv.property.type;
         if (!acc[type]) {
           acc[type] = {
@@ -870,9 +873,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Top performing investments
       const topPerformingInvestments = [...investmentsWithProperties]
-        .sort((a, b) => 
-          parseFloat(b.property.targetReturn) - parseFloat(a.property.targetReturn)
-        )
+        .filter(inv => inv.property !== undefined)
+        .sort((a, b) => {
+          // Both properties are guaranteed to exist due to the filter above
+          return parseFloat(b.property!.targetReturn) - parseFloat(a.property!.targetReturn);
+        })
         .slice(0, 3);
       
       // Monthly returns data
