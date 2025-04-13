@@ -1,74 +1,64 @@
-import { Building, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
-import { Link } from "wouter";
+import { Github, Mail } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-800 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="bg-background border-t py-6 md:py-8">
+      <div className="container px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center mb-4">
-              <Building className="h-6 w-6 text-white mr-2" />
-              <span className="text-xl font-bold">InvestProperty</span>
-            </div>
-            <p className="text-gray-300 text-sm mb-4">
-              Access institutional-quality real estate investments with as little as $1,000.
+          <div className="space-y-3">
+            <h4 className="font-medium text-base">RealtyFund</h4>
+            <p className="text-sm text-muted-foreground">
+              Invest in premium real estate opportunities with our transparent and secure platform.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-300 hover:text-white">
-                <Twitter size={18} />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white">
-                <Facebook size={18} />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white">
-                <Instagram size={18} />
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white">
-                <Linkedin size={18} />
-              </a>
-            </div>
           </div>
           
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Resources</h3>
-            <ul className="space-y-2">
-              <li><Link href="/#how-it-works" className="text-gray-300 hover:text-white text-sm">How It Works</Link></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Investment Guide</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">FAQ</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Blog</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Investor Education</a></li>
+          <div className="space-y-3">
+            <h4 className="font-medium text-base">Pages</h4>
+            <ul className="space-y-2 text-sm">
+              <li><a href="/" className="text-muted-foreground hover:text-foreground transition-colors">Home</a></li>
+              <li><a href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</a></li>
+              <li><a href="/market-trends" className="text-muted-foreground hover:text-foreground transition-colors">Market Trends</a></li>
+              <li><a href="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">Analytics</a></li>
             </ul>
           </div>
           
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Company</h3>
-            <ul className="space-y-2">
-              <li><Link href="/#about" className="text-gray-300 hover:text-white text-sm">About Us</Link></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Our Team</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Careers</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Contact</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Press</a></li>
+          <div className="space-y-3">
+            <h4 className="font-medium text-base">Resources</h4>
+            <ul className="space-y-2 text-sm">
+              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Blog</a></li>
+              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Knowledge Base</a></li>
+              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a></li>
+              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Support</a></li>
             </ul>
           </div>
           
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Legal</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Terms of Service</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Privacy Policy</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Cookie Policy</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Disclosures</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Licenses</a></li>
+          <div className="space-y-3">
+            <h4 className="font-medium text-base">Contact</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="flex">
+                <Mail className="h-4 w-4 mr-2 mt-0.5" />
+                <span className="text-muted-foreground">support@realtyfund.com</span>
+              </li>
+              <li className="flex">
+                <Github className="h-4 w-4 mr-2 mt-0.5" />
+                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">GitHub</a>
+              </li>
             </ul>
           </div>
         </div>
         
-        <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between">
-          <p className="text-sm text-gray-400">© {new Date().getFullYear()} InvestProperty. All rights reserved.</p>
-          <p className="text-sm text-gray-400 mt-2 md:mt-0">
-            Investing involves risks, including loss of principal. Past performance does not guarantee future results.
+        <Separator className="my-6" />
+        
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <p className="text-xs text-muted-foreground mb-4 md:mb-0">
+            &copy; 2025 RealtyFund. All rights reserved.
           </p>
+          <div className="flex space-x-6">
+            <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</a>
+            <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
+            <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookies</a>
+          </div>
         </div>
       </div>
     </footer>

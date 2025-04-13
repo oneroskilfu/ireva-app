@@ -11,7 +11,8 @@ import {
   Shield, 
   UserCircle, 
   Wallet, 
-  LogOut 
+  LogOut,
+  BarChart
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -31,6 +32,11 @@ export default function DashboardSidebar() {
       name: "Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      name: "Analytics",
+      href: "/analytics",
+      icon: <BarChart className="h-5 w-5" />,
     },
     {
       name: "Market Trends",
