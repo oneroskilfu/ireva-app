@@ -766,6 +766,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comprehensive Analytics Dashboard Data
+  app.get("/api/analytics/dashboard", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = (req.user as Express.User).id;
+      const investments = await storage.getUserInvestments(userId);
+      
+      // Early return if no investments
+      if (investments.length === 0) {
+        return res.json({
+          totalInvested: 0,
+          totalProjectedReturns: 0,
+          avgReturnRate: 0,
+          riskAssessment: { low: 0, medium: 0, high: 0 },
+          portfolioAllocation: [],
+          monthlyReturns: [],
+          performanceByType: [],
+          topPerformingInvestments: []
+        });
+      }
+      
+      // Get properties data for analytics
+      const propertiesPromises = investments.map(inv => storage.getProperty(inv.propertyId));
+      const properties = await Promise.all(propertiesPromises);
+      
+      // Combine investment data with property data
+      const investmentsWithProperties = investments.map((investment, index) => {
+        return {
+          ...investment,
+          property: properties[index]
+        };
+      }).filter(inv => inv.property); // Filter out investments with missing property data
+      
+      // Calculate basic metrics
+      const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
+      
+      // Calculate projected returns based on property target returns
+      const totalProjectedReturns = investmentsWithProperties.reduce((sum, inv) => {
+        const targetReturn = parseFloat(inv.property.targetReturn);
+        return sum + (inv.amount * targetReturn / 100);
+      }, 0);
+      
+      const avgReturnRate = totalInvested > 0 ? 
+        (totalProjectedReturns / totalInvested) * 100 : 0;
+      
+      // Calculate risk assessment
+      const riskAssessment = {
+        low: 0,    // Low risk (returns < 10%)
+        medium: 0, // Medium risk (returns 10-13%)
+        high: 0    // High risk (returns > 13%)
+      };
+      
+      investmentsWithProperties.forEach(inv => {
+        const returnRate = parseFloat(inv.property.targetReturn);
+        
+        if (returnRate < 10) {
+          riskAssessment.low += inv.amount;
+        } else if (returnRate <= 13) {
+          riskAssessment.medium += inv.amount;
+        } else {
+          riskAssessment.high += inv.amount;
+        }
+      });
+      
+      // Portfolio allocation by property type
+      const allocationByType = investmentsWithProperties.reduce((acc, inv) => {
+        const type = inv.property.type;
+        if (!acc[type]) {
+          acc[type] = {
+            amount: 0,
+            count: 0,
+            returns: 0
+          };
+        }
+        
+        acc[type].amount += inv.amount;
+        acc[type].count += 1;
+        acc[type].returns += (inv.amount * parseFloat(inv.property.targetReturn)) / 100;
+        
+        return acc;
+      }, {} as Record<string, { amount: number, count: number, returns: number }>);
+      
+      // Format for charts
+      const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+      
+      const portfolioAllocation = Object.entries(allocationByType).map(([type, data], index) => ({
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+        value: data.amount,
+        type,
+        color: CHART_COLORS[index % CHART_COLORS.length]
+      }));
+      
+      // Performance by property type
+      const performanceByType = Object.entries(allocationByType).map(([type, data]) => ({
+        type: type.charAt(0).toUpperCase() + type.slice(1),
+        returns: parseFloat((data.returns / data.amount * 100).toFixed(1)),
+        invested: data.amount
+      }));
+      
+      // Top performing investments
+      const topPerformingInvestments = [...investmentsWithProperties]
+        .sort((a, b) => 
+          parseFloat(b.property.targetReturn) - parseFloat(a.property.targetReturn)
+        )
+        .slice(0, 3);
+      
+      // Monthly returns data
+      const monthsAgo = [5, 4, 3, 2, 1, 0];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      const now = new Date();
+      const monthlyReturns = monthsAgo.map(monthsBack => {
+        const month = new Date(now);
+        month.setMonth(now.getMonth() - monthsBack);
+        
+        // Use a sensible calculation based on portfolio size
+        // In a real app, this would be actual historical returns
+        const baseReturn = totalProjectedReturns / 12;
+        const variance = baseReturn * 0.2; // 20% variance 
+        const randomFactor = 0.8 + Math.random() * 0.4; // Random factor between 0.8 and 1.2
+        
+        return {
+          month: monthNames[month.getMonth()],
+          returns: Math.round(baseReturn * randomFactor)
+        };
+      });
+      
+      res.json({
+        totalInvested,
+        totalProjectedReturns,
+        avgReturnRate,
+        riskAssessment,
+        portfolioAllocation,
+        monthlyReturns,
+        performanceByType,
+        topPerformingInvestments
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch analytics dashboard data" });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }

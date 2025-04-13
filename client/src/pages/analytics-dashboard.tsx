@@ -114,103 +114,11 @@ function AnalyticsDashboard() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("overview");
 
-  // Fetch user investments with property details
-  const { data: investments, isLoading: investmentsLoading, error: investmentsError } = useQuery<InvestmentWithProperty[]>({
-    queryKey: ["/api/investments/user", "with-details"],
+  // Fetch analytics dashboard data
+  const { data: analyticsData, isLoading: investmentsLoading, error: investmentsError } = useQuery<AnalyticsData>({
+    queryKey: ["/api/analytics/dashboard"],
     retry: 1,
   });
-
-  // Analytics data calculation
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-
-  useEffect(() => {
-    if (investments) {
-      // Calculate analytics data
-      const totalInvested = investments.reduce((total, inv) => total + inv.amount, 0);
-      
-      // Group by property type
-      const byType = investments.reduce((acc, inv) => {
-        const type = inv.property.type;
-        if (!acc[type]) {
-          acc[type] = {
-            invested: 0,
-            returns: 0,
-            count: 0
-          };
-        }
-        acc[type].invested += inv.amount;
-        // Calculate projected returns based on target return percentage
-        const projectedReturn = inv.amount * (parseFloat(inv.property.targetReturn) / 100);
-        acc[type].returns += projectedReturn;
-        acc[type].count += 1;
-        return acc;
-      }, {} as Record<string, { invested: number, returns: number, count: number }>);
-      
-      // Portfolio allocation
-      const portfolioAllocation = Object.entries(byType).map(([type, data], index) => ({
-        name: type.charAt(0).toUpperCase() + type.slice(1),
-        value: data.invested,
-        type,
-        color: COLORS[index % COLORS.length]
-      }));
-      
-      // Mock monthly returns data (in a real app, this would come from the API)
-      const monthlyReturns = [
-        { month: 'Jan', returns: 1200 },
-        { month: 'Feb', returns: 1800 },
-        { month: 'Mar', returns: 1600 },
-        { month: 'Apr', returns: 2100 },
-        { month: 'May', returns: 1900 },
-        { month: 'Jun', returns: 2400 }
-      ];
-      
-      // Performance by type
-      const performanceByType = Object.entries(byType).map(([type, data]) => ({
-        type: type.charAt(0).toUpperCase() + type.slice(1),
-        returns: parseFloat((data.returns / data.invested * 100).toFixed(1)),
-        invested: data.invested
-      }));
-      
-      // Top performing investments
-      const topPerformingInvestments = [...investments]
-        .sort((a, b) => 
-          parseFloat(b.property.targetReturn) - parseFloat(a.property.targetReturn)
-        )
-        .slice(0, 3);
-      
-      // Risk assessment
-      const riskAssessment = {
-        low: 0,
-        medium: 0,
-        high: 0
-      };
-      
-      investments.forEach(inv => {
-        const returnRate = parseFloat(inv.property.targetReturn);
-        if (returnRate < 10) {
-          riskAssessment.low += inv.amount;
-        } else if (returnRate < 13) {
-          riskAssessment.medium += inv.amount;
-        } else {
-          riskAssessment.high += inv.amount;
-        }
-      });
-      
-      const totalProjectedReturns = investments.reduce((total, inv) => {
-        return total + (inv.amount * parseFloat(inv.property.targetReturn) / 100);
-      }, 0);
-      
-      setAnalyticsData({
-        totalInvested,
-        totalProjectedReturns,
-        portfolioAllocation,
-        monthlyReturns,
-        performanceByType,
-        topPerformingInvestments,
-        riskAssessment
-      });
-    }
-  }, [investments]);
 
   if (investmentsLoading) {
     return (
@@ -249,7 +157,7 @@ function AnalyticsDashboard() {
     );
   }
 
-  if (!analyticsData || !investments || investments.length === 0) {
+  if (!analyticsData || analyticsData.totalInvested === 0) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -316,7 +224,7 @@ function AnalyticsDashboard() {
             />
             <StatCard 
               title="Active Investments" 
-              value={investments.length.toString()}
+              value={analyticsData.topPerformingInvestments.length > 0 ? analyticsData.topPerformingInvestments.length.toString() : "0"}
               description="Across multiple properties"
               icon={<Calendar className="h-5 w-5 text-purple-500" />}
               color="text-purple-500"
@@ -592,7 +500,7 @@ function AnalyticsDashboard() {
                           <p className="text-muted-foreground">Average Return</p>
                         </div>
                         <div>
-                          <p className="font-medium text-lg">{investments.length}</p>
+                          <p className="font-medium text-lg">{analyticsData.topPerformingInvestments.length}</p>
                           <p className="text-muted-foreground">Properties</p>
                         </div>
                       </div>
