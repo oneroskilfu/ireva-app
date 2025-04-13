@@ -5,6 +5,7 @@ import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
+import CommunityPage from "@/pages/community-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/properties/:id" component={PropertyPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <ProtectedRoute path="/community" component={CommunityPage} />
       <Route component={NotFound} />
     </Switch>
   );
