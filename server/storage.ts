@@ -9,6 +9,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Property methods
   getProperty(id: number): Promise<Property | undefined>;
@@ -17,11 +20,16 @@ export interface IStorage {
   getPropertiesByLocation(location: string): Promise<Property[]>;
   searchProperties(search: string): Promise<Property[]>;
   createProperty(property: InsertProperty): Promise<Property>;
+  updateProperty(id: number, propertyData: Partial<InsertProperty>): Promise<Property | undefined>;
+  deleteProperty(id: number): Promise<boolean>;
   
   // Investment methods
   getInvestment(id: number): Promise<Investment | undefined>;
   getUserInvestments(userId: number): Promise<Investment[]>;
+  getAllInvestments(): Promise<Investment[]>;
   createInvestment(investment: InsertInvestment): Promise<Investment>;
+  updateInvestment(id: number, investmentData: Partial<InsertInvestment>): Promise<Investment | undefined>;
+  deleteInvestment(id: number): Promise<boolean>;
   
   // Session store
   sessionStore: session.SessionStore;
@@ -68,6 +76,36 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      ...userData,
+      // Don't update the ID or creation timestamp
+      id: user.id,
+      createdAt: user.createdAt
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    // Delete user's investments first
+    const userInvestments = await this.getUserInvestments(id);
+    for (const investment of userInvestments) {
+      await this.deleteInvestment(investment.id);
+    }
+    
+    return this.users.delete(id);
+  }
 
   // Property methods
   async getProperty(id: number): Promise<Property | undefined> {
@@ -105,6 +143,34 @@ export class MemStorage implements IStorage {
     const newProperty: Property = { id, ...property };
     this.properties.set(id, newProperty);
     return newProperty;
+  }
+  
+  async updateProperty(id: number, propertyData: Partial<InsertProperty>): Promise<Property | undefined> {
+    const property = await this.getProperty(id);
+    if (!property) return undefined;
+    
+    const updatedProperty: Property = {
+      ...property,
+      ...propertyData,
+      id: property.id
+    };
+    
+    this.properties.set(id, updatedProperty);
+    return updatedProperty;
+  }
+  
+  async deleteProperty(id: number): Promise<boolean> {
+    // First check if there are investments for this property
+    const investments = Array.from(this.investments.values()).filter(
+      inv => inv.propertyId === id
+    );
+    
+    // If there are investments, don't allow deletion
+    if (investments.length > 0) {
+      return false;
+    }
+    
+    return this.properties.delete(id);
   }
 
   // Investment methods
