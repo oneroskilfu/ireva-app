@@ -59,6 +59,15 @@ export default function Header() {
                   About
                 </a>
               </Link>
+              <Link href="/market-trends">
+                <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  location === "/market-trends" 
+                    ? "border-primary text-primary" 
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                }`}>
+                  Market Trends
+                </a>
+              </Link>
               {user && (
                 <Link href="/community">
                   <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
