@@ -118,7 +118,9 @@ export async function verifyPayment(req: Request, res: Response) {
           propertyId: paymentRef.propertyId,
           amount: paymentRef.amount,
           status: 'active',
+          currentValue: paymentRef.amount, // Initial value equals investment amount
           returns: 0,
+          earnings: 0,
           paymentReference: reference as string
         });
         

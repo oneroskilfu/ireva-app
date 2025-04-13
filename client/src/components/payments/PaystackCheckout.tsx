@@ -89,7 +89,7 @@ export function PaystackCheckout({ property, amount, onSuccess, onError }: Payst
           </div>
           <div className="flex justify-between py-2 border-b">
             <span>Expected Return:</span>
-            <span className="text-emerald-600 font-medium">{property.returnRate}% annually</span>
+            <span className="text-emerald-600 font-medium">{property.targetReturn}% annually</span>
           </div>
           <div className="flex justify-between py-2">
             <span>Investment Period:</span>

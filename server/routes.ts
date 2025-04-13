@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate portfolio metrics
       const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
-      const totalReturns = investments.reduce((sum, inv) => sum + inv.returns, 0);
+      const totalReturns = investments.reduce((sum, inv) => sum + (inv.returns || 0), 0);
       const roi = totalInvested > 0 ? (totalReturns / totalInvested) * 100 : 0;
       
       // Group investments by property type for asset allocation
