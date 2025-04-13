@@ -57,6 +57,26 @@ export class MemStorage implements IStorage {
     
     // Seed properties
     this.seedProperties();
+    
+    // Create admin user if it doesn't exist
+    this.seedAdminUser();
+  }
+  
+  private async seedAdminUser() {
+    // Check if admin user already exists
+    const adminUser = await this.getUserByUsername("admin");
+    if (!adminUser) {
+      // Create an admin user with a known password for testing
+      await this.createUser({
+        username: "admin",
+        email: "admin@investproperty.com",
+        password: "$2b$10$rQEZ7DNxL7ywmZ0q4tTCIOQYeED0PqfvFfyxwDOcYQNe.zvnv3YwO", // 'adminpassword' hashed
+        firstName: "Admin",
+        lastName: "User",
+        isAdmin: true
+      });
+      console.log("Admin user created. Username: admin, Password: adminpassword");
+    }
   }
 
   // User methods

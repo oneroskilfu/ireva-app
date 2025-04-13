@@ -80,6 +80,13 @@ export default function Header() {
                     Dashboard
                   </Button>
                 </Link>
+                {user.isAdmin && (
+                  <Link href="/admin">
+                    <Button variant="outline" size="sm" className="hidden md:inline-flex mr-3 bg-red-50 text-red-600 hover:bg-red-100 border-red-200">
+                      Admin
+                    </Button>
+                  </Link>
+                )}
                 <Button 
                   variant="default" 
                   size="sm" 
