@@ -23,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/community" component={CommunityPage} />
       <Route path="/market-trends" component={MarketTrendsPage} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
+      <ProtectedRoute path="/account/security" component={AccountSecurityPage} />
       <Route component={NotFound} />
     </Switch>
   );

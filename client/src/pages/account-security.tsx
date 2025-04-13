@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import { MFASetup } from "@/components/auth/MFASetup";
@@ -14,7 +14,6 @@ import { Loader2, Shield, KeyRound, Phone, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -70,7 +69,6 @@ function AccountSecurityPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex-1 flex">
-        <DashboardSidebar />
         <main className="flex-1 p-6 lg:p-8 bg-gray-50">
           <div className="max-w-5xl mx-auto">
             <div className="mb-8">

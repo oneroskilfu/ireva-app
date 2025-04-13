@@ -1,3 +1,4 @@
+import React from "react";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
