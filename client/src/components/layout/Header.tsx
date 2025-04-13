@@ -46,7 +46,7 @@ export default function Header() {
           <div className="flex items-center">
             <AnimatedLink href="/" className="flex-shrink-0 flex items-center">
               <Building className="h-6 w-6 text-primary mr-2" />
-              <span className="text-xl font-bold">InvestProperty</span>
+              <span className="text-xl font-bold">REVA</span>
             </AnimatedLink>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <AnimatedLink href="/" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${

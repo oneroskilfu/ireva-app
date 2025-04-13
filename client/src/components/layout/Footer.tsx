@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="container px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-3">
-            <h4 className="font-medium text-base">RealtyFund</h4>
+            <h4 className="font-medium text-base">REVA</h4>
             <p className="text-sm text-muted-foreground">
               Invest in premium real estate opportunities with our transparent and secure platform.
             </p>
@@ -38,7 +38,7 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex">
                 <Mail className="h-4 w-4 mr-2 mt-0.5" />
-                <span className="text-muted-foreground">support@realtyfund.com</span>
+                <span className="text-muted-foreground">support@reva.com</span>
               </li>
               <li className="flex">
                 <Github className="h-4 w-4 mr-2 mt-0.5" />
@@ -52,7 +52,7 @@ export default function Footer() {
         
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-xs text-muted-foreground mb-4 md:mb-0">
-            &copy; 2025 RealtyFund. All rights reserved.
+            &copy; 2025 REVA. All rights reserved.
           </p>
           <div className="flex space-x-6">
             <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</a>
