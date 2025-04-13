@@ -14,6 +14,7 @@ import { Loader2, Building } from "lucide-react";
 import { useLocation } from "wouter";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { MFAVerification } from "@/components/auth/MFAVerification";
 
 // Extended schemas with validation
 const loginSchema = z.object({
@@ -34,6 +35,8 @@ export default function AuthPage() {
   const { toast } = useToast();
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [showMFAVerification, setShowMFAVerification] = useState(false);
+  const [mfaMethod, setMfaMethod] = useState<string>("app");
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -58,8 +61,14 @@ export default function AuthPage() {
   
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data, {
-      onSuccess: () => {
-        navigate("/");
+      onSuccess: (user) => {
+        // Check if MFA is required
+        if (user.mfaEnabled) {
+          setMfaMethod(user.mfaPrimaryMethod || "app");
+          setShowMFAVerification(true);
+        } else {
+          navigate("/");
+        }
       },
     });
   };
@@ -72,12 +81,35 @@ export default function AuthPage() {
     });
   };
   
+  const handleMFAVerified = () => {
+    setShowMFAVerification(false);
+    navigate("/");
+  };
+  
   // Redirect if already logged in
   if (user) {
     navigate("/");
     return null;
   }
   
+  // Show MFA verification when needed
+  if (showMFAVerification) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center py-12">
+          <div className="max-w-md w-full mx-auto px-4">
+            <MFAVerification 
+              mfaMethod={mfaMethod} 
+              onVerified={handleMFAVerified} 
+            />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

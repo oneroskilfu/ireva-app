@@ -8,6 +8,7 @@ import DashboardPage from "@/pages/dashboard-page";
 import CommunityPage from "@/pages/community-page";
 import MarketTrendsPage from "@/pages/market-trends-page";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AccountSecurityPage from "@/pages/account-security";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";

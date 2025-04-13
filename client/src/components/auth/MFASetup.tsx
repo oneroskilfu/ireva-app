@@ -36,7 +36,7 @@ export function MFASetup() {
   };
   
   const handlePrintBackupCodes = () => {
-    if (!setupState.backupCodes) return;
+    if (!setupState.backupCodes || setupState.backupCodes.length === 0) return;
     
     const content = `
       <html>
@@ -294,7 +294,7 @@ export function MFASetup() {
             <DialogFooter className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
-                onClick={() => copyToClipboard(setupState.backupCodes.join('\n'))}
+                onClick={() => setupState.backupCodes && copyToClipboard(setupState.backupCodes.join('\n'))}
                 className="w-full"
               >
                 {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
