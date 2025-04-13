@@ -42,6 +42,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   bankName: true,
   bankAccountNumber: true,
   bankAccountName: true,
+  walletBalance: true,
+  kycStatus: true,
+  kycIdType: true,
+  kycIdNumber: true,
+  kycVerificationDate: true,
 });
 
 // Property type enum

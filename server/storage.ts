@@ -98,17 +98,22 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const user: User = { 
       id, 
-      ...insertUser, 
+      username: insertUser.username,
+      password: insertUser.password,
+      email: insertUser.email,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      isAdmin: insertUser.isAdmin || false,
       createdAt: new Date(),
-      walletBalance: 0,
+      walletBalance: insertUser.walletBalance || 0,
       phoneNumber: insertUser.phoneNumber || null,
       bankName: insertUser.bankName || null,
       bankAccountNumber: insertUser.bankAccountNumber || null,
       bankAccountName: insertUser.bankAccountName || null,
-      kycStatus: "not_started",
-      kycIdType: null,
-      kycIdNumber: null,
-      kycVerificationDate: null,
+      kycStatus: insertUser.kycStatus || "not_started",
+      kycIdType: insertUser.kycIdType || null,
+      kycIdNumber: insertUser.kycIdNumber || null,
+      kycVerificationDate: insertUser.kycVerificationDate || null,
     };
     this.users.set(id, user);
     return user;
@@ -289,7 +294,7 @@ export class MemStorage implements IStorage {
         description: "Modern apartment complex in downtown with 120 units and premium amenities.",
         type: "residential",
         imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-        targetReturn: 12.5,
+        targetReturn: "12.5",
         minimumInvestment: 1000,
         term: 36,
         totalFunding: 5000000,
