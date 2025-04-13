@@ -138,9 +138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment processing with Paystack
-  app.post("/api/payment/initialize", paystackController.initializePayment);
-  app.get("/payment/verify", paystackController.verifyPayment);
-  app.get("/api/transactions", paystackController.getTransactions);
+  app.post("/api/payments/initialize", paystackController.initializePayment);
+  app.post("/api/payments/verify", paystackController.verifyPayment);
+  app.get("/api/payments/transactions", paystackController.getTransactions);
   
   // User wallet management endpoints
   app.get("/api/wallet", async (req, res) => {

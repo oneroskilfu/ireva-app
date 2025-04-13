@@ -1,380 +1,639 @@
-import { Property } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Property } from "@shared/schema";
+import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CreditCard } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useLocation } from "wouter";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PaystackCheckout from "@/components/payments/PaystackCheckout";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { PaystackCheckout } from "@/components/payments/PaystackCheckout";
+import { 
+  Building2, 
+  Calendar, 
+  CheckCircle, 
+  Clock, 
+  DollarSign, 
+  Home, 
+  Info, 
+  LineChart, 
+  Loader2, 
+  MapPin, 
+  Percent, 
+  ShieldCheck, 
+  Users
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { usePageTransition } from "@/contexts/page-transition-context";
 
-interface PropertyDetailsProps {
-  property: Property;
-}
+// Investment amount schema
+const investmentFormSchema = z.object({
+  amount: z.string()
+    .min(1, { message: "Investment amount is required" })
+    .refine(val => !isNaN(Number(val)), { message: "Amount must be a number" })
+    .refine(val => Number(val) > 0, { message: "Amount must be greater than 0" })
+});
 
-export default function PropertyDetails({ property }: PropertyDetailsProps) {
-  const [, navigate] = useLocation();
-  const { user } = useAuth();
+type InvestmentFormValues = z.infer<typeof investmentFormSchema>;
+
+export default function PropertyDetails() {
+  const { id } = useParams<{ id: string }>();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [investmentAmount, setInvestmentAmount] = useState(property.minimumInvestment.toString());
-  const [selectedImage, setSelectedImage] = useState(property.imageUrl);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"direct" | "paystack">("direct");
+  const { user } = useAuth();
+  const { startLoading, stopLoading } = usePageTransition();
+  const [investDialogOpen, setInvestDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isInvesting, setIsInvesting] = useState(false);
   
-  const fundingPercentage = Math.round((property.currentFunding / property.totalFunding) * 100);
-  
-  // Additional mock images for the property
-  const additionalImages = [
-    "https://images.unsplash.com/photo-1587064712555-6e206484699b?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1524549207884-e7d1130ae2f3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80"
-  ];
-  
-  // Parse and format investment amount
-  const parseAmount = (value: string): number => {
-    return parseInt(value.replace(/,/g, "")) || property.minimumInvestment;
-  };
-  
-  const formatAmount = (value: number): string => {
-    return value.toLocaleString();
-  };
-  
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/[^0-9]/g, "");
-    if (rawValue) {
-      const numValue = parseInt(rawValue);
-      setInvestmentAmount(formatAmount(numValue));
-    } else {
-      setInvestmentAmount("");
-    }
-  };
-  
-  const setMinAmount = () => {
-    setInvestmentAmount(formatAmount(property.minimumInvestment));
-  };
-  
-  const setMaxAmount = () => {
-    // Set a realistic max amount (e.g., 10% of remaining funding or $100k, whichever is smaller)
-    const remainingFunding = property.totalFunding - property.currentFunding;
-    const maxAmount = Math.min(remainingFunding * 0.1, 100000);
-    setInvestmentAmount(formatAmount(Math.max(property.minimumInvestment, Math.floor(maxAmount))));
-  };
-  
-  // Calculate returns based on investment amount
-  const amount = parseAmount(investmentAmount);
-  const targetReturnRate = parseFloat(property.targetReturn.toString()) || 0;
-  const monthlyReturn = ((amount * (targetReturnRate / 100)) / 12).toFixed(0);
-  const annualReturn = (amount * (targetReturnRate / 100)).toFixed(0);
-  const totalReturnRate = 1 + ((targetReturnRate / 100) * (property.term / 12));
-  const totalReturn = (amount * totalReturnRate).toFixed(0);
-  
-  // Investment mutation
-  const investMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) {
-        throw new Error("You must be logged in to invest");
-      }
-      
-      const res = await apiRequest("POST", "/api/investments", {
-        propertyId: property.id,
-        amount: parseAmount(investmentAmount),
-        currentValue: parseAmount(investmentAmount)
-      });
-      
-      return await res.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Investment successful!",
-        description: `You have successfully invested $${formatAmount(parseAmount(investmentAmount))} in ${property.name}.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/investments"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/properties/${property.id}`] });
-      
-      // Navigate to dashboard
-      navigate("/dashboard");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Investment failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+  // Fetch property details
+  const { data: property, isLoading, error } = useQuery<Property>({
+    queryKey: [`/api/properties/${id}`],
   });
-  
-  const handleInvest = () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in or create an account to invest.",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
+
+  // Setup form for investment amount
+  const investmentForm = useForm<InvestmentFormValues>({
+    resolver: zodResolver(investmentFormSchema),
+    defaultValues: {
+      amount: property?.minimumInvestment?.toString() || ""
     }
+  });
+
+  // Handle investment form submission
+  const onInvestSubmit = (values: InvestmentFormValues) => {
+    if (!property) return;
     
-    if (parseAmount(investmentAmount) < property.minimumInvestment) {
+    const amount = Number(values.amount);
+    if (amount < property.minimumInvestment) {
       toast({
         title: "Invalid amount",
-        description: `Minimum investment is $${formatAmount(property.minimumInvestment)}.`,
-        variant: "destructive",
+        description: `Minimum investment is $${property.minimumInvestment}`,
+        variant: "destructive"
       });
       return;
     }
     
-    // Show payment options dialog
-    setIsPaymentDialogOpen(true);
+    setIsInvesting(true);
   };
-  
-  const handleDirectInvestment = () => {
-    investMutation.mutate();
-    setIsPaymentDialogOpen(false);
+
+  // Handle successful payment
+  const handlePaymentSuccess = (data: any) => {
+    setIsInvesting(false);
+    setInvestDialogOpen(false);
+    toast({
+      title: "Investment successful!",
+      description: "Your investment has been processed successfully.",
+    });
+    // Redirect to dashboard
+    startLoading();
+    setTimeout(() => {
+      setLocation("/dashboard");
+      stopLoading();
+    }, 1000);
   };
-  
+
+  // Handle payment error
+  const handlePaymentError = (error: Error) => {
+    setIsInvesting(false);
+    toast({
+      title: "Payment failed",
+      description: error.message,
+      variant: "destructive",
+    });
+  };
+
+  // Function to format percentages
+  const formatPercent = (num: number | string) => {
+    if (typeof num === 'string') num = parseFloat(num);
+    return `${num}%`;
+  };
+
+  // Calculate funding progress percentage
+  const fundingProgress = property ? (property.currentFunding / property.totalFunding) * 100 : 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !property) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h2 className="text-2xl font-bold mb-4">Property Not Found</h2>
+        <p className="text-muted-foreground mb-6">We couldn't find the property you're looking for.</p>
+        <Button onClick={() => setLocation("/")}>Back to Home</Button>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <div className="relative aspect-w-16 aspect-h-9 mb-4">
+    <div className="container py-8 max-w-7xl">
+      {/* Back button */}
+      <Button 
+        variant="ghost" 
+        className="mb-6"
+        onClick={() => setLocation("/")}
+      >
+        ← Back to Properties
+      </Button>
+
+      {/* Property Header */}
+      <div className="flex flex-col md:flex-row gap-8 mb-8">
+        {/* Property Image */}
+        <div className="md:w-1/2">
+          <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video">
             <img 
-              className="rounded-md object-cover w-full h-64" 
-              src={selectedImage} 
-              alt={property.name}
+              src={property.imageUrl} 
+              alt={property.name} 
+              className="w-full h-full object-cover"
             />
           </div>
-          
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            {[property.imageUrl, ...additionalImages].map((image, index) => (
-              <img 
-                key={index}
-                className="h-20 w-full object-cover rounded cursor-pointer border-2 transition-all"
-                style={{ borderColor: selectedImage === image ? 'hsl(222, 80%, 40%)' : 'transparent' }}
-                src={image} 
-                alt={`${property.name} view ${index + 1}`}
-                onClick={() => setSelectedImage(image)}
-              />
-            ))}
-          </div>
-          
-          <div className="mb-6">
-            <h4 className="font-semibold text-lg mb-2">Property Details</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Type</p>
-                <p className="font-medium capitalize">{property.type}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Location</p>
-                <p className="font-medium">{property.location}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Size</p>
-                <p className="font-medium">{property.size}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Built</p>
-                <p className="font-medium">{property.builtYear}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Occupancy</p>
-                <p className="font-medium">{property.occupancy}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Cash Flow</p>
-                <p className="font-medium">{property.cashFlow}</p>
-              </div>
-            </div>
-          </div>
         </div>
-        
-        <div>
-          <h4 className="font-semibold text-lg mb-3">Investment Opportunity</h4>
-          <p className="text-gray-700 mb-4">{property.description}</p>
+
+        {/* Property Summary */}
+        <div className="md:w-1/2 flex flex-col">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+              {property.type.charAt(0).toUpperCase() + property.type.slice(1)}
+            </span>
+            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
+              {property.location}
+            </span>
+          </div>
+          <h1 className="text-3xl font-bold mb-2">{property.name}</h1>
+          <p className="text-muted-foreground mb-4">{property.description}</p>
           
-          <div className="mb-6">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="font-medium">{fundingPercentage}% Funded</span>
-              <span className="text-gray-500">
-                ${(property.currentFunding / 1000000).toFixed(1)}M / ${(property.totalFunding / 1000000).toFixed(1)}M
+          {/* Key Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div className="flex flex-col">
+              <span className="text-sm text-muted-foreground">Target Return</span>
+              <span className="text-xl font-bold flex items-center">
+                <Percent className="h-4 w-4 text-primary mr-1" />
+                {formatPercent(property.targetReturn)}
               </span>
             </div>
-            <div className="h-2 w-full bg-gray-100 rounded">
-              <div 
-                className="h-full bg-emerald-400 rounded" 
-                style={{ width: `${fundingPercentage}%` }}
-              ></div>
+            <div className="flex flex-col">
+              <span className="text-sm text-muted-foreground">Minimum</span>
+              <span className="text-xl font-bold flex items-center">
+                <DollarSign className="h-4 w-4 text-primary mr-1" />
+                ${property.minimumInvestment.toLocaleString()}
+              </span>
             </div>
-            <div className="flex justify-between text-xs mt-1">
-              <span>{property.numberOfInvestors} investors</span>
-              <span>{property.daysLeft} days left</span>
+            <div className="flex flex-col">
+              <span className="text-sm text-muted-foreground">Term</span>
+              <span className="text-xl font-bold flex items-center">
+                <Calendar className="h-4 w-4 text-primary mr-1" />
+                {property.term} months
+              </span>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <Card className="bg-gray-50">
-              <CardContent className="p-3">
-                <p className="text-sm text-gray-500">Target Return</p>
-                <p className="text-xl font-medium text-amber-600">{property.targetReturn}%</p>
-                <p className="text-xs text-gray-500">Annual projected yield</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-gray-50">
-              <CardContent className="p-3">
-                <p className="text-sm text-gray-500">Investment Term</p>
-                <p className="text-xl font-medium">{property.term} months</p>
-                <p className="text-xs text-gray-500">Expected hold period</p>
-              </CardContent>
-            </Card>
-          </div>
-          
+          {/* Funding Progress */}
           <div className="mb-6">
-            <h4 className="font-semibold text-md mb-2">Investment Simulation</h4>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center mb-4">
-                  <span className="text-sm font-medium mr-2">Investment Amount:</span>
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 sm:text-sm">$</span>
-                    </div>
-                    <Input
-                      type="text"
-                      value={investmentAmount}
-                      onChange={handleAmountChange}
-                      className="pl-7 pr-20"
-                      placeholder={property.minimumInvestment.toString()}
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-xs h-6 px-1 mr-1"
-                        onClick={setMinAmount}
-                      >
-                        Min
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-xs h-6 px-1 mr-2"
-                        onClick={setMaxAmount}
-                      >
-                        Max
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="text-center p-2 bg-gray-50 rounded">
-                    <p className="text-xs text-gray-500">Monthly Return</p>
-                    <p className="text-lg font-medium text-primary">${monthlyReturn}</p>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded">
-                    <p className="text-xs text-gray-500">Annual Return</p>
-                    <p className="text-lg font-medium text-primary">${annualReturn}</p>
-                  </div>
-                  <div className="text-center p-2 bg-gray-50 rounded">
-                    <p className="text-xs text-gray-500">Total Return</p>
-                    <p className="text-lg font-medium text-primary">${totalReturn}</p>
-                  </div>
-                </div>
-                
-                <Button 
-                  className="w-full" 
-                  onClick={handleInvest}
-                  disabled={investMutation.isPending}
-                >
-                  {investMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : "Invest Now"}
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="flex justify-between mb-1">
+              <span className="text-sm font-medium">${property.currentFunding.toLocaleString()} raised</span>
+              <span className="text-sm text-muted-foreground">${property.totalFunding.toLocaleString()} target</span>
+            </div>
+            <Progress value={fundingProgress} className="h-2" />
+            <div className="flex justify-between mt-2">
+              <span className="text-sm text-muted-foreground flex items-center">
+                <Users className="h-3 w-3 mr-1" />
+                {property.numberOfInvestors} investors
+              </span>
+              <span className="text-sm text-muted-foreground flex items-center">
+                <Clock className="h-3 w-3 mr-1" />
+                {property.daysLeft} days left
+              </span>
+            </div>
+          </div>
+          
+          {/* CTA Button */}
+          <div className="mt-auto">
+            {user ? (
+              <Dialog open={investDialogOpen} onOpenChange={setInvestDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full" size="lg">
+                    Invest Now
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invest in {property.name}</DialogTitle>
+                    <DialogDescription>
+                      Enter the amount you would like to invest. Minimum investment is ${property.minimumInvestment}.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <Form {...investmentForm}>
+                    <form onSubmit={investmentForm.handleSubmit(onInvestSubmit)} className="space-y-6">
+                      <FormField
+                        control={investmentForm.control}
+                        name="amount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Investment Amount ($)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter amount" 
+                                {...field} 
+                                type="number"
+                                min={property.minimumInvestment}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Minimum investment: ${property.minimumInvestment}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <DialogFooter>
+                        {isInvesting ? (
+                          <PaystackCheckout 
+                            property={property}
+                            amount={Number(investmentForm.getValues().amount)}
+                            onSuccess={handlePaymentSuccess}
+                            onError={handlePaymentError}
+                          />
+                        ) : (
+                          <Button type="submit">
+                            Continue to Payment
+                          </Button>
+                        )}
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Button className="w-full" size="lg" onClick={() => setLocation("/auth")}>
+                Sign in to Invest
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Payment Options Dialog */}
-      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Choose Payment Method</DialogTitle>
-            <DialogDescription>
-              Select how you would like to complete your investment of ${formatAmount(parseAmount(investmentAmount))} in {property.name}.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs defaultValue="direct" onValueChange={(value) => setPaymentMethod(value as "direct" | "paystack")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="direct">Direct Investment</TabsTrigger>
-              <TabsTrigger value="paystack">Pay with Paystack</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="direct" className="space-y-4 py-4">
-              <div className="bg-amber-50 p-4 rounded-lg">
-                <p className="text-sm text-amber-800">
-                  Direct investment uses your account balance to fund this investment. 
-                  Your investment will be processed immediately.
-                </p>
+      {/* Detailed Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+        <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            <span>Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="financials" className="flex items-center gap-2">
+            <LineChart className="h-4 w-4" />
+            <span>Financials</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            <span>Security</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Property Details</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <PropertyDetailItem 
+                    icon={<Building2 className="h-4 w-4 text-primary" />}
+                    label="Property Type"
+                    value={property.type.charAt(0).toUpperCase() + property.type.slice(1)}
+                  />
+                  <PropertyDetailItem 
+                    icon={<MapPin className="h-4 w-4 text-primary" />}
+                    label="Location"
+                    value={property.location}
+                  />
+                  <PropertyDetailItem 
+                    icon={<Home className="h-4 w-4 text-primary" />}
+                    label="Size"
+                    value={property.size || "N/A"}
+                  />
+                  <PropertyDetailItem 
+                    icon={<Calendar className="h-4 w-4 text-primary" />}
+                    label="Built Year"
+                    value={property.builtYear || "N/A"}
+                  />
+                  <PropertyDetailItem 
+                    icon={<Users className="h-4 w-4 text-primary" />}
+                    label="Occupancy"
+                    value={property.occupancy || "N/A"}
+                  />
+                  <PropertyDetailItem 
+                    icon={<DollarSign className="h-4 w-4 text-primary" />}
+                    label="Cash Flow"
+                    value={property.cashFlow || "N/A"}
+                  />
+                </div>
               </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleDirectInvestment} 
-                  disabled={investMutation.isPending}
-                >
-                  {investMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : "Confirm Direct Investment"}
-                </Button>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Investment Overview</h3>
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Target Return</span>
+                        <span className="font-semibold">{formatPercent(property.targetReturn)}</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Investment Term</span>
+                        <span className="font-semibold">{property.term} months</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Minimum Investment</span>
+                        <span className="font-semibold">${property.minimumInvestment.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Total Funding Target</span>
+                        <span className="font-semibold">${property.totalFunding.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Current Funding</span>
+                        <span className="font-semibold">${property.currentFunding.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Number of Investors</span>
+                        <span className="font-semibold">{property.numberOfInvestors}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </TabsContent>
+            </div>
+          </div>
+        </TabsContent>
+        
+        {/* Financials Tab */}
+        <TabsContent value="financials" className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Financial Projections</h3>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span className="font-medium">Projected Return: {formatPercent(property.targetReturn)}</span>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Year 1 Return Projection</h4>
+                        <div className="h-2 bg-gray-100 rounded-full">
+                          <div 
+                            className="h-full bg-primary rounded-full" 
+                            style={{ width: `${Math.min(Number(property.targetReturn) * 0.8, 100)}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {formatPercent(Number(property.targetReturn) * 0.8)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Year 3 Return Projection</h4>
+                        <div className="h-2 bg-gray-100 rounded-full">
+                          <div 
+                            className="h-full bg-primary rounded-full" 
+                            style={{ width: `${Math.min(Number(property.targetReturn) * 0.9, 100)}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {formatPercent(Number(property.targetReturn) * 0.9)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Year 5 Return Projection</h4>
+                        <div className="h-2 bg-gray-100 rounded-full">
+                          <div 
+                            className="h-full bg-primary rounded-full" 
+                            style={{ width: `${Math.min(Number(property.targetReturn), 100)}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {formatPercent(property.targetReturn)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Risk Assessment</h3>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <RiskItem 
+                      title="Market Risk" 
+                      level="Low" 
+                      description="Property is located in a stable market with consistent growth."
+                    />
+                    <RiskItem 
+                      title="Liquidity Risk" 
+                      level="Medium" 
+                      description="Investment term is 5 years with limited options for early exit."
+                    />
+                    <RiskItem 
+                      title="Operational Risk" 
+                      level="Low" 
+                      description="Experienced property management team with proven track record."
+                    />
+                    <RiskItem 
+                      title="Regulatory Risk" 
+                      level="Low" 
+                      description="All necessary permits and approvals have been obtained."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+        
+        {/* Security Tab */}
+        <TabsContent value="security" className="pt-4">
+          <div className="max-w-3xl mx-auto">
+            <h3 className="text-xl font-semibold mb-4">Security Information</h3>
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 pb-4 border-b">
+                    <ShieldCheck className="h-8 w-8 text-primary" />
+                    <div>
+                      <h4 className="font-medium">Secure Investment Structure</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Your investment is protected through a legal entity structure that provides security and transparency.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <SecurityItem 
+                      title="Legal Structure" 
+                      description="Investment is made through a Special Purpose Vehicle (SPV) that owns the property."
+                    />
+                    <SecurityItem 
+                      title="Documentation" 
+                      description="Full legal documentation provided including operating agreement and subscription documents."
+                    />
+                    <SecurityItem 
+                      title="Investor Rights" 
+                      description="Clearly defined investor rights including profit distributions and voting rights on major decisions."
+                    />
+                    <SecurityItem 
+                      title="Reporting" 
+                      description="Regular financial reporting and updates on property performance and market conditions."
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <h3 className="text-xl font-semibold mb-4">Compliance Information</h3>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <p className="text-muted-foreground mb-4">
+                    All investments are made in compliance with relevant securities regulations. Investment opportunities 
+                    are available to accredited and non-accredited investors as permitted by applicable exemptions.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ComplianceItem 
+                      title="KYC/AML Procedures" 
+                      description="We implement comprehensive Know Your Customer and Anti-Money Laundering procedures."
+                    />
+                    <ComplianceItem 
+                      title="Tax Documentation" 
+                      description="Annual tax documents provided for all investors for easy tax reporting."
+                    />
+                    <ComplianceItem 
+                      title="Regulatory Compliance" 
+                      description="Platform operates in compliance with relevant securities regulations and exemptions."
+                    />
+                    <ComplianceItem 
+                      title="Data Security" 
+                      description="Bank-level encryption and security measures to protect your personal and financial information."
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
 
-            <TabsContent value="paystack" className="py-4">
-              <PaystackCheckout 
-                property={property}
-                amount={parseAmount(investmentAmount)}
-                onSuccess={() => {
-                  toast({
-                    title: "Payment Successful",
-                    description: `You have successfully invested $${formatAmount(parseAmount(investmentAmount))} in ${property.name}.`,
-                  });
-                  
-                  queryClient.invalidateQueries({ queryKey: ["/api/investments"] });
-                  queryClient.invalidateQueries({ queryKey: [`/api/properties/${property.id}`] });
-                  
-                  setIsPaymentDialogOpen(false);
-                  navigate("/dashboard");
-                }}
-                onError={(error) => {
-                  toast({
-                    title: "Payment Failed",
-                    description: error.message,
-                    variant: "destructive",
-                  });
-                }}
-              />
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-    </>
+// Property Detail Item Component
+interface PropertyDetailItemProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}
+
+function PropertyDetailItem({ icon, label, value }: PropertyDetailItemProps) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5">
+        {icon}
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="font-medium">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+// Risk Item Component
+interface RiskItemProps {
+  title: string;
+  level: "Low" | "Medium" | "High";
+  description: string;
+}
+
+function RiskItem({ title, level, description }: RiskItemProps) {
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case "Low":
+        return "text-green-500 bg-green-50";
+      case "Medium":
+        return "text-yellow-500 bg-yellow-50";
+      case "High":
+        return "text-red-500 bg-red-50";
+      default:
+        return "text-gray-500 bg-gray-50";
+    }
+  };
+  
+  return (
+    <div className="pb-4 border-b last:border-0 last:pb-0">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-medium">{title}</h4>
+        <span className={cn("px-2 py-1 rounded-full text-xs font-medium", getLevelColor(level))}>
+          {level}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+// Security Item Component
+interface SecurityItemProps {
+  title: string;
+  description: string;
+}
+
+function SecurityItem({ title, description }: SecurityItemProps) {
+  return (
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <h4 className="font-medium mb-1">{title}</h4>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+// Compliance Item Component
+interface ComplianceItemProps {
+  title: string;
+  description: string;
+}
+
+function ComplianceItem({ title, description }: ComplianceItemProps) {
+  return (
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <h4 className="font-medium mb-1">{title}</h4>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
   );
 }

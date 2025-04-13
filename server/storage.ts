@@ -182,7 +182,25 @@ export class MemStorage implements IStorage {
 
   async createProperty(property: InsertProperty): Promise<Property> {
     const id = this.propertyIdCounter++;
-    const newProperty: Property = { id, ...property };
+    const newProperty: Property = { 
+      id, 
+      name: property.name,
+      description: property.description,
+      location: property.location,
+      type: property.type,
+      imageUrl: property.imageUrl,
+      targetReturn: property.targetReturn,
+      minimumInvestment: property.minimumInvestment,
+      term: property.term,
+      totalFunding: property.totalFunding,
+      currentFunding: property.currentFunding,
+      numberOfInvestors: property.numberOfInvestors || 0,
+      size: property.size || null,
+      builtYear: property.builtYear || null,
+      occupancy: property.occupancy || null,
+      cashFlow: property.cashFlow || null,
+      daysLeft: property.daysLeft || null,
+    };
     this.properties.set(id, newProperty);
     return newProperty;
   }
@@ -312,7 +330,7 @@ export class MemStorage implements IStorage {
         description: "Shopping center with 45 retail units in a prime location with high foot traffic.",
         type: "commercial",
         imageUrl: "https://images.unsplash.com/photo-1577415124269-fc1140a69e91?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-        targetReturn: 9.8,
+        targetReturn: "9.8",
         minimumInvestment: 2500,
         term: 60,
         totalFunding: 9000000,
@@ -330,7 +348,7 @@ export class MemStorage implements IStorage {
         description: "100,000 sq ft distribution center with modern facilities and transportation access.",
         type: "industrial",
         imageUrl: "https://images.unsplash.com/photo-1554435493-93422e8d1c89?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-        targetReturn: 10.2,
+        targetReturn: "10.2",
         minimumInvestment: 5000,
         term: 48,
         totalFunding: 12000000,
@@ -348,7 +366,7 @@ export class MemStorage implements IStorage {
         description: "Luxury beachfront property with 65 premium condos and exclusive amenities.",
         type: "residential",
         imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-        targetReturn: 14.5,
+        targetReturn: "14.5",
         minimumInvestment: 2000,
         term: 36,
         totalFunding: 20000000,
@@ -366,7 +384,7 @@ export class MemStorage implements IStorage {
         description: "Class A office space in technology district with flexible floor plans and modern facilities.",
         type: "commercial",
         imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-        targetReturn: 11.2,
+        targetReturn: "11.2",
         minimumInvestment: 5000,
         term: 60,
         totalFunding: 15000000,
@@ -384,7 +402,7 @@ export class MemStorage implements IStorage {
         description: "Mixed-use development with retail spaces and 85 residential units in a walkable community.",
         type: "mixed-use",
         imageUrl: "https://images.unsplash.com/photo-1523192193543-6e7296d960e4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-        targetReturn: 13.0,
+        targetReturn: "13.0",
         minimumInvestment: 1500,
         term: 48,
         totalFunding: 12000000,

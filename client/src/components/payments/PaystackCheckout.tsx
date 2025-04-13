@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useState, useEffect } from 'react';
 import { Property } from '@shared/schema';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
+
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
 
 interface PaystackCheckoutProps {
   property: Property;
@@ -16,123 +20,107 @@ interface PaystackCheckoutProps {
 
 export function PaystackCheckout({ property, amount, onSuccess, onError }: PaystackCheckoutProps) {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+
+  // Load the Paystack script dynamically
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.onload = () => {
+      setScriptLoaded(true);
+      setIsLoading(false);
+    };
+    script.onerror = () => {
+      console.error('Failed to load Paystack script');
+      setIsLoading(false);
+      if (onError) onError(new Error('Failed to load payment processor. Please try again.'));
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [onError]);
 
   const handlePayment = async () => {
-    if (!user) {
-      setError('You must be logged in to make an investment');
+    if (!scriptLoaded || !user) {
+      onError && onError(new Error('Payment system not ready. Please try again.'));
       return;
     }
 
     try {
-      setLoading(true);
-      setError(null);
+      setIsLoading(true);
+      
+      // Generate a reference from backend
+      const paymentData = {
+        amount,
+        propertyId: property.id,
+        email: user.email || ''
+      };
 
-      const response = await apiRequest('POST', '/api/payment/initialize', { 
-        propertyId: property.id, 
-        amount 
-      });
+      const response = await apiRequest('POST', '/api/payments/initialize', paymentData);
+      const data = await response.json();
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to initialize payment');
+        throw new Error(data.message || 'Failed to initialize payment');
       }
 
-      const data = await response.json();
-      
-      if (data.status && data.data.authorization_url) {
-        // Redirect to Paystack payment page
-        window.location.href = data.data.authorization_url;
-      } else {
-        throw new Error('Invalid payment response');
-      }
-    } catch (err: any) {
-      console.error('Payment error:', err);
-      setError(err.message || 'Payment initialization failed');
-      if (onError) {
-        onError(err);
-      }
-      toast({
-        title: 'Payment Error',
-        description: err.message || 'There was a problem initializing your payment',
-        variant: 'destructive',
+      // Open Paystack payment modal
+      const paystack = new window.PaystackPop();
+      paystack.newTransaction({
+        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+        email: user.email,
+        amount: amount * 100, // Paystack expects amount in kobo (smallest currency unit)
+        currency: 'NGN',
+        ref: data.reference,
+        onClose: () => {
+          setIsLoading(false);
+        },
+        callback: (response: any) => {
+          // Verify the transaction on the server
+          verifyPayment(response.reference);
+        }
       });
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      onError && onError(error instanceof Error ? error : new Error('Payment failed'));
+    }
+  };
+
+  const verifyPayment = async (reference: string) => {
+    try {
+      const response = await apiRequest('POST', '/api/payments/verify', { reference });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to verify payment');
+      }
+
+      setIsLoading(false);
+      onSuccess && onSuccess(data);
+    } catch (error) {
+      setIsLoading(false);
+      onError && onError(error instanceof Error ? error : new Error('Payment verification failed'));
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Complete Your Investment</CardTitle>
-        <CardDescription>
-          You're investing in {property.name}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex justify-between py-2 border-b">
-            <span>Property:</span>
-            <span className="font-medium">{property.name}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b">
-            <span>Location:</span>
-            <span>{property.location}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b">
-            <span>Investment Amount:</span>
-            <span className="font-bold">${amount.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b">
-            <span>Expected Return:</span>
-            <span className="text-emerald-600 font-medium">{property.targetReturn}% annually</span>
-          </div>
-          <div className="flex justify-between py-2">
-            <span>Investment Period:</span>
-            <span>5 years</span>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 p-3 rounded-md flex items-start mt-4">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" />
-              <span className="text-red-700 text-sm">{error}</span>
-            </div>
-          )}
-
-          {success && (
-            <div className="bg-green-50 p-3 rounded-md flex items-start mt-4">
-              <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-              <span className="text-green-700 text-sm">
-                Payment successful! Your investment has been processed.
-              </span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={handlePayment} 
-          disabled={loading || success} 
-          className="w-full"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : success ? (
-            'Payment Complete'
-          ) : (
-            'Pay with Paystack'
-          )}
-        </Button>
-      </CardFooter>
-    </Card>
+    <Button 
+      type="button"
+      onClick={handlePayment} 
+      disabled={isLoading || !scriptLoaded}
+      className="w-full"
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Processing...
+        </>
+      ) : (
+        'Pay with Paystack'
+      )}
+    </Button>
   );
 }
-
-export default PaystackCheckout;
