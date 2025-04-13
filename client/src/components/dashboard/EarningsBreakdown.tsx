@@ -97,7 +97,7 @@ export default function EarningsBreakdown() {
   typePercentages.sort((a, b) => b.earnings - a.earnings);
   
   // Generate colors for types
-  const typeColors = {
+  const typeColors: Record<string, string> = {
     "residential": "bg-blue-500",
     "commercial": "bg-amber-500",
     "industrial": "bg-emerald-500",
@@ -175,51 +175,32 @@ export default function EarningsBreakdown() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center mb-6">
-            {/* Circular chart representation */}
-            <div className="relative w-40 h-40">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                {typePercentages.reduce<React.ReactNode[]>((elements, item, i, array) => {
-                  // Calculate starting angle based on previous segments
-                  let startAngle = 0;
-                  for (let j = 0; j < i; j++) {
-                    startAngle += (array[j].percentage * 3.6);
-                  }
-                  
-                  const endAngle = startAngle + (item.percentage * 3.6); // 3.6 = 360/100
-                  const largeArcFlag = item.percentage > 50 ? 1 : 0;
-                  
-                  // Calculate coordinates
-                  const startX = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180);
-                  const startY = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180);
-                  const endX = 50 + 40 * Math.cos((endAngle - 90) * Math.PI / 180);
-                  const endY = 50 + 40 * Math.sin((endAngle - 90) * Math.PI / 180);
-                  
-                  const path = [
-                    `M 50 50`,
-                    `L ${startX} ${startY}`,
-                    `A 40 40 0 ${largeArcFlag} 1 ${endX} ${endY}`,
-                    `Z`
-                  ].join(' ');
-                  
-                  const colorClass = typeColors[item.type as keyof typeof typeColors] || "bg-gray-500";
-                  const fill = colorClass.replace('bg-', 'fill-');
-                  
-                  elements.push(
-                    <path
-                      d={path}
-                      className={fill}
-                      key={`slice-${i}`}
-                    />
-                  );
-                  
-                  return elements;
-                }, [])
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-3xl font-bold">{investments.length}</p>
-                  <p className="text-xs text-gray-500">Investments</p>
-                </div>
+            {/* Simple chart representation */}
+            <div className="relative w-40 h-40 flex items-center justify-center">
+              <div className="absolute inset-0">
+                <svg viewBox="0 0 100 100">
+                  {typePercentages.map((item, i) => {
+                    // Simple representation with colored segments
+                    const segmentSize = item.percentage / 100;
+                    const segmentStartY = i === 0 ? 0 : typePercentages.slice(0, i).reduce((acc, curr) => acc + (curr.percentage / 100), 0) * 100;
+                    const colorClass = typeColors[item.type] || "fill-gray-500";
+                    
+                    return (
+                      <rect
+                        key={`segment-${i}`}
+                        x="25"
+                        y={segmentStartY}
+                        width="50"
+                        height={segmentSize * 100}
+                        className={colorClass.replace('bg-', 'fill-')}
+                      />
+                    );
+                  })}
+                </svg>
+              </div>
+              <div className="z-10 text-center">
+                <p className="text-3xl font-bold">{investments.length}</p>
+                <p className="text-xs text-gray-500">Investments</p>
               </div>
             </div>
           </div>
@@ -227,7 +208,7 @@ export default function EarningsBreakdown() {
           <div className="space-y-4">
             {typePercentages.map(({ type, percentage, earnings, count }) => (
               <div key={type} className="flex items-center space-x-4">
-                <div className={`w-3 h-3 rounded-full ${typeColors[type as keyof typeof typeColors] || "bg-gray-500"}`} />
+                <div className={`w-3 h-3 rounded-full ${typeColors[type] || "bg-gray-500"}`} />
                 <div className="flex-1">
                   <div className="flex justify-between">
                     <p className="text-sm font-medium capitalize">{type}</p>

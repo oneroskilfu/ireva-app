@@ -86,10 +86,15 @@ export default function CompletedProjects() {
         const roi = (totalEarnings / totalInvested) * 100;
         
         // Get completion date
+        const startDate = investments[0].date ? new Date(investments[0].date) : new Date();
+        
+        // Create a copy of startDate for calculation to avoid modifying the original
+        const endDate = new Date(startDate.getTime());
+        
         const completionDate = investments[0].completedDate 
           ? new Date(investments[0].completedDate) 
-          : new Date(new Date(investments[0].date).setMonth(
-              new Date(investments[0].date).getMonth() + property.term
+          : new Date(endDate.setMonth(
+              endDate.getMonth() + property.term
             ));
         
         return (
@@ -112,7 +117,7 @@ export default function CompletedProjects() {
                 <div>
                   <p className="text-xs text-gray-500">Investment Period</p>
                   <p className="text-sm font-medium">
-                    {new Date(investments[0].date).toLocaleDateString('en-US', {
+                    {startDate.toLocaleDateString('en-US', {
                       month: 'short',
                       year: 'numeric'
                     })} - {completionDate.toLocaleDateString('en-US', {
