@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
@@ -9,6 +9,19 @@ import paystackController from "./paystack";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Admin middleware to check if the user is an admin
+  const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in to access this resource" });
+    }
+    
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "You don't have permission to access this resource" });
+    }
+    
+    next();
+  };
 
   // Get all properties
   app.get("/api/properties", async (req, res) => {
@@ -222,6 +235,222 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ===== ADMIN ROUTES =====
+  
+  // Get all users (admin only)
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  // Get a specific user by ID (admin only)
+  app.get("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Update a user (admin only)
+  app.patch("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const userData = req.body;
+      
+      // Don't allow password update through this endpoint
+      if (userData.password) {
+        delete userData.password;
+      }
+      
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  // Delete a user (admin only)
+  app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const success = await storage.deleteUser(userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+  
+  // Create a new property (admin only)
+  app.post("/api/admin/properties", isAdmin, async (req, res) => {
+    try {
+      const property = await storage.createProperty(req.body);
+      res.status(201).json(property);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create property" });
+    }
+  });
+  
+  // Update a property (admin only)
+  app.patch("/api/admin/properties/:id", isAdmin, async (req, res) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      const updatedProperty = await storage.updateProperty(propertyId, req.body);
+      
+      if (!updatedProperty) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      res.json(updatedProperty);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update property" });
+    }
+  });
+  
+  // Delete a property (admin only)
+  app.delete("/api/admin/properties/:id", isAdmin, async (req, res) => {
+    try {
+      const propertyId = parseInt(req.params.id);
+      const success = await storage.deleteProperty(propertyId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Property not found or cannot be deleted (has investments)" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete property" });
+    }
+  });
+  
+  // Get all investments (admin only)
+  app.get("/api/admin/investments", isAdmin, async (req, res) => {
+    try {
+      const investments = await storage.getAllInvestments();
+      
+      // Get user and property details for each investment
+      const investmentsWithDetails = await Promise.all(
+        investments.map(async (investment) => {
+          const user = await storage.getUser(investment.userId);
+          const property = await storage.getProperty(investment.propertyId);
+          return {
+            ...investment,
+            user,
+            property,
+          };
+        })
+      );
+      
+      res.json(investmentsWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch investments" });
+    }
+  });
+  
+  // Update an investment (admin only)
+  app.patch("/api/admin/investments/:id", isAdmin, async (req, res) => {
+    try {
+      const investmentId = parseInt(req.params.id);
+      const updatedInvestment = await storage.updateInvestment(investmentId, req.body);
+      
+      if (!updatedInvestment) {
+        return res.status(404).json({ message: "Investment not found" });
+      }
+      
+      res.json(updatedInvestment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update investment" });
+    }
+  });
+  
+  // Delete an investment (admin only)
+  app.delete("/api/admin/investments/:id", isAdmin, async (req, res) => {
+    try {
+      const investmentId = parseInt(req.params.id);
+      const success = await storage.deleteInvestment(investmentId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Investment not found" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete investment" });
+    }
+  });
+  
+  // Get admin dashboard stats
+  app.get("/api/admin/dashboard", isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const properties = await storage.getAllProperties();
+      const investments = await storage.getAllInvestments();
+      
+      // Calculate statistics
+      const totalUsers = users.length;
+      const totalProperties = properties.length;
+      const totalInvestments = investments.length;
+      const totalInvestedAmount = investments.reduce((sum, inv) => sum + inv.amount, 0);
+      
+      // Property stats by type
+      const propertiesByType = properties.reduce((acc, property) => {
+        acc[property.type] = (acc[property.type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Investment stats by status
+      const investmentsByStatus = investments.reduce((acc, investment) => {
+        const status = investment.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      res.json({
+        totalUsers,
+        totalProperties,
+        totalInvestments,
+        totalInvestedAmount,
+        propertiesByType,
+        investmentsByStatus,
+        recentUsers: users.slice(-5).reverse(),
+        recentInvestments: await Promise.all(
+          investments.slice(-5).reverse().map(async (investment) => {
+            const user = await storage.getUser(investment.userId);
+            const property = await storage.getProperty(investment.propertyId);
+            return {
+              ...investment,
+              user: user ? { id: user.id, username: user.username } : null,
+              property: property ? { id: property.id, name: property.name } : null,
+            };
+          })
+        )
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch admin dashboard data" });
+    }
+  });
+
   app.get("/api/analytics/investment-risk", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {

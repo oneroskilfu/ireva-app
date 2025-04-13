@@ -32,7 +32,7 @@ export interface IStorage {
   deleteInvestment(id: number): Promise<boolean>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any for session store to avoid type issues
 }
 
 export class MemStorage implements IStorage {
@@ -42,7 +42,7 @@ export class MemStorage implements IStorage {
   private userIdCounter: number;
   private propertyIdCounter: number;
   private investmentIdCounter: number;
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any for the session store type
 
   constructor() {
     this.users = new Map();
@@ -184,6 +184,10 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getAllInvestments(): Promise<Investment[]> {
+    return Array.from(this.investments.values());
+  }
+  
   async createInvestment(investment: InsertInvestment): Promise<Investment> {
     const id = this.investmentIdCounter++;
     const newInvestment: Investment = { id, ...investment, date: new Date() };
@@ -195,12 +199,48 @@ export class MemStorage implements IStorage {
       const updatedProperty = {
         ...property,
         currentFunding: property.currentFunding + investment.amount,
-        numberOfInvestors: property.numberOfInvestors + 1
+        numberOfInvestors: property.numberOfInvestors ? property.numberOfInvestors + 1 : 1
       };
       this.properties.set(property.id, updatedProperty);
     }
     
     return newInvestment;
+  }
+  
+  async updateInvestment(id: number, investmentData: Partial<InsertInvestment>): Promise<Investment | undefined> {
+    const investment = await this.getInvestment(id);
+    if (!investment) return undefined;
+    
+    // Update the investment
+    const updatedInvestment: Investment = {
+      ...investment,
+      ...investmentData,
+      id: investment.id,
+      date: investment.date
+    };
+    
+    this.investments.set(id, updatedInvestment);
+    return updatedInvestment;
+  }
+  
+  async deleteInvestment(id: number): Promise<boolean> {
+    const investment = await this.getInvestment(id);
+    if (!investment) return false;
+    
+    // Update property funding
+    const property = await this.getProperty(investment.propertyId);
+    if (property) {
+      const updatedProperty = {
+        ...property,
+        currentFunding: Math.max(0, property.currentFunding - investment.amount),
+        numberOfInvestors: property.numberOfInvestors && property.numberOfInvestors > 0 
+          ? property.numberOfInvestors - 1 
+          : 0
+      };
+      this.properties.set(property.id, updatedProperty);
+    }
+    
+    return this.investments.delete(id);
   }
 
   // Seed properties
