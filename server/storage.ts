@@ -67,9 +67,9 @@ export class MemStorage implements IStorage {
     const adminUser = await this.getUserByUsername("admin");
     if (!adminUser) {
       // Create an admin user with a known password for testing
-      // Instead of importing hashPassword, we'll create a simple hash directly 
-      // This is only for the admin seed user - real users will use the proper hash function
-      const hashedPassword = "adminpassword_hashed_with_salt";
+      // In a real application, we'd use the proper hash function
+      // For testing, we're using a simple format that our comparePasswords function can verify
+      const hashedPassword = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8.112233445566";
       
       await this.createUser({
         username: "admin",
@@ -79,7 +79,7 @@ export class MemStorage implements IStorage {
         lastName: "User",
         isAdmin: true
       });
-      console.log("Admin user created. Username: admin, Password: adminpassword");
+      console.log("Admin user created. Username: admin, Password: password");
     }
   }
 
@@ -114,6 +114,13 @@ export class MemStorage implements IStorage {
       kycIdType: insertUser.kycIdType || null,
       kycIdNumber: insertUser.kycIdNumber || null,
       kycVerificationDate: insertUser.kycVerificationDate || null,
+      // MFA fields
+      mfaEnabled: insertUser.mfaEnabled || false,
+      mfaPrimaryMethod: insertUser.mfaPrimaryMethod || "none",
+      mfaSecondaryMethod: insertUser.mfaSecondaryMethod || null,
+      mfaSecret: insertUser.mfaSecret || null,
+      mfaBackupCodes: insertUser.mfaBackupCodes || null,
+      mfaLastVerified: insertUser.mfaLastVerified || null,
     };
     this.users.set(id, user);
     return user;
@@ -250,7 +257,19 @@ export class MemStorage implements IStorage {
   
   async createInvestment(investment: InsertInvestment): Promise<Investment> {
     const id = this.investmentIdCounter++;
-    const newInvestment: Investment = { id, ...investment, date: new Date() };
+    const newInvestment: Investment = { 
+      id, 
+      userId: investment.userId,
+      propertyId: investment.propertyId,
+      amount: investment.amount,
+      currentValue: investment.currentValue,
+      date: new Date(),
+      status: investment.status || "active",
+      completedDate: investment.completedDate || null,
+      earnings: investment.earnings || 0,
+      returns: investment.returns || 0,
+      paymentReference: investment.paymentReference || null
+    };
     this.investments.set(id, newInvestment);
     
     // Update property funding
