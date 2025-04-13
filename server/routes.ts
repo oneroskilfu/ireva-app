@@ -244,20 +244,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let riskScore;
         
         switch (property.type) {
-          case "Residential":
+          case "residential":
             riskScore = 3;
             break;
-          case "Commercial":
+          case "commercial":
             riskScore = 5;
             break;
-          case "Industrial":
+          case "industrial":
             riskScore = 6;
             break;
-          case "Land":
-            riskScore = 7;
+          case "mixed-use":
+            riskScore = 4;
             break;
           default:
-            riskScore = 4;
+            riskScore = 5;
         }
         
         // Adjust risk based on location (simplified)

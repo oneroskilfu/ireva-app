@@ -72,6 +72,8 @@ export const investments = pgTable("investments", {
   currentValue: integer("current_value").notNull(),
   completedDate: timestamp("completed_date"),
   earnings: integer("earnings").default(0),
+  returns: integer("returns").default(0),
+  paymentReference: text("payment_reference"),
 });
 
 export const insertInvestmentSchema = createInsertSchema(investments).omit({

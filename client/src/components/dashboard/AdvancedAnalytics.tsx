@@ -48,7 +48,8 @@ import {
   Building,
   LineChart as LineChartIcon,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  CheckCircle2
 } from 'lucide-react';
 
 interface AnalyticsProps {
