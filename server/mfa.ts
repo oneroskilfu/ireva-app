@@ -4,6 +4,28 @@ import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 import { User } from '@shared/schema';
+import session from 'express-session';
+
+// Extend express-session with our custom data
+declare module 'express-session' {
+  interface SessionData {
+    mfaStatus?: {
+      userId: number;
+      status: MFAVerificationStatus;
+      verifiedAt?: string;
+    };
+    verificationCode?: {
+      code: string;
+      expiresAt: number;
+    };
+    mfaSetup?: {
+      secret?: string;
+      method?: string;
+      code?: string;
+      expiresAt: number;
+    };
+  }
+}
 
 // Generate a random 6-digit OTP
 export function generateOTP(): string {

@@ -1,11 +1,12 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { MFAVerificationStatus, addMFAVerificationToSession, getMFAVerificationFromSession } from "./mfa";
 
 declare global {
   namespace Express {
@@ -104,9 +105,28 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    // Remove password from response
-    const { password, ...userWithoutPassword } = req.user as SelectUser;
-    res.status(200).json(userWithoutPassword);
+    const user = req.user as SelectUser;
+    
+    // Set MFA verification status based on user's MFA settings
+    if (user.mfaEnabled) {
+      // User has MFA enabled, mark authentication as pending MFA verification
+      addMFAVerificationToSession(req, user.id, MFAVerificationStatus.PENDING);
+      
+      // Return user info with flag indicating MFA verification is required
+      const { password, ...userWithoutPassword } = user;
+      res.status(200).json({
+        ...userWithoutPassword,
+        mfaRequired: true,
+        mfaMethod: user.mfaPrimaryMethod
+      });
+    } else {
+      // User doesn't have MFA enabled, mark as fully authenticated
+      addMFAVerificationToSession(req, user.id, MFAVerificationStatus.VERIFIED);
+      
+      // Return user info without MFA flag
+      const { password, ...userWithoutPassword } = user;
+      res.status(200).json(userWithoutPassword);
+    }
   });
 
   app.post("/api/logout", (req, res, next) => {
@@ -118,8 +138,28 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const user = req.user as SelectUser;
+    const mfaStatus = getMFAVerificationFromSession(req);
+    
     // Remove password from response
-    const { password, ...userWithoutPassword } = req.user as SelectUser;
-    res.json(userWithoutPassword);
+    const { password, ...userWithoutPassword } = user;
+    
+    // If user has MFA enabled but not verified, add mfaRequired flag
+    if (user.mfaEnabled && 
+        (mfaStatus.status !== MFAVerificationStatus.VERIFIED || 
+         mfaStatus.userId !== user.id)) {
+      res.json({
+        ...userWithoutPassword,
+        mfaRequired: true,
+        mfaVerified: false,
+        mfaMethod: user.mfaPrimaryMethod
+      });
+    } else {
+      res.json({
+        ...userWithoutPassword,
+        mfaVerified: true
+      });
+    }
   });
 }

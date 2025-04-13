@@ -5,6 +5,15 @@ import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import paystackController from "./paystack";
+import {
+  setupMFA,
+  initiateMFAVerification,
+  verifyMFACode,
+  disableMFA,
+  requireMFAVerification,
+  MFAVerificationStatus,
+  getMFAVerificationFromSession
+} from "./mfa";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -390,6 +399,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch investment projections" });
     }
+  });
+  
+  // ===== MFA (MULTI-FACTOR AUTHENTICATION) ROUTES =====
+  
+  // Get MFA status for the current user
+  app.get("/api/mfa/status", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const mfaStatus = getMFAVerificationFromSession(req);
+      
+      res.json({
+        enabled: user.mfaEnabled,
+        primaryMethod: user.mfaPrimaryMethod,
+        secondaryMethod: user.mfaSecondaryMethod,
+        verified: mfaStatus.status === MFAVerificationStatus.VERIFIED && mfaStatus.userId === user.id,
+        lastVerified: user.mfaLastVerified
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch MFA status" });
+    }
+  });
+  
+  // Setup MFA
+  app.post("/api/mfa/setup", async (req, res) => {
+    try {
+      return await setupMFA(req, res);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to setup MFA" });
+    }
+  });
+  
+  // Initiate MFA verification
+  app.post("/api/mfa/initiate", async (req, res) => {
+    try {
+      return await initiateMFAVerification(req, res);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to initiate MFA verification" });
+    }
+  });
+  
+  // Verify MFA code
+  app.post("/api/mfa/verify", async (req, res) => {
+    try {
+      return await verifyMFACode(req, res);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to verify MFA code" });
+    }
+  });
+  
+  // Disable MFA
+  app.post("/api/mfa/disable", async (req, res) => {
+    try {
+      return await disableMFA(req, res);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to disable MFA" });
+    }
+  });
+  
+  // Protected route that requires MFA verification
+  app.get("/api/protected", requireMFAVerification, (req, res) => {
+    res.json({ 
+      message: "You've successfully accessed a protected resource using MFA!",
+      user: req.user
+    });
   });
   
   // ===== ADMIN ROUTES =====
