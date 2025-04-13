@@ -1,6 +1,8 @@
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
+import { usePageTransition } from "@/contexts/page-transition-context";
+import { useEffect } from "react";
 
 export function ProtectedRoute({
   path,
@@ -9,13 +11,22 @@ export function ProtectedRoute({
   path: string;
   component: () => React.JSX.Element;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const { startLoading, stopLoading } = usePageTransition();
 
-  if (isLoading) {
+  useEffect(() => {
+    if (authLoading) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+  }, [authLoading, startLoading, stopLoading]);
+
+  if (authLoading) {
     return (
       <Route path={path}>
         <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <LoadingIndicator size="md" />
         </div>
       </Route>
     );

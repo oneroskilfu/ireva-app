@@ -9,6 +9,8 @@ import CommunityPage from "@/pages/community-page";
 import MarketTrendsPage from "@/pages/market-trends-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import { ProtectedRoute } from "./lib/protected-route";
+import { PageTransitionProvider } from "./contexts/page-transition-context";
+import { PageLoading } from "@/components/ui/page-loading";
 
 function Router() {
   return (
@@ -27,10 +29,11 @@ function Router() {
 
 function App() {
   return (
-    <>
+    <PageTransitionProvider>
+      <PageLoading />
       <Router />
       <Toaster />
-    </>
+    </PageTransitionProvider>
   );
 }
 
