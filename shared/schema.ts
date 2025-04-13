@@ -54,6 +54,13 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
 });
 
+// Investment status enum
+export const investmentStatusEnum = pgEnum("investment_status", [
+  "active",
+  "completed",
+  "pending",
+]);
+
 // Investment schema
 export const investments = pgTable("investments", {
   id: serial("id").primaryKey(),
@@ -61,8 +68,10 @@ export const investments = pgTable("investments", {
   propertyId: integer("property_id").notNull(),
   amount: integer("amount").notNull(),
   date: timestamp("date").defaultNow(),
-  status: text("status").default("active"),
+  status: investmentStatusEnum("status").default("active"),
   currentValue: integer("current_value").notNull(),
+  completedDate: timestamp("completed_date"),
+  earnings: integer("earnings").default(0),
 });
 
 export const insertInvestmentSchema = createInsertSchema(investments).omit({
