@@ -1,78 +1,126 @@
-import { Property } from "@shared/schema";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
+import { Property } from '@shared/schema';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { useLocation } from 'wouter';
+import { usePageTransition } from '@/contexts/page-transition-context';
+import { Building2, Calendar, Clock, DollarSign, MapPin, Percent, Users } from 'lucide-react';
 
 interface PropertyCardProps {
   property: Property;
 }
 
-export default function PropertyCard({ property }: PropertyCardProps) {
-  const fundingPercentage = Math.round((property.currentFunding / property.totalFunding) * 100);
+export function PropertyCard({ property }: PropertyCardProps) {
+  const [, navigate] = useLocation();
+  const { startLoading, stopLoading } = usePageTransition();
+  
+  // Calculate funding progress as percentage
+  const fundingProgress = (property.currentFunding / property.totalFunding) * 100;
+  
+  // Format numbers with commas
+  const formatNumber = (num: number) => {
+    return num.toLocaleString();
+  };
+  
+  // Determine risk level based on property characteristics
+  const getRiskLevel = (): { level: 'low' | 'medium' | 'high', color: string } => {
+    const returnRate = parseFloat(property.targetReturn);
+    
+    if (returnRate < 10) {
+      return { level: 'low', color: 'bg-green-100 text-green-800' };
+    } else if (returnRate < 13) {
+      return { level: 'medium', color: 'bg-yellow-100 text-yellow-800' };
+    } else {
+      return { level: 'high', color: 'bg-red-100 text-red-800' };
+    }
+  };
+  
+  const risk = getRiskLevel();
+  
+  const handleViewDetails = () => {
+    startLoading();
+    navigate(`/property/${property.id}`);
+    // In a real scenario, we'd stop loading when the page is loaded
+    // Here we'll just set a timeout for demo purposes
+    setTimeout(() => {
+      stopLoading();
+    }, 500);
+  };
   
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+    <Card className="overflow-hidden flex flex-col transition-all duration-200 hover:shadow-md">
+      {/* Property Image */}
       <div className="relative">
-        <img 
-          src={property.imageUrl} 
-          alt={property.name} 
-          className="h-48 w-full object-cover"
-        />
-        <div className="absolute top-0 right-0 m-2">
-          <Badge className="bg-white text-primary hover:bg-white">{property.type}</Badge>
+        <div className="absolute top-2 left-2 z-10 flex gap-1 flex-wrap">
+          <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+            {property.type.charAt(0).toUpperCase() + property.type.slice(1)}
+          </Badge>
+          <Badge variant="secondary" className={risk.color}>
+            {risk.level.charAt(0).toUpperCase() + risk.level.slice(1)} Risk
+          </Badge>
+        </div>
+        <div className="relative aspect-video bg-muted overflow-hidden">
+          <img 
+            src={property.imageUrl} 
+            alt={property.name} 
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+          />
         </div>
       </div>
       
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start">
-          <h3 className="text-lg font-bold truncate">{property.name}</h3>
-          <span className="ml-1 text-sm text-gray-500">{property.location}</span>
+      {/* Property Details */}
+      <CardContent className="flex-1 flex flex-col p-4">
+        <div className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+          <MapPin className="h-3.5 w-3.5" />
+          <span>{property.location}</span>
         </div>
         
-        <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-          {property.description}
-        </p>
+        <h3 className="text-lg font-semibold mb-1 line-clamp-1">{property.name}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{property.description}</p>
         
-        <div className="mt-4 flex justify-between">
-          <div>
-            <p className="text-xs text-gray-500">Target Return</p>
-            <p className="text-lg font-medium text-amber-600">
-              {property.targetReturn}% <span className="text-xs">/ year</span>
-            </p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
+          <div className="flex items-center gap-1">
+            <Percent className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">{property.targetReturn}% Return</span>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Minimum</p>
-            <p className="text-lg font-medium">${property.minimumInvestment.toLocaleString()}</p>
+          <div className="flex items-center gap-1">
+            <DollarSign className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Min ${formatNumber(property.minimumInvestment)}</span>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Term</p>
-            <p className="text-lg font-medium">{property.term} mo</p>
+          <div className="flex items-center gap-1">
+            <Calendar className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">{property.term} months</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Users className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">{property.numberOfInvestors} investors</span>
           </div>
         </div>
         
-        <div className="mt-4">
-          <div className="flex justify-between text-sm mb-1">
-            <span className="font-medium">{fundingPercentage}% Funded</span>
-            <span className="text-gray-500">
-              ${(property.currentFunding / 1000000).toFixed(1)}M / ${(property.totalFunding / 1000000).toFixed(1)}M
-            </span>
+        {/* Funding Progress */}
+        <div className="mt-auto">
+          <div className="flex justify-between mb-1 text-sm">
+            <span className="font-medium">${formatNumber(property.currentFunding)} raised</span>
+            <span className="text-muted-foreground">${formatNumber(property.totalFunding)} target</span>
           </div>
-          <div className="h-2 w-full bg-gray-100 rounded">
-            <div 
-              className="h-full bg-emerald-400 rounded" 
-              style={{ width: `${fundingPercentage}%` }}
-            ></div>
+          <Progress className="h-2 mb-1" value={fundingProgress} />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{Math.round(fundingProgress)}% funded</span>
+            {property.daysLeft !== null && (
+              <span className="flex items-center">
+                <Clock className="h-3 w-3 mr-1" />
+                {property.daysLeft} days left
+              </span>
+            )}
           </div>
         </div>
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Link href={`/properties/${property.id}`} className="w-full">
-          <Button variant="default" className="w-full">
-            View Details
-          </Button>
-        </Link>
+        <Button className="w-full" onClick={handleViewDetails}>
+          View Details
+        </Button>
       </CardFooter>
     </Card>
   );

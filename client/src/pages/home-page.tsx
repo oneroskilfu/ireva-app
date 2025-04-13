@@ -1,41 +1,210 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/home/HeroSection";
-import FilterBar from "@/components/properties/FilterBar";
-import PropertyGrid from "@/components/properties/PropertyGrid";
-import { useState } from "react";
+import { FilterBar, type PropertyFilters } from "@/components/properties/FilterBar";
+import { PropertyCard } from "@/components/properties/PropertyCard";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Property } from "@shared/schema";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 
 export default function HomePage() {
-  const [filters, setFilters] = useState({
+  // Define default filter values
+  const defaultFilters: PropertyFilters = {
     search: "",
     location: "all",
-    type: "all"
+    type: "all",
+    minInvestment: [0, 10000],
+    minReturn: 0,
+    riskLevel: "all",
+    sort: "default"
+  };
+  
+  const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
+  
+  // Fetch properties
+  const { data: properties = [], isLoading } = useQuery<Property[]>({
+    queryKey: ["/api/properties", filters.type, filters.location],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams();
+      if (filters.type !== 'all') queryParams.append('type', filters.type);
+      if (filters.location !== 'all') queryParams.append('location', filters.location);
+      if (filters.search) queryParams.append('search', filters.search);
+      
+      const url = `/api/properties${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await fetch(url);
+      return response.json();
+    }
   });
   
-  const { data: properties = [] } = useQuery<Property[]>({
-    queryKey: ["/api/properties"],
-  });
+  // Extract unique locations from properties
+  const locations = useMemo(() => {
+    const uniqueLocations = Array.from(new Set(properties.map(p => p.location)));
+    return uniqueLocations;
+  }, [properties]);
   
-  const handleFilterChange = (newFilters: typeof filters) => {
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.type !== 'all') count++;
+    if (filters.location !== 'all') count++;
+    if (filters.minInvestment[0] > 0 || filters.minInvestment[1] < 10000) count++;
+    if (filters.minReturn > 0) count++;
+    if (filters.riskLevel !== 'all') count++;
+    if (filters.search) count++;
+    if (filters.sort !== 'default') count++;
+    return count;
+  }, [filters]);
+  
+  // Handle filter changes
+  const handleFilterChange = (newFilters: PropertyFilters) => {
     setFilters(newFilters);
   };
+  
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters(defaultFilters);
+  };
+  
+  // Filter and sort properties client-side
+  const filteredProperties = useMemo(() => {
+    let result = [...properties];
+    
+    // Filter by minimum investment amount
+    if (filters.minInvestment[0] > 0 || filters.minInvestment[1] < 10000) {
+      result = result.filter(
+        p => p.minimumInvestment >= filters.minInvestment[0] && 
+             p.minimumInvestment <= filters.minInvestment[1]
+      );
+    }
+    
+    // Filter by minimum return rate
+    if (filters.minReturn > 0) {
+      result = result.filter(p => parseFloat(p.targetReturn) >= filters.minReturn);
+    }
+    
+    // Filter by risk level
+    if (filters.riskLevel !== 'all') {
+      result = result.filter(p => {
+        const returnRate = parseFloat(p.targetReturn);
+        
+        if (filters.riskLevel === 'low') {
+          return returnRate < 10;
+        } else if (filters.riskLevel === 'medium') {
+          return returnRate >= 10 && returnRate < 13;
+        } else if (filters.riskLevel === 'high') {
+          return returnRate >= 13;
+        }
+        
+        return true;
+      });
+    }
+    
+    // Filter by search term (already handled by server but adding client-side support too)
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      result = result.filter(
+        p => p.name.toLowerCase().includes(searchLower) || 
+             p.description.toLowerCase().includes(searchLower) ||
+             p.location.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Sort properties
+    if (filters.sort !== 'default') {
+      result.sort((a, b) => {
+        switch (filters.sort) {
+          case 'return-high':
+            return parseFloat(b.targetReturn) - parseFloat(a.targetReturn);
+          case 'return-low':
+            return parseFloat(a.targetReturn) - parseFloat(b.targetReturn);
+          case 'investment-high':
+            return b.minimumInvestment - a.minimumInvestment;
+          case 'investment-low':
+            return a.minimumInvestment - b.minimumInvestment;
+          case 'funding-high':
+            return b.currentFunding - a.currentFunding;
+          case 'funding-low':
+            return a.currentFunding - b.currentFunding;
+          case 'deadline-close':
+            if (a.daysLeft === null && b.daysLeft === null) return 0;
+            if (a.daysLeft === null) return 1;
+            if (b.daysLeft === null) return -1;
+            return a.daysLeft - b.daysLeft;
+          default:
+            return 0;
+        }
+      });
+    }
+    
+    return result;
+  }, [properties, filters]);
   
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
         <HeroSection />
-        <FilterBar 
-          propertyCount={properties.length} 
-          onFilterChange={handleFilterChange} 
-        />
-        <PropertyGrid 
-          search={filters.search}
-          location={filters.location}
-          type={filters.type}
-        />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search properties by name, location or description..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange({...filters, search: e.target.value})}
+                />
+              </div>
+              {filters.search && (
+                <Button variant="ghost" onClick={() => handleFilterChange({...filters, search: ''})}>
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Filter Bar */}
+          <FilterBar 
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onReset={handleResetFilters}
+            locations={locations}
+            activeFilterCount={activeFilterCount}
+          />
+          
+          {/* Results Count */}
+          <div className="mb-6 flex justify-between items-center">
+            <h2 className="text-xl font-semibold">
+              {filteredProperties.length} {filteredProperties.length === 1 ? 'Property' : 'Properties'} Available
+            </h2>
+            {activeFilterCount > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'} applied
+              </p>
+            )}
+          </div>
+          
+          {/* Property Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {filteredProperties.map(property => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+            
+            {filteredProperties.length === 0 && !isLoading && (
+              <div className="col-span-3 py-12 text-center">
+                <h3 className="text-lg font-medium mb-2">No properties match your filters</h3>
+                <p className="text-muted-foreground mb-4">Try adjusting your filters or search criteria</p>
+                <Button onClick={handleResetFilters}>Reset All Filters</Button>
+              </div>
+            )}
+          </div>
+        </div>
         
         {/* How It Works Section */}
         <section id="how-it-works" className="py-16 bg-gray-50">
