@@ -289,11 +289,11 @@ export default function AdminDashboard() {
                               {investment.user?.username || "Unknown User"} → {investment.property?.name || "Unknown Property"}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              ${investment.amount.toLocaleString()} • {new Date(investment.date).toLocaleDateString()}
+                              ${investment.amount.toLocaleString()} • {investment.date ? new Date(investment.date).toLocaleDateString() : "N/A"}
                             </p>
                           </div>
                           <Badge variant={investment.status === "active" ? "default" : 
-                                         investment.status === "completed" ? "success" : "secondary"}>
+                                         investment.status === "completed" ? "secondary" : "secondary"}>
                             {investment.status}
                           </Badge>
                         </div>
@@ -350,7 +350,7 @@ export default function AdminDashboard() {
                               {user.isAdmin ? "Admin" : "User"}
                             </Badge>
                           </td>
-                          <td className="py-2 px-4">{new Date(user.createdAt).toLocaleDateString()}</td>
+                          <td className="py-2 px-4">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</td>
                           <td className="py-2 px-4">
                             <div className="flex gap-2">
                               <TooltipProvider>
@@ -523,13 +523,13 @@ export default function AdminDashboard() {
                           <td className="py-2 px-4">
                             <Badge variant={
                               investment.status === "active" ? "default" : 
-                              investment.status === "completed" ? "success" : 
+                              investment.status === "completed" ? "secondary" : 
                               "secondary"
                             }>
                               {investment.status}
                             </Badge>
                           </td>
-                          <td className="py-2 px-4">{new Date(investment.date).toLocaleDateString()}</td>
+                          <td className="py-2 px-4">{investment.date ? new Date(investment.date).toLocaleDateString() : "N/A"}</td>
                           <td className="py-2 px-4">
                             <div className="flex gap-2">
                               <TooltipProvider>
