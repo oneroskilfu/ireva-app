@@ -11,6 +11,14 @@ export const kycStatusEnum = pgEnum("kyc_status", [
   "rejected"
 ]);
 
+// MFA method enum
+export const mfaMethodEnum = pgEnum("mfa_method", [
+  "none",
+  "sms",
+  "email",
+  "app"
+]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -29,6 +37,13 @@ export const users = pgTable("users", {
   kycIdType: text("kyc_id_type"),
   kycIdNumber: text("kyc_id_number"),
   kycVerificationDate: timestamp("kyc_verification_date"),
+  // MFA fields
+  mfaEnabled: boolean("mfa_enabled").default(false).notNull(),
+  mfaPrimaryMethod: mfaMethodEnum("mfa_primary_method").default("none").notNull(),
+  mfaSecondaryMethod: mfaMethodEnum("mfa_secondary_method").default("none"),
+  mfaSecret: text("mfa_secret"), // For TOTP (app-based authentication)
+  mfaBackupCodes: text("mfa_backup_codes"), // JSON string of backup codes
+  mfaLastVerified: timestamp("mfa_last_verified"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -47,6 +62,13 @@ export const insertUserSchema = createInsertSchema(users).pick({
   kycIdType: true,
   kycIdNumber: true,
   kycVerificationDate: true,
+  // Include MFA fields
+  mfaEnabled: true,
+  mfaPrimaryMethod: true,
+  mfaSecondaryMethod: true,
+  mfaSecret: true,
+  mfaBackupCodes: true,
+  mfaLastVerified: true,
 });
 
 // Property type enum

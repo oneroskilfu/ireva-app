@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import PropertyCard from "./PropertyCard";
+import { PropertyCard } from "./PropertyCard";
 import { Property } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
