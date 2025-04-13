@@ -3,6 +3,14 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // User schema
+// KYC status enum
+export const kycStatusEnum = pgEnum("kyc_status", [
+  "not_started",
+  "pending",
+  "verified",
+  "rejected"
+]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -12,6 +20,15 @@ export const users = pgTable("users", {
   lastName: text("last_name"),
   isAdmin: boolean("is_admin").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  walletBalance: integer("wallet_balance").default(0).notNull(),
+  phoneNumber: text("phone_number"),
+  bankName: text("bank_name"),
+  bankAccountNumber: text("bank_account_number"),
+  bankAccountName: text("bank_account_name"),
+  kycStatus: kycStatusEnum("kyc_status").default("not_started").notNull(),
+  kycIdType: text("kyc_id_type"),
+  kycIdNumber: text("kyc_id_number"),
+  kycVerificationDate: timestamp("kyc_verification_date"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -21,6 +38,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   isAdmin: true,
+  phoneNumber: true,
+  bankName: true,
+  bankAccountNumber: true,
+  bankAccountName: true,
 });
 
 // Property type enum

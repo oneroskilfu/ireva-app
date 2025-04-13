@@ -141,6 +141,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payment/initialize", paystackController.initializePayment);
   app.get("/payment/verify", paystackController.verifyPayment);
   app.get("/api/transactions", paystackController.getTransactions);
+  
+  // User wallet management endpoints
+  app.get("/api/wallet", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ 
+        walletBalance: user.walletBalance,
+        kycStatus: user.kycStatus 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch wallet data" });
+    }
+  });
+  
+  // Fund wallet endpoint - initializes Paystack payment to add funds to wallet
+  app.post("/api/wallet/fund", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { amount } = req.body;
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+      
+      // Forward request to Paystack with metadata indicating this is a wallet funding
+      const modifiedBody = {
+        ...req.body,
+        metadata: {
+          transaction_type: "wallet_funding",
+          user_id: req.user.id
+        }
+      };
+      
+      req.body = modifiedBody;
+      return paystackController.initializePayment(req, res);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to initiate wallet funding" });
+    }
+  });
+  
+  // Withdraw from wallet endpoint
+  app.post("/api/wallet/withdraw", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { amount, bankName, accountNumber, accountName } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.walletBalance < amount) {
+        return res.status(400).json({ message: "Insufficient wallet balance" });
+      }
+      
+      // In a real application, you would initiate a withdrawal via Paystack or other payment processor
+      // For this demo, we'll just reduce the wallet balance
+      const updatedUser = await storage.updateUser(user.id, {
+        walletBalance: user.walletBalance - amount,
+        bankName: bankName || user.bankName,
+        bankAccountNumber: accountNumber || user.bankAccountNumber,
+        bankAccountName: accountName || user.bankAccountName
+      });
+      
+      res.json({ 
+        success: true,
+        message: "Withdrawal initiated successfully",
+        newBalance: updatedUser?.walletBalance
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to process withdrawal" });
+    }
+  });
+  
+  // KYC verification endpoints
+  app.post("/api/kyc/submit", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { idType, idNumber, phoneNumber } = req.body;
+      
+      if (!idType || !idNumber || !phoneNumber) {
+        return res.status(400).json({ message: "Missing required KYC information" });
+      }
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user KYC information
+      const updatedUser = await storage.updateUser(user.id, {
+        phoneNumber,
+        kycStatus: "pending",
+        kycIdType: idType,
+        kycIdNumber: idNumber
+      });
+      
+      res.json({
+        success: true,
+        message: "KYC submission successful and pending verification",
+        kycStatus: updatedUser?.kycStatus
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to submit KYC information" });
+    }
+  });
+  
+  // Admin endpoint to approve/reject KYC (admin only)
+  app.post("/api/admin/kyc/:userId/:action", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const action = req.params.action;
+      
+      if (action !== "approve" && action !== "reject") {
+        return res.status(400).json({ message: "Invalid action. Must be 'approve' or 'reject'" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const kycStatus = action === "approve" ? "verified" : "rejected";
+      const updatedUser = await storage.updateUser(userId, {
+        kycStatus,
+        kycVerificationDate: new Date()
+      });
+      
+      res.json({
+        success: true,
+        message: `KYC ${action}d successfully`,
+        user: updatedUser
+      });
+    } catch (error) {
+      res.status(500).json({ message: `Failed to ${req.params.action} KYC` });
+    }
+  });
 
   // Analytics endpoints
   app.get("/api/analytics/portfolio-performance", async (req, res) => {
