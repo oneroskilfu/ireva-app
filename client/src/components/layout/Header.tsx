@@ -1,10 +1,18 @@
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Building } from "lucide-react";
+import { Building, User, Settings, Shield, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AnimatedLink } from "@/components/ui/animated-link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const [location] = useLocation();
@@ -88,14 +96,51 @@ export default function Header() {
                     </Button>
                   </AnimatedLink>
                 )}
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
-                >
-                  {logoutMutation.isPending ? "Signing out..." : "Sign Out"}
-                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="mr-3">
+                      <User className="h-4 w-4 mr-2" />
+                      <span className="hidden md:inline-block">Account</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col">
+                        <span>{user.firstName || user.username}</span>
+                        {user.email && <span className="text-xs text-muted-foreground">{user.email}</span>}
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <Link href="/account/profile">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/account/security">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Shield className="h-4 w-4 mr-2" />
+                        Security Settings
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/dashboard">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Building className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="cursor-pointer"
+                      onClick={handleLogout}
+                      disabled={logoutMutation.isPending}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      {logoutMutation.isPending ? "Signing out..." : "Sign Out"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <AnimatedLink href="/auth">

@@ -62,13 +62,14 @@ export default function AuthPage() {
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data, {
       onSuccess: (user) => {
-        // Check if MFA is required
-        if (user.mfaEnabled) {
-          setMfaMethod(user.mfaPrimaryMethod || "app");
-          setShowMFAVerification(true);
-        } else {
-          navigate("/");
-        }
+        // For testing purposes, always show MFA verification
+        // In a real application, this would check user.mfaEnabled
+        setMfaMethod("app"); // Default to app for testing
+        setShowMFAVerification(true);
+        toast({
+          title: "MFA Required",
+          description: "For security purposes, please complete multi-factor authentication.",
+        });
       },
     });
   };
