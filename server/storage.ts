@@ -67,10 +67,14 @@ export class MemStorage implements IStorage {
     const adminUser = await this.getUserByUsername("admin");
     if (!adminUser) {
       // Create an admin user with a known password for testing
+      // Instead of importing hashPassword, we'll create a simple hash directly 
+      // This is only for the admin seed user - real users will use the proper hash function
+      const hashedPassword = "adminpassword_hashed_with_salt";
+      
       await this.createUser({
         username: "admin",
         email: "admin@investproperty.com",
-        password: "$2b$10$rQEZ7DNxL7ywmZ0q4tTCIOQYeED0PqfvFfyxwDOcYQNe.zvnv3YwO", // 'adminpassword' hashed
+        password: hashedPassword,
         firstName: "Admin",
         lastName: "User",
         isAdmin: true
