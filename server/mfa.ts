@@ -34,10 +34,15 @@ export function generateOTP(): string {
 
 // Generate a unique TOTP secret for app-based auth
 export function generateTOTPSecret(username: string): { secret: string; otpauth_url: string } {
-  return speakeasy.generateSecret({
+  const generated = speakeasy.generateSecret({
     name: `InvestProperty:${username}`,
     issuer: 'InvestProperty',
   });
+  
+  return {
+    secret: generated.base32,
+    otpauth_url: generated.otpauth_url || ''
+  };
 }
 
 // Generate QR code for TOTP setup
@@ -334,7 +339,8 @@ export async function setupMFA(
         return res.status(400).json({ error: 'MFA setup has expired, please start again' });
       }
       
-      const isValid = validateTOTP(code, req.session.mfaSetup.secret);
+      const secretKey = req.session.mfaSetup.secret || '';
+      const isValid = validateTOTP(code, secretKey);
       
       if (!isValid) {
         return res.status(400).json({ error: 'Invalid verification code' });
@@ -347,15 +353,18 @@ export async function setupMFA(
       await storage.updateUser(user.id, {
         mfaEnabled: true,
         mfaPrimaryMethod: 'app',
-        mfaSecret: req.session.mfaSetup.secret,
+        mfaSecret: secretKey,
         mfaBackupCodes: JSON.stringify(backupCodes),
       });
       
       // Clear setup from session
       delete req.session.mfaSetup;
       
-      // Update user object
-      req.user = await storage.getUser(user.id);
+      // Update user object in memory (safely handling possible undefined)
+      const updatedUser = await storage.getUser(user.id);
+      if (updatedUser) {
+        req.user = updatedUser;
+      }
       
       return res.status(200).json({
         success: true,
@@ -415,18 +424,27 @@ export async function setupMFA(
       // Generate backup codes
       const backupCodes = generateBackupCodes();
       
+      // Get method from setup (ensuring it's a valid MFA method)
+      const setupMethod = req.session.mfaSetup.method as 'email' | 'sms' | 'app' | 'none';
+      const primaryMethod = (setupMethod === 'email' || setupMethod === 'sms' || setupMethod === 'app') 
+        ? setupMethod 
+        : 'email'; // Default to email if somehow invalid
+      
       // Update user with MFA settings
       await storage.updateUser(user.id, {
         mfaEnabled: true,
-        mfaPrimaryMethod: req.session.mfaSetup.method,
+        mfaPrimaryMethod: primaryMethod,
         mfaBackupCodes: JSON.stringify(backupCodes),
       });
       
       // Clear setup from session
       delete req.session.mfaSetup;
       
-      // Update user object
-      req.user = await storage.getUser(user.id);
+      // Update user object in memory (safely handling possible undefined)
+      const updatedUser = await storage.getUser(user.id);
+      if (updatedUser) {
+        req.user = updatedUser;
+      }
       
       return res.status(200).json({
         success: true,
@@ -463,8 +481,11 @@ export async function disableMFA(
     mfaBackupCodes: null,
   });
   
-  // Update user object
-  req.user = await storage.getUser(user.id);
+  // Update user object in memory (safely handling possible undefined)
+  const updatedUser = await storage.getUser(user.id);
+  if (updatedUser) {
+    req.user = updatedUser;
+  }
   
   return res.status(200).json({ success: true });
 }
