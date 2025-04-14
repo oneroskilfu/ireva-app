@@ -145,19 +145,20 @@ export function FilterBar({
     { value: 'deadline-close', label: 'Closing Soon' }
   ];
   
-  // Desktop filter view
+  // Desktop filter view - aligned in a single line
   const DesktopFilters = (
     <Card className="hidden md:block p-1 mb-6">
       <CardContent className="p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Sort */}
-          <div>
+        <div className="flex items-center justify-between space-x-2 overflow-x-auto">
+          {/* Search and Sort in first group */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {/* Sort */}
             <Select 
               value={localFilters.sort} 
               onValueChange={(value) => updateFilter('sort', value)}
             >
               <SelectTrigger className={cn(
-                "w-[180px]",
+                "w-[150px] h-9",
                 isFilterActive('sort') && "border-primary"
               )}>
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
@@ -171,16 +172,14 @@ export function FilterBar({
                 ))}
               </SelectContent>
             </Select>
-          </div>
   
-          {/* Type */}
-          <div>
+            {/* Type */}
             <Select 
               value={localFilters.type} 
               onValueChange={(value) => updateFilter('type', value)}
             >
               <SelectTrigger className={cn(
-                "w-[170px]",
+                "w-[150px] h-9",
                 isFilterActive('type') && "border-primary"
               )}>
                 <Home className="mr-2 h-4 w-4" />
@@ -195,15 +194,16 @@ export function FilterBar({
               </SelectContent>
             </Select>
           </div>
-  
-          {/* Location */}
-          <div>
+
+          {/* Location and Return Rate in second group */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {/* Location */}
             <Select 
               value={localFilters.location} 
               onValueChange={(value) => updateFilter('location', value)}
             >
               <SelectTrigger className={cn(
-                "w-[180px]",
+                "w-[150px] h-9",
                 isFilterActive('location') && "border-primary"
               )}>
                 <Map className="mr-2 h-4 w-4" />
@@ -218,54 +218,54 @@ export function FilterBar({
                 ))}
               </SelectContent>
             </Select>
-          </div>
   
-          {/* Return Rate */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                className={cn(
-                  "gap-2",
-                  isFilterActive('minReturn') && "border-primary"
-                )}
-              >
-                <Percent className="h-4 w-4" />
-                <span>Min Return: {localFilters.minReturn}%</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <h4 className="font-medium">Minimum Return Rate</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>0%</span>
-                    <span>20%+</span>
-                  </div>
-                  <Slider
-                    value={[localFilters.minReturn]}
-                    min={0}
-                    max={20}
-                    step={0.5}
-                    onValueChange={(value) => updateFilter('minReturn', value[0])}
-                  />
-                  <div className="text-center text-muted-foreground">
-                    Currently: {localFilters.minReturn}%
+            {/* Return Rate - Made more compact */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className={cn(
+                    "h-9 px-3",
+                    isFilterActive('minReturn') && "border-primary"
+                  )}
+                >
+                  <Percent className="mr-1 h-4 w-4" />
+                  <span className="whitespace-nowrap">{localFilters.minReturn}%+</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Minimum Return Rate</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>0%</span>
+                      <span>20%+</span>
+                    </div>
+                    <Slider
+                      value={[localFilters.minReturn]}
+                      min={0}
+                      max={20}
+                      step={0.5}
+                      onValueChange={(value) => updateFilter('minReturn', value[0])}
+                    />
+                    <div className="text-center text-muted-foreground">
+                      Currently: {localFilters.minReturn}%
+                    </div>
                   </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-  
-          {/* Risk Level */}
-          <div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Risk and Investment in third group */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {/* Risk Level */}
             <Select 
               value={localFilters.riskLevel} 
               onValueChange={(value) => updateFilter('riskLevel', value)}
             >
               <SelectTrigger className={cn(
-                "w-[170px]",
+                "w-[130px] h-9",
                 isFilterActive('riskLevel') && "border-primary"
               )}>
                 <AlertTriangle className="mr-2 h-4 w-4" />
@@ -279,53 +279,51 @@ export function FilterBar({
                 ))}
               </SelectContent>
             </Select>
+  
+            {/* Investment Range - Made more compact */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className={cn(
+                    "h-9 px-3",
+                    isFilterActive('minInvestment') && "border-primary"
+                  )}
+                >
+                  <BarChart3 className="mr-1 h-4 w-4" />
+                  <span className="whitespace-nowrap">₦{localFilters.minInvestment[0]/1000000}M-{localFilters.minInvestment[1]/1000000}M</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-4">
+                  <h4 className="font-medium">Investment Range</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>₦{localFilters.minInvestment[0]/1000000}M</span>
+                      <span>₦{localFilters.minInvestment[1]/1000000}M</span>
+                    </div>
+                    <Slider
+                      value={[localFilters.minInvestment[0], localFilters.minInvestment[1]]}
+                      min={0}
+                      max={10000000}
+                      step={100000}
+                      onValueChange={(value) => updateFilter('minInvestment', [value[0], value[1]])}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
   
-          {/* Investment Range */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                className={cn(
-                  "gap-2",
-                  isFilterActive('minInvestment') && "border-primary"
-                )}
-              >
-                <BarChart3 className="h-4 w-4" />
-                <span>Investment: ₦{localFilters.minInvestment[0]}-₦{localFilters.minInvestment[1]}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <h4 className="font-medium">Investment Range</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>₦{localFilters.minInvestment[0]}</span>
-                    <span>₦{localFilters.minInvestment[1]}</span>
-                  </div>
-                  <Slider
-                    value={[localFilters.minInvestment[0], localFilters.minInvestment[1]]}
-                    min={0}
-                    max={10000000}
-                    step={100000}
-                    onValueChange={(value) => updateFilter('minInvestment', [value[0], value[1]])}
-                  />
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-  
           {/* Reset filters */}
-          <div>
+          <div className="flex-shrink-0">
             <Button 
               variant="ghost" 
               onClick={onReset}
-              className="gap-2"
+              className="gap-1 h-9 px-3"
               disabled={activeFilterCount === 0}
             >
               <X className="h-4 w-4" />
-              <span>Reset</span>
               {activeFilterCount > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {activeFilterCount}
