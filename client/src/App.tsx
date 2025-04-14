@@ -15,6 +15,8 @@ import HowItWorksPage from "@/pages/how-it-works";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
+import { OnboardingProvider } from "./contexts/onboarding-context";
+import OnboardingWrapper from "./components/onboarding/OnboardingWrapper";
 
 function Router() {
   return (
@@ -38,9 +40,13 @@ function Router() {
 function App() {
   return (
     <PageTransitionProvider>
-      <PageLoading />
-      <Router />
-      <Toaster />
+      <OnboardingProvider>
+        <OnboardingWrapper>
+          <PageLoading />
+          <Router />
+          <Toaster />
+        </OnboardingWrapper>
+      </OnboardingProvider>
     </PageTransitionProvider>
   );
 }
