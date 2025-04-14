@@ -90,20 +90,20 @@ const MILESTONE_CONFIGS: Record<MilestoneType, {
     icon: 'trophy'
   },
   investment_threshold_1000: {
-    title: '$1,000 Invested',
+    title: '₦100,000 Invested',
     description: 'You\'ve reached your first investment milestone. Keep building your portfolio!',
     variant: 'award',
     icon: 'award'
   },
   investment_threshold_5000: {
-    title: '$5,000 Invested',
+    title: '₦500,000 Invested',
     description: 'You\'re becoming a serious investor! Your portfolio is growing nicely.',
     variant: 'award',
     icon: 'medal'
   },
   investment_threshold_10000: {
-    title: '$10,000 Milestone!',
-    description: 'Impressive! You\'ve joined our top tier of investors with over $10,000 invested.',
+    title: '₦1,000,000 Milestone!',
+    description: 'Impressive! You\'ve joined our top tier of investors with over ₦1,000,000 invested.',
     variant: 'trophy',
     icon: 'trophy'
   },
