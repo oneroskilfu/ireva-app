@@ -13,13 +13,15 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import type { SxProps } from '@mui/system';
 import { VisibilityOff, Visibility, Login as LoginIcon } from '@mui/icons-material';
 import { AuthContext } from '../App';
 import API from '../api/axios';
 import { useLocation } from 'wouter';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,7 @@ const LoginPage: React.FC = () => {
 
     try {
       // Use the API utility to make the POST request to the login endpoint
-      const response = await API.post('/auth/login', { email, password });
+      const response = await API.post('/auth/login', { username, password });
       
       // Check if a token was returned in the response
       if (response.data && response.data.token) {
@@ -64,9 +66,9 @@ const LoginPage: React.FC = () => {
 
   return (
     <Container maxWidth="md">
-      <Grid container spacing={2} sx={{ height: '100vh', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: '100vh', alignItems: 'center' }}>
         {/* Login Form */}
-        <Grid item xs={12} md={6}>
+        <Box sx={{ width: { xs: '100%', md: '50%' }, p: 2 }}>
           <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
               <Typography variant="h4" component="h1" gutterBottom>
@@ -86,13 +88,13 @@ const LoginPage: React.FC = () => {
                 margin="normal"
                 required
                 fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
+                id="username"
+                label="Username"
+                name="username"
+                autoComplete="username"
                 autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 sx={{ mb: 2 }}
               />
               
@@ -146,10 +148,10 @@ const LoginPage: React.FC = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
 
         {/* Hero Section */}
-        <Grid item xs={12} md={6}>
+        <Box sx={{ width: { xs: '100%', md: '50%' }, p: 2 }}>
           <Box sx={{ p: 4 }}>
             <Typography variant="h4" component="h2" gutterBottom>
               Invest in Nigeria's Future
@@ -170,8 +172,8 @@ const LoginPage: React.FC = () => {
               • Full transparency with real-time ROI tracking
             </Typography>
           </Box>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Container>
   );
 };

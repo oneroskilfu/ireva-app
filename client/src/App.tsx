@@ -14,6 +14,7 @@ import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import SupportPage from "@/pages/support-page";
 import HowItWorksPage from "@/pages/how-it-works";
 import JwtAuthTest from "@/pages/jwt-auth-test";
+import LoginPage from "./pages/login-page";
 import Projects from "./components/Projects";
 import Users from "./components/Users";
 import Properties from "./components/Properties";
@@ -79,6 +80,7 @@ function Router() {
         <Route path="/" component={HomePage} />
         <Route path="/properties/:id" component={PropertyPage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/login" component={LoginPage} />
         <ProtectedRoute path="/dashboard" component={DashboardPage} />
         <ProtectedRoute path="/mui-dashboard" component={MuiDashboardPage} />
         <ProtectedRoute path="/simple-dashboard" component={SimpleDashboardPage} />
