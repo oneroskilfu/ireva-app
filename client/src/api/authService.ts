@@ -1,17 +1,5 @@
 import API from './axios';
 
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  fullName?: string;
-  phone?: string;
-  role: 'user' | 'admin' | 'developer';
-  kycVerified?: boolean;
-  mfaEnabled?: boolean;
-  createdAt?: string;
-}
-
 export interface LoginCredentials {
   username: string;
   password: string;
@@ -25,30 +13,37 @@ export interface RegisterData {
   phone?: string;
 }
 
+export interface AuthResponse {
+  token: string;
+  user?: {
+    id: number;
+    username: string;
+    role: string;
+    email?: string;
+    fullName?: string;
+  };
+}
+
 // User login
-export const login = async (credentials: LoginCredentials) => {
-  const response = await API.post<{user: User, token: string}>('/auth/login', credentials);
-  
-  // Store token in localStorage
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('authToken', response.data.token);
+export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  try {
+    const response = await API.post('/auth/login', credentials);
+    return response.data;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
   }
-  
-  return response.data;
 };
 
 // User registration
-export const register = async (userData: RegisterData) => {
-  const response = await API.post<{user: User, token: string}>('/auth/register', userData);
-  
-  // Store token in localStorage if provided
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('authToken', response.data.token);
+export const register = async (userData: RegisterData): Promise<AuthResponse> => {
+  try {
+    const response = await API.post('/auth/register', userData);
+    return response.data;
+  } catch (error) {
+    console.error('Registration error:', error);
+    throw error;
   }
-  
-  return response.data;
 };
 
 // Logout user
@@ -59,21 +54,33 @@ export const logout = () => {
 
 // Get current user data
 export const getCurrentUser = async () => {
-  const response = await API.get<User>('/auth/verify');
-  return response.data;
+  try {
+    const response = await API.get('/auth/verify');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    throw error;
+  }
 };
 
 // Update user profile
-export const updateUserProfile = async (profileData: Partial<User>) => {
-  const response = await API.put<User>('/users/profile/me', profileData);
-  return response.data;
+export const updateUserProfile = async (profileData: any) => {
+  try {
+    const response = await API.put('/users/profile/me', profileData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
 };
 
 // Change password
-export const changePassword = async (passwordData: {
-  oldPassword: string;
-  newPassword: string;
-}) => {
-  const response = await API.post('/auth/change-password', passwordData);
-  return response.data;
+export const changePassword = async (passwordData: { currentPassword: string; newPassword: string }) => {
+  try {
+    const response = await API.post('/auth/change-password', passwordData);
+    return response.data;
+  } catch (error) {
+    console.error('Error changing password:', error);
+    throw error;
+  }
 };

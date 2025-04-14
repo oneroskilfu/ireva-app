@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { LockOutlined, Person, PersonAdd, Email, Phone } from '@mui/icons-material';
 import { useAuth } from '../contexts/auth-context';
-import { login as apiLogin, register, LoginCredentials, RegisterData } from '../api/authService';
+import { login as apiLogin, register, LoginCredentials, RegisterData, AuthResponse } from '../api/authService';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -89,9 +89,13 @@ const AuthPage: React.FC = () => {
     setError(null);
 
     try {
-      const result = await login(loginData);
-      setToken(result.token);
-      setLocation('/simple-dashboard');
+      const result = await apiLogin(loginData);
+      if (result.token) {
+        login(result.token);
+        setLocation('/simple-dashboard');
+      } else {
+        setError('Login failed: No authentication token received');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.response?.data?.message || 'Invalid username or password');
@@ -107,8 +111,12 @@ const AuthPage: React.FC = () => {
 
     try {
       const result = await register(registerData);
-      setToken(result.token);
-      setLocation('/simple-dashboard');
+      if (result.token) {
+        login(result.token);
+        setLocation('/simple-dashboard');
+      } else {
+        setError('Registration failed: No authentication token received');
+      }
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
