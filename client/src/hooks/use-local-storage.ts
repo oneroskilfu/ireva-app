@@ -4,16 +4,15 @@ export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((val: T) => T)) => void] {
-  // Get from local storage then parse stored json or return initialValue
+  // Get stored value from localStorage or use initialValue
   const readValue = (): T => {
-    // Prevent build error "window is undefined" but keep working
     if (typeof window === 'undefined') {
       return initialValue;
     }
 
     try {
       const item = window.localStorage.getItem(key);
-      return item ? (JSON.parse(item) as T) : initialValue;
+      return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
       return initialValue;
@@ -33,7 +32,7 @@ export function useLocalStorage<T>(
       // Save state
       setStoredValue(valueToStore);
       
-      // Save to local storage
+      // Save to localStorage
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
@@ -43,16 +42,15 @@ export function useLocalStorage<T>(
   };
 
   useEffect(() => {
-    // Update state if localStorage value changes in another tab/window
+    // Listen for changes to this localStorage key in other tabs/windows
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === key && event.newValue) {
         setStoredValue(JSON.parse(event.newValue));
       }
     };
-
-    // Listen for storage changes
-    window.addEventListener('storage', handleStorageChange);
     
+    // Listen for window storage events
+    window.addEventListener('storage', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };

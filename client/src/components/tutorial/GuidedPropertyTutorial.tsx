@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
 import { 
-  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui";
+} from "@/components/ui/card";
 import { 
   ChevronRight, 
   ChevronLeft, 
@@ -260,14 +260,16 @@ export function GuidedPropertyTutorial({
   return (
     <>
       {/* Add global style for highlighted elements */}
-      <style jsx global>{`
+      <style>
+        {`
         .tutorial-highlight {
           position: relative;
           z-index: 50;
           box-shadow: 0 0 0 4px rgba(var(--primary), 0.5), 0 0 0 2000px rgba(0, 0, 0, 0.5);
           border-radius: 4px;
         }
-      `}</style>
+        `}
+      </style>
       
       {/* Tooltip */}
       {isActive && currentStep < propertyTutorialSteps.length && (

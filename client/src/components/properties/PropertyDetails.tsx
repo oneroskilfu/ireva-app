@@ -438,7 +438,7 @@ export default function PropertyDetails() {
 
       {/* Detailed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="gap-1 mb-6 md:w-auto overflow-auto p-0.5 flex w-full no-scrollbar">
+        <TabsList className="gap-1 mb-6 md:w-auto overflow-auto p-0.5 flex w-full no-scrollbar property-tabs">
           <TabsTrigger value="overview" className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm">
             <Info className="h-3 md:h-3.5 w-3 md:w-3.5" />
             <span className="truncate">Overview</span>
