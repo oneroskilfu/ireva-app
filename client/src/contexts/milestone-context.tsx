@@ -150,7 +150,7 @@ type MilestoneContextType = {
   resetMilestones: () => void;
 };
 
-const MilestoneContext = createContext<MilestoneContextType | undefined>(undefined);
+export const MilestoneContext = createContext<MilestoneContextType | undefined>(undefined);
 
 export function MilestoneProvider({ children }: { children: ReactNode }) {
   const [completedMilestones, setCompletedMilestones] = useState<Set<MilestoneType>>(new Set());

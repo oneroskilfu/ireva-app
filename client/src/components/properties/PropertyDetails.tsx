@@ -4,7 +4,7 @@ import { Property } from "@shared/schema";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useMilestones } from "@/contexts/milestone-context";
+import { useSafeMilestones } from "@/hooks/use-safe-milestones";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,8 +68,14 @@ export default function PropertyDetails() {
   
   // Trigger the first property viewed milestone when component loads
   useEffect(() => {
-    if (user && !checkMilestone('first_property_viewed')) {
-      triggerMilestone('first_property_viewed');
+    // Safely check if the user is logged in before triggering the milestone
+    if (user && triggerMilestone && checkMilestone && !checkMilestone('first_property_viewed')) {
+      // Use a small timeout to ensure provider is fully initialized
+      const timer = setTimeout(() => {
+        triggerMilestone('first_property_viewed');
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [user, triggerMilestone, checkMilestone]);
   
@@ -111,28 +117,31 @@ export default function PropertyDetails() {
     // Get investment amount
     const amount = Number(investmentForm.getValues().amount);
     
-    // Trigger first investment milestone
-    if (!checkMilestone('first_investment')) {
-      triggerMilestone('first_investment');
-    }
-    
-    // Trigger investment threshold milestones based on amount
-    if (amount >= 1000) {
-      triggerMilestone('investment_threshold_1000');
-    }
-    
-    if (amount >= 5000) {
-      triggerMilestone('investment_threshold_5000');
-    }
-    
-    if (amount >= 10000) {
-      triggerMilestone('investment_threshold_10000');
-    }
-    
-    // Check portfolio diversity (this is simplified, in a real app we would check actual diversity)
-    // Here we just assume that if this isn't their first investment, they might have diversity
-    if (checkMilestone('first_investment') && !checkMilestone('portfolio_diversified')) {
-      triggerMilestone('portfolio_diversified');
+    // Only process milestones if the functions are available
+    if (triggerMilestone && checkMilestone) {
+      // Trigger first investment milestone
+      if (!checkMilestone('first_investment')) {
+        triggerMilestone('first_investment');
+      }
+      
+      // Trigger investment threshold milestones based on amount
+      if (amount >= 1000) {
+        triggerMilestone('investment_threshold_1000');
+      }
+      
+      if (amount >= 5000) {
+        triggerMilestone('investment_threshold_5000');
+      }
+      
+      if (amount >= 10000) {
+        triggerMilestone('investment_threshold_10000');
+      }
+      
+      // Check portfolio diversity (this is simplified, in a real app we would check actual diversity)
+      // Here we just assume that if this isn't their first investment, they might have diversity
+      if (checkMilestone('first_investment') && !checkMilestone('portfolio_diversified')) {
+        triggerMilestone('portfolio_diversified');
+      }
     }
     
     toast({
