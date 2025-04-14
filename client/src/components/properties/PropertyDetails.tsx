@@ -148,21 +148,22 @@ export default function PropertyDetails() {
   }
 
   return (
-    <div className="container py-8 max-w-7xl">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6">
       {/* Back button */}
       <Button 
         variant="ghost" 
-        className="mb-6"
+        size="sm"
+        className="mb-4"
         onClick={() => setLocation("/")}
       >
-        ← Back to Properties
+        ← Back
       </Button>
 
       {/* Property Header */}
-      <div className="flex flex-col md:flex-row gap-8 mb-8">
+      <div className="flex flex-col lg:flex-row gap-6 mb-6">
         {/* Property Image */}
-        <div className="md:w-1/2">
-          <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video">
+        <div className="lg:w-5/12">
+          <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video shadow-sm">
             <img 
               src={property.imageUrl} 
               alt={property.name} 
@@ -172,38 +173,38 @@ export default function PropertyDetails() {
         </div>
 
         {/* Property Summary */}
-        <div className="md:w-1/2 flex flex-col">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+        <div className="lg:w-7/12 flex flex-col">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 font-normal">
               {property.type.charAt(0).toUpperCase() + property.type.slice(1)}
-            </span>
-            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium">
+            </Badge>
+            <Badge variant="secondary" className="font-normal">
               {property.location}
-            </span>
+            </Badge>
           </div>
-          <h1 className="text-3xl font-bold mb-2">{property.name}</h1>
-          <p className="text-muted-foreground mb-4">{property.description}</p>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">{property.name}</h1>
+          <p className="text-muted-foreground text-sm mb-4 max-w-prose">{property.description}</p>
           
           {/* Key Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-4 mb-5">
             <div className="flex flex-col">
-              <span className="text-sm text-muted-foreground">Target Return</span>
-              <span className="text-xl font-bold flex items-center">
-                <Percent className="h-4 w-4 text-primary mr-1" />
+              <span className="text-xs text-muted-foreground">Return</span>
+              <span className="font-semibold flex items-center text-sm">
+                <Percent className="h-3.5 w-3.5 text-primary mr-1" />
                 {formatPercent(property.targetReturn)}
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm text-muted-foreground">Minimum</span>
-              <span className="text-xl font-bold flex items-center">
-                <DollarSign className="h-4 w-4 text-primary mr-1" />
+              <span className="text-xs text-muted-foreground">Minimum</span>
+              <span className="font-semibold flex items-center text-sm">
+                <DollarSign className="h-3.5 w-3.5 text-primary mr-1" />
                 ${property.minimumInvestment.toLocaleString()}
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm text-muted-foreground">Term</span>
-              <span className="text-xl font-bold flex items-center">
-                <Calendar className="h-4 w-4 text-primary mr-1" />
+              <span className="text-xs text-muted-foreground">Term</span>
+              <span className="font-semibold flex items-center text-sm">
+                <Calendar className="h-3.5 w-3.5 text-primary mr-1" />
                 {property.term} months
               </span>
             </div>
@@ -212,16 +213,16 @@ export default function PropertyDetails() {
           {/* Funding Progress */}
           <div className="mb-6">
             <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">${property.currentFunding.toLocaleString()} raised</span>
-              <span className="text-sm text-muted-foreground">${property.totalFunding.toLocaleString()} target</span>
+              <span className="text-xs font-medium">${property.currentFunding.toLocaleString()} raised</span>
+              <span className="text-xs text-muted-foreground">${property.totalFunding.toLocaleString()} target</span>
             </div>
-            <Progress value={fundingProgress} className="h-2" />
-            <div className="flex justify-between mt-2">
-              <span className="text-sm text-muted-foreground flex items-center">
+            <Progress value={fundingProgress} className="h-1.5" />
+            <div className="flex justify-between mt-1.5">
+              <span className="text-xs text-muted-foreground flex items-center">
                 <Users className="h-3 w-3 mr-1" />
                 {property.numberOfInvestors} investors
               </span>
-              <span className="text-sm text-muted-foreground flex items-center">
+              <span className="text-xs text-muted-foreground flex items-center">
                 <Clock className="h-3 w-3 mr-1" />
                 {property.daysLeft} days left
               </span>
@@ -233,11 +234,11 @@ export default function PropertyDetails() {
             {user ? (
               <Dialog open={investDialogOpen} onOpenChange={setInvestDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-full" size="lg">
+                  <Button className="w-full sm:w-auto px-8">
                     Invest Now
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Invest in {property.name}</DialogTitle>
                     <DialogDescription>
@@ -246,7 +247,7 @@ export default function PropertyDetails() {
                   </DialogHeader>
                   
                   <Form {...investmentForm}>
-                    <form onSubmit={investmentForm.handleSubmit(onInvestSubmit)} className="space-y-6">
+                    <form onSubmit={investmentForm.handleSubmit(onInvestSubmit)} className="space-y-4">
                       <FormField
                         control={investmentForm.control}
                         name="amount"
@@ -261,7 +262,7 @@ export default function PropertyDetails() {
                                 min={property.minimumInvestment}
                               />
                             </FormControl>
-                            <FormDescription>
+                            <FormDescription className="text-xs">
                               Minimum investment: ${property.minimumInvestment}
                             </FormDescription>
                             <FormMessage />
@@ -288,7 +289,7 @@ export default function PropertyDetails() {
                 </DialogContent>
               </Dialog>
             ) : (
-              <Button className="w-full" size="lg" onClick={() => setLocation("/auth")}>
+              <Button className="w-full sm:w-auto px-8" onClick={() => setLocation("/auth")}>
                 Sign in to Invest
               </Button>
             )}
@@ -384,25 +385,25 @@ export default function PropertyDetails() {
 
       {/* Detailed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-5 max-w-3xl mx-auto mb-8">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Info className="h-4 w-4" />
+        <TabsList className="gap-1 mb-6 md:w-auto overflow-auto p-0.5 flex w-full no-scrollbar">
+          <TabsTrigger value="overview" className="flex items-center gap-1.5 text-sm">
+            <Info className="h-3.5 w-3.5" />
             <span>Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="financials" className="flex items-center gap-2">
-            <LineChart className="h-4 w-4" />
+          <TabsTrigger value="financials" className="flex items-center gap-1.5 text-sm">
+            <LineChart className="h-3.5 w-3.5" />
             <span>Financials</span>
           </TabsTrigger>
-          <TabsTrigger value="location" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
+          <TabsTrigger value="location" className="flex items-center gap-1.5 text-sm">
+            <MapPin className="h-3.5 w-3.5" />
             <span>Location</span>
           </TabsTrigger>
-          <TabsTrigger value="developer" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
+          <TabsTrigger value="developer" className="flex items-center gap-1.5 text-sm">
+            <User className="h-3.5 w-3.5" />
             <span>Developer</span>
           </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+          <TabsTrigger value="documents" className="flex items-center gap-1.5 text-sm">
+            <FileText className="h-3.5 w-3.5" />
             <span>Documents</span>
           </TabsTrigger>
         </TabsList>
@@ -979,13 +980,13 @@ interface PropertyDetailItemProps {
 
 function PropertyDetailItem({ icon, label, value }: PropertyDetailItemProps) {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-2">
       <div className="mt-0.5">
         {icon}
       </div>
       <div>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="font-medium">{value}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium">{value}</p>
       </div>
     </div>
   );
@@ -1009,13 +1010,13 @@ function RiskItem({ title, level, description }: RiskItemProps) {
   };
   
   return (
-    <div className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0">
-      <div className={`px-2 py-1 rounded text-xs font-medium mt-0.5 ${getLevelColor()}`}>
+    <div className="flex items-start gap-2 pb-3 border-b last:border-0 last:pb-0">
+      <div className={`px-1.5 py-0.5 rounded text-xs font-medium mt-0.5 ${getLevelColor()}`}>
         {level}
       </div>
       <div>
-        <h4 className="font-medium">{title}</h4>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <h4 className="font-medium text-sm">{title}</h4>
+        <p className="text-xs text-muted-foreground">{description}</p>
       </div>
     </div>
   );
@@ -1029,9 +1030,9 @@ interface SecurityItemProps {
 
 function SecurityItem({ title, description }: SecurityItemProps) {
   return (
-    <div className="border rounded-lg p-4">
-      <h4 className="font-medium mb-2">{title}</h4>
-      <p className="text-sm text-muted-foreground">{description}</p>
+    <div className="border rounded-md p-3">
+      <h4 className="font-medium text-sm mb-1">{title}</h4>
+      <p className="text-xs text-muted-foreground">{description}</p>
     </div>
   );
 }
@@ -1044,15 +1045,15 @@ interface DocumentItemProps {
 
 function DocumentItem({ title, url }: DocumentItemProps) {
   return (
-    <div className="flex items-center justify-between p-4 border rounded-lg">
-      <div className="flex items-center gap-3">
-        <FileText className="h-5 w-5 text-primary" />
-        <span className="font-medium">{title}</span>
+    <div className="flex items-center justify-between p-2.5 border rounded-md">
+      <div className="flex items-center gap-2">
+        <FileText className="h-4 w-4 text-primary" />
+        <span className="font-medium text-sm">{title}</span>
       </div>
-      <Button variant="ghost" size="sm" asChild>
+      <Button variant="ghost" size="sm" className="h-7 px-2" asChild>
         <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
-          <Download className="h-4 w-4" />
-          <span>Download</span>
+          <Download className="h-3.5 w-3.5" />
+          <span className="text-xs">Download</span>
         </a>
       </Button>
     </div>
