@@ -244,8 +244,8 @@ export default function PropertyDetails() {
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Minimum</span>
               <span className="font-semibold flex items-center text-sm">
-                <DollarSign className="h-3.5 w-3.5 text-primary mr-1" />
-                ${property.minimumInvestment.toLocaleString()}
+                <span className="text-primary font-semibold mr-1">₦</span>
+                {property.minimumInvestment.toLocaleString()}
               </span>
             </div>
             <div className="flex flex-col">
@@ -260,8 +260,8 @@ export default function PropertyDetails() {
           {/* Funding Progress */}
           <div className="mb-6">
             <div className="flex justify-between mb-1">
-              <span className="text-xs font-medium">${property.currentFunding.toLocaleString()} raised</span>
-              <span className="text-xs text-muted-foreground">${property.totalFunding.toLocaleString()} target</span>
+              <span className="text-xs font-medium">₦{property.currentFunding.toLocaleString()} raised</span>
+              <span className="text-xs text-muted-foreground">₦{property.totalFunding.toLocaleString()} target</span>
             </div>
             <Progress value={fundingProgress} className="h-1.5" />
             <div className="flex justify-between mt-1.5">
@@ -289,7 +289,7 @@ export default function PropertyDetails() {
                   <DialogHeader>
                     <DialogTitle>Invest in {property.name}</DialogTitle>
                     <DialogDescription>
-                      Enter the amount you would like to invest. Minimum investment is ${property.minimumInvestment}.
+                      Enter the amount you would like to invest. Minimum investment is ₦100,000.
                     </DialogDescription>
                   </DialogHeader>
                   
@@ -300,7 +300,7 @@ export default function PropertyDetails() {
                         name="amount"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Investment Amount ($)</FormLabel>
+                            <FormLabel>Investment Amount (₦)</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="Enter amount" 
@@ -310,7 +310,7 @@ export default function PropertyDetails() {
                               />
                             </FormControl>
                             <FormDescription className="text-xs">
-                              Minimum investment: ${property.minimumInvestment}
+                              Minimum investment: ₦100,000
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -528,15 +528,15 @@ export default function PropertyDetails() {
                       </div>
                       <div className="flex justify-between items-center pb-1.5 border-b">
                         <span className="text-muted-foreground">Minimum Investment</span>
-                        <span className="font-semibold">${property.minimumInvestment.toLocaleString()}</span>
+                        <span className="font-semibold">₦100,000</span>
                       </div>
                       <div className="flex justify-between items-center pb-1.5 border-b">
                         <span className="text-muted-foreground">Total Funding Target</span>
-                        <span className="font-semibold">${property.totalFunding.toLocaleString()}</span>
+                        <span className="font-semibold">₦{property.totalFunding.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center pb-1.5 border-b">
                         <span className="text-muted-foreground">Current Funding</span>
-                        <span className="font-semibold">${property.currentFunding.toLocaleString()}</span>
+                        <span className="font-semibold">₦{property.currentFunding.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Number of Investors</span>
