@@ -14,59 +14,61 @@ const SimpleDashboardPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Grid container spacing={3}>
-        <Grid xs={12} md={6} lg={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" component="div">
-                Total Properties
-              </Typography>
-              <Typography variant="h4" color="primary">
-                12
-              </Typography>
-            </CardContent>
-          </Card>
+      <Box sx={{ flexGrow: 1 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6} lg={3}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" component="div">
+                  Total Properties
+                </Typography>
+                <Typography variant="h4" color="primary">
+                  12
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={6} lg={3}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" component="div">
+                  Active Investments
+                </Typography>
+                <Typography variant="h4" color="primary">
+                  48
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={6} lg={3}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" component="div">
+                  Total Investment
+                </Typography>
+                <Typography variant="h4" color="primary">
+                  ₦24.5M
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={6} lg={3}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" component="div">
+                  Average ROI
+                </Typography>
+                <Typography variant="h4" color="primary">
+                  14.5%
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-        
-        <Grid xs={12} md={6} lg={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" component="div">
-                Active Investments
-              </Typography>
-              <Typography variant="h4" color="primary">
-                48
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid xs={12} md={6} lg={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" component="div">
-                Total Investment
-              </Typography>
-              <Typography variant="h4" color="primary">
-                ₦24.5M
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid xs={12} md={6} lg={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" component="div">
-                Average ROI
-              </Typography>
-              <Typography variant="h4" color="primary">
-                14.5%
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      </Box>
     </SimpleLayout>
   );
 };
