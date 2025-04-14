@@ -68,7 +68,9 @@ const withdrawSchema = z.object({
 const kycSchema = z.object({
   idType: z.string().min(1, "ID type is required"),
   idNumber: z.string().min(1, "ID number is required"),
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+  phoneNumber: z.string()
+    .min(13, "Phone number is too short")
+    .regex(/^\+234[0-9]{10}$/, "Must be a valid Nigerian phone number starting with +234"),
 });
 
 export default function DashboardPage() {

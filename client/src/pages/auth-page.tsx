@@ -26,7 +26,10 @@ const loginSchema = z.object({
 const registerSchema = insertUserSchema.extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(7, "Please enter a valid phone number").optional(),
+  phoneNumber: z.string()
+    .min(10, "Phone number is too short")
+    .regex(/^\+234[0-9]{10}$/, "Must be a valid Nigerian phone number starting with +234")
+    .optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -65,7 +68,7 @@ export default function AuthPage() {
       email: "",
       firstName: "",
       lastName: "",
-      phoneNumber: "",
+      phoneNumber: "+234", // Set Nigeria dialing code as default
     },
   });
   
@@ -285,12 +288,16 @@ export default function AuthPage() {
                             <Input
                               id="register-phone"
                               type="tel"
-                              placeholder="+1234567890"
+                              placeholder="+2341234567890"
                               {...registerForm.register("phoneNumber")}
                             />
-                            {registerForm.formState.errors.phoneNumber && (
+                            {registerForm.formState.errors.phoneNumber ? (
                               <p className="text-sm text-red-500">
                                 {registerForm.formState.errors.phoneNumber.message}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Nigerian format: +234 followed by 10 digits
                               </p>
                             )}
                           </div>
