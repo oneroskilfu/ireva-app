@@ -20,6 +20,135 @@ import {
   getMFAVerificationFromSession
 } from "./mfa";
 
+// Market data types
+interface MarketDataPoint {
+  date: string;
+  value: number;
+}
+
+interface PropertyMarketData {
+  location: string;
+  priceIndex: MarketDataPoint[];
+  rentIndex: MarketDataPoint[];
+  supplyIndex: MarketDataPoint[];
+  demandIndex: MarketDataPoint[];
+  yoyChange: number;
+}
+
+// Generate realistic market data for Nigerian cities
+function generateMarketData(): PropertyMarketData[] {
+  const locations = ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Kano", "Enugu", "Calabar"];
+  const currentDate = new Date();
+  const startDate = new Date(currentDate);
+  startDate.setFullYear(currentDate.getFullYear() - 5); // 5 years of data
+  
+  return locations.map(location => {
+    // Base values and growth rates vary by city
+    let priceBase = 100;
+    let rentBase = 100;
+    let supplyBase = 100;
+    let demandBase = 100;
+    
+    // Assign different characteristics to different cities
+    let priceGrowthRate = 0;
+    let rentGrowthRate = 0;
+    let supplyGrowthRate = 0;
+    let demandGrowthRate = 0;
+    
+    // City-specific market characteristics
+    switch(location) {
+      case "Lagos":
+        priceGrowthRate = 0.8; // 0.8% monthly growth
+        rentGrowthRate = 0.7;
+        supplyGrowthRate = 0.3;
+        demandGrowthRate = 0.9;
+        break;
+      case "Abuja":
+        priceGrowthRate = 0.7;
+        rentGrowthRate = 0.6;
+        supplyGrowthRate = 0.4;
+        demandGrowthRate = 0.7;
+        break;
+      case "Port Harcourt":
+        priceGrowthRate = 0.5;
+        rentGrowthRate = 0.5;
+        supplyGrowthRate = 0.2;
+        demandGrowthRate = 0.6;
+        break;
+      case "Ibadan":
+        priceGrowthRate = 0.4;
+        rentGrowthRate = 0.5;
+        supplyGrowthRate = 0.3;
+        demandGrowthRate = 0.5;
+        break;
+      case "Kano":
+        priceGrowthRate = 0.3;
+        rentGrowthRate = 0.4;
+        supplyGrowthRate = 0.2;
+        demandGrowthRate = 0.4;
+        break;
+      case "Enugu":
+        priceGrowthRate = 0.4;
+        rentGrowthRate = 0.4;
+        supplyGrowthRate = 0.2;
+        demandGrowthRate = 0.5;
+        break;
+      case "Calabar":
+        priceGrowthRate = 0.4;
+        rentGrowthRate = 0.3;
+        supplyGrowthRate = 0.2;
+        demandGrowthRate = 0.4;
+        break;
+    }
+    
+    // Generate monthly data points for the past 5 years
+    const priceIndex: MarketDataPoint[] = [];
+    const rentIndex: MarketDataPoint[] = [];
+    const supplyIndex: MarketDataPoint[] = [];
+    const demandIndex: MarketDataPoint[] = [];
+    
+    // Add some randomness to make the data more realistic
+    function addNoise(value: number): number {
+      // Add +/- 0.5% random noise
+      return value * (1 + (Math.random() * 0.01 - 0.005));
+    }
+    
+    // Generate monthly data for 5 years
+    for (let i = 0; i <= 60; i++) {
+      const date = new Date(startDate);
+      date.setMonth(startDate.getMonth() + i);
+      
+      // Apply compounding growth with randomness
+      priceBase = addNoise(priceBase * (1 + priceGrowthRate / 100));
+      rentBase = addNoise(rentBase * (1 + rentGrowthRate / 100));
+      supplyBase = addNoise(supplyBase * (1 + supplyGrowthRate / 100));
+      demandBase = addNoise(demandBase * (1 + demandGrowthRate / 100));
+      
+      // Format date as YYYY-MM
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      priceIndex.push({ date: dateStr, value: Math.round(priceBase * 100) / 100 });
+      rentIndex.push({ date: dateStr, value: Math.round(rentBase * 100) / 100 });
+      supplyIndex.push({ date: dateStr, value: Math.round(supplyBase * 100) / 100 });
+      demandIndex.push({ date: dateStr, value: Math.round(demandBase * 100) / 100 });
+    }
+    
+    // Calculate year-over-year change (comparing current with 12 months ago)
+    const latestPrice = priceIndex[priceIndex.length - 1].value;
+    const yearAgoPrice = priceIndex[priceIndex.length - 13].value;
+    const yoyChange = Math.round(((latestPrice - yearAgoPrice) / yearAgoPrice * 100) * 10) / 10;
+    
+    return {
+      location,
+      priceIndex,
+      rentIndex,
+      supplyIndex,
+      demandIndex,
+      yoyChange
+    };
+  });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
