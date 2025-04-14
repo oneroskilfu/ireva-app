@@ -5,6 +5,11 @@ import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import paystackController from "./paystack";
+import { 
+  getPropertyRecommendations,
+  analyzeUserBehavior,
+  UserPreferences
+} from "./services/openai";
 import {
   setupMFA,
   initiateMFAVerification,
@@ -471,6 +476,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: "You've successfully accessed a protected resource using MFA!",
       user: req.user
     });
+  });
+  
+  // ===== AI RECOMMENDATION ENGINE ROUTES =====
+  
+  // Get AI-powered property recommendations based on user preferences
+  app.get("/api/recommendations", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = (req.user as Express.User).id;
+      
+      // Get user preferences from query parameters or analyze user behavior
+      let preferences: UserPreferences;
+      
+      if (
+        req.query.riskTolerance && 
+        req.query.investmentGoal && 
+        req.query.investmentHorizon
+      ) {
+        // Use provided preferences
+        preferences = {
+          riskTolerance: req.query.riskTolerance as "low" | "medium" | "high",
+          investmentGoal: req.query.investmentGoal as "income" | "growth" | "balanced",
+          investmentHorizon: req.query.investmentHorizon as "short" | "medium" | "long",
+          preferredLocations: req.query.locations ? (req.query.locations as string).split(',') : undefined,
+          preferredPropertyTypes: req.query.propertyTypes ? (req.query.propertyTypes as string).split(',') : undefined,
+          minReturn: req.query.minReturn ? parseFloat(req.query.minReturn as string) : undefined,
+          maxInvestment: req.query.maxInvestment ? parseFloat(req.query.maxInvestment as string) : undefined
+        };
+      } else {
+        // Analyze user behavior to infer preferences
+        const inferredPreferences = await analyzeUserBehavior(userId);
+        
+        if (!inferredPreferences) {
+          // Not enough data to analyze, use default preferences
+          preferences = {
+            riskTolerance: "medium",
+            investmentGoal: "balanced",
+            investmentHorizon: "medium"
+          };
+        } else {
+          preferences = inferredPreferences;
+        }
+      }
+      
+      // Get recommendations based on preferences
+      const recommendations = await getPropertyRecommendations(userId, preferences);
+      
+      // Return recommendations with details
+      res.json({
+        preferences,
+        recommendations
+      });
+    } catch (error) {
+      console.error("Error getting recommendations:", error);
+      res.status(500).json({ message: "Failed to generate property recommendations" });
+    }
+  });
+  
+  // Save or update user preferences
+  app.post("/api/user/preferences", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = (req.user as Express.User).id;
+      const preferences: UserPreferences = req.body;
+      
+      // Validate required fields
+      if (!preferences.riskTolerance || !preferences.investmentGoal || !preferences.investmentHorizon) {
+        return res.status(400).json({ message: "Missing required preference fields" });
+      }
+      
+      // In a real application, you would save these preferences to the database
+      // For this demo, we'll just return the preferences
+      
+      // Get recommendations based on new preferences
+      const recommendations = await getPropertyRecommendations(userId, preferences);
+      
+      res.json({
+        success: true,
+        message: "Preferences updated successfully",
+        preferences,
+        recommendations
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update preferences" });
+    }
   });
   
   // ===== SOCIAL AUTHENTICATION ROUTES =====

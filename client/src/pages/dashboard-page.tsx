@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import InvestmentStats from "@/components/dashboard/InvestmentStats";
 import InvestmentPortfolio from "@/components/dashboard/InvestmentPortfolio";
 import RecommendedProperties from "@/components/dashboard/RecommendedProperties";
+import { AIRecommendations } from "@/components/dashboard/AIRecommendations";
 import ActiveProjects from "@/components/dashboard/ActiveProjects";
 import CompletedProjects from "@/components/dashboard/CompletedProjects";
 import EarningsBreakdown from "@/components/dashboard/EarningsBreakdown";
