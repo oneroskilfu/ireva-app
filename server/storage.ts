@@ -1,4 +1,11 @@
-import { users, type User, type InsertUser, properties, type Property, type InsertProperty, investments, type Investment, type InsertInvestment } from "@shared/schema";
+import { 
+  users, type User, type InsertUser, 
+  properties, type Property, type InsertProperty, 
+  investments, type Investment, type InsertInvestment,
+  forumPosts, type ForumPost, type InsertForumPost,
+  qaQuestions, type QAQuestion, type InsertQAQuestion,
+  qaAnswers, type QAAnswer, type InsertQAAnswer
+} from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -32,6 +39,27 @@ export interface IStorage {
   updateInvestment(id: number, investmentData: Partial<InsertInvestment>): Promise<Investment | undefined>;
   deleteInvestment(id: number): Promise<boolean>;
   
+  // Forum methods
+  getForumPost(id: number): Promise<ForumPost | undefined>;
+  getForumPostsByProperty(propertyId: number): Promise<ForumPost[]>;
+  getForumPostsByUser(userId: number): Promise<ForumPost[]>;
+  getForumThreads(parentId: number): Promise<ForumPost[]>;
+  getRecentForumPosts(limit?: number): Promise<ForumPost[]>;
+  createForumPost(post: InsertForumPost): Promise<ForumPost>;
+  updateForumPost(id: number, postData: Partial<InsertForumPost>): Promise<ForumPost | undefined>;
+  deleteForumPost(id: number): Promise<boolean>;
+  
+  // Q&A methods
+  getQuestion(id: number): Promise<QAQuestion | undefined>;
+  getQuestionsByProperty(propertyId: number): Promise<QAQuestion[]>;
+  getQuestionsByUser(userId: number): Promise<QAQuestion[]>;
+  getAnswers(questionId: number): Promise<QAAnswer[]>;
+  getRecentQuestions(limit?: number): Promise<QAQuestion[]>;
+  createQuestion(question: InsertQAQuestion): Promise<QAQuestion>;
+  createAnswer(answer: InsertQAAnswer): Promise<QAAnswer>;
+  markQuestionAsAnswered(id: number, isAnswered: boolean): Promise<QAQuestion | undefined>;
+  markAnswerAsAccepted(id: number, isAccepted: boolean): Promise<QAAnswer | undefined>;
+  
   // Session store
   sessionStore: any; // Using any for session store to avoid type issues
 }
@@ -40,18 +68,30 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private properties: Map<number, Property>;
   private investments: Map<number, Investment>;
+  private forumPosts: Map<number, ForumPost>;
+  private qaQuestions: Map<number, QAQuestion>;
+  private qaAnswers: Map<number, QAAnswer>;
   private userIdCounter: number;
   private propertyIdCounter: number;
   private investmentIdCounter: number;
+  private forumPostIdCounter: number;
+  private qaQuestionIdCounter: number;
+  private qaAnswerIdCounter: number;
   sessionStore: any; // Using any for the session store type
 
   constructor() {
     this.users = new Map();
     this.properties = new Map();
     this.investments = new Map();
+    this.forumPosts = new Map();
+    this.qaQuestions = new Map();
+    this.qaAnswers = new Map();
     this.userIdCounter = 1;
     this.propertyIdCounter = 1;
     this.investmentIdCounter = 1;
+    this.forumPostIdCounter = 1;
+    this.qaQuestionIdCounter = 1;
+    this.qaAnswerIdCounter = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });

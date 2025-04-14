@@ -173,6 +173,75 @@ export const insertInvestmentSchema = createInsertSchema(investments).omit({
 });
 
 // Export types
+// Forum post types
+export const postStatusEnum = pgEnum("post_status", [
+  "published",
+  "pending",
+  "rejected",
+  "archived"
+]);
+
+export const forumPosts = pgTable("forum_posts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  propertyId: integer("property_id").references(() => properties.id),
+  parentId: integer("parent_id").references((): any => forumPosts.id),
+  status: postStatusEnum("status").default("published").notNull(),
+  isPinned: boolean("is_pinned").default(false).notNull(),
+  isAnnouncement: boolean("is_announcement").default(false).notNull(),
+  likes: integer("likes").default(0).notNull(),
+  views: integer("views").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertForumPostSchema = createInsertSchema(forumPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  likes: true,
+  views: true
+});
+
+// Q&A specific types
+export const qaQuestions = pgTable("qa_questions", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  details: text("details"),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  propertyId: integer("property_id").references(() => properties.id).notNull(),
+  isAnswered: boolean("is_answered").default(false).notNull(),
+  isFeatured: boolean("is_featured").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertQAQuestionSchema = createInsertSchema(qaQuestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  isAnswered: true
+});
+
+export const qaAnswers = pgTable("qa_answers", {
+  id: serial("id").primaryKey(),
+  answer: text("answer").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  questionId: integer("question_id").references(() => qaQuestions.id).notNull(),
+  isAccepted: boolean("is_accepted").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertQAAnswerSchema = createInsertSchema(qaAnswers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  isAccepted: true
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
@@ -181,3 +250,12 @@ export type InsertProperty = z.infer<typeof insertPropertySchema>;
 
 export type Investment = typeof investments.$inferSelect;
 export type InsertInvestment = z.infer<typeof insertInvestmentSchema>;
+
+export type ForumPost = typeof forumPosts.$inferSelect;
+export type InsertForumPost = z.infer<typeof insertForumPostSchema>;
+
+export type QAQuestion = typeof qaQuestions.$inferSelect;
+export type InsertQAQuestion = z.infer<typeof insertQAQuestionSchema>;
+
+export type QAAnswer = typeof qaAnswers.$inferSelect;
+export type InsertQAAnswer = z.infer<typeof insertQAAnswerSchema>;
