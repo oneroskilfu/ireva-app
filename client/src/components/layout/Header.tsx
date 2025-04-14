@@ -145,7 +145,7 @@ export default function Header() {
             ) : (
               <AnimatedLink href="/auth">
                 <Button variant="default" size="sm">
-                  Sign In
+                  Create
                 </Button>
               </AnimatedLink>
             )}

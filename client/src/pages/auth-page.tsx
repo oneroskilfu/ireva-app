@@ -245,18 +245,35 @@ export default function AuthPage() {
                           </div>
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="register-email">Email</Label>
-                          <Input
-                            id="register-email"
-                            type="email"
-                            {...registerForm.register("email")}
-                          />
-                          {registerForm.formState.errors.email && (
-                            <p className="text-sm text-red-500">
-                              {registerForm.formState.errors.email.message}
-                            </p>
-                          )}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="register-email">Email</Label>
+                            <Input
+                              id="register-email"
+                              type="email"
+                              {...registerForm.register("email")}
+                            />
+                            {registerForm.formState.errors.email && (
+                              <p className="text-sm text-red-500">
+                                {registerForm.formState.errors.email.message}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="register-phone">Phone Number</Label>
+                            <Input
+                              id="register-phone"
+                              type="tel"
+                              placeholder="+1234567890"
+                              {...registerForm.register("phoneNumber")}
+                            />
+                            {registerForm.formState.errors.phoneNumber && (
+                              <p className="text-sm text-red-500">
+                                {registerForm.formState.errors.phoneNumber.message}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         
                         <div className="space-y-2">
@@ -269,21 +286,6 @@ export default function AuthPage() {
                           {registerForm.formState.errors.username && (
                             <p className="text-sm text-red-500">
                               {registerForm.formState.errors.username.message}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="register-phone">Phone Number</Label>
-                          <Input
-                            id="register-phone"
-                            type="tel"
-                            placeholder="+1234567890"
-                            {...registerForm.register("phoneNumber")}
-                          />
-                          {registerForm.formState.errors.phoneNumber && (
-                            <p className="text-sm text-red-500">
-                              {registerForm.formState.errors.phoneNumber.message}
                             </p>
                           )}
                         </div>
