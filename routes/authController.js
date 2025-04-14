@@ -1,396 +1,166 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const Joi = require('joi');
-const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
-const { protect } = require('../middleware/authMiddleware');
-const { adminOnly } = require('../middleware/roleMiddleware');
+const { verifyToken } = require('../middleware/authMiddleware');
+const { isAdmin } = require('../middleware/roleMiddleware');
 
 // Validation schemas
 const registerSchema = Joi.object({
-  username: Joi.string().min(3).max(50).required(),
+  name: Joi.string().min(3).required(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
-  phoneNumber: Joi.string().pattern(/^\+[1-9]\d{1,14}$/).messages({
-    'string.pattern.base': 'Phone number must be in international format starting with + (e.g., +2341234567890)'
-  }),
   role: Joi.string().valid('admin', 'investor', 'project_owner').default('investor')
 });
 
 const loginSchema = Joi.object({
-  username: Joi.string().required(),
+  email: Joi.string().email().required(),
   password: Joi.string().required()
 });
 
-const emailVerificationSchema = Joi.object({
-  token: Joi.string().required()
-});
+// Email transporter setup (if you have email credentials)
+let transporter;
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+}
 
-const resendVerificationSchema = Joi.object({
-  email: Joi.string().email().required()
-});
-
-const resetPasswordRequestSchema = Joi.object({
-  email: Joi.string().email().required()
-});
-
-const resetPasswordSchema = Joi.object({
-  token: Joi.string().required(),
-  password: Joi.string().min(6).required()
-});
-
-const updatePasswordSchema = Joi.object({
-  currentPassword: Joi.string().required(),
-  newPassword: Joi.string().min(6).required()
-});
-
-/**
- * @route POST /api/auth/register
- * @desc Register a new user
- * @access Public
- */
+// Register
 router.post('/register', async (req, res) => {
   try {
-    // Validate request body
-    const { error, value } = registerSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message
-      });
-    }
+    const { error } = registerSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { username, email, password, phoneNumber, role } = value;
-
+    const { name, email, password, role } = req.body;
+    
     // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
-    });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: 'User already exists with this email' });
+    
+    // Create new user (password will be hashed by the pre-save hook)
+    const user = new User({ name, email, password, role });
+    await user.save();
+    
+    // Generate token
+    const token = jwt.sign({ id: user._id, name: user.name, role: user.role }, process.env.JWT_SECRET);
 
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists with this email or username'
-      });
-    }
-
-    // Only allow admin role to be created by an admin (if it's not the first admin)
-    if (role === 'admin') {
-      const adminCount = await User.countDocuments({ role: 'admin' });
-      // If trying to create admin and admins already exist, require authorization
-      if (adminCount > 0) {
-        // Check if request is from an authorized admin
-        if (!req.user || req.user.role !== 'admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Only existing admins can create new admin accounts'
-          });
-        }
+    // Send welcome email if email service is configured
+    if (transporter) {
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: "Welcome to the REVA Crowdfunding Platform",
+          html: `<h2>Hello ${user.name},</h2><p>Welcome aboard as a ${user.role}!</p>`
+        });
+      } catch (emailErr) {
+        console.error('Email sending failed:', emailErr);
       }
     }
 
-    // Create email verification token
-    const emailVerificationToken = crypto.randomBytes(20).toString('hex');
-    const emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-
-    // Create user
-    const user = await User.create({
-      username,
-      email,
-      password, // Will be hashed by the model pre-save hook
-      phoneNumber,
-      role,
-      emailVerificationToken,
-      emailVerificationExpires
-    });
-
-    // Send email verification (to be implemented)
-    // await sendVerificationEmail(user.email, emailVerificationToken);
-
-    // Generate token
-    const token = user.generateAuthToken();
-
-    // Return new user (exclude sensitive fields)
-    const userResponse = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      isEmailVerified: user.isEmailVerified,
-      isPhoneVerified: user.isPhoneVerified,
-      phoneNumber: user.phoneNumber,
-      kycStatus: user.kycStatus,
-      walletBalance: user.walletBalance,
-      createdAt: user.createdAt
-    };
-
-    res.status(201).json({
+    res.status(201).json({ 
       success: true,
-      token,
-      user: userResponse,
-      message: 'User registered successfully. Please verify your email.'
-    });
-  } catch (error) {
-    console.error('Error in user registration:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during registration'
-    });
-  }
-});
-
-/**
- * @route POST /api/auth/login
- * @desc Authenticate user & get token
- * @access Public
- */
-router.post('/login', async (req, res) => {
-  try {
-    // Validate request body
-    const { error, value } = loginSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message
-      });
-    }
-
-    const { username, password } = value;
-
-    // Find user by username
-    const user = await User.findOne({ username }).select('+password');
-
-    // Check if user exists
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    // Check if password matches
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    }
-
-    // Update last login time
-    user.lastLogin = Date.now();
-    await user.save();
-
-    // Generate token
-    const token = user.generateAuthToken();
-
-    // Return user info (exclude sensitive fields)
-    const userResponse = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      isEmailVerified: user.isEmailVerified,
-      isPhoneVerified: user.isPhoneVerified,
-      phoneNumber: user.phoneNumber,
-      kycStatus: user.kycStatus,
-      walletBalance: user.walletBalance,
-      mfaEnabled: user.mfaEnabled,
-      lastLogin: user.lastLogin,
-      createdAt: user.createdAt
-    };
-
-    res.status(200).json({
-      success: true,
-      token,
-      user: userResponse
-    });
-  } catch (error) {
-    console.error('Error in user login:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during login'
-    });
-  }
-});
-
-/**
- * @route GET /api/auth/verify
- * @desc Verify token & return user data
- * @access Private
- */
-router.get('/verify', protect, async (req, res) => {
-  try {
-    // User is already attached to req by the protect middleware
-    const user = req.user;
-
-    res.status(200).json({
-      success: true,
+      token, 
       user: {
         id: user._id,
-        username: user.username,
+        name: user.name,
         email: user.email,
-        role: user.role,
-        isEmailVerified: user.isEmailVerified,
-        isPhoneVerified: user.isPhoneVerified,
-        phoneNumber: user.phoneNumber,
-        kycStatus: user.kycStatus,
-        walletBalance: user.walletBalance,
-        mfaEnabled: user.mfaEnabled,
-        lastLogin: user.lastLogin,
-        createdAt: user.createdAt
+        role: user.role
       }
     });
-  } catch (error) {
-    console.error('Error in token verification:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during token verification'
-    });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ message: 'Server error during registration' });
   }
 });
 
-/**
- * @route POST /api/auth/change-password
- * @desc Change user password
- * @access Private
- */
-router.post('/change-password', protect, async (req, res) => {
+// Login
+router.post('/login', async (req, res) => {
   try {
-    // Validate request body
-    const { error, value } = updatePasswordSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message
-      });
-    }
+    const { error } = loginSchema.validate(req.body);
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { currentPassword, newPassword } = value;
-    const user = await User.findById(req.user._id).select('+password');
+    const { email, password } = req.body;
+    
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // Check if current password matches
-    const isMatch = await user.matchPassword(currentPassword);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Current password is incorrect'
-      });
-    }
+    // Check password
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // Update password
-    user.password = newPassword;
-    await user.save();
+    // Generate token
+    const token = jwt.sign({ id: user._id, name: user.name, role: user.role }, process.env.JWT_SECRET);
 
-    res.status(200).json({
+    res.json({ 
       success: true,
-      message: 'Password updated successfully'
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
     });
-  } catch (error) {
-    console.error('Error in password change:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during password change'
-    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error during login' });
   }
 });
 
-/**
- * @route POST /api/auth/verify-email
- * @desc Verify user email with token
- * @access Public
- */
-router.post('/verify-email', async (req, res) => {
+// Get current user
+router.get('/user', verifyToken, async (req, res) => {
   try {
-    // Validate request body
-    const { error, value } = emailVerificationSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message
-      });
-    }
-
-    const { token } = value;
-
-    // Find user with this token
-    const user = await User.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: Date.now() }
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or expired verification token'
-      });
-    }
-
-    // Update user verification status
-    user.isEmailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-    await user.save();
-
-    res.status(200).json({
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    res.json({ 
       success: true,
-      message: 'Email verified successfully'
+      user
     });
-  } catch (error) {
-    console.error('Error in email verification:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during email verification'
-    });
+  } catch (err) {
+    console.error('Get user error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-/**
- * @route POST /api/auth/role
- * @desc Change user role (admin only)
- * @access Admin
- */
-router.post('/role', protect, adminOnly, async (req, res) => {
+// Change user role (admin only)
+router.post('/role', verifyToken, isAdmin, async (req, res) => {
   try {
     const { userId, role } = req.body;
 
     if (!userId || !role) {
-      return res.status(400).json({
-        success: false,
-        message: 'User ID and role are required'
-      });
+      return res.status(400).json({ message: 'User ID and role are required' });
     }
 
     if (!['admin', 'investor', 'project_owner'].includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid role specified'
-      });
+      return res.status(400).json({ message: 'Invalid role specified' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     user.role = role;
     await user.save();
 
-    res.status(200).json({
+    res.json({ 
       success: true,
       message: `User role updated to ${role}`
     });
-  } catch (error) {
-    console.error('Error in role update:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during role update'
-    });
+  } catch (err) {
+    console.error('Role update error:', err);
+    res.status(500).json({ message: 'Server error during role update' });
   }
 });
 
