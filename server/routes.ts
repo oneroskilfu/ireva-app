@@ -20,6 +20,15 @@ import {
   analyzeUserBehavior,
   UserPreferences
 } from "./services/openai";
+
+// Import route handlers
+import authRoutes from './routes/auth.js';
+import usersRoutes from './routes/users.js';
+import projectsRoutes from './routes/projects.js';
+import propertiesRoutes from './routes/properties.js';
+import investmentsRoutes from './routes/investments.js';
+import roiRoutes from './routes/roi.js';
+import messagesRoutes from './routes/messages.js';
 import {
   setupMFA,
   initiateMFAVerification,
@@ -1761,6 +1770,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Register API routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', usersRoutes);
+  app.use('/api/projects', projectsRoutes);
+  app.use('/api/properties', propertiesRoutes);
+  app.use('/api/investments', investmentsRoutes);
+  app.use('/api/roi', roiRoutes);
+  app.use('/api/messages', messagesRoutes);
+
   const httpServer = createServer(app);
   
   // Customer Support System Routes

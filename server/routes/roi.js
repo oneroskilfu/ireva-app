@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import { ROI } from '../models/ROI.js';
+import { Investment } from '../models/Investment.js';
+
 const router = express.Router();
-const jwt = require('jsonwebtoken');
-const ROI = require('../models/ROI');
-const Investment = require('../models/Investment');
 
 // Middleware to authenticate JWT token
 const auth = (req, res, next) => {
@@ -335,4 +336,4 @@ router.get('/calculate/:investmentId', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
