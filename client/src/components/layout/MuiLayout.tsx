@@ -1,8 +1,12 @@
-import React from 'react';
+import * as React from 'react';
 import { Box, CssBaseline } from '@mui/material';
 import MuiSidebar from './MuiSidebar';
 import { useLocation } from 'wouter';
-import { logout } from '../../utils/auth.js';
+// Import logout function from auth utilities
+const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('authToken');
+};
 
 interface MuiLayoutProps {
   children: React.ReactNode;

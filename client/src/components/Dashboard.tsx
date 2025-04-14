@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getToken } from '../utils/auth.js';
+
+// Define getToken function directly
+const getToken = () => {
+  return localStorage.getItem('token') || localStorage.getItem('authToken');
+};
+
 import { useToast } from '@/hooks/use-toast';
 
 // MUI components
@@ -267,87 +273,89 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Stats Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card elevation={2}>
-                <CardContent>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Properties
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold">
-                        {stats.totalProperties}
-                      </Typography>
-                    </Box>
-                    <Avatar sx={{ bgcolor: '#e0f2fe', color: '#0284c7', width: 56, height: 56 }}>
-                      <Building color="#0284c7" />
-                    </Avatar>
-                  </Stack>
-                </CardContent>
-              </Card>
+          <Box sx={{ mb: 4 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={2}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Properties
+                        </Typography>
+                        <Typography variant="h5" fontWeight="bold">
+                          {stats.totalProperties}
+                        </Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: '#e0f2fe', color: '#0284c7', width: 56, height: 56 }}>
+                        <Building color="#0284c7" />
+                      </Avatar>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={2}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Investors
+                        </Typography>
+                        <Typography variant="h5" fontWeight="bold">
+                          {stats.totalInvestors}
+                        </Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: '#f3e8ff', color: '#7e22ce', width: 56, height: 56 }}>
+                        <Users color="#7e22ce" />
+                      </Avatar>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={2}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Total Investment
+                        </Typography>
+                        <Typography variant="h5" fontWeight="bold">
+                          {formatCurrency(stats.totalInvestment)}
+                        </Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: '#ecfdf5', color: '#047857', width: 56, height: 56 }}>
+                        <DollarSign color="#047857" />
+                      </Avatar>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Card elevation={2}>
+                  <CardContent>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Average ROI
+                        </Typography>
+                        <Typography variant="h5" fontWeight="bold">
+                          {stats.roi}%
+                        </Typography>
+                      </Box>
+                      <Avatar sx={{ bgcolor: '#fff7ed', color: '#c2410c', width: 56, height: 56 }}>
+                        <TrendingUp color="#c2410c" />
+                      </Avatar>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
             </Grid>
-            
-            <Grid item xs={12} sm={6} md={3}>
-              <Card elevation={2}>
-                <CardContent>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Investors
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold">
-                        {stats.totalInvestors}
-                      </Typography>
-                    </Box>
-                    <Avatar sx={{ bgcolor: '#f3e8ff', color: '#7e22ce', width: 56, height: 56 }}>
-                      <Users color="#7e22ce" />
-                    </Avatar>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} sm={6} md={3}>
-              <Card elevation={2}>
-                <CardContent>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Total Investment
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold">
-                        {formatCurrency(stats.totalInvestment)}
-                      </Typography>
-                    </Box>
-                    <Avatar sx={{ bgcolor: '#ecfdf5', color: '#047857', width: 56, height: 56 }}>
-                      <DollarSign color="#047857" />
-                    </Avatar>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid item xs={12} sm={6} md={3}>
-              <Card elevation={2}>
-                <CardContent>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Average ROI
-                      </Typography>
-                      <Typography variant="h5" fontWeight="bold">
-                        {stats.roi}%
-                      </Typography>
-                    </Box>
-                    <Avatar sx={{ bgcolor: '#fff7ed', color: '#c2410c', width: 56, height: 56 }}>
-                      <TrendingUp color="#c2410c" />
-                    </Avatar>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+          </Box>
           
           {/* Activity and Events */}
           <Grid container spacing={3}>

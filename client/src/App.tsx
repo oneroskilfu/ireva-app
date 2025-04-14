@@ -27,7 +27,20 @@ import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
 import { OnboardingProvider } from "./contexts/onboarding-context";
 import OnboardingWrapper from "./components/onboarding/OnboardingWrapper";
-import { getToken, setToken as setAuthToken, logout } from "./utils/auth.js";
+// Define auth utilities directly to avoid import issues
+const getToken = () => {
+  return localStorage.getItem('token') || localStorage.getItem('authToken');
+};
+
+const setAuthToken = (token: string) => {
+  localStorage.setItem('token', token);
+  localStorage.setItem('authToken', token);
+};
+
+const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('authToken');
+};
 
 // Create a context for auth
 import React from "react";
