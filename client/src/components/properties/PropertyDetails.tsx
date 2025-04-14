@@ -4,13 +4,17 @@ import { Property } from "@shared/schema";
 import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,13 +25,20 @@ import {
   CheckCircle, 
   Clock, 
   DollarSign, 
+  Download,
+  ExternalLink,
+  FileText,
   Home, 
   Info, 
   LineChart, 
   Loader2, 
-  MapPin, 
+  MapPin,
+  Maximize,
   Percent, 
+  Play,
   ShieldCheck, 
+  Sparkles,
+  User,
   Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -285,9 +296,95 @@ export default function PropertyDetails() {
         </div>
       </div>
 
+      {/* Media Gallery */}
+      {property.additionalImages && (
+        <div className="mb-12">
+          <h3 className="text-xl font-semibold mb-4">Gallery</h3>
+          <Carousel className="w-full">
+            <CarouselContent>
+              {/* Main Image */}
+              <CarouselItem className="basis-full md:basis-1/2 lg:basis-1/3">
+                <div className="p-1 h-full">
+                  <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden">
+                    <img 
+                      src={property.imageUrl} 
+                      alt={`${property.name} main view`} 
+                      className="object-cover w-full h-full"
+                    />
+                  </AspectRatio>
+                </div>
+              </CarouselItem>
+              
+              {/* Additional Images */}
+              {JSON.parse(property.additionalImages || '[]').map((imgUrl: string, index: number) => (
+                <CarouselItem key={index} className="basis-full md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1 h-full">
+                    <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden">
+                      <img 
+                        src={imgUrl} 
+                        alt={`${property.name} view ${index + 1}`} 
+                        className="object-cover w-full h-full"
+                      />
+                    </AspectRatio>
+                  </div>
+                </CarouselItem>
+              ))}
+              
+              {/* Video Preview (if available) */}
+              {property.videoUrl && (
+                <CarouselItem className="basis-full md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1 h-full">
+                    <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden relative group">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-black/50 p-2 rounded-full">
+                          <Play className="h-8 w-8 text-white" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 bg-black/70 text-white text-xs px-2 py-1 rounded-tr-lg">
+                        Video Tour
+                      </div>
+                      <img 
+                        src={property.imageUrl} 
+                        alt="Video preview" 
+                        className="object-cover w-full h-full"
+                      />
+                    </AspectRatio>
+                  </div>
+                </CarouselItem>
+              )}
+              
+              {/* Virtual Tour Preview (if available) */}
+              {property.virtualTourUrl && (
+                <CarouselItem className="basis-full md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1 h-full">
+                    <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden relative group">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-black/50 p-2 rounded-full">
+                          <Maximize className="h-8 w-8 text-white" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 bg-black/70 text-white text-xs px-2 py-1 rounded-tr-lg">
+                        Virtual Tour
+                      </div>
+                      <img 
+                        src={property.imageUrl} 
+                        alt="Virtual tour preview" 
+                        className="object-cover w-full h-full"
+                      />
+                    </AspectRatio>
+                  </div>
+                </CarouselItem>
+              )}
+            </CarouselContent>
+            <CarouselPrevious className="left-2" />
+            <CarouselNext className="right-2" />
+          </Carousel>
+        </div>
+      )}
+
       {/* Detailed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8">
+        <TabsList className="grid w-full grid-cols-5 max-w-3xl mx-auto mb-8">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Info className="h-4 w-4" />
             <span>Overview</span>
@@ -296,9 +393,17 @@ export default function PropertyDetails() {
             <LineChart className="h-4 w-4" />
             <span>Financials</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            <span>Security</span>
+          <TabsTrigger value="location" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            <span>Location</span>
+          </TabsTrigger>
+          <TabsTrigger value="developer" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span>Developer</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span>Documents</span>
           </TabsTrigger>
         </TabsList>
         
@@ -341,6 +446,30 @@ export default function PropertyDetails() {
                   />
                 </div>
               </div>
+              
+              {/* Property Features */}
+              {property.features && (
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold mb-4">Features</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {JSON.parse(property.features || '[]').map((feature: string, index: number) => (
+                      <FeatureItem key={index} feature={feature} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Property Amenities */}
+              {property.amenities && (
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold mb-4">Amenities</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {JSON.parse(property.amenities || '[]').map((amenity: string, index: number) => (
+                      <FeatureItem key={index} feature={amenity} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             
             <div>
@@ -376,6 +505,28 @@ export default function PropertyDetails() {
                     </div>
                   </CardContent>
                 </Card>
+                
+                {/* Risk Rating */}
+                {property.riskRating && (
+                  <Card className="mt-6">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Risk Assessment</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant={
+                          property.riskRating === "Low" ? "success" : 
+                          property.riskRating === "Medium" ? "warning" : "destructive"
+                        }>
+                          {property.riskRating} Risk
+                        </Badge>
+                      </div>
+                      {property.riskDescription && (
+                        <p className="text-sm text-muted-foreground">{property.riskDescription}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </div>
@@ -394,55 +545,69 @@ export default function PropertyDetails() {
                       <span className="font-medium">Projected Return: {formatPercent(property.targetReturn)}</span>
                     </div>
                     
-                    <div className="space-y-6">
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Year 1 Return Projection</h4>
-                        <div className="h-2 bg-gray-100 rounded-full">
-                          <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${Math.min(Number(property.targetReturn) * 0.8, 100)}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            {formatPercent(Number(property.targetReturn) * 0.8)}
-                          </span>
-                        </div>
+                    {property.projectedIrr && (
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Projected IRR</span>
+                        <span className="font-semibold">{formatPercent(property.projectedIrr)}</span>
                       </div>
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Year 3 Return Projection</h4>
-                        <div className="h-2 bg-gray-100 rounded-full">
-                          <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${Math.min(Number(property.targetReturn) * 0.9, 100)}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            {formatPercent(Number(property.targetReturn) * 0.9)}
-                          </span>
-                        </div>
+                    )}
+                    
+                    {property.projectedCashYield && (
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Cash Yield</span>
+                        <span className="font-semibold">{formatPercent(property.projectedCashYield)}</span>
                       </div>
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Year 5 Return Projection</h4>
-                        <div className="h-2 bg-gray-100 rounded-full">
-                          <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${Math.min(Number(property.targetReturn), 100)}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            {formatPercent(property.targetReturn)}
-                          </span>
-                        </div>
+                    )}
+                    
+                    {property.projectedAppreciation && (
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Projected Appreciation</span>
+                        <span className="font-semibold">{formatPercent(property.projectedAppreciation)}</span>
                       </div>
-                    </div>
+                    )}
+                    
+                    {property.projectedTotalReturn && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Total Projected Return</span>
+                        <span className="font-semibold">{formatPercent(property.projectedTotalReturn)}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
+              
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold mb-4">Investment Timeline</h3>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="relative pl-6 border-l border-gray-200">
+                      <div className="mb-8 relative">
+                        <div className="absolute -left-[25px] bg-primary text-white w-5 h-5 rounded-full flex items-center justify-center">
+                          1
+                        </div>
+                        <h4 className="font-medium mb-1">Initial Investment</h4>
+                        <p className="text-sm text-muted-foreground">Invest now with as little as ${property.minimumInvestment}</p>
+                      </div>
+                      
+                      <div className="mb-8 relative">
+                        <div className="absolute -left-[25px] bg-primary text-white w-5 h-5 rounded-full flex items-center justify-center">
+                          2
+                        </div>
+                        <h4 className="font-medium mb-1">Quarterly Distributions</h4>
+                        <p className="text-sm text-muted-foreground">Receive quarterly cash distributions from rental income</p>
+                      </div>
+                      
+                      <div className="relative">
+                        <div className="absolute -left-[25px] bg-primary text-white w-5 h-5 rounded-full flex items-center justify-center">
+                          3
+                        </div>
+                        <h4 className="font-medium mb-1">Exit ({property.term} months)</h4>
+                        <p className="text-sm text-muted-foreground">Receive your principal plus appreciation at property sale</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
             
             <div>
@@ -458,7 +623,7 @@ export default function PropertyDetails() {
                     <RiskItem 
                       title="Liquidity Risk" 
                       level="Medium" 
-                      description="Investment term is 5 years with limited options for early exit."
+                      description="Investment term is medium-length with limited options for early exit."
                     />
                     <RiskItem 
                       title="Operational Risk" 
@@ -477,71 +642,322 @@ export default function PropertyDetails() {
           </div>
         </TabsContent>
         
-        {/* Security Tab */}
-        <TabsContent value="security" className="pt-4">
-          <div className="max-w-3xl mx-auto">
-            <h3 className="text-xl font-semibold mb-4">Security Information</h3>
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 pb-4 border-b">
-                    <ShieldCheck className="h-8 w-8 text-primary" />
-                    <div>
-                      <h4 className="font-medium">Secure Investment Structure</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Your investment is protected through a legal entity structure that provides security and transparency.
+        {/* Location Tab */}
+        <TabsContent value="location" className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Location Details</h3>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    {property.address && (
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Address</span>
+                        <span className="font-semibold">{property.address}</span>
+                      </div>
+                    )}
+                    
+                    {property.city && (
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">City</span>
+                        <span className="font-semibold">{property.city}</span>
+                      </div>
+                    )}
+                    
+                    {property.state && (
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">State</span>
+                        <span className="font-semibold">{property.state}</span>
+                      </div>
+                    )}
+                    
+                    {property.zipCode && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Zip Code</span>
+                        <span className="font-semibold">{property.zipCode}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {property.neighborhoodDescription && (
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold mb-4">Neighborhood</h3>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <p className="text-muted-foreground">{property.neighborhoodDescription}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Map</h3>
+              {(property.latitude && property.longitude) ? (
+                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="aspect-video bg-gray-200 flex items-center justify-center">
+                    <div className="text-center p-4">
+                      <MapPin className="h-8 w-8 text-primary mx-auto mb-2" />
+                      <p className="font-medium">Map View</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Located at {property.latitude}, {property.longitude}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <SecurityItem 
-                      title="Legal Structure" 
-                      description="Investment is made through a Special Purpose Vehicle (SPV) that owns the property."
-                    />
-                    <SecurityItem 
-                      title="Documentation" 
-                      description="Full legal documentation provided including operating agreement and subscription documents."
-                    />
-                    <SecurityItem 
-                      title="Investor Rights" 
-                      description="Clearly defined investor rights including profit distributions and voting rights on major decisions."
-                    />
-                    <SecurityItem 
-                      title="Reporting" 
-                      description="Regular financial reporting and updates on property performance and market conditions."
-                    />
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-10 text-center">
+                    <MapPin className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-muted-foreground">Map information not available</p>
+                  </CardContent>
+                </Card>
+              )}
+              
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold mb-4">Nearby Amenities</h3>
+                <div className="space-y-2">
+                  <Card>
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <Building2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Commercial Centers</h4>
+                        <p className="text-sm text-muted-foreground">Within 1.5 miles</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <Building2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Public Transportation</h4>
+                        <p className="text-sm text-muted-foreground">Within 0.5 miles</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <Building2 className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Schools & Universities</h4>
+                        <p className="text-sm text-muted-foreground">Within 2 miles</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+        
+        {/* Developer Tab */}
+        <TabsContent value="developer" className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Developer Information</h3>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col gap-4">
+                    {property.developerLogoUrl && (
+                      <div className="flex justify-center mb-2">
+                        <img 
+                          src={property.developerLogoUrl} 
+                          alt={property.developerName || "Developer Logo"} 
+                          className="h-16 object-contain"
+                        />
+                      </div>
+                    )}
+                    
+                    {property.developerName && (
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-muted-foreground">Developer</span>
+                        <span className="font-semibold">{property.developerName}</span>
+                      </div>
+                    )}
+                    
+                    {property.developerDescription && (
+                      <div className="mt-4">
+                        <p className="text-muted-foreground">{property.developerDescription}</p>
+                      </div>
+                    )}
                   </div>
+                </CardContent>
+              </Card>
+              
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold mb-4">Project Timeline</h3>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="relative pl-6 border-l border-gray-200">
+                      {property.acquisitionDate && (
+                        <div className="mb-8 relative">
+                          <div className="absolute -left-[25px] bg-primary/10 border border-primary text-primary w-5 h-5 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-3 w-3" />
+                          </div>
+                          <h4 className="font-medium mb-1">Property Acquisition</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(property.acquisitionDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {property.constructionStartDate && (
+                        <div className="mb-8 relative">
+                          <div className="absolute -left-[25px] bg-primary/10 border border-primary text-primary w-5 h-5 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-3 w-3" />
+                          </div>
+                          <h4 className="font-medium mb-1">Construction Start</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(property.constructionStartDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {property.estimatedCompletionDate && (
+                        <div className="relative">
+                          <div className="absolute -left-[25px] bg-gray-100 border border-gray-300 text-gray-500 w-5 h-5 rounded-full flex items-center justify-center">
+                            <Clock className="h-3 w-3" />
+                          </div>
+                          <h4 className="font-medium mb-1">Estimated Completion</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(property.estimatedCompletionDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Track Record</h3>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                      <div className="bg-gray-100 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-lg mb-1">Portfolio Value</h4>
+                        <p className="text-xl font-semibold">$2+ Billion</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Total value of developed properties
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <div className="bg-gray-100 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-lg mb-1">Projects Completed</h4>
+                        <p className="text-xl font-semibold">25+</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Successful projects over the past decade
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <div className="bg-gray-100 rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0">
+                        <Percent className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-lg mb-1">Average Returns</h4>
+                        <p className="text-xl font-semibold">18.5%</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Average returns across all projects
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+        
+        {/* Documents Tab */}
+        <TabsContent value="documents" className="pt-4">
+          <div className="max-w-3xl mx-auto">
+            <h3 className="text-xl font-semibold mb-4">Due Diligence Documents</h3>
+            
+            {property.documentUrls ? (
+              <div className="space-y-3">
+                {JSON.parse(property.documentUrls || '[]').map((doc: { title: string, url: string }, index: number) => (
+                  <DocumentItem key={index} title={doc.title} url={doc.url} />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-10 text-center">
+                  <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground">No documents available at this moment</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            <h3 className="text-xl font-semibold mb-4 mt-8">Legal Structure</h3>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <p className="text-muted-foreground">
+                    This investment is structured as a Special Purpose Vehicle (SPV) that allows investors to own 
+                    shares in the property. All investors receive pro-rata distributions based on their ownership percentage.
+                  </p>
+                  
+                  <h4 className="font-medium mt-4">Key Legal Points:</h4>
+                  <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                    <li>Investors own fractional shares of the property through an LLC structure</li>
+                    <li>Liability is limited to your investment amount</li>
+                    <li>Quarterly distributions are made to all investors</li>
+                    <li>Voting rights on major decisions proportional to investment</li>
+                    <li>Exit is planned at month {property.term} with option to hold longer if market conditions favor</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
             
-            <h3 className="text-xl font-semibold mb-4">Compliance Information</h3>
+            <h3 className="text-xl font-semibold mb-4 mt-8">Frequently Asked Questions</h3>
             <Card>
               <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <p className="text-muted-foreground mb-4">
-                    All investments are made in compliance with relevant securities regulations. Investment opportunities 
-                    are available to accredited and non-accredited investors as permitted by applicable exemptions.
-                  </p>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-medium mb-2">How is my investment secured?</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Your investment is secured by real estate, which is one of the most reliable asset classes. 
+                      The property serves as collateral, and all investments are backed by a legal entity structure 
+                      that provides security and transparency.
+                    </p>
+                  </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ComplianceItem 
-                      title="KYC/AML Procedures" 
-                      description="We implement comprehensive Know Your Customer and Anti-Money Laundering procedures."
-                    />
-                    <ComplianceItem 
-                      title="Tax Documentation" 
-                      description="Annual tax documents provided for all investors for easy tax reporting."
-                    />
-                    <ComplianceItem 
-                      title="Regulatory Compliance" 
-                      description="Platform operates in compliance with relevant securities regulations and exemptions."
-                    />
-                    <ComplianceItem 
-                      title="Data Security" 
-                      description="Bank-level encryption and security measures to protect your personal and financial information."
-                    />
+                  <div>
+                    <h4 className="font-medium mb-2">Can I sell my investment early?</h4>
+                    <p className="text-sm text-muted-foreground">
+                      While the investment is designed for a {property.term}-month hold period, 
+                      we do offer a secondary marketplace where you can list your shares for sale to other investors, 
+                      subject to certain conditions and availability of buyers.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">How are returns calculated?</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Returns come from three sources: regular income distributions (from rental income), 
+                      tax advantages (depreciation benefits), and appreciation of the property value over time. 
+                      The target return of {formatPercent(property.targetReturn)} represents the annualized return including all these factors.
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -553,7 +969,7 @@ export default function PropertyDetails() {
   );
 }
 
-// Property Detail Item Component
+// PropertyDetailItem Component
 interface PropertyDetailItemProps {
   icon: React.ReactNode;
   label: string;
@@ -582,28 +998,24 @@ interface RiskItemProps {
 }
 
 function RiskItem({ title, level, description }: RiskItemProps) {
-  const getLevelColor = (level: string) => {
+  const getLevelColor = () => {
     switch (level) {
-      case "Low":
-        return "text-green-500 bg-green-50";
-      case "Medium":
-        return "text-yellow-500 bg-yellow-50";
-      case "High":
-        return "text-red-500 bg-red-50";
-      default:
-        return "text-gray-500 bg-gray-50";
+      case "Low": return "bg-green-100 text-green-700";
+      case "Medium": return "bg-yellow-100 text-yellow-700";
+      case "High": return "bg-red-100 text-red-700";
+      default: return "bg-gray-100 text-gray-700";
     }
   };
   
   return (
-    <div className="pb-4 border-b last:border-0 last:pb-0">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="font-medium">{title}</h4>
-        <span className={cn("px-2 py-1 rounded-full text-xs font-medium", getLevelColor(level))}>
-          {level}
-        </span>
+    <div className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0">
+      <div className={`px-2 py-1 rounded text-xs font-medium mt-0.5 ${getLevelColor()}`}>
+        {level}
       </div>
-      <p className="text-sm text-muted-foreground">{description}</p>
+      <div>
+        <h4 className="font-medium">{title}</h4>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
     </div>
   );
 }
@@ -616,9 +1028,46 @@ interface SecurityItemProps {
 
 function SecurityItem({ title, description }: SecurityItemProps) {
   return (
-    <div className="p-4 bg-gray-50 rounded-lg">
-      <h4 className="font-medium mb-1">{title}</h4>
+    <div className="border rounded-lg p-4">
+      <h4 className="font-medium mb-2">{title}</h4>
       <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+// Document Item Component
+interface DocumentItemProps {
+  title: string;
+  url: string;
+}
+
+function DocumentItem({ title, url }: DocumentItemProps) {
+  return (
+    <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex items-center gap-3">
+        <FileText className="h-5 w-5 text-primary" />
+        <span className="font-medium">{title}</span>
+      </div>
+      <Button variant="ghost" size="sm" asChild>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+          <Download className="h-4 w-4" />
+          <span>Download</span>
+        </a>
+      </Button>
+    </div>
+  );
+}
+
+// Property Feature Item Component
+interface FeatureItemProps {
+  feature: string;
+}
+
+function FeatureItem({ feature }: FeatureItemProps) {
+  return (
+    <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg">
+      <Sparkles className="h-4 w-4 text-primary" />
+      <span className="text-sm">{feature}</span>
     </div>
   );
 }
