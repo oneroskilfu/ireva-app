@@ -1,70 +1,95 @@
 import React from 'react';
-import { Box, Typography, Button, Container, Alert } from '@mui/material';
-import { ShieldAlert, Home, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../contexts/auth-context';
+import { Container, Typography, Box, Button, Paper } from '@mui/material';
+import { Lock, ArrowLeft, Home } from 'lucide-react';
 import { Link } from 'wouter';
+import { useAuth } from '../contexts/auth-context';
 
 const UnauthorizedPage: React.FC = () => {
-  const { user, role, isAuthenticated } = useAuth();
-
+  const { user } = useAuth();
+  
   return (
-    <Container maxWidth="md">
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          minHeight: '80vh',
-          textAlign: 'center',
-          py: 4
-        }}
-      >
-        <ShieldAlert size={64} color="#f44336" />
+    <Container maxWidth="md" sx={{ py: 8 }}>
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
+        <Box 
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            backgroundColor: 'error.light',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto',
+            mb: 3
+          }}
+        >
+          <Lock size={40} color="#fff" />
+        </Box>
         
-        <Typography variant="h3" component="h1" fontWeight="bold" color="error" gutterBottom sx={{ mt: 2 }}>
+        <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
           Access Denied
         </Typography>
         
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 4, maxWidth: '600px' }}>
-          You don't have permission to access this page or resource.
+        <Typography variant="subtitle1" color="text.secondary" paragraph>
+          Sorry, you don't have permission to access this page.
         </Typography>
         
-        <Alert severity="info" sx={{ width: '100%', maxWidth: '600px', mb: 4 }}>
-          {isAuthenticated ? (
-            <>
-              You are logged in as <strong>{user?.username}</strong> with role <strong>{role || "none"}</strong>, 
-              but this area is restricted to <strong>admin</strong> users only.
-            </>
-          ) : (
-            <>
-              This page requires administrator privileges. Please log in with an admin account.
-            </>
-          )}
-        </Alert>
+        <Box 
+          sx={{ 
+            bgcolor: '#FFF9E6', 
+            p: 3, 
+            borderRadius: 2, 
+            mt: 3, 
+            mb: 4,
+            textAlign: 'left'
+          }}
+        >
+          <Typography variant="body1">
+            {user ? (
+              <>
+                <strong>Current User:</strong> {user.username}<br />
+                <strong>Role Required:</strong> Administrator<br />
+                <strong>Your Role:</strong> {user.role || 'Investor'}<br />
+              </>
+            ) : (
+              <>
+                <strong>Status:</strong> Not Logged In<br />
+                <strong>Role Required:</strong> Administrator<br />
+              </>
+            )}
+          </Typography>
+        </Box>
         
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
           <Button 
             variant="outlined" 
-            startIcon={<ArrowLeft />}
-            component={Link}
-            href="/login"
-            sx={{ my: 1 }}
+            component={Link} 
+            href="/"
+            startIcon={<Home size={18} />}
           >
-            Back to Login
+            Go to Home
           </Button>
           
           <Button 
-            variant="contained" 
-            startIcon={<Home />}
-            component={Link}
-            href="/"
-            sx={{ my: 1 }}
+            variant="outlined" 
+            onClick={() => window.history.back()}
+            startIcon={<ArrowLeft size={18} />}
           >
-            Go to Homepage
+            Go Back
           </Button>
+          
+          {!user && (
+            <Button 
+              variant="contained" 
+              color="primary"
+              component={Link} 
+              href="/login"
+            >
+              Log In
+            </Button>
+          )}
         </Box>
-      </Box>
+      </Paper>
     </Container>
   );
 };

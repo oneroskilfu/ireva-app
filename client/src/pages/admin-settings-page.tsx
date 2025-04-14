@@ -48,7 +48,7 @@ const AdminSettingsPage: React.FC = () => {
       <AdminOnlyComponent title="Global Platform Settings">
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid item component="div" xs={12} md={6}>
               <Paper elevation={2} sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
                   Investment Parameters
@@ -96,7 +96,7 @@ const AdminSettingsPage: React.FC = () => {
               </Paper>
             </Grid>
             
-            <Grid item xs={12} md={6}>
+            <Grid item component="div" xs={12} md={6}>
               <Paper elevation={2} sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
                   Platform Features

@@ -10,6 +10,7 @@ import CommunityPage from "@/pages/community-page";
 import MarketTrendsPage from "@/pages/market-trends-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminSettingsPage from "@/pages/admin-settings-page";
+import SimpleAdminPage from "@/pages/simple-admin-page";
 import AccountSecurityPage from "@/pages/account-security";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import SupportPage from "@/pages/support-page";
@@ -81,6 +82,7 @@ function Router() {
           component={AdminSettingsPage}
           allowedRoles={['admin']} 
         />
+        <Route path="/admin/simple" component={SimpleAdminPage} />
         <ProtectedRoute path="/account/security" component={AccountSecurityPage} />
         <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
         
