@@ -11,3 +11,30 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Grid background patterns for design elements */
+  .bg-grid-slate-100 {
+    background-image: linear-gradient(to right, #f1f5f9 1px, transparent 1px),
+                      linear-gradient(to bottom, #f1f5f9 1px, transparent 1px);
+  }
+  
+  .bg-grid-slate-700 {
+    background-image: linear-gradient(to right, #334155 1px, transparent 1px),
+                      linear-gradient(to bottom, #334155 1px, transparent 1px);
+  }
+
+  /* Gradients for text and UI elements */
+  .primary-gradient-text {
+    @apply bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent;
+  }
+
+  /* Primary color variations for gradients */
+  .primary-light {
+    color: color-mix(in srgb, theme('colors.primary'), white 30%);
+  }
+  
+  .primary-dark {
+    color: color-mix(in srgb, theme('colors.primary'), black 20%);
+  }
+}
