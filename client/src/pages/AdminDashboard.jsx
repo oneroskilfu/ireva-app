@@ -8,7 +8,23 @@ const AdminDashboard = () => {
 
   return (
     <div>
-      <h1>Admin Dashboard</h1>
+      <h2>Admin Dashboard</h2>
+      <div>
+        <h4>Quick Stats</h4>
+        <ul>
+          <li>Total Users: 320</li>
+          <li>Ongoing Projects: 12</li>
+          <li>Total ROI Paid: ₦24M</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Admin Tools</h4>
+        <button>Manage Users</button>
+        <button>Manage Properties</button>
+        <button>View Analytics</button>
+      </div>
+
       <button onClick={handleLogout}>Logout</button>
     </div>
   );
