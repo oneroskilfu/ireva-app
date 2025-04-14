@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { comparePassword } = require('../utils/passwordUtils');
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -23,19 +24,23 @@ exports.loginAdmin = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
-    // In a real app, you'd validate the password here
-    // This is simplified for the admin dashboard prototype
+    // Validate password
+    const isPasswordMatch = await comparePassword(password, user.password);
+    if (!isPasswordMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
     
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      isAdmin: true,
+      isAdmin: user.isAdmin,
       token: generateToken(user._id)
     });
     
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -44,20 +49,40 @@ exports.loginAdmin = async (req, res) => {
 // @access  Private/Admin
 exports.getDashboardData = async (req, res) => {
   try {
-    // Get count of users
-    const userCount = await User.countDocuments();
+    const { getPlatformStatistics } = require('../utils/statisticsUtils');
+    const statistics = await getPlatformStatistics();
     
-    // Get users with KYC status
-    const kycApproved = await User.countDocuments({ isKYCApproved: true });
+    res.json(statistics);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get user growth data
+// @route   GET /api/admin/user-growth
+// @access  Private/Admin
+exports.getUserGrowth = async (req, res) => {
+  try {
+    const { getUserGrowthData } = require('../utils/statisticsUtils');
+    const months = req.query.months ? parseInt(req.query.months) : 12;
+    const userData = await getUserGrowthData(months);
     
-    // Response with dashboard data
-    res.json({
-      userCount,
-      kycApproved,
-      kycPending: userCount - kycApproved,
-      kycApprovalRate: userCount > 0 ? (kycApproved / userCount) * 100 : 0
-    });
+    res.json(userData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get investment trend data
+// @route   GET /api/admin/investment-trends
+// @access  Private/Admin
+exports.getInvestmentTrends = async (req, res) => {
+  try {
+    const { getInvestmentTrendData } = require('../utils/statisticsUtils');
+    const months = req.query.months ? parseInt(req.query.months) : 12;
+    const investmentData = await getInvestmentTrendData(months);
     
+    res.json(investmentData);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
