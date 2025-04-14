@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { calculateROI, getInvestmentReturns } = require('../controllers/roiController');
+const roiController = require('../controllers/roiController');
 
-router.get('/', getInvestmentReturns);
-router.post('/calculate', calculateROI);
+// POST calculate ROI for a potential investment
+router.post('/calculate', roiController.calculateROI);
+
+// GET returns for all investments
+router.get('/investment-returns', roiController.getInvestmentReturns);
 
 module.exports = router;
