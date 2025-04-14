@@ -1,29 +1,161 @@
 const express = require('express');
+const User = require('../models/User');
+const verifyToken = require('../middleware/authMiddleware');
+const { verifyAdmin, verifyRole } = require('../middleware/roleMiddleware');
+
 const router = express.Router();
-const userController = require('../controllers/userController');
 
-// GET all users
-router.get('/', userController.getUsers);
+/**
+ * @route GET /api/users
+ * @desc Get all users (admin only)
+ * @access Admin
+ */
+router.get('/', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
-// GET specific user
-router.get('/:id', userController.getUserById);
+/**
+ * @route GET /api/users/:id
+ * @desc Get user by ID
+ * @access Private - only admin or the user themselves
+ */
+router.get('/:id', verifyToken, async (req, res) => {
+  try {
+    // Allow access if admin or if user is requesting their own data
+    if (req.user.role !== 'admin' && req.user.id !== req.params.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
 
-// POST create user
-router.post('/', userController.createUser);
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
-// PUT update user
-router.put('/:id', userController.updateUser);
+/**
+ * @route PUT /api/users/:id
+ * @desc Update user profile
+ * @access Private - only admin or the user themselves
+ */
+router.put('/:id', verifyToken, async (req, res) => {
+  try {
+    // Allow access if admin or if user is updating their own data
+    if (req.user.role !== 'admin' && req.user.id !== req.params.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
 
-// DELETE user
-router.delete('/:id', userController.deleteUser);
+    // Don't allow role changes unless admin
+    if (req.body.role && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Cannot change role without admin privileges' });
+    }
 
-// GET user investments
-router.get('/:id/investments', userController.getUserInvestments);
+    // Remove password field if present (password should be changed through a dedicated endpoint)
+    if (req.body.password) {
+      delete req.body.password;
+    }
 
-// GET user KYC status
-router.get('/:id/kyc', userController.getUserKYCStatus);
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
-// PUT update user KYC status
-router.put('/:id/kyc', userController.updateUserKYCStatus);
+/**
+ * @route DELETE /api/users/:id
+ * @desc Delete user
+ * @access Admin only
+ */
+router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * @route GET /api/users/profile/me
+ * @desc Get current user profile
+ * @access Private
+ */
+router.get('/profile/me', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * @route PUT /api/users/role/:id
+ * @desc Change user role (admin only)
+ * @access Admin only
+ */
+router.put('/role/:id', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { role } = req.body;
+    
+    if (!role) {
+      return res.status(400).json({ message: 'Role is required' });
+    }
+    
+    // Validate role
+    const validRoles = ['admin', 'investor', 'developer'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+    
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error changing user role:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 module.exports = router;
