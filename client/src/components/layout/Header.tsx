@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Building, User, Settings, Shield, LogOut } from "lucide-react";
+import { Building, User, Shield, LogOut, Menu, X, Home, Info, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AnimatedLink } from "@/components/ui/animated-link";
@@ -13,6 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 
 export default function Header() {
   const [location] = useLocation();
@@ -81,6 +89,101 @@ export default function Header() {
             </nav>
           </div>
           <div className="flex items-center">
+            {/* Mobile menu button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="sm:hidden mr-2">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] sm:w-[350px]">
+                <SheetHeader className="mb-6">
+                  <SheetTitle className="flex items-center text-left">
+                    <Building className="h-6 w-6 text-primary mr-2" />
+                    <span className="text-xl font-bold">REVA</span>
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col space-y-4">
+                  <SheetClose asChild>
+                    <Link href="/" className={`flex items-center p-2 rounded-md ${location === "/" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
+                      <Home className="h-5 w-5 mr-2" />
+                      Properties
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link href="/#how-it-works" className="flex items-center p-2 rounded-md hover:bg-gray-100">
+                      <Info className="h-5 w-5 mr-2" />
+                      How It Works
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link href="/#about" className="flex items-center p-2 rounded-md hover:bg-gray-100">
+                      <Building className="h-5 w-5 mr-2" />
+                      About
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link href="/market-trends" className={`flex items-center p-2 rounded-md ${location === "/market-trends" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
+                      <TrendingUp className="h-5 w-5 mr-2" />
+                      Market Trends
+                    </Link>
+                  </SheetClose>
+                  {user && (
+                    <>
+                      <SheetClose asChild>
+                        <Link href="/community" className={`flex items-center p-2 rounded-md ${location === "/community" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
+                          <Users className="h-5 w-5 mr-2" />
+                          Community
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/dashboard" className={`flex items-center p-2 rounded-md ${location === "/dashboard" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
+                          <Building className="h-5 w-5 mr-2" />
+                          Dashboard
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/account/profile" className="flex items-center p-2 rounded-md hover:bg-gray-100">
+                          <User className="h-5 w-5 mr-2" />
+                          Profile
+                        </Link>
+                      </SheetClose>
+                      <div className="pt-4 border-t">
+                        <Button 
+                          variant="ghost" 
+                          className="flex w-full justify-start text-red-600 hover:text-red-800 hover:bg-red-50"
+                          onClick={handleLogout}
+                          disabled={logoutMutation.isPending}
+                        >
+                          <LogOut className="h-5 w-5 mr-2" />
+                          {logoutMutation.isPending ? "Signing out..." : "Sign Out"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                  {!user && (
+                    <div className="pt-4 border-t space-y-2">
+                      <SheetClose asChild>
+                        <Link href="/auth?tab=login">
+                          <Button variant="outline" className="w-full">
+                            Login
+                          </Button>
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/auth">
+                          <Button variant="default" className="w-full">
+                            Create Account
+                          </Button>
+                        </Link>
+                      </SheetClose>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+            
+            {/* Desktop navigation */}
             {user ? (
               <>
                 <AnimatedLink href="/dashboard">
@@ -145,7 +248,7 @@ export default function Header() {
             ) : (
               <div className="flex space-x-3">
                 <AnimatedLink href="/auth?tab=login">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="hidden sm:inline-flex">
                     Login
                   </Button>
                 </AnimatedLink>

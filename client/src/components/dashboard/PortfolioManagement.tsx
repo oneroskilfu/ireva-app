@@ -67,19 +67,22 @@ export default function PortfolioManagement() {
   const { toast } = useToast();
   const [activeSubTab, setActiveSubTab] = useState("all");
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [realTimeInvestments, setRealTimeInvestments] = useState<InvestmentWithDetails[]>([]);
-  const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; investment: InvestmentWithDetails | null }>({
-    open: false,
-    investment: null,
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    investment?: InvestmentWithDetails;
+  }>({
+    open: false
   });
 
-  // Fetch investments data
+  // Fetch investments
   const { data: investments = [], isLoading } = useQuery({
     queryKey: ['/api/investments'],
-    enabled: !!user,
+    enabled: !!user
   });
 
-  // Setup WebSocket connection for real-time updates
+  // Connect to WebSocket for real-time investment updates
   useEffect(() => {
     if (!user) return;
 
@@ -88,10 +91,12 @@ export default function PortfolioManagement() {
     const newSocket = new WebSocket(wsUrl);
 
     newSocket.onopen = () => {
-      console.log("WebSocket connected");
-      // Subscribe to real-time investment updates
+      setIsConnected(true);
+      console.log("WebSocket connected for portfolio management");
+      
+      // Subscribe to investment updates
       newSocket.send(JSON.stringify({
-        type: 'subscribe_investments',
+        type: 'subscribe',
         userId: user.id
       }));
     };
@@ -99,6 +104,8 @@ export default function PortfolioManagement() {
     newSocket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        
+        // Handle investment updates
         if (message.type === 'investment_update') {
           setRealTimeInvestments(message.data);
         }
@@ -109,10 +116,12 @@ export default function PortfolioManagement() {
 
     newSocket.onerror = (error) => {
       console.error("WebSocket error:", error);
+      setIsConnected(false);
     };
 
     newSocket.onclose = () => {
       console.log("WebSocket disconnected");
+      setIsConnected(false);
     };
 
     setSocket(newSocket);
@@ -125,7 +134,7 @@ export default function PortfolioManagement() {
   }, [user]);
 
   // Combine static and real-time investment data
-  const combinedInvestments = investments.map((investment: InvestmentWithDetails) => {
+  const combinedInvestments = (investments as InvestmentWithDetails[]).map((investment: InvestmentWithDetails) => {
     const realTimeData = realTimeInvestments.find(rtInv => rtInv.id === investment.id);
     return {
       ...investment,
@@ -134,14 +143,14 @@ export default function PortfolioManagement() {
   });
 
   // Calculate portfolio metrics
-  const totalInvested = combinedInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalCurrentValue = combinedInvestments.reduce((sum, inv) => sum + (inv.currentValue || inv.amount), 0);
-  const totalReturns = combinedInvestments.reduce((sum, inv) => sum + (inv.returns || 0), 0);
+  const totalInvested = combinedInvestments.reduce((sum: number, inv: InvestmentWithDetails) => sum + inv.amount, 0);
+  const totalCurrentValue = combinedInvestments.reduce((sum: number, inv: InvestmentWithDetails) => sum + (inv.currentValue || inv.amount), 0);
+  const totalReturns = combinedInvestments.reduce((sum: number, inv: InvestmentWithDetails) => sum + (inv.returns || 0), 0);
   const totalAppreciation = totalCurrentValue - totalInvested;
   const appreciationPercentage = totalInvested > 0 ? (totalAppreciation / totalInvested) * 100 : 0;
 
   // Filter investments based on active tab
-  const filteredInvestments = combinedInvestments.filter((inv) => {
+  const filteredInvestments = combinedInvestments.filter((inv: InvestmentWithDetails) => {
     if (activeSubTab === "all") return true;
     if (activeSubTab === "residential") return inv.property.type === "residential";
     if (activeSubTab === "commercial") return inv.property.type === "commercial";
@@ -198,7 +207,7 @@ export default function PortfolioManagement() {
       </div>
 
       {/* Portfolio Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -295,69 +304,109 @@ export default function PortfolioManagement() {
               <Button>Browse Properties</Button>
             </div>
           ) : (
-            <Table>
-              <TableCaption>Real-time investment data updated every minute</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Property</TableHead>
-                  <TableHead>Invested Amount</TableHead>
-                  <TableHead>Current Value</TableHead>
-                  <TableHead>Returns</TableHead>
-                  <TableHead>Appreciation</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvestments.map((investment) => (
-                  <TableRow key={investment.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 mr-2 overflow-hidden rounded">
-                          <img 
-                            src={investment.property.imageUrl} 
-                            alt={investment.property.name}
-                            className="h-full w-full object-cover"
-                          />
+            <>
+              {/* Desktop View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableCaption>Real-time investment data updated every minute</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Property</TableHead>
+                      <TableHead>Invested Amount</TableHead>
+                      <TableHead>Current Value</TableHead>
+                      <TableHead>Returns</TableHead>
+                      <TableHead>Appreciation</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvestments.map((investment: InvestmentWithDetails) => (
+                      <TableRow key={investment.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 mr-2 overflow-hidden rounded">
+                              <img 
+                                src={investment.property.imageUrl} 
+                                alt={investment.property.name}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <span>{investment.property.name}</span>
+                              <span className="text-xs text-muted-foreground">{investment.property.location}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>₦{investment.amount.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <span className="font-semibold">
+                            ₦{(investment.currentValue || investment.amount).toLocaleString()}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-semibold">₦{(investment.returns || 0).toLocaleString()}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {investment.rentalIncome ? `₦${investment.rentalIncome}/mo` : 'Pending'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {investment.currentValue ? (
+                            <Badge className={(investment.currentValue - investment.amount) >= 0 ? "bg-green-500" : "bg-red-500"}>
+                              {(investment.currentValue - investment.amount) >= 0 ? "+" : ""}
+                              {(((investment.currentValue - investment.amount) / investment.amount) * 100).toFixed(2)}%
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Pending</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleReinvest(investment.id)}
+                            >
+                              <Banknote className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => setDetailsDialog({
+                                open: true,
+                                investment
+                              })}
+                            >
+                              <Info className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Mobile View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {filteredInvestments.map((investment: InvestmentWithDetails) => (
+                  <Card key={investment.id} className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="h-12 w-12 rounded overflow-hidden">
+                            <img 
+                              src={investment.property.imageUrl} 
+                              alt={investment.property.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">{investment.property.name}</CardTitle>
+                            <CardDescription>{investment.property.location}</CardDescription>
+                          </div>
                         </div>
-                        <div className="flex flex-col">
-                          <span>{investment.property.name}</span>
-                          <span className="text-xs text-muted-foreground">{investment.property.location}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>₦{investment.amount.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <span className="font-semibold">
-                        ₦{(investment.currentValue || investment.amount).toLocaleString()}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-semibold">₦{(investment.returns || 0).toLocaleString()}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {investment.rentalIncome ? `₦${investment.rentalIncome}/mo` : 'Pending'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {investment.currentValue ? (
-                        <Badge className={(investment.currentValue - investment.amount) >= 0 ? "bg-green-500" : "bg-red-500"}>
-                          {(investment.currentValue - investment.amount) >= 0 ? "+" : ""}
-                          {(((investment.currentValue - investment.amount) / investment.amount) * 100).toFixed(2)}%
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">Pending</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleReinvest(investment.id)}
-                        >
-                          <Banknote className="h-4 w-4" />
-                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon"
@@ -369,11 +418,46 @@ export default function PortfolioManagement() {
                           <Info className="h-4 w-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Invested</p>
+                          <p className="font-medium">₦{investment.amount.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Current Value</p>
+                          <p className="font-medium">₦{(investment.currentValue || investment.amount).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Returns</p>
+                          <p className="font-medium">₦{(investment.returns || 0).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Appreciation</p>
+                          {investment.currentValue ? (
+                            <Badge className={(investment.currentValue - investment.amount) >= 0 ? "bg-green-500" : "bg-red-500"}>
+                              {(investment.currentValue - investment.amount) >= 0 ? "+" : ""}
+                              {(((investment.currentValue - investment.amount) / investment.amount) * 100).toFixed(2)}%
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Pending</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-0 flex justify-between">
+                      <Badge variant="outline" className="capitalize">
+                        {investment.status || 'Active'}
+                      </Badge>
+                      <Button variant="outline" size="sm" onClick={() => handleReinvest(investment.id)}>
+                        <Banknote className="h-4 w-4 mr-2" /> Reinvest
+                      </Button>
+                    </CardFooter>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -399,17 +483,17 @@ export default function PortfolioManagement() {
                   <h3 className="text-lg font-semibold mb-4">
                     {detailsDialog.investment.property.name}
                   </h3>
-                  <div className="flex space-x-4 mb-4">
+                  <div className="flex flex-col sm:flex-row gap-4 mb-4">
                     <img 
                       src={detailsDialog.investment.property.imageUrl} 
                       alt={detailsDialog.investment.property.name}
-                      className="w-40 h-28 rounded-md object-cover"
+                      className="w-full sm:w-40 h-28 rounded-md object-cover"
                     />
                     <div>
                       <p className="text-sm text-muted-foreground mb-2">
                         {detailsDialog.investment.property.description}
                       </p>
-                      <div className="flex space-x-4">
+                      <div className="flex flex-wrap gap-2">
                         <Badge variant="outline">
                           {detailsDialog.investment.property.type}
                         </Badge>
@@ -427,7 +511,7 @@ export default function PortfolioManagement() {
                 <Separator />
                 
                 {/* Investment Details */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Investment Date</p>
                     <p className="font-medium">
@@ -487,7 +571,7 @@ export default function PortfolioManagement() {
                         </span>
                       </div>
                       <Progress value={40} className="h-2" />
-                      <div className="flex justify-between mt-1">
+                      <div className="flex flex-wrap justify-between mt-1">
                         <span className="text-xs text-muted-foreground">
                           Invested {new Date(detailsDialog.investment.date).toLocaleDateString()}
                         </span>
@@ -498,7 +582,7 @@ export default function PortfolioManagement() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Monthly Rental Income</p>
                         <p className="font-medium">
@@ -537,7 +621,7 @@ export default function PortfolioManagement() {
                   </p>
                   
                   <div className="bg-muted p-4 rounded-md">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-muted-foreground">Last Updated</p>
                         <p className="text-sm">
@@ -555,7 +639,7 @@ export default function PortfolioManagement() {
                 </div>
               </div>
               
-              <DialogFooter className="flex justify-between">
+              <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
                   Download Statement

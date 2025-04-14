@@ -160,25 +160,27 @@ export default function RealTimeInvestmentTracker() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
           <div>
             <CardTitle className="flex items-center">
               <LineChart className="h-5 w-5 mr-2 text-primary" />
-              Real-Time Investment Updates
+              Real-Time Updates
             </CardTitle>
             <CardDescription>
               Live updates on your property investments
             </CardDescription>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant={isConnected ? "outline" : "destructive"} className="flex items-center">
               <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} mr-1.5`}></div>
               {isConnected ? "Live" : "Disconnected"}
             </Badge>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleTimeString()}` : 'Waiting for updates...'}
-            </span>
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleTimeString()}` : 'Waiting...'}
+              </span>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -198,19 +200,19 @@ export default function RealTimeInvestmentTracker() {
                       {getUpdateIcon(update.type, update.change >= 0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between">
-                        <p className="text-sm font-medium">
+                      <div className="flex flex-wrap sm:flex-nowrap justify-between">
+                        <p className="text-sm font-medium truncate mr-2">
                           {update.propertyName}
                         </p>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {new Date(update.timestamp).toLocaleTimeString()}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
                         {update.message}
                       </p>
-                      <div className="mt-1 flex items-center">
-                        <Badge variant="outline" className="mr-2 text-xs">
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
                           {update.location}
                         </Badge>
                         {update.type !== 'distribution' && (
