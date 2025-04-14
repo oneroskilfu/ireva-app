@@ -1,4 +1,4 @@
-import { Github, Mail, ArrowRight, Send } from "lucide-react";
+import { Github, Mail, Send } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,29 +43,6 @@ export default function Footer() {
   return (
     <footer className="bg-background border-t py-10 md:py-12">
       <div className="container px-4 md:px-6">
-        {/* Newsletter subscription */}
-        <div className="mb-10 pb-10 border-b">
-          <div className="max-w-md mx-auto md:mx-0">
-            <h4 className="font-semibold text-lg mb-3">Subscribe for updates</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Stay updated on new investment opportunities and market insights.
-            </p>
-            <form onSubmit={handleSubscribe} className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Your email address"
-                className="focus-visible:ring-primary"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button type="submit" size="sm" className="shrink-0 gap-1">
-                Subscribe
-                <Send className="h-4 w-4 ml-1" />
-              </Button>
-            </form>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <h4 className="font-medium text-base">REVA</h4>
@@ -95,17 +72,27 @@ export default function Footer() {
           </div>
           
           <div className="space-y-4">
-            <h4 className="font-medium text-base">Contact</h4>
-            <ul className="space-y-3 text-sm">
-              <li className="flex">
-                <Mail className="h-4 w-4 mr-2 mt-0.5" />
-                <span className="text-muted-foreground">support@reva.com</span>
-              </li>
-              <li className="flex">
-                <Github className="h-4 w-4 mr-2 mt-0.5" />
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">GitHub</a>
-              </li>
-            </ul>
+            <h4 className="font-medium text-base">Subscribe for updates</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Stay updated on new investment opportunities and market insights.
+            </p>
+            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2">
+              <Input
+                type="email"
+                placeholder="Your email address"
+                className="focus-visible:ring-primary"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Button type="submit" size="sm" className="shrink-0 gap-1">
+                Subscribe
+                <Send className="h-4 w-4 ml-1" />
+              </Button>
+            </form>
+            <div className="pt-4 flex items-center text-sm text-muted-foreground">
+              <Mail className="h-4 w-4 mr-2" />
+              <span>support@reva.com</span>
+            </div>
           </div>
         </div>
         
