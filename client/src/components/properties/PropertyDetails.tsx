@@ -210,7 +210,7 @@ export default function PropertyDetails() {
       {/* Property Header */}
       <div className="flex flex-col lg:flex-row gap-6 mb-6">
         {/* Property Image */}
-        <div className="lg:w-5/12 mb-4 lg:mb-0">
+        <div className="lg:w-5/12 mb-4 lg:mb-0 property-image">
           <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video shadow-sm">
             <img 
               src={property.imageUrl} 
@@ -234,7 +234,7 @@ export default function PropertyDetails() {
           <p className="text-muted-foreground text-sm mb-4 max-w-prose">{property.description}</p>
           
           {/* Key Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-5 property-stats">
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Return</span>
               <span className="font-semibold flex items-center text-sm">
@@ -259,7 +259,7 @@ export default function PropertyDetails() {
           </div>
           
           {/* Funding Progress */}
-          <div className="mb-6">
+          <div className="mb-6 property-funding-progress">
             <div className="flex justify-between mb-1">
               <span className="text-xs font-medium">₦{property.currentFunding.toLocaleString()} raised</span>
               <span className="text-xs text-muted-foreground">₦{property.totalFunding.toLocaleString()} target</span>
@@ -283,7 +283,7 @@ export default function PropertyDetails() {
               {user ? (
                 <Dialog open={investDialogOpen} onOpenChange={setInvestDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="w-full sm:w-auto px-8">
+                    <Button className="w-full sm:w-auto px-8 property-invest-button">
                       Invest Now
                     </Button>
                   </DialogTrigger>
@@ -345,7 +345,7 @@ export default function PropertyDetails() {
             </div>
             
             {/* Social Share Buttons - Separated for better visibility */}
-            <div className="flex items-center mt-4">
+            <div className="flex items-center mt-4 property-share-buttons">
               <span className="text-sm text-muted-foreground mr-3">Share:</span>
               <SocialShareButtons
                 title={`Check out ${property.name} - ${property.targetReturn}% returns on REVA`}
