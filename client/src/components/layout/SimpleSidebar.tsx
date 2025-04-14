@@ -6,10 +6,10 @@ const SimpleSidebar: React.FC = () => {
   const [location, navigate] = useLocation();
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/messages', label: 'Messages' },
-    { path: '/investments', label: 'Investments' },
-    { path: '/roi', label: 'ROI Tracker' }
+    { path: '/simple-dashboard', label: 'Dashboard' },
+    { path: '/simple-messages', label: 'Messages' },
+    { path: '/simple-investments', label: 'Investments' },
+    { path: '/simple-roi', label: 'ROI Tracker' }
   ];
 
   return (

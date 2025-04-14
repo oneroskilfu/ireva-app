@@ -22,6 +22,10 @@ import Messages from "./components/Messages";
 import Investments from "./components/Investments";
 import Dashboard from "./components/Dashboard";
 import MuiDashboardPage from "./pages/mui-dashboard-page";
+import SimpleDashboardPage from "./pages/simple-dashboard-page";
+import SimpleInvestmentsPage from "./pages/simple-investments-page";
+import SimpleRoiPage from "./pages/simple-roi-page";
+import SimpleMessagesPage from "./pages/simple-messages-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -76,6 +80,10 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <ProtectedRoute path="/dashboard" component={DashboardPage} />
         <ProtectedRoute path="/mui-dashboard" component={MuiDashboardPage} />
+        <ProtectedRoute path="/simple-dashboard" component={SimpleDashboardPage} />
+        <ProtectedRoute path="/simple-investments" component={SimpleInvestmentsPage} />
+        <ProtectedRoute path="/simple-roi" component={SimpleRoiPage} />
+        <ProtectedRoute path="/simple-messages" component={SimpleMessagesPage} />
         <ProtectedRoute path="/community" component={CommunityPage} />
         <Route path="/market-trends" component={MarketTrendsPage} />
         <ProtectedRoute path="/admin" component={AdminDashboard} />
