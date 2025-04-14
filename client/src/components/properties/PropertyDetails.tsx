@@ -514,9 +514,10 @@ export default function PropertyDetails() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant={
-                          property.riskRating === "Low" ? "success" : 
-                          property.riskRating === "Medium" ? "warning" : "destructive"
+                        <Badge className={
+                          property.riskRating === "Low" ? "bg-green-100 text-green-800 hover:bg-green-100/80" : 
+                          property.riskRating === "Medium" ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100/80" : 
+                          "bg-red-100 text-red-800 hover:bg-red-100/80"
                         }>
                           {property.riskRating} Risk
                         </Badge>

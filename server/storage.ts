@@ -328,38 +328,164 @@ export class MemStorage implements IStorage {
       {
         name: "Skyline Apartments",
         location: "New York",
-        description: "Modern apartment complex in downtown with 120 units and premium amenities.",
+        description: "Luxury residential apartment complex with 120 units, rooftop amenities, and prime location in the heart of Manhattan. The property features high-end finishes, smart home technology, and stunning city views.",
         type: "residential",
         imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        additionalImages: JSON.stringify([
+          "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+        ]),
+        videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        virtualTourUrl: "https://my.matterport.com/show/?m=YAG8dwjKqDV",
+        
+        // Financial details
         targetReturn: "12.5",
         minimumInvestment: 1000,
         term: 36,
         totalFunding: 5000000,
         currentFunding: 3200000,
+        
+        // Project metrics
         numberOfInvestors: 180,
-        size: "120 Units",
+        size: "120 Units, 85,000 sq ft",
         builtYear: "2020",
         occupancy: "92%",
         cashFlow: "$450,000/year",
-        daysLeft: 28
+        daysLeft: 28,
+        
+        // Detailed location information
+        address: "123 High Rise Avenue",
+        city: "New York",
+        state: "NY",
+        zipCode: "10001",
+        latitude: "40.7128",
+        longitude: "-74.0060",
+        neighborhoodDescription: "Located in the vibrant Chelsea neighborhood, this property is just steps away from the High Line, Chelsea Market, and numerous dining and entertainment options. The area has seen significant appreciation over the past decade and continues to be one of Manhattan's most desirable neighborhoods.",
+        
+        // Developer/Sponsor information
+        developerName: "Skyline Developers LLC",
+        developerDescription: "Skyline Developers has over 25 years of experience in luxury residential developments with a portfolio of over $2 billion in completed projects. Their properties consistently outperform market averages in both appreciation and rental yields.",
+        developerLogoUrl: "https://placehold.co/200x100?text=Skyline+Developers",
+        
+        // Project timeline
+        acquisitionDate: new Date("2020-06-15").toISOString(),
+        constructionStartDate: new Date("2020-08-01").toISOString(),
+        estimatedCompletionDate: new Date("2023-12-31").toISOString(),
+        
+        // Due diligence
+        documentUrls: JSON.stringify([
+          { title: "Property Appraisal", url: "https://example.com/docs/appraisal.pdf" },
+          { title: "Financial Projections", url: "https://example.com/docs/financial-projections.pdf" },
+          { title: "Market Analysis", url: "https://example.com/docs/market-analysis.pdf" },
+          { title: "Legal Structure", url: "https://example.com/docs/legal-structure.pdf" }
+        ]),
+        riskRating: "Low",
+        riskDescription: "This investment is considered low risk due to the property's prime location, strong pre-leasing activity, and experienced development team. The debt-to-equity ratio is conservative at 65%, providing a cushion against market fluctuations.",
+        
+        // Detailed financial projections
+        projectedIrr: "14.5",
+        projectedCashYield: "6.8",
+        projectedAppreciation: "3.5",
+        projectedTotalReturn: "24.8",
+        
+        // Property features & amenities
+        features: JSON.stringify([
+          "Floor-to-ceiling windows",
+          "Hardwood flooring",
+          "Quartz countertops",
+          "Stainless steel appliances",
+          "Smart home technology",
+          "In-unit washer/dryer"
+        ]),
+        amenities: JSON.stringify([
+          "Rooftop pool and lounge",
+          "24/7 concierge service",
+          "State-of-the-art fitness center",
+          "Pet spa",
+          "Coworking space",
+          "Package room with cold storage"
+        ])
       },
       {
         name: "Westfield Retail Center",
         location: "Los Angeles",
-        description: "Shopping center with 45 retail units in a prime location with high foot traffic.",
+        description: "Prime shopping center with 45 retail units in an upscale area with consistent high foot traffic. Features modern architecture, spacious common areas, and convenient parking.",
         type: "commercial",
         imageUrl: "https://images.unsplash.com/photo-1577415124269-fc1140a69e91?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        additionalImages: JSON.stringify([
+          "https://images.unsplash.com/photo-1519501025264-65ba15a82390?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1555447408-4a1c608e41fd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1611079830811-0803f2157b0e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+        ]),
+        videoUrl: "https://www.youtube.com/embed/jNQXAC9IVRw",
+        virtualTourUrl: "https://my.matterport.com/show/?m=RizJDmybZ3y",
+        
+        // Financial details
         targetReturn: "9.8",
         minimumInvestment: 2500,
         term: 60,
         totalFunding: 9000000,
         currentFunding: 7400000,
+        
+        // Project metrics
         numberOfInvestors: 120,
-        size: "45 Units",
+        size: "45 Units, 125,000 sq ft",
         builtYear: "2015",
         occupancy: "88%",
         cashFlow: "$780,000/year",
-        daysLeft: 45
+        daysLeft: 45,
+        
+        // Detailed location information
+        address: "456 Retail Row",
+        city: "Los Angeles",
+        state: "CA",
+        zipCode: "90210",
+        latitude: "34.0522",
+        longitude: "-118.2437",
+        neighborhoodDescription: "Located in a prime retail district with high-income demographics and excellent visibility from major thoroughfares. The area features complementary businesses that drive consistent foot traffic throughout the week and increased weekend visits.",
+        
+        // Developer/Sponsor information
+        developerName: "Westfield Commercial Properties",
+        developerDescription: "Westfield Commercial Properties specializes in retail developments in premium locations. With a 30-year track record, they've developed over 3 million square feet of successful retail space across the western United States.",
+        developerLogoUrl: "https://placehold.co/200x100?text=Westfield+Properties",
+        
+        // Project timeline
+        acquisitionDate: new Date("2014-03-10").toISOString(),
+        constructionStartDate: new Date("2014-05-15").toISOString(),
+        estimatedCompletionDate: new Date("2025-08-30").toISOString(),
+        
+        // Due diligence
+        documentUrls: JSON.stringify([
+          { title: "Property Appraisal", url: "https://example.com/docs/westfield-appraisal.pdf" },
+          { title: "Tenant Mix Analysis", url: "https://example.com/docs/westfield-tenant-mix.pdf" },
+          { title: "Market Study", url: "https://example.com/docs/westfield-market-study.pdf" }
+        ]),
+        riskRating: "Medium",
+        riskDescription: "This investment carries medium risk due to evolving retail trends and competitive market conditions. Mitigating factors include the prime location, diverse tenant mix, and experienced property management.",
+        
+        // Detailed financial projections
+        projectedIrr: "11.3",
+        projectedCashYield: "5.8",
+        projectedAppreciation: "2.9",
+        projectedTotalReturn: "20.0",
+        
+        // Property features & amenities
+        features: JSON.stringify([
+          "Modern storefront designs",
+          "High visibility retail spaces",
+          "Digital signage throughout",
+          "Energy-efficient HVAC systems",
+          "24/7 security monitoring"
+        ]),
+        amenities: JSON.stringify([
+          "Abundant parking (500+ spaces)",
+          "Food court with 8 vendors",
+          "Children's play area",
+          "Public WiFi",
+          "Electric vehicle charging stations"
+        ])
       },
       {
         name: "Logistics Hub",
