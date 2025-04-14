@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { UserRound, LayoutDashboard, Building2, Users, BarChartBig, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { UserRound, LayoutDashboard, Building2, Users, BarChartBig, Settings, HelpCircle, LogOut, TrendingUp } from 'lucide-react';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -43,6 +43,24 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
               <a className={`flex items-center p-3 rounded-md ${isActive('/projects')}`}>
                 <Building2 className="mr-2 h-5 w-5" />
                 <span>Projects</span>
+              </a>
+            </Link>
+          </li>
+          
+          <li>
+            <Link href="/properties">
+              <a className={`flex items-center p-3 rounded-md ${isActive('/properties')}`}>
+                <Building2 className="mr-2 h-5 w-5" />
+                <span>Properties</span>
+              </a>
+            </Link>
+          </li>
+          
+          <li>
+            <Link href="/roi">
+              <a className={`flex items-center p-3 rounded-md ${isActive('/roi')}`}>
+                <TrendingUp className="mr-2 h-5 w-5" />
+                <span>ROI Tracker</span>
               </a>
             </Link>
           </li>

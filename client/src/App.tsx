@@ -16,6 +16,8 @@ import HowItWorksPage from "@/pages/how-it-works";
 import JwtAuthTest from "@/pages/jwt-auth-test";
 import Projects from "./components/Projects";
 import Users from "./components/Users";
+import Properties from "./components/Properties";
+import RoiTracker from "./components/RoiTracker";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -63,6 +65,8 @@ function Router() {
         <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
         <ProtectedRoute path="/projects" component={Projects} />
         <ProtectedRoute path="/users" component={Users} />
+        <ProtectedRoute path="/roi" component={RoiTracker} />
+        <ProtectedRoute path="/properties" component={Properties} />
         <Route path="/support" component={SupportPage} />
         <Route path="/how-it-works" component={HowItWorksPage} />
         <Route path="/jwt-auth-test" component={JwtAuthTest} />
