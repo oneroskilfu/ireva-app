@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
+import Footer from "@/components/layout/Footer";
 
 // Animation variants for the sections
 const containerVariants = {
@@ -455,6 +456,8 @@ export default function HowItWorksPage() {
           </div>
         </div>
       </section>
+      
+      <Footer />
     </div>
   );
 }
