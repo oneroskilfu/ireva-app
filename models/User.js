@@ -1,146 +1,132 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-const UserSchema = new Schema({
+const UserSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true,
-    unique: true
+    required: [true, 'Username is required'],
+    unique: true,
+    trim: true,
+    minlength: [3, 'Username must be at least 3 characters'],
+    maxlength: [50, 'Username cannot exceed 50 characters']
   },
   email: {
     type: String,
-    required: true,
-    unique: true
+    required: [true, 'Email is required'],
+    unique: true,
+    match: [
+      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      'Please provide a valid email'
+    ]
   },
   password: {
     type: String,
-    required: true
-  },
-  fullName: {
-    type: String,
-    required: true
-  },
-  phoneNumber: {
-    type: String,
-    required: false
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters'],
+    select: false // Don't return password in query results
   },
   role: {
     type: String,
-    enum: ['investor', 'admin', 'projectOwner'],
+    enum: ['admin', 'investor', 'project_owner'],
     default: 'investor'
   },
-  avatar: {
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  phoneNumber: {
     type: String,
-    default: ''
+    match: [/^\+[1-9]\d{1,14}$/, 'Please provide a valid phone number in E.164 format'],
+    sparse: true // Allow null values but enforce uniqueness if provided
+  },
+  kycStatus: {
+    type: String,
+    enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+    default: 'not_submitted'
+  },
+  kycDocuments: {
+    idCard: {
+      type: String,
+      default: null
+    },
+    addressProof: {
+      type: String,
+      default: null
+    },
+    selfie: {
+      type: String,
+      default: null
+    }
   },
   walletBalance: {
     type: Number,
     default: 0
   },
-  investments: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Investment'
-  }],
-  // KYC verification status
-  kycVerified: {
-    type: Boolean,
-    default: false
-  },
-  kycDocuments: {
-    idDocument: { type: String, default: '' },
-    addressProof: { type: String, default: '' },
-    photo: { type: String, default: '' },
-    submitted: { type: Boolean, default: false },
-    reviewedAt: { type: Date, default: null }
-  },
-  // Authentication and security
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
   mfaEnabled: {
     type: Boolean,
     default: false
   },
-  mfaMethod: {
-    type: String,
-    enum: ['app', 'sms', 'email', null],
-    default: null
-  },
   mfaSecret: {
     type: String,
-    default: null
+    select: false // Don't return MFA secret in query results
   },
-  backupCodes: [{
-    code: String,
-    used: { type: Boolean, default: false }
-  }],
-  lastLogin: {
-    type: Date,
-    default: null
+  backupCodes: {
+    type: [String],
+    select: false // Don't return backup codes in query results
   },
-  securityQuestions: [{
-    question: String,
-    answer: String
-  }],
-  // Preferences and notification settings
-  preferences: {
-    emailNotifications: { type: Boolean, default: true },
-    smsNotifications: { type: Boolean, default: false },
-    pushNotifications: { type: Boolean, default: false },
-    language: { type: String, default: 'en' },
-    currency: { type: String, default: 'NGN' }
-  },
-  // Social media integration
-  socialAccounts: {
-    facebook: { type: String, default: '' },
-    twitter: { type: String, default: '' },
-    linkedin: { type: String, default: '' }
-  },
-  // Additional metadata
-  bio: {
-    type: String,
-    default: ''
-  },
-  location: {
-    city: String,
-    state: String,
-    country: { type: String, default: 'Nigeria' }
-  },
-  // Session management
-  activeSessions: [{
-    token: String,
-    device: String,
-    ip: String,
-    createdAt: { type: Date, default: Date.now },
-    lastActive: { type: Date, default: Date.now }
-  }],
-  // Community and social features
-  referredBy: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  },
-  referrals: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  achievements: [{
-    type: { type: String },
-    name: String,
-    description: String,
-    dateEarned: { type: Date, default: Date.now }
-  }],
+  lastLogin: Date,
   createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
     type: Date,
     default: Date.now
   }
 });
 
-// Update the updatedAt field on save
-UserSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
+// Hash password before saving
+UserSchema.pre('save', async function(next) {
+  // Only hash the password if it's modified or new
+  if (!this.isModified('password')) {
+    return next();
+  }
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
+
+// Method to check if password matches
+UserSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Method to generate JWT token
+UserSchema.methods.generateAuthToken = function() {
+  return jwt.sign(
+    { id: this._id, username: this.username, role: this.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE || '30d' }
+  );
+};
+
+// Static method to find user by id and update last login
+UserSchema.statics.findByIdAndUpdateLogin = async function(id) {
+  return await this.findByIdAndUpdate(
+    id,
+    { lastLogin: Date.now() },
+    { new: true, runValidators: true }
+  ).select('-password -emailVerificationToken -resetPasswordToken');
+};
 
 module.exports = mongoose.model('User', UserSchema);
