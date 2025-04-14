@@ -19,6 +19,7 @@ import Users from "./components/Users";
 import Properties from "./components/Properties";
 import RoiTracker from "./components/RoiTracker";
 import Messages from "./components/Messages";
+import Investments from "./components/Investments";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -69,6 +70,7 @@ function Router() {
         <ProtectedRoute path="/roi" component={RoiTracker} />
         <ProtectedRoute path="/properties" component={Properties} />
         <ProtectedRoute path="/messages" component={Messages} />
+        <ProtectedRoute path="/investments" component={Investments} />
         <Route path="/support" component={SupportPage} />
         <Route path="/how-it-works" component={HowItWorksPage} />
         <Route path="/jwt-auth-test" component={JwtAuthTest} />

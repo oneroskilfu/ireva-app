@@ -11,7 +11,8 @@ import {
   LogOut, 
   TrendingUp, 
   MessageSquare, 
-  Mail
+  Mail,
+  DollarSign
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -78,6 +79,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
           </li>
           
           <li>
+            <Link href="/investments">
+              <a className={`flex items-center p-3 rounded-md ${isActive('/investments')}`}>
+                <DollarSign className="mr-2 h-5 w-5" />
+                <span>Investments</span>
+              </a>
+            </Link>
+          </li>
+          
+          <li>
             <Link href="/admin">
               <a className={`flex items-center p-3 rounded-md ${isActive('/admin')}`}>
                 <Users className="mr-2 h-5 w-5" />
@@ -91,6 +101,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
               <a className={`flex items-center p-3 rounded-md ${isActive('/analytics')}`}>
                 <BarChartBig className="mr-2 h-5 w-5" />
                 <span>Analytics</span>
+              </a>
+            </Link>
+          </li>
+          
+          <li>
+            <Link href="/messages">
+              <a className={`flex items-center p-3 rounded-md ${isActive('/messages')}`}>
+                <Mail className="mr-2 h-5 w-5" />
+                <span>Messaging</span>
               </a>
             </Link>
           </li>
