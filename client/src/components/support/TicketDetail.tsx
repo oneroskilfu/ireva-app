@@ -1,20 +1,63 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { format } from "date-fns";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { format } from "date-fns";
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormMessage 
+} from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { 
+  Avatar, 
+  AvatarFallback, 
+  AvatarImage 
+} from "@/components/ui/avatar";
+import { 
+  ChevronLeft, 
+  Clock, 
+  Calendar, 
+  Loader2, 
+  Building, 
+  CreditCard, 
+  Tag, 
+  AlertCircle 
+} from "lucide-react";
+import { 
+  Badge 
+} from "@/components/ui/badge";
+import { 
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
 interface TicketDetailProps {
   ticketId: number;
@@ -58,9 +101,9 @@ interface TicketData {
   investment: any | null;
 }
 
-// Form schema for new message
+// Message form validation schema
 const messageSchema = z.object({
-  content: z.string().min(1, "Message cannot be empty"),
+  content: z.string().min(1, "Message cannot be empty")
 });
 
 type MessageFormValues = z.infer<typeof messageSchema>;
@@ -68,107 +111,113 @@ type MessageFormValues = z.infer<typeof messageSchema>;
 const TicketDetail = ({ ticketId, onBack }: TicketDetailProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isResolving, setIsResolving] = useState(false);
+  const isAdmin = user?.isAdmin;
 
   // Query to fetch ticket details
-  const { data: ticketData, isLoading } = useQuery<TicketData>({
+  const { data, isLoading, isError } = useQuery<TicketData>({
     queryKey: ['/api/support/tickets', ticketId],
     queryFn: async () => {
       const response = await fetch(`/api/support/tickets/${ticketId}`);
-      
       if (!response.ok) {
         throw new Error('Failed to fetch ticket details');
       }
-      
       return response.json();
     }
   });
 
-  // Form for new message
+  // Form setup for sending messages
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
     defaultValues: {
-      content: "",
-    },
+      content: ""
+    }
   });
 
-  // Mutation to add a new message
+  // Add message mutation
   const addMessageMutation = useMutation({
     mutationFn: async (values: MessageFormValues) => {
-      const res = await apiRequest("POST", `/api/support/tickets/${ticketId}/messages`, values);
-      return await res.json();
+      const response = await apiRequest("POST", `/api/support/tickets/${ticketId}/messages`, values);
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/support/tickets', ticketId] });
+      // Reset form
       form.reset();
+      
+      // Invalidate ticket query to refresh the messages
+      queryClient.invalidateQueries({ queryKey: ['/api/support/tickets', ticketId] });
+      
+      toast({
+        title: "Message Sent",
+        description: "Your message has been sent successfully.",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to send message",
-        description: error.message,
+        title: "Failed to Send Message",
+        description: error.message || "There was an error sending your message. Please try again.",
         variant: "destructive",
       });
-    },
+    }
   });
 
-  // Mutation to update ticket status
-  const updateTicketStatusMutation = useMutation({
+  // Update ticket status mutation (for closing/reopening tickets)
+  const updateStatusMutation = useMutation({
     mutationFn: async (status: string) => {
-      const res = await apiRequest("PATCH", `/api/support/tickets/${ticketId}`, { status });
-      return await res.json();
+      const response = await apiRequest("PATCH", `/api/support/tickets/${ticketId}`, { status });
+      return response.json();
     },
     onSuccess: () => {
+      // Invalidate ticket query to refresh the ticket
       queryClient.invalidateQueries({ queryKey: ['/api/support/tickets', ticketId] });
       queryClient.invalidateQueries({ queryKey: ['/api/support/my-tickets'] });
-      setIsResolving(false);
+      
       toast({
         title: "Ticket Updated",
-        description: "The ticket status was updated successfully.",
+        description: "The ticket status has been updated successfully.",
       });
     },
     onError: (error: Error) => {
-      setIsResolving(false);
       toast({
-        title: "Failed to update ticket",
-        description: error.message,
+        title: "Failed to Update Ticket",
+        description: error.message || "There was an error updating the ticket. Please try again.",
         variant: "destructive",
       });
-    },
+    }
   });
 
-  // Handle message submission
+  // Form submission handler
   const onSubmit = (values: MessageFormValues) => {
     addMessageMutation.mutate(values);
   };
 
-  // Handle resolving ticket
-  const handleResolveTicket = () => {
-    setIsResolving(true);
-    updateTicketStatusMutation.mutate("resolved");
+  // Format date
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "MMM d, yyyy 'at' h:mm a");
+    } catch (e) {
+      return dateString;
+    }
   };
 
-  // Handle reopening ticket
-  const handleReopenTicket = () => {
-    setIsResolving(true);
-    updateTicketStatusMutation.mutate("in-progress");
-  };
-
-  // Get status badge color based on status
+  // Get status badge variant
   const getStatusBadgeVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
     switch (status) {
-      case "pending":
+      case "new":
         return "default";
+      case "open":
+        return "secondary";
       case "in-progress":
         return "secondary";
       case "resolved":
+        return "outline";
+      case "closed":
         return "outline";
       default:
         return "default";
     }
   };
 
-  // Get priority badge color based on priority
+  // Get priority badge variant
   const getPriorityBadgeVariant = (priority: string): "default" | "outline" | "secondary" | "destructive" => {
     switch (priority) {
       case "low":
@@ -184,238 +233,372 @@ const TicketDetail = ({ ticketId, onBack }: TicketDetailProps) => {
     }
   };
 
-  // Show loading state
+  // Close or reopen ticket
+  const handleStatusChange = (newStatus: string) => {
+    updateStatusMutation.mutate(newStatus);
+  };
+
+  // User name display
+  const getUserDisplayName = (user: { username: string; firstName: string | null; lastName: string | null; }) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user.username;
+  };
+
+  // User avatar fallback
+  const getUserAvatarFallback = (user: { username: string; firstName: string | null; lastName: string | null; }) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`;
+    }
+    return user.username.substring(0, 2).toUpperCase();
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" className="mr-2" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4" />
+          <div className="flex items-center mb-2">
+            <Button variant="ghost" size="sm" onClick={onBack} className="mr-2">
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
             </Button>
-            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-5 w-32" />
           </div>
+          <Skeleton className="h-7 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2" />
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="md:w-3/4">
+              <Skeleton className="h-32 w-full mb-4" />
+              <div className="space-y-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            </div>
+            <div className="md:w-1/4">
+              <Skeleton className="h-48 w-full" />
+            </div>
           </div>
         </CardContent>
-        <CardFooter>
-          <Skeleton className="h-32 w-full" />
-        </CardFooter>
       </Card>
     );
   }
 
-  if (!ticketData) {
+  // Error state
+  if (isError || !data) {
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" className="mr-2" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4" />
+          <div className="flex items-center mb-2">
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
             </Button>
-            <CardTitle>Ticket Not Found</CardTitle>
           </div>
+          <CardTitle>Error Loading Ticket</CardTitle>
+          <CardDescription>
+            There was an error loading the ticket details. Please try again.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">This ticket may have been deleted or doesn't exist.</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/support/tickets', ticketId] })}>
+            Try Again
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
-  const { ticket, messages, property, investment } = ticketData;
-  const isResolved = ticket.status === "resolved";
+  const { ticket, messages, property, investment } = data;
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" className="mr-2" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <CardTitle>{ticket.subject}</CardTitle>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant={getPriorityBadgeVariant(ticket.priority)}>
+      <CardHeader>
+        <div className="flex items-center mb-2">
+          <Button variant="ghost" size="sm" onClick={onBack} className="mr-2">
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
+          <Breadcrumb className="flex-1">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink onClick={onBack}>Support</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink>Ticket #{ticket.id}</BreadcrumbLink>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <div className="flex items-center gap-2">
+            <Badge variant={getStatusBadgeVariant(ticket.status)} className="capitalize">
+              {ticket.status.replace("-", " ")}
+            </Badge>
+            <Badge variant={getPriorityBadgeVariant(ticket.priority)} className="capitalize">
               {ticket.priority}
             </Badge>
-            <Badge variant={getStatusBadgeVariant(ticket.status)}>
-              {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1).replace('-', ' ')}
-            </Badge>
           </div>
         </div>
-        <div className="flex justify-between items-center text-sm text-muted-foreground mt-2">
-          <div>
-            Ticket #{ticket.id} • {format(new Date(ticket.createdAt), "MMM d, yyyy")}
-          </div>
-          <div className="capitalize">
-            Category: {ticket.category.replace('-', ' ')}
-          </div>
-        </div>
+        <CardTitle className="text-xl md:text-2xl">{ticket.subject}</CardTitle>
+        <CardDescription className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+          <span className="flex items-center text-sm">
+            <Calendar className="h-4 w-4 mr-1" />
+            Created: {formatDate(ticket.createdAt)}
+          </span>
+          <span className="flex items-center text-sm">
+            <Clock className="h-4 w-4 mr-1" />
+            Last updated: {formatDate(ticket.updatedAt)}
+          </span>
+          <span className="flex items-center text-sm">
+            <Tag className="h-4 w-4 mr-1" />
+            Category: <span className="capitalize ml-1">{ticket.category}</span>
+          </span>
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Ticket details */}
-        <div className="p-4 bg-muted/50 rounded-md">
-          <p className="text-sm mb-2">{ticket.description}</p>
-          
-          {/* Related property or investment */}
-          {(property || investment) && (
-            <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
-              {property && (
-                <div className="flex items-center">
-                  <span className="font-medium mr-1">Related Property:</span>
-                  <span>{property.name}</span>
+      <CardContent>
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Main content */}
+          <div className="md:w-3/4">
+            {/* Ticket description */}
+            <div className="mb-6 p-4 border rounded-md bg-muted/20">
+              <div className="flex items-start mb-3">
+                <Avatar className="h-8 w-8 mr-3">
+                  <AvatarFallback>
+                    {user && getUserAvatarFallback(user)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-medium">{user && getUserDisplayName(user)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatDate(ticket.createdAt)}
+                  </div>
                 </div>
-              )}
-              {investment && (
-                <div className="flex items-center">
-                  <span className="font-medium mr-1">Related Investment:</span>
-                  <span>₦{investment.amount.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Messages */}
-        <div className="space-y-4 max-h-[400px] overflow-y-auto px-1 py-2">
-          {messages.map((message) => (
-            <div 
-              key={message.id} 
-              className={`flex ${message.isFromStaff ? "justify-start" : "justify-end"}`}
-            >
-              <div 
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  message.isFromStaff 
-                    ? "bg-muted text-muted-foreground" 
-                    : "bg-primary text-primary-foreground"
-                }`}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-medium">
-                    {message.isFromStaff ? "Support Team" : "You"}
-                  </span>
-                  <span className="text-xs opacity-75">
-                    {format(new Date(message.createdAt), "MMM d, h:mm a")}
-                  </span>
-                </div>
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                {message.attachmentUrl && (
-                  <a 
-                    href={message.attachmentUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center mt-2 text-xs underline"
-                  >
-                    View attachment
-                  </a>
-                )}
+              </div>
+              <div className="pl-11">
+                <p className="whitespace-pre-wrap">{ticket.description}</p>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Reply form */}
-        {!isResolved && (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Type your reply here..."
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end">
-                <Button 
-                  type="submit" 
-                  disabled={addMessageMutation.isPending}
-                  className="flex items-center"
+            {/* Messages */}
+            <div className="space-y-4 mb-6">
+              {messages.map((message) => (
+                <div 
+                  key={message.id} 
+                  className={`p-4 border rounded-md ${
+                    message.isFromStaff ? "bg-muted/30 ml-6" : "bg-muted/10 mr-6"
+                  }`}
                 >
-                  {addMessageMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Send Reply
-                    </>
-                  )}
-                </Button>
+                  <div className="flex items-start mb-3">
+                    <Avatar className="h-8 w-8 mr-3">
+                      <AvatarFallback className={message.isFromStaff ? "bg-primary text-primary-foreground" : ""}>
+                        {getUserAvatarFallback(message.user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium flex items-center">
+                        {getUserDisplayName(message.user)}
+                        {message.isFromStaff && (
+                          <Badge variant="outline" className="ml-2 text-xs">Staff</Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(message.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pl-11">
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Reply form */}
+            {ticket.status !== "closed" && (
+              <div className="pl-11">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Write your reply..." 
+                              className="min-h-[100px]" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end">
+                      <Button 
+                        type="submit" 
+                        disabled={addMessageMutation.isPending}
+                      >
+                        {addMessageMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Reply"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               </div>
-            </form>
-          </Form>
-        )}
-
-        {/* Resolution notice */}
-        {isResolved && (
-          <div className="text-center p-4 border rounded-md bg-muted/30">
-            <p className="text-muted-foreground mb-2">
-              This ticket has been resolved. 
-              {ticket.resolvedAt && ` Resolved on ${format(new Date(ticket.resolvedAt), "MMM d, yyyy")}.`}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleReopenTicket}
-              disabled={isResolving}
-            >
-              {isResolving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Reopening...
-                </>
-              ) : (
-                "Reopen Ticket"
-              )}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-
-      {/* Footer actions */}
-      {!isResolved && (
-        <CardFooter className="flex justify-between border-t pt-4">
-          <Button 
-            variant="outline" 
-            onClick={onBack}
-          >
-            Back to List
-          </Button>
-          <Button 
-            variant="default" 
-            onClick={handleResolveTicket}
-            disabled={isResolving}
-          >
-            {isResolving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Resolving...
-              </>
-            ) : (
-              "Mark as Resolved"
             )}
-          </Button>
-        </CardFooter>
-      )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="md:w-1/4">
+            <div className="border rounded-md">
+              <div className="p-4 border-b">
+                <h3 className="font-medium mb-1">Ticket Information</h3>
+              </div>
+              <div className="p-4">
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground block">Status:</span>
+                    <Badge variant={getStatusBadgeVariant(ticket.status)} className="mt-1 capitalize">
+                      {ticket.status.replace("-", " ")}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <span className="text-muted-foreground block">Priority:</span>
+                    <Badge variant={getPriorityBadgeVariant(ticket.priority)} className="mt-1 capitalize">
+                      {ticket.priority}
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <span className="text-muted-foreground block">Channel:</span>
+                    <span className="capitalize">{ticket.channel || "web"}</span>
+                  </div>
+                  
+                  {property && (
+                    <div>
+                      <span className="text-muted-foreground block">Related Property:</span>
+                      <div className="flex items-center mt-1">
+                        <Building className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <span>{property.name}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {investment && (
+                    <div>
+                      <span className="text-muted-foreground block">Related Investment:</span>
+                      <div className="flex items-center mt-1">
+                        <CreditCard className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <span>₦{investment.amount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <Separator />
+                  
+                  {/* Status change buttons */}
+                  <div className="pt-2">
+                    {ticket.status === "closed" ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleStatusChange("open")}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              {updateStatusMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Reopen Ticket"
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reopen this ticket if you need further assistance</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleStatusChange("closed")}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              {updateStatusMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Close Ticket"
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Close this ticket if your issue has been resolved</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                  
+                  {/* Admin-only actions */}
+                  {isAdmin && ticket.status !== "closed" && (
+                    <div className="pt-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleStatusChange("in-progress")}
+                              disabled={updateStatusMutation.isPending || ticket.status === "in-progress"}
+                            >
+                              {updateStatusMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                "Mark In Progress"
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mark this ticket as being worked on</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+                  
+                  {/* Warning for closed tickets */}
+                  {ticket.status === "closed" && (
+                    <div className="flex items-start mt-4 text-xs p-2 border rounded bg-amber-50 border-amber-200">
+                      <AlertCircle className="h-4 w-4 text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <p>This ticket is closed. You can reopen it if you need further assistance.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 };

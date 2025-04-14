@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import TicketDetail from "./TicketDetail";
+import { Search, Filter, Clock, Calendar, Tag } from "lucide-react";
 
 interface Ticket {
   id: number;
@@ -30,6 +32,7 @@ const SupportTickets = () => {
   const { user } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Query to fetch user's tickets
   const { data: tickets, isLoading } = useQuery<Ticket[]>({
@@ -46,12 +49,22 @@ const SupportTickets = () => {
     }
   });
 
-  // Filter tickets based on active tab
+  // Filter tickets based on active tab and search query
   const filteredTickets = tickets?.filter(ticket => {
-    if (activeTab === "all") return true;
-    if (activeTab === "open") return ["pending", "in-progress"].includes(ticket.status);
-    if (activeTab === "closed") return ticket.status === "resolved";
-    return true;
+    // Filter by status tab
+    const statusMatch = 
+      activeTab === "all" || 
+      (activeTab === "open" && ["new", "open", "in-progress"].includes(ticket.status)) ||
+      (activeTab === "closed" && ["resolved", "closed"].includes(ticket.status));
+    
+    // Filter by search query
+    const searchMatch = 
+      searchQuery === "" || 
+      ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return statusMatch && searchMatch;
   });
 
   // Handler to view a ticket's details
@@ -64,21 +77,23 @@ const SupportTickets = () => {
     setSelectedTicket(null);
   };
 
-  // Get status badge color based on status
+  // Get status badge variant
   const getStatusBadgeVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
     switch (status) {
-      case "pending":
+      case "new":
         return "default";
+      case "open":
       case "in-progress":
         return "secondary";
       case "resolved":
+      case "closed":
         return "outline";
       default:
         return "default";
     }
   };
 
-  // Get priority badge color based on priority
+  // Get priority badge variant
   const getPriorityBadgeVariant = (priority: string): "default" | "outline" | "secondary" | "destructive" => {
     switch (priority) {
       case "low":
@@ -94,93 +109,129 @@ const SupportTickets = () => {
     }
   };
 
-  // If a ticket is selected, show ticket detail view
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "MMM d, yyyy");
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  // If a ticket is selected, show the ticket detail view
   if (selectedTicket !== null) {
     return <TicketDetail ticketId={selectedTicket} onBack={handleBackToList} />;
-  }
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Support Tickets</CardTitle>
-          <CardDescription>Manage your support requests</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-10 w-full mb-4" />
-          <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Support Tickets</CardTitle>
-        <CardDescription>View and manage your support requests</CardDescription>
+        <CardDescription>View and manage your support tickets</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="all">All Tickets</TabsTrigger>
-            <TabsTrigger value="open">Open</TabsTrigger>
-            <TabsTrigger value="closed">Closed</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={activeTab} className="mt-0">
-            {/* Empty state */}
-            {(!filteredTickets || filteredTickets.length === 0) && (
-              <div className="text-center py-8 border rounded-md bg-gray-50">
-                <p className="text-muted-foreground mb-4">You don't have any {activeTab !== "all" ? activeTab : ""} support tickets yet.</p>
-                <Button 
-                  variant="default" 
-                  onClick={() => document.querySelector('[value="new"]')?.dispatchEvent(new Event('click'))}
-                >
-                  Create a Support Ticket
-                </Button>
+        {/* Tabs for filtering tickets */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="all">All Tickets</TabsTrigger>
+              <TabsTrigger value="open">Open</TabsTrigger>
+              <TabsTrigger value="closed">Closed</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center">
+              <div className="relative mr-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search tickets..."
+                  className="pl-8 w-[200px] md:w-[300px]"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-            )}
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="shrink-0"
+                title="More filters"
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-            {/* Ticket list */}
-            {filteredTickets && filteredTickets.length > 0 && (
+          {/* Content for all tabs */}
+          <TabsContent value={activeTab} className="mt-0">
+            {isLoading ? (
+              // Loading state
+              <div className="space-y-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : filteredTickets && filteredTickets.length > 0 ? (
+              // Tickets list
               <div className="space-y-4">
                 {filteredTickets.map((ticket) => (
                   <div 
                     key={ticket.id} 
-                    className="border rounded-md p-4 hover:border-primary transition-colors cursor-pointer"
+                    className="border rounded-md p-4 hover:border-primary/50 hover:bg-muted/20 transition-colors cursor-pointer"
                     onClick={() => handleViewTicket(ticket.id)}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-medium text-base">{ticket.subject}</h3>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={getStatusBadgeVariant(ticket.status)}>
-                          {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1).replace('-', ' ')}
+                      <h3 className="font-medium">{ticket.subject}</h3>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant={getStatusBadgeVariant(ticket.status)} className="capitalize">
+                          {ticket.status.replace("-", " ")}
                         </Badge>
-                        <Badge variant={getPriorityBadgeVariant(ticket.priority)}>
+                        <Badge variant={getPriorityBadgeVariant(ticket.priority)} className="capitalize">
                           {ticket.priority}
                         </Badge>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                    <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
                       {ticket.description}
                     </p>
-                    <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-                      <div className="flex items-center">
-                        <span className="mr-2">#{ticket.id}</span>
-                        <span className="capitalize">{ticket.category.replace('-', ' ')}</span>
-                      </div>
-                      <span>
-                        {format(new Date(ticket.createdAt), "MMM d, yyyy")}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {formatDate(ticket.createdAt)}
+                      </span>
+                      <span className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Last updated: {formatDate(ticket.updatedAt)}
+                      </span>
+                      <span className="flex items-center">
+                        <Tag className="h-3 w-3 mr-1" />
+                        {ticket.category}
                       </span>
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : (
+              // Empty state
+              <div className="text-center py-12 border rounded-md">
+                <div className="mb-4">
+                  <div className="inline-block p-3 bg-muted rounded-full mb-2">
+                    <Search className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-1">No tickets found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchQuery 
+                      ? `No tickets matching "${searchQuery}" found.` 
+                      : activeTab === "all" 
+                        ? "You haven't created any support tickets yet." 
+                        : `You don't have any ${activeTab} tickets.`
+                    }
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => document.querySelector('[value="new"]')?.dispatchEvent(new Event('click'))}
+                  >
+                    Create New Ticket
+                  </Button>
+                </div>
               </div>
             )}
           </TabsContent>
