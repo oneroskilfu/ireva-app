@@ -753,6 +753,85 @@ export class MemStorage implements IStorage {
   private seedProperties() {
     const properties: Omit<Property, 'id'>[] = [
       {
+        name: "Premium Abuja Land",
+        location: "Abuja",
+        description: "Prime land investment opportunity in a rapidly developing area of Abuja. This 2-hectare plot offers excellent potential for residential or commercial development with all necessary approvals in place. Located in a strategic growth corridor with strong appreciation potential.",
+        type: "land",
+        imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        additionalImages: JSON.stringify([
+          "https://images.unsplash.com/photo-1554254648-2d58a1bc3fd5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1543872084-c7bd3822856f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1504681869696-d977211a5db4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1532404943945-2c8496bat5ff?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+        ]),
+        videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        virtualTourUrl: "https://my.matterport.com/show/?m=YAG8dwjKqDV",
+        
+        // Financial details
+        targetReturn: "15.5",
+        minimumInvestment: 500000,
+        term: 48,
+        totalFunding: 10000000,
+        currentFunding: 7500000,
+        
+        // Project metrics
+        numberOfInvestors: 45,
+        size: "20000 sq m",
+        builtYear: "N/A",
+        occupancy: "N/A",
+        cashFlow: "N/A",
+        daysLeft: 15,
+        
+        // Detailed location information
+        address: "Phase 4, Jabi District",
+        city: "Abuja",
+        state: "FCT",
+        zipCode: "900108",
+        latitude: "9.0765",
+        longitude: "7.3986",
+        neighborhoodDescription: "Located in a rapidly developing district with new infrastructure projects, commercial centers, and residential developments in progress.",
+        
+        // Developer/Sponsor information
+        developerName: "Terra Developers Ltd",
+        developerDescription: "Terra Developers Ltd is a leading land development company in Nigeria with over 15 years of experience in property acquisition and development.",
+        developerLogoUrl: "https://randomuser.me/api/portraits/men/42.jpg",
+        
+        // Project timeline
+        acquisitionDate: new Date("2023-10-15"),
+        constructionStartDate: new Date("2024-03-01"),
+        estimatedCompletionDate: new Date("2025-04-30"),
+        
+        // Due diligence
+        documentUrls: JSON.stringify([
+          "https://example.com/landsurvey.pdf",
+          "https://example.com/approvals.pdf",
+          "https://example.com/title.pdf"
+        ]),
+        riskRating: "medium",
+        riskDescription: "Land investments in developing areas carry moderate risk, with potential for delays in infrastructure development and market fluctuations.",
+        
+        // Detailed financial projections
+        projectedIrr: "18.5",
+        projectedCashYield: "0",
+        projectedAppreciation: "20.5",
+        projectedTotalReturn: "39.0",
+        
+        // Property features & amenities
+        features: JSON.stringify([
+          "Prime location",
+          "All approvals and permits in place",
+          "Clear title",
+          "Access to utilities",
+          "Strategic growth area"
+        ]),
+        amenities: JSON.stringify([
+          "Nearby shopping centers",
+          "Proximity to schools",
+          "Access to public transportation",
+          "Well-developed road network"
+        ])
+      },
+      {
         name: "Skyline Apartments",
         location: "Lagos",
         description: "Luxury residential apartment complex with 120 units, rooftop amenities, and prime location in the heart of Manhattan. The property features high-end finishes, smart home technology, and stunning city views.",
