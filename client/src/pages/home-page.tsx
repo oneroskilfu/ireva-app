@@ -233,7 +233,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">Invest Online</h3>
                 <p className="text-gray-600">
-                  Choose your investment amount, starting from as little as $1,000, and complete your investment in minutes.
+                  Choose your investment amount, starting from as little as ₦100,000, and complete your investment in minutes.
                 </p>
               </div>
               

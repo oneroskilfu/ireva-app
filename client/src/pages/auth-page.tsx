@@ -355,7 +355,7 @@ export default function AuthPage() {
                   Real Estate Investing, Simplified
                 </h2>
                 <p className="text-lg mb-8 text-gray-200">
-                  Access institutional-quality real estate investments with as little as $1,000. Build a diversified portfolio of income-generating properties without the hassle of traditional real estate ownership.
+                  Access institutional-quality real estate investments with as little as ₦100,000. Build a diversified portfolio of income-generating properties without the hassle of traditional real estate ownership.
                 </p>
                 
                 <div className="space-y-6">
@@ -367,7 +367,7 @@ export default function AuthPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-xl">Low Minimum Investment</h3>
-                      <p className="text-gray-300">Start investing with just $1,000</p>
+                      <p className="text-gray-300">Start investing with just ₦100,000</p>
                     </div>
                   </div>
                   
