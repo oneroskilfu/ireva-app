@@ -614,8 +614,8 @@ export default function DashboardPage() {
               </div>
               
               <div>
-                <h4 className="font-semibold text-lg mb-4">Recommended Properties</h4>
-                <RecommendedProperties />
+                <h4 className="font-semibold text-lg mb-4">AI-Powered Recommendations</h4>
+                <AIRecommendations />
               </div>
             </TabsContent>
             
