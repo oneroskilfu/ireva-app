@@ -209,7 +209,7 @@ export default function PropertyDetails() {
       {/* Property Header */}
       <div className="flex flex-col lg:flex-row gap-6 mb-6">
         {/* Property Image */}
-        <div className="lg:w-5/12">
+        <div className="lg:w-5/12 mb-4 lg:mb-0">
           <div className="rounded-lg overflow-hidden bg-gray-100 aspect-video shadow-sm">
             <img 
               src={property.imageUrl} 
@@ -229,11 +229,11 @@ export default function PropertyDetails() {
               {property.location}
             </Badge>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">{property.name}</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">{property.name}</h1>
           <p className="text-muted-foreground text-sm mb-4 max-w-prose">{property.description}</p>
           
           {/* Key Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-5">
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Return</span>
               <span className="font-semibold flex items-center text-sm">
