@@ -60,7 +60,7 @@ export default function PropertyDetails() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { triggerMilestone, checkMilestone } = useMilestones();
+  const { triggerMilestone, checkMilestone } = useSafeMilestones();
   const { startLoading, stopLoading } = usePageTransition();
   const [investDialogOpen, setInvestDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
