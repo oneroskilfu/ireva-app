@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
@@ -14,6 +14,8 @@ import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import SupportPage from "@/pages/support-page";
 import HowItWorksPage from "@/pages/how-it-works";
 import JwtAuthTest from "@/pages/jwt-auth-test";
+import Projects from "./components/Projects";
+import Users from "./components/Users";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -59,8 +61,8 @@ function Router() {
         <ProtectedRoute path="/admin" component={AdminDashboard} />
         <ProtectedRoute path="/account/security" component={AccountSecurityPage} />
         <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
-        <ProtectedRoute path="/projects" component={() => import("./components/Projects").then(module => module.default)} />
-        <ProtectedRoute path="/users" component={() => import("./components/Users").then(module => module.default)} />
+        <ProtectedRoute path="/projects" component={Projects} />
+        <ProtectedRoute path="/users" component={Users} />
         <Route path="/support" component={SupportPage} />
         <Route path="/how-it-works" component={HowItWorksPage} />
         <Route path="/jwt-auth-test" component={JwtAuthTest} />

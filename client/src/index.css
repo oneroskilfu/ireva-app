@@ -9,6 +9,13 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    margin: 0;
+    font-family: sans-serif;
+  }
+  
+  input, button {
+    margin: 5px;
+    padding: 8px;
   }
 }
 
