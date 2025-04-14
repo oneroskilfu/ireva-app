@@ -1,119 +1,112 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
+import { HelpCircle, LifeBuoy, MessageSquare } from "lucide-react";
+
 import SupportTickets from "@/components/support/SupportTickets";
 import CreateTicket from "@/components/support/CreateTicket";
 import FAQSection from "@/components/support/FAQSection";
-import { Banknote, HelpCircle, MessagesSquare, PanelRightOpen, Phone } from "lucide-react";
-import { ProtectedRoute } from "@/lib/protected-route";
 
-const SupportPage = () => {
-  const { user } = useAuth();
+export default function SupportPage() {
   const [activeTab, setActiveTab] = useState("tickets");
 
   return (
-    <div className="container mx-auto py-10 px-4 md:px-6">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Customer Support</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row gap-8 mb-8">
+        <div className="w-full md:w-1/2">
+          <h1 className="text-3xl font-bold mb-2">Customer Support</h1>
           <p className="text-muted-foreground">
-            Get help with your investments, account settings, or technical issues
+            Get help with your REVA experience. Browse our FAQs or create a support ticket if you need personalized assistance.
           </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Left sidebar */}
-          <div className="md:col-span-1 space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Support Channels</CardTitle>
-                <CardDescription>
-                  Choose how you want to get help
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2 text-sm">
-                  <MessagesSquare className="h-5 w-5 text-primary" />
-                  <span>Live Chat (8am - 8pm)</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <Phone className="h-5 w-5 text-primary" />
-                  <span>Phone: +234-8000-REVA</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <Banknote className="h-5 w-5 text-primary" />
-                  <span>Investment Support</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <HelpCircle className="h-5 w-5 text-primary" />
-                  <span>General Inquiries</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <PanelRightOpen className="h-5 w-5 text-primary" />
-                  <span>Technical Support</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Support Hours</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Monday - Friday:</span>
-                  <span className="text-sm font-medium">8am - 8pm</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Saturday:</span>
-                  <span className="text-sm font-medium">10am - 6pm</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Sunday:</span>
-                  <span className="text-sm font-medium">Closed</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main content */}
-          <div className="md:col-span-3">
-            <Tabs
-              defaultValue="tickets"
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="space-y-4"
-            >
-              <TabsList className="grid grid-cols-3">
-                <TabsTrigger value="tickets">My Tickets</TabsTrigger>
-                <TabsTrigger value="new">Create Ticket</TabsTrigger>
-                <TabsTrigger value="faqs">FAQs</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="tickets" className="space-y-4">
-                <SupportTickets />
-              </TabsContent>
-
-              <TabsContent value="new" className="space-y-4">
-                <CreateTicket onSuccess={() => setActiveTab("tickets")} />
-              </TabsContent>
-
-              <TabsContent value="faqs" className="space-y-4">
-                <FAQSection />
-              </TabsContent>
-            </Tabs>
+        <div className="w-full md:w-1/2 flex flex-col md:items-end justify-center">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center text-muted-foreground">
+              <MessageSquare className="h-5 w-5 mr-2" />
+              <span>Email: support@reva.ng</span>
+            </div>
+            <div className="flex items-center text-muted-foreground">
+              <LifeBuoy className="h-5 w-5 mr-2" />
+              <span>Call: +234-8000-REVA</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
 
-// Export as protected route
-export default function ProtectedSupportPage() {
-  return (
-    <ProtectedRoute path="/support" component={SupportPage} />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto mb-8">
+          <TabsTrigger value="tickets" className="flex items-center">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            <span>My Tickets</span>
+          </TabsTrigger>
+          <TabsTrigger value="new" className="flex items-center">
+            <LifeBuoy className="h-4 w-4 mr-2" />
+            <span>New Ticket</span>
+          </TabsTrigger>
+          <TabsTrigger value="faqs" className="flex items-center">
+            <HelpCircle className="h-4 w-4 mr-2" />
+            <span>FAQs</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tickets">
+          <SupportTickets />
+        </TabsContent>
+
+        <TabsContent value="new">
+          <CreateTicket onSuccess={() => setActiveTab("tickets")} />
+        </TabsContent>
+
+        <TabsContent value="faqs">
+          <FAQSection />
+        </TabsContent>
+      </Tabs>
+
+      <div className="mt-12 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Need More Assistance?</CardTitle>
+            <CardDescription>REVA offers multiple ways to connect with our support team</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex flex-col items-center text-center p-4 border rounded-lg hover:border-primary transition-colors">
+                <MessageSquare className="h-12 w-12 text-primary mb-4" />
+                <h3 className="text-lg font-medium mb-2">Email Support</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Email us anytime for general inquiries or assistance with your investments.
+                </p>
+                <a href="mailto:support@reva.ng" className="text-primary hover:underline font-medium">
+                  support@reva.ng
+                </a>
+              </div>
+              
+              <div className="flex flex-col items-center text-center p-4 border rounded-lg hover:border-primary transition-colors">
+                <LifeBuoy className="h-12 w-12 text-primary mb-4" />
+                <h3 className="text-lg font-medium mb-2">Phone Support</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Available Monday - Friday, 9am - 5pm WAT for urgent matters.
+                </p>
+                <a href="tel:+2348000REVA" className="text-primary hover:underline font-medium">
+                  +234-8000-REVA
+                </a>
+              </div>
+              
+              <div className="flex flex-col items-center text-center p-4 border rounded-lg hover:border-primary transition-colors">
+                <HelpCircle className="h-12 w-12 text-primary mb-4" />
+                <h3 className="text-lg font-medium mb-2">Visit Our Office</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Schedule an appointment to visit our office in Lagos for personalized support.
+                </p>
+                <address className="text-primary not-italic">
+                  <p>REVA Headquarters</p>
+                  <p>Victoria Island, Lagos</p>
+                </address>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

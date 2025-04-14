@@ -1,26 +1,24 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
-import { CheckCircle, Clock, HelpCircle, MessageCircle, XCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import TicketDetail from "./TicketDetail";
-import { apiRequest } from "@/lib/queryClient";
 
-// Type for support tickets
-interface SupportTicket {
+interface Ticket {
   id: number;
   userId: number;
   subject: string;
   description: string;
   category: string;
-  status: 'new' | 'open' | 'pending' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent' | 'critical';
-  channel: 'email' | 'phone' | 'chat' | 'social' | 'web';
+  status: string;
+  priority: string;
+  channel: string;
   propertyId: number | null;
   investmentId: number | null;
   createdAt: string;
@@ -28,227 +26,167 @@ interface SupportTicket {
   resolvedAt: string | null;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'new':
-      return 'bg-blue-500';
-    case 'open':
-      return 'bg-green-500';
-    case 'pending':
-      return 'bg-yellow-500';
-    case 'resolved':
-      return 'bg-purple-500';
-    case 'closed':
-      return 'bg-gray-500';
-    default:
-      return 'bg-gray-500';
-  }
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'new':
-      return <MessageCircle className="h-4 w-4" />;
-    case 'open':
-      return <HelpCircle className="h-4 w-4" />;
-    case 'pending':
-      return <Clock className="h-4 w-4" />;
-    case 'resolved':
-      return <CheckCircle className="h-4 w-4" />;
-    case 'closed':
-      return <XCircle className="h-4 w-4" />;
-    default:
-      return <HelpCircle className="h-4 w-4" />;
-  }
-};
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'low':
-      return 'bg-blue-100 text-blue-800';
-    case 'medium':
-      return 'bg-green-100 text-green-800';
-    case 'high':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'urgent':
-      return 'bg-orange-100 text-orange-800';
-    case 'critical':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
 const SupportTickets = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
 
   // Query to fetch user's tickets
-  const { data: tickets, isLoading, isError } = useQuery<SupportTicket[]>({
+  const { data: tickets, isLoading } = useQuery<Ticket[]>({
     queryKey: ['/api/support/my-tickets'],
     enabled: !!user,
-  });
-
-  // Mutation to close a ticket
-  const closeTicketMutation = useMutation({
-    mutationFn: async (ticketId: number) => {
-      const res = await apiRequest('PATCH', `/api/support/tickets/${ticketId}`, {
-        status: 'closed'
-      });
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Ticket closed',
-        description: 'Your support ticket has been closed successfully.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/support/my-tickets'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to close ticket',
-        description: error.message,
-        variant: 'destructive',
-      });
+    queryFn: async () => {
+      const response = await fetch('/api/support/my-tickets');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch tickets');
+      }
+      
+      return response.json();
     }
   });
 
-  // Handle closing a ticket
-  const handleCloseTicket = (ticketId: number) => {
-    closeTicketMutation.mutate(ticketId);
+  // Filter tickets based on active tab
+  const filteredTickets = tickets?.filter(ticket => {
+    if (activeTab === "all") return true;
+    if (activeTab === "open") return ["pending", "in-progress"].includes(ticket.status);
+    if (activeTab === "closed") return ticket.status === "resolved";
+    return true;
+  });
+
+  // Handler to view a ticket's details
+  const handleViewTicket = (ticketId: number) => {
+    setSelectedTicket(ticketId);
   };
 
-  // Render loading state
+  // Handler to go back to ticket list
+  const handleBackToList = () => {
+    setSelectedTicket(null);
+  };
+
+  // Get status badge color based on status
+  const getStatusBadgeVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
+    switch (status) {
+      case "pending":
+        return "default";
+      case "in-progress":
+        return "secondary";
+      case "resolved":
+        return "outline";
+      default:
+        return "default";
+    }
+  };
+
+  // Get priority badge color based on priority
+  const getPriorityBadgeVariant = (priority: string): "default" | "outline" | "secondary" | "destructive" => {
+    switch (priority) {
+      case "low":
+        return "outline";
+      case "medium":
+        return "default";
+      case "high":
+        return "secondary";
+      case "urgent":
+        return "destructive";
+      default:
+        return "default";
+    }
+  };
+
+  // If a ticket is selected, show ticket detail view
+  if (selectedTicket !== null) {
+    return <TicketDetail ticketId={selectedTicket} onBack={handleBackToList} />;
+  }
+
+  // Show loading state
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        {[1, 2, 3].map(i => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-4 w-1/3" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-4/5" />
-            </CardContent>
-            <CardFooter>
-              <Skeleton className="h-9 w-20" />
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  // Render error state
-  if (isError) {
-    return (
       <Card>
         <CardHeader>
-          <CardTitle>Error</CardTitle>
-          <CardDescription>Failed to load your support tickets</CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/support/my-tickets'] })}
-          >
-            Try Again
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
-  // Render ticket detail if a ticket is selected
-  if (selectedTicket !== null) {
-    return (
-      <TicketDetail
-        ticketId={selectedTicket}
-        onBack={() => setSelectedTicket(null)}
-      />
-    );
-  }
-
-  // Render empty state
-  if (!tickets || tickets.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No Support Tickets</CardTitle>
-          <CardDescription>You haven't created any support tickets yet</CardDescription>
+          <CardTitle>Support Tickets</CardTitle>
+          <CardDescription>Manage your support requests</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            If you need help with your account, investments, or have any other questions,
-            create a new support ticket and our team will assist you.
-          </p>
+          <Skeleton className="h-10 w-full mb-4" />
+          <div className="space-y-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
         </CardContent>
-        <CardFooter>
-          <Button variant="default" onClick={() => document.querySelector('[value="new"]')?.dispatchEvent(new Event('click'))}>
-            Create New Ticket
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
 
-  // Render tickets list
   return (
-    <div className="space-y-4">
-      {tickets.map(ticket => (
-        <Card key={ticket.id} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-lg">{ticket.subject}</CardTitle>
-                <CardDescription className="flex items-center space-x-2 mt-1">
-                  <span>Ticket #{ticket.id}</span>
-                  <span>•</span>
-                  <span>{format(new Date(ticket.createdAt), 'MMM d, yyyy')}</span>
-                </CardDescription>
+    <Card>
+      <CardHeader>
+        <CardTitle>Support Tickets</CardTitle>
+        <CardDescription>View and manage your support requests</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="all">All Tickets</TabsTrigger>
+            <TabsTrigger value="open">Open</TabsTrigger>
+            <TabsTrigger value="closed">Closed</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={activeTab} className="mt-0">
+            {/* Empty state */}
+            {(!filteredTickets || filteredTickets.length === 0) && (
+              <div className="text-center py-8 border rounded-md bg-gray-50">
+                <p className="text-muted-foreground mb-4">You don't have any {activeTab !== "all" ? activeTab : ""} support tickets yet.</p>
+                <Button 
+                  variant="default" 
+                  onClick={() => document.querySelector('[value="new"]')?.dispatchEvent(new Event('click'))}
+                >
+                  Create a Support Ticket
+                </Button>
               </div>
-              <div className="flex space-x-2">
-                <Badge className={getPriorityColor(ticket.priority)}>
-                  {ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}
-                </Badge>
-                <Badge className={`flex items-center gap-1 ${getStatusColor(ticket.status)} text-white`}>
-                  {getStatusIcon(ticket.status)}
-                  <span>{ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}</span>
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-3">
-            <p className="text-sm text-muted-foreground line-clamp-2">{ticket.description}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Category: {ticket.category.charAt(0).toUpperCase() + ticket.category.slice(1)}
-            </p>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => setSelectedTicket(ticket.id)}
-            >
-              View Details
-            </Button>
-            {ticket.status !== 'closed' && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleCloseTicket(ticket.id)}
-                disabled={closeTicketMutation.isPending}
-              >
-                {closeTicketMutation.isPending ? 'Closing...' : 'Close Ticket'}
-              </Button>
             )}
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
+
+            {/* Ticket list */}
+            {filteredTickets && filteredTickets.length > 0 && (
+              <div className="space-y-4">
+                {filteredTickets.map((ticket) => (
+                  <div 
+                    key={ticket.id} 
+                    className="border rounded-md p-4 hover:border-primary transition-colors cursor-pointer"
+                    onClick={() => handleViewTicket(ticket.id)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-medium text-base">{ticket.subject}</h3>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={getStatusBadgeVariant(ticket.status)}>
+                          {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1).replace('-', ' ')}
+                        </Badge>
+                        <Badge variant={getPriorityBadgeVariant(ticket.priority)}>
+                          {ticket.priority}
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      {ticket.description}
+                    </p>
+                    <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+                      <div className="flex items-center">
+                        <span className="mr-2">#{ticket.id}</span>
+                        <span className="capitalize">{ticket.category.replace('-', ' ')}</span>
+                      </div>
+                      <span>
+                        {format(new Date(ticket.createdAt), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

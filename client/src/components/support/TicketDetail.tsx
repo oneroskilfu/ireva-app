@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, PaperclipIcon, RefreshCcw, Send } from "lucide-react";
+import { format } from "date-fns";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
 interface TicketDetailProps {
   ticketId: number;
@@ -54,321 +58,364 @@ interface TicketData {
   investment: any | null;
 }
 
+// Form schema for new message
+const messageSchema = z.object({
+  content: z.string().min(1, "Message cannot be empty"),
+});
+
+type MessageFormValues = z.infer<typeof messageSchema>;
+
 const TicketDetail = ({ ticketId, onBack }: TicketDetailProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [newMessage, setNewMessage] = useState("");
+  const [isResolving, setIsResolving] = useState(false);
 
-  // Query to fetch ticket details and messages
-  const { data, isLoading, isError, refetch } = useQuery<TicketData>({
+  // Query to fetch ticket details
+  const { data: ticketData, isLoading } = useQuery<TicketData>({
     queryKey: ['/api/support/tickets', ticketId],
-    enabled: !!ticketId,
-  });
-
-  // Mutation to send a new message
-  const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const res = await apiRequest('POST', `/api/support/tickets/${ticketId}/messages`, {
-        content
-      });
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Message sent',
-        description: 'Your message has been sent successfully.',
-      });
-      setNewMessage(""); // Clear input
-      queryClient.invalidateQueries({ queryKey: ['/api/support/tickets', ticketId] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to send message',
-        description: error.message,
-        variant: 'destructive',
-      });
+    queryFn: async () => {
+      const response = await fetch(`/api/support/tickets/${ticketId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch ticket details');
+      }
+      
+      return response.json();
     }
   });
 
-  // Mutation to close the ticket
-  const closeTicketMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest('PATCH', `/api/support/tickets/${ticketId}`, {
-        status: 'closed'
-      });
+  // Form for new message
+  const form = useForm<MessageFormValues>({
+    resolver: zodResolver(messageSchema),
+    defaultValues: {
+      content: "",
+    },
+  });
+
+  // Mutation to add a new message
+  const addMessageMutation = useMutation({
+    mutationFn: async (values: MessageFormValues) => {
+      const res = await apiRequest("POST", `/api/support/tickets/${ticketId}/messages`, values);
       return await res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/support/tickets', ticketId] });
+      form.reset();
+    },
+    onError: (error: Error) => {
       toast({
-        title: 'Ticket closed',
-        description: 'This support ticket has been marked as closed.',
+        title: "Failed to send message",
+        description: error.message,
+        variant: "destructive",
       });
+    },
+  });
+
+  // Mutation to update ticket status
+  const updateTicketStatusMutation = useMutation({
+    mutationFn: async (status: string) => {
+      const res = await apiRequest("PATCH", `/api/support/tickets/${ticketId}`, { status });
+      return await res.json();
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/support/tickets', ticketId] });
       queryClient.invalidateQueries({ queryKey: ['/api/support/my-tickets'] });
+      setIsResolving(false);
+      toast({
+        title: "Ticket Updated",
+        description: "The ticket status was updated successfully.",
+      });
     },
     onError: (error: Error) => {
+      setIsResolving(false);
       toast({
-        title: 'Failed to close ticket',
+        title: "Failed to update ticket",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  // Handle sending a new message
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      sendMessageMutation.mutate(newMessage);
+  // Handle message submission
+  const onSubmit = (values: MessageFormValues) => {
+    addMessageMutation.mutate(values);
+  };
+
+  // Handle resolving ticket
+  const handleResolveTicket = () => {
+    setIsResolving(true);
+    updateTicketStatusMutation.mutate("resolved");
+  };
+
+  // Handle reopening ticket
+  const handleReopenTicket = () => {
+    setIsResolving(true);
+    updateTicketStatusMutation.mutate("in-progress");
+  };
+
+  // Get status badge color based on status
+  const getStatusBadgeVariant = (status: string): "default" | "outline" | "secondary" | "destructive" => {
+    switch (status) {
+      case "pending":
+        return "default";
+      case "in-progress":
+        return "secondary";
+      case "resolved":
+        return "outline";
+      default:
+        return "default";
     }
   };
 
-  // Render loading state
+  // Get priority badge color based on priority
+  const getPriorityBadgeVariant = (priority: string): "default" | "outline" | "secondary" | "destructive" => {
+    switch (priority) {
+      case "low":
+        return "outline";
+      case "medium":
+        return "default";
+      case "high":
+        return "secondary";
+      case "urgent":
+        return "destructive";
+      default:
+        return "default";
+    }
+  };
+
+  // Show loading state
   if (isLoading) {
     return (
       <Card>
-        <CardHeader className="pb-3">
-          <Button variant="ghost" size="sm" className="w-fit mb-2" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back to tickets
-          </Button>
-          <Skeleton className="h-6 w-2/3" />
-          <Skeleton className="h-4 w-1/3 mt-2" />
+        <CardHeader>
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" className="mr-2" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Skeleton className="h-6 w-48" />
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="flex gap-3">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-1/4" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            </div>
-          ))}
+        <CardContent>
+          <div className="space-y-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
         </CardContent>
         <CardFooter>
-          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-32 w-full" />
         </CardFooter>
       </Card>
     );
   }
 
-  // Render error state
-  if (isError || !data) {
+  if (!ticketData) {
     return (
       <Card>
         <CardHeader>
-          <Button variant="ghost" size="sm" className="w-fit mb-2" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back to tickets
-          </Button>
-          <CardTitle>Error</CardTitle>
-          <CardDescription>Failed to load ticket details</CardDescription>
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" className="mr-2" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle>Ticket Not Found</CardTitle>
+          </div>
         </CardHeader>
-        <CardFooter>
-          <Button onClick={() => refetch()}>
-            <RefreshCcw className="h-4 w-4 mr-2" /> Try Again
-          </Button>
-        </CardFooter>
+        <CardContent>
+          <p className="text-muted-foreground">This ticket may have been deleted or doesn't exist.</p>
+        </CardContent>
       </Card>
     );
   }
 
-  const { ticket, messages, property, investment } = data;
-
-  // Get status color for badge
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'new':
-        return 'bg-blue-500 text-white';
-      case 'open':
-        return 'bg-green-500 text-white';
-      case 'pending':
-        return 'bg-yellow-500 text-white';
-      case 'resolved':
-        return 'bg-purple-500 text-white';
-      case 'closed':
-        return 'bg-gray-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
-    }
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy h:mm a');
-  };
-
-  // User can't reply to closed tickets
-  const canReply = ticket.status !== 'closed';
+  const { ticket, messages, property, investment } = ticketData;
+  const isResolved = ticket.status === "resolved";
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between mb-3">
-          <Button variant="ghost" size="sm" className="w-fit" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back to tickets
-          </Button>
-          <Badge className={getStatusColor(ticket.status)}>
-            {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-          </Badge>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" className="mr-2" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <CardTitle>{ticket.subject}</CardTitle>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge variant={getPriorityBadgeVariant(ticket.priority)}>
+              {ticket.priority}
+            </Badge>
+            <Badge variant={getStatusBadgeVariant(ticket.status)}>
+              {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1).replace('-', ' ')}
+            </Badge>
+          </div>
         </div>
-        <CardTitle>{ticket.subject}</CardTitle>
-        <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-          <span>Ticket #{ticket.id}</span>
-          <span>•</span>
-          <span>Created: {formatDate(ticket.createdAt)}</span>
-          <span>•</span>
-          <span>Category: {ticket.category}</span>
-          {ticket.resolvedAt && (
-            <>
-              <span>•</span>
-              <span>Resolved: {formatDate(ticket.resolvedAt)}</span>
-            </>
-          )}
-        </CardDescription>
+        <div className="flex justify-between items-center text-sm text-muted-foreground mt-2">
+          <div>
+            Ticket #{ticket.id} • {format(new Date(ticket.createdAt), "MMM d, yyyy")}
+          </div>
+          <div className="capitalize">
+            Category: {ticket.category.replace('-', ' ')}
+          </div>
+        </div>
       </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Original ticket message */}
-        <div className="border rounded-lg p-4 bg-muted/20">
-          <div className="flex items-start gap-3">
-            <Avatar>
-              <AvatarFallback>
-                {data.ticket.userId === user?.id ? user?.username?.charAt(0).toUpperCase() : 'U'}
-              </AvatarFallback>
-              <AvatarImage src={null} alt="User" />
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex justify-between items-center mb-2">
-                <p className="font-medium text-sm">
-                  {data.ticket.userId === user?.id ? 'You' : 'User'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDate(ticket.createdAt)}
-                </p>
-              </div>
-              <div className="text-sm">{ticket.description}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Related information */}
-        {(property || investment) && (
-          <div className="border rounded-lg p-4 bg-blue-50 dark:bg-blue-950/20">
-            <h4 className="text-sm font-medium mb-2">Related Information</h4>
-            {property && (
-              <div className="text-xs text-muted-foreground mb-1">
-                <span className="font-medium">Property:</span> {property.name}
-              </div>
-            )}
-            {investment && (
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium">Investment:</span> #{investment.id} - ₦{investment.amount.toLocaleString()}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Message thread */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Conversation</h3>
+      <CardContent className="space-y-4">
+        {/* Ticket details */}
+        <div className="p-4 bg-muted/50 rounded-md">
+          <p className="text-sm mb-2">{ticket.description}</p>
           
-          {messages.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-3">
-              No replies yet. Our team will respond to your ticket soon.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {messages.map(message => (
-                <div 
-                  key={message.id} 
-                  className={`flex items-start gap-3 ${
-                    message.isFromStaff ? 'bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg' : ''
-                  }`}
-                >
-                  <Avatar>
-                    {message.isFromStaff ? (
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        S
-                      </AvatarFallback>
-                    ) : (
-                      <AvatarFallback>
-                        {message.user?.username?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    )}
-                    <AvatarImage src={null} alt={message.isFromStaff ? 'Staff' : 'User'} />
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="font-medium text-sm">
-                        {message.isFromStaff 
-                          ? 'Support Staff' 
-                          : message.user?.id === user?.id 
-                            ? 'You' 
-                            : message.user?.username || 'User'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(message.createdAt)}
-                      </p>
-                    </div>
-                    <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                    {message.attachmentUrl && (
-                      <div className="mt-2">
-                        <a 
-                          href={message.attachmentUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
-                        >
-                          <PaperclipIcon className="h-3 w-3 mr-1" /> Attachment
-                        </a>
-                      </div>
-                    )}
-                  </div>
+          {/* Related property or investment */}
+          {(property || investment) && (
+            <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
+              {property && (
+                <div className="flex items-center">
+                  <span className="font-medium mr-1">Related Property:</span>
+                  <span>{property.name}</span>
                 </div>
-              ))}
+              )}
+              {investment && (
+                <div className="flex items-center">
+                  <span className="font-medium mr-1">Related Investment:</span>
+                  <span>₦{investment.amount.toLocaleString()}</span>
+                </div>
+              )}
             </div>
           )}
+        </div>
+
+        {/* Messages */}
+        <div className="space-y-4 max-h-[400px] overflow-y-auto px-1 py-2">
+          {messages.map((message) => (
+            <div 
+              key={message.id} 
+              className={`flex ${message.isFromStaff ? "justify-start" : "justify-end"}`}
+            >
+              <div 
+                className={`max-w-[80%] p-3 rounded-lg ${
+                  message.isFromStaff 
+                    ? "bg-muted text-muted-foreground" 
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium">
+                    {message.isFromStaff ? "Support Team" : "You"}
+                  </span>
+                  <span className="text-xs opacity-75">
+                    {format(new Date(message.createdAt), "MMM d, h:mm a")}
+                  </span>
+                </div>
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                {message.attachmentUrl && (
+                  <a 
+                    href={message.attachmentUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center mt-2 text-xs underline"
+                  >
+                    View attachment
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Reply form */}
-        {canReply ? (
-          <div className="space-y-3 pt-3 border-t">
-            <h3 className="text-sm font-medium">Reply to this ticket</h3>
-            <Textarea
-              placeholder="Type your message here..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              rows={4}
-              className="w-full"
-            />
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => closeTicketMutation.mutate()}
-                disabled={closeTicketMutation.isPending}
-              >
-                {closeTicketMutation.isPending ? 'Closing...' : 'Close Ticket'}
-              </Button>
-              <Button
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim() || sendMessageMutation.isPending}
-              >
-                {sendMessageMutation.isPending ? 'Sending...' : 'Send Reply'}
-                <Send className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center p-3 border-t">
-            <p className="text-sm text-muted-foreground mb-2">
-              This ticket is closed. You cannot reply to it.
+        {!isResolved && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Type your reply here..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={addMessageMutation.isPending}
+                  className="flex items-center"
+                >
+                  {addMessageMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Send Reply
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
+
+        {/* Resolution notice */}
+        {isResolved && (
+          <div className="text-center p-4 border rounded-md bg-muted/30">
+            <p className="text-muted-foreground mb-2">
+              This ticket has been resolved. 
+              {ticket.resolvedAt && ` Resolved on ${format(new Date(ticket.resolvedAt), "MMM d, yyyy")}.`}
             </p>
-            <Button variant="outline" size="sm" onClick={onBack}>
-              Back to Tickets
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleReopenTicket}
+              disabled={isResolving}
+            >
+              {isResolving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Reopening...
+                </>
+              ) : (
+                "Reopen Ticket"
+              )}
             </Button>
           </div>
         )}
       </CardContent>
+
+      {/* Footer actions */}
+      {!isResolved && (
+        <CardFooter className="flex justify-between border-t pt-4">
+          <Button 
+            variant="outline" 
+            onClick={onBack}
+          >
+            Back to List
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={handleResolveTicket}
+            disabled={isResolving}
+          >
+            {isResolving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Resolving...
+              </>
+            ) : (
+              "Mark as Resolved"
+            )}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };

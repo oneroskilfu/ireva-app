@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Building, User, Shield, LogOut, Menu, X, Home, Info, TrendingUp, Users } from "lucide-react";
+import { Building, User, Shield, LogOut, Menu, X, Home, Info, TrendingUp, Users, HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AnimatedLink } from "@/components/ui/animated-link";
@@ -77,6 +77,13 @@ export default function Header() {
               }`}>
                 Market Trends
               </AnimatedLink>
+              <AnimatedLink href="/support" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                location === "/support" 
+                  ? "border-primary text-primary" 
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              }`}>
+                Support
+              </AnimatedLink>
               {user && (
                 <AnimatedLink href="/community" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                   location === "/community" 
@@ -126,6 +133,12 @@ export default function Header() {
                     <Link href="/market-trends" className={`flex items-center p-2 rounded-md ${location === "/market-trends" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
                       <TrendingUp className="h-5 w-5 mr-2" />
                       Market Trends
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link href="/support" className={`flex items-center p-2 rounded-md ${location === "/support" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
+                      <HelpCircle className="h-5 w-5 mr-2" />
+                      Support
                     </Link>
                   </SheetClose>
                   {user && (
@@ -231,6 +244,12 @@ export default function Header() {
                       <DropdownMenuItem className="cursor-pointer">
                         <Building className="h-4 w-4 mr-2" />
                         Dashboard
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/support">
+                      <DropdownMenuItem className="cursor-pointer">
+                        <HelpCircle className="h-4 w-4 mr-2" />
+                        Customer Support
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />
