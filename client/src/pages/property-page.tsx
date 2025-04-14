@@ -9,6 +9,8 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Button } from "@/components/ui/button";
 import { HelpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { AchievementsDisplay } from "@/components/gamification/AchievementsDisplay";
+import { AchievementBadge } from "@/components/gamification/AchievementBadge";
 
 export default function PropertyPage() {
   const [showBasicTutorial, setShowBasicTutorial] = useState(false);
@@ -33,18 +35,30 @@ export default function PropertyPage() {
             <div className="flex gap-2">
               <GuidedPropertyTutorial 
                 onComplete={() => console.log("Guided tutorial completed")} 
-                autoStart={!hasViewedProperty}
+                autoStart={false} // Set to false while we fix the error
               />
+              {/* Show property_viewed badge if the user has viewed this property */}
+              {hasViewedProperty && (
+                <AchievementBadge type="property_viewed" size="sm" />
+              )}
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1.5"
-              onClick={() => setShowBasicTutorial(true)}
-            >
-              <HelpCircle className="h-4 w-4" />
-              <span>Investment Help</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Compact achievements display */}
+              <AchievementsDisplay 
+                userId={user?.id} 
+                compact={true} 
+              />
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1.5"
+                onClick={() => setShowBasicTutorial(true)}
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span>Investment Help</span>
+              </Button>
+            </div>
           </div>
           
           <PropertyDetails />
