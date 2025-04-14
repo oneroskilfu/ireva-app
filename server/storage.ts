@@ -334,7 +334,7 @@ export class MemStorage implements IStorage {
     const properties: Omit<Property, 'id'>[] = [
       {
         name: "Skyline Apartments",
-        location: "New York",
+        location: "Lagos",
         description: "Luxury residential apartment complex with 120 units, rooftop amenities, and prime location in the heart of Manhattan. The property features high-end finishes, smart home technology, and stunning city views.",
         type: "residential",
         imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
@@ -364,7 +364,7 @@ export class MemStorage implements IStorage {
         
         // Detailed location information
         address: "123 High Rise Avenue",
-        city: "New York",
+        city: "Lagos",
         state: "NY",
         zipCode: "10001",
         latitude: "40.7128",
@@ -417,7 +417,7 @@ export class MemStorage implements IStorage {
       },
       {
         name: "Westfield Retail Center",
-        location: "Los Angeles",
+        location: "Abuja",
         description: "Prime shopping center with 45 retail units in an upscale area with consistent high foot traffic. Features modern architecture, spacious common areas, and convenient parking.",
         type: "commercial",
         imageUrl: "https://images.unsplash.com/photo-1577415124269-fc1140a69e91?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
@@ -446,7 +446,7 @@ export class MemStorage implements IStorage {
         
         // Detailed location information
         address: "456 Retail Row",
-        city: "Los Angeles",
+        city: "Abuja",
         state: "CA",
         zipCode: "90210",
         latitude: "34.0522",
@@ -496,7 +496,7 @@ export class MemStorage implements IStorage {
       },
       {
         name: "Logistics Hub",
-        location: "Chicago",
+        location: "Lagos",
         description: "100,000 sq ft distribution center with modern facilities and transportation access.",
         type: "industrial",
         imageUrl: "https://images.unsplash.com/photo-1554435493-93422e8d1c89?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
@@ -514,7 +514,7 @@ export class MemStorage implements IStorage {
       },
       {
         name: "Ocean View Residences",
-        location: "Miami",
+        location: "Abuja",
         description: "Luxury beachfront property with 65 premium condos and exclusive amenities.",
         type: "residential",
         imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
@@ -532,7 +532,7 @@ export class MemStorage implements IStorage {
       },
       {
         name: "Tech Hub Offices",
-        location: "San Francisco",
+        location: "Lagos",
         description: "Class A office space in technology district with flexible floor plans and modern facilities.",
         type: "commercial",
         imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
@@ -550,7 +550,7 @@ export class MemStorage implements IStorage {
       },
       {
         name: "Urban Village",
-        location: "Austin",
+        location: "Abuja",
         description: "Mixed-use development with retail spaces and 85 residential units in a walkable community.",
         type: "mixed-use",
         imageUrl: "https://images.unsplash.com/photo-1523192193543-6e7296d960e4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
