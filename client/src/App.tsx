@@ -11,6 +11,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import AccountSecurityPage from "@/pages/account-security";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import SupportPage from "@/pages/support-page";
+import HowItWorksPage from "@/pages/how-it-works";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -28,6 +29,7 @@ function Router() {
       <ProtectedRoute path="/account/security" component={AccountSecurityPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
       <Route path="/support" component={SupportPage} />
+      <Route path="/how-it-works" component={HowItWorksPage} />
       <Route component={NotFound} />
     </Switch>
   );

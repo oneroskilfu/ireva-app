@@ -95,7 +95,11 @@ export default function Header() {
                 </div>
               </div>
               
-              <AnimatedLink href="/#how-it-works" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              <AnimatedLink href="/how-it-works" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                location === "/how-it-works" 
+                  ? "border-primary text-primary" 
+                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              }`}>
                 How It Works
               </AnimatedLink>
               <AnimatedLink href="/#about" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
@@ -177,7 +181,7 @@ export default function Header() {
                     </div>
                   </div>
                   <SheetClose asChild>
-                    <Link href="/#how-it-works" className="flex items-center p-2 rounded-md hover:bg-gray-100">
+                    <Link href="/how-it-works" className={`flex items-center p-2 rounded-md ${location === "/how-it-works" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
                       <Info className="h-5 w-5 mr-2" />
                       How It Works
                     </Link>
