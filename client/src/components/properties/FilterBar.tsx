@@ -301,8 +301,8 @@ export function FilterBar({
                 <h4 className="font-medium">Investment Range</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>${localFilters.minInvestment[0]}</span>
-                    <span>${localFilters.minInvestment[1]}</span>
+                    <span>₦{localFilters.minInvestment[0]}</span>
+                    <span>₦{localFilters.minInvestment[1]}</span>
                   </div>
                   <Slider
                     value={[localFilters.minInvestment[0], localFilters.minInvestment[1]]}
@@ -525,7 +525,7 @@ export function FilterBar({
                   <div className="space-y-4 pt-2">
                     <div className="space-y-2">
                       <div className="text-center text-muted-foreground">
-                        ${localFilters.minInvestment[0]} - ${localFilters.minInvestment[1]}
+                        ₦{localFilters.minInvestment[0]} - ₦{localFilters.minInvestment[1]}
                       </div>
                       <Slider
                         value={[localFilters.minInvestment[0], localFilters.minInvestment[1]]}
