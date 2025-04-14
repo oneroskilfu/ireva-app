@@ -634,7 +634,7 @@ export class MemStorage implements IStorage {
     return newTicket;
   }
 
-  async updateSupportTicket(id: number, ticketData: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> {
+  async updateSupportTicket(id: number, ticketData: Partial<InsertSupportTicket> & { status?: string }): Promise<SupportTicket | undefined> {
     const ticket = await this.getSupportTicket(id);
     if (!ticket) return undefined;
     
@@ -670,7 +670,7 @@ export class MemStorage implements IStorage {
   async getSupportMessages(ticketId: number): Promise<SupportMessage[]> {
     return Array.from(this.supportMessages.values())
       .filter(message => message.ticketId === ticketId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
   }
 
   async createSupportMessage(message: InsertSupportMessage): Promise<SupportMessage> {
@@ -690,7 +690,7 @@ export class MemStorage implements IStorage {
     // Update the ticket status if needed (reopening a closed ticket)
     const ticket = await this.getSupportTicket(message.ticketId);
     if (ticket && (ticket.status === "closed" || ticket.status === "resolved")) {
-      await this.updateSupportTicket(ticket.id, { status: "open", updatedAt: new Date() });
+      await this.updateSupportTicket(ticket.id, { status: "open" });
     }
     
     return newMessage;
@@ -699,13 +699,17 @@ export class MemStorage implements IStorage {
   async getSupportFaqs(category?: string): Promise<SupportFaq[]> {
     let faqs = Array.from(this.supportFaqs.values())
       .filter(faq => faq.isPublished)
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
     
     if (category) {
       faqs = faqs.filter(faq => faq.category === category);
     }
     
     return faqs;
+  }
+  
+  async getSupportFaq(id: number): Promise<SupportFaq | undefined> {
+    return this.supportFaqs.get(id);
   }
 
   async createSupportFaq(faq: InsertSupportFaq): Promise<SupportFaq> {

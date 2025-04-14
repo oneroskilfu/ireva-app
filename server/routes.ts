@@ -7,7 +7,10 @@ import {
   insertInvestmentSchema, 
   insertForumPostSchema, 
   insertQAQuestionSchema, 
-  insertQAAnswerSchema 
+  insertQAAnswerSchema,
+  insertSupportTicketSchema,
+  insertSupportMessageSchema,
+  insertSupportFaqSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -1759,6 +1762,365 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   const httpServer = createServer(app);
+  
+  // Customer Support System Routes
+  
+  // Support Tickets
+  
+  // Get all tickets (admin)
+  app.get("/api/support/tickets", isAdmin, async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      
+      let tickets;
+      if (status) {
+        tickets = await storage.getSupportTicketsByStatus(status);
+      } else {
+        tickets = await storage.getAllSupportTickets();
+      }
+      
+      // Add user information for each ticket
+      const ticketsWithUserInfo = await Promise.all(
+        tickets.map(async (ticket) => {
+          const user = await storage.getUser(ticket.userId);
+          return {
+            ...ticket,
+            user: {
+              id: user?.id,
+              username: user?.username,
+              email: user?.email,
+              firstName: user?.firstName,
+              lastName: user?.lastName
+            }
+          };
+        })
+      );
+      
+      res.json(ticketsWithUserInfo);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+  
+  // Get user's tickets
+  app.get("/api/support/my-tickets", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = (req.user as Express.User).id;
+      const tickets = await storage.getUserSupportTickets(userId);
+      
+      res.json(tickets);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+  
+  // Get a specific ticket
+  app.get("/api/support/tickets/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ message: "Support ticket not found" });
+      }
+      
+      // Check if the user is the ticket owner or an admin
+      const userId = (req.user as Express.User).id;
+      if (ticket.userId !== userId && !(req.user as Express.User).isAdmin) {
+        return res.status(403).json({ message: "You don't have permission to view this ticket" });
+      }
+      
+      // Get ticket messages
+      const messages = await storage.getSupportMessages(ticketId);
+      
+      // Get user information for messages
+      const messagesWithUserInfo = await Promise.all(
+        messages.map(async (message) => {
+          const user = await storage.getUser(message.userId);
+          return {
+            ...message,
+            user: {
+              id: user?.id,
+              username: user?.username,
+              email: user?.email,
+              firstName: user?.firstName,
+              lastName: user?.lastName,
+              isAdmin: user?.isAdmin
+            }
+          };
+        })
+      );
+      
+      // Get property information if ticket is related to a property
+      let property = null;
+      if (ticket.propertyId) {
+        property = await storage.getProperty(ticket.propertyId);
+      }
+      
+      // Get investment information if ticket is related to an investment
+      let investment = null;
+      if (ticket.investmentId) {
+        investment = await storage.getInvestment(ticket.investmentId);
+        if (investment && !property && investment.propertyId) {
+          property = await storage.getProperty(investment.propertyId);
+        }
+      }
+      
+      res.json({
+        ticket,
+        messages: messagesWithUserInfo,
+        property,
+        investment
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch support ticket details" });
+    }
+  });
+  
+  // Create a new support ticket
+  app.post("/api/support/tickets", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = (req.user as Express.User).id;
+      
+      // Validate ticket data
+      const validatedData = insertSupportTicketSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      // Create ticket
+      const ticket = await storage.createSupportTicket(validatedData);
+      
+      // If the ticket includes a first message, add it
+      if (req.body.message) {
+        await storage.createSupportMessage({
+          ticketId: ticket.id,
+          userId: userId,
+          content: req.body.message,
+          isFromStaff: false
+        });
+      }
+      
+      res.status(201).json(ticket);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({ 
+          message: "Invalid ticket data", 
+          errors: fromZodError(error).toString() 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to create support ticket" });
+      }
+    }
+  });
+  
+  // Update a support ticket
+  app.patch("/api/support/tickets/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ message: "Support ticket not found" });
+      }
+      
+      // Check permissions - only ticket owner or admin can update
+      const userId = (req.user as Express.User).id;
+      const isAdmin = (req.user as Express.User).isAdmin;
+      
+      if (ticket.userId !== userId && !isAdmin) {
+        return res.status(403).json({ message: "You don't have permission to update this ticket" });
+      }
+      
+      // Restrict what regular users can update
+      let updateData = { ...req.body };
+      if (!isAdmin) {
+        // Regular users can only close their own tickets
+        const allowedFields = ['status'];
+        updateData = Object.keys(updateData)
+          .filter(key => allowedFields.includes(key))
+          .reduce((obj, key) => {
+            obj[key] = updateData[key];
+            return obj;
+          }, {} as Record<string, any>);
+          
+        // Regular users can only change status to "closed"
+        if (updateData.status && updateData.status !== "closed") {
+          return res.status(403).json({ 
+            message: "You can only close tickets, not change to other statuses" 
+          });
+        }
+      }
+      
+      // Update ticket
+      const updatedTicket = await storage.updateSupportTicket(ticketId, updateData);
+      
+      res.json(updatedTicket);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update support ticket" });
+    }
+  });
+  
+  // Support Messages
+  
+  // Add a message to a ticket
+  app.post("/api/support/tickets/:id/messages", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const ticketId = parseInt(req.params.id);
+      const userId = (req.user as Express.User).id;
+      const isAdmin = (req.user as Express.User).isAdmin;
+      
+      const ticket = await storage.getSupportTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Support ticket not found" });
+      }
+      
+      // Check if the user is the ticket owner or an admin
+      if (ticket.userId !== userId && !isAdmin) {
+        return res.status(403).json({ message: "You don't have permission to reply to this ticket" });
+      }
+      
+      // Validate message data
+      const validatedData = insertSupportMessageSchema.parse({
+        ticketId,
+        userId,
+        content: req.body.content,
+        isFromStaff: isAdmin,
+        attachmentUrl: req.body.attachmentUrl
+      });
+      
+      // Create message
+      const message = await storage.createSupportMessage(validatedData);
+      
+      // If admin is responding, update ticket status to "open" if it's "new"
+      if (isAdmin && ticket.status === "new") {
+        await storage.updateSupportTicket(ticketId, { status: "open" });
+      }
+      
+      // Get user information
+      const user = await storage.getUser(userId);
+      
+      res.status(201).json({
+        ...message,
+        user: {
+          id: user?.id,
+          username: user?.username,
+          email: user?.email,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          isAdmin: user?.isAdmin
+        }
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({ 
+          message: "Invalid message data", 
+          errors: fromZodError(error).toString() 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to add message" });
+      }
+    }
+  });
+  
+  // Support FAQs
+  
+  // Get all FAQs
+  app.get("/api/support/faqs", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const faqs = await storage.getSupportFaqs(category);
+      res.json(faqs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch FAQs" });
+    }
+  });
+  
+  // Create a new FAQ (admin only)
+  app.post("/api/support/faqs", isAdmin, async (req, res) => {
+    try {
+      // Validate FAQ data
+      const validatedData = insertSupportFaqSchema.parse(req.body);
+      
+      // Create FAQ
+      const faq = await storage.createSupportFaq(validatedData);
+      
+      res.status(201).json(faq);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({ 
+          message: "Invalid FAQ data", 
+          errors: fromZodError(error).toString() 
+        });
+      } else {
+        res.status(500).json({ message: "Failed to create FAQ" });
+      }
+    }
+  });
+  
+  // Update a FAQ (admin only)
+  app.patch("/api/support/faqs/:id", isAdmin, async (req, res) => {
+    try {
+      const faqId = parseInt(req.params.id);
+      
+      // Check if FAQ exists
+      const faq = await storage.getSupportFaq(faqId);
+      if (!faq) {
+        return res.status(404).json({ message: "FAQ not found" });
+      }
+      
+      // Update FAQ
+      const updatedFaq = await storage.updateSupportFaq(faqId, req.body);
+      
+      res.json(updatedFaq);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update FAQ" });
+    }
+  });
+  
+  // Delete a FAQ (admin only)
+  app.delete("/api/support/faqs/:id", isAdmin, async (req, res) => {
+    try {
+      const faqId = parseInt(req.params.id);
+      
+      // Check if FAQ exists
+      const faq = await storage.getSupportFaq(faqId);
+      if (!faq) {
+        return res.status(404).json({ message: "FAQ not found" });
+      }
+      
+      // Delete FAQ
+      const success = await storage.deleteSupportFaq(faqId);
+      
+      if (success) {
+        res.json({ message: "FAQ deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete FAQ" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete FAQ" });
+    }
+  });
   
   // Set up WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
