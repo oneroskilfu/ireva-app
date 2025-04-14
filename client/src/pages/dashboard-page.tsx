@@ -247,7 +247,7 @@ export default function DashboardPage() {
           )}
 
           <div className="flex flex-col md:flex-row justify-between mb-6">
-            <div>
+            <div id="dashboard-welcome">
               <h4 className="text-sm font-medium text-gray-500">Welcome back,</h4>
               <h3 className="text-xl font-bold">
                 {user?.firstName && user?.lastName 
@@ -256,6 +256,13 @@ export default function DashboardPage() {
               </h3>
             </div>
             <div className="flex items-center space-x-3 mt-4 md:mt-0">
+              <StartOnboardingButton 
+                flow="dashboard" 
+                variant="ghost" 
+                className="mr-2"
+              >
+                Help Guide
+              </StartOnboardingButton>
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export
