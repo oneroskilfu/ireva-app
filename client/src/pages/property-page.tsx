@@ -33,7 +33,7 @@ export default function PropertyPage() {
             <div className="flex gap-2">
               <GuidedPropertyTutorial 
                 onComplete={() => console.log("Guided tutorial completed")} 
-                autoStart={!checkMilestone('first_property_viewed')}
+                autoStart={!hasViewedProperty}
               />
             </div>
             <Button 
