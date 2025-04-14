@@ -6,6 +6,7 @@ import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
+import DashboardWithWelcome from "@/pages/dashboard-with-welcome";
 import CommunityPage from "@/pages/community-page";
 import MarketTrendsPage from "@/pages/market-trends-page";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/login" component={LoginPage} />
         <ProtectedRoute path="/dashboard" component={DashboardPage} />
+        <ProtectedRoute path="/welcome-dashboard" component={DashboardWithWelcome} />
         <ProtectedRoute path="/mui-dashboard" component={MuiDashboardPage} />
         <ProtectedRoute path="/simple-dashboard" component={SimpleDashboardPage} />
         <ProtectedRoute path="/simple-investments" component={SimpleInvestmentsPage} />
