@@ -283,7 +283,7 @@ export default function PropertyDetails() {
               {user ? (
                 <Dialog open={investDialogOpen} onOpenChange={setInvestDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="w-full sm:w-auto px-8 property-invest-button">
+                    <Button id="investment-options" className="w-full sm:w-auto px-8 property-invest-button">
                       Invest Now
                     </Button>
                   </DialogTrigger>
@@ -438,7 +438,7 @@ export default function PropertyDetails() {
 
       {/* Detailed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="gap-1 mb-6 md:w-auto overflow-auto p-0.5 flex w-full no-scrollbar property-tabs">
+        <TabsList id="property-navigation" className="gap-1 mb-6 md:w-auto overflow-auto p-0.5 flex w-full no-scrollbar property-tabs">
           <TabsTrigger value="overview" className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm">
             <Info className="h-3 md:h-3.5 w-3 md:w-3.5" />
             <span className="truncate">Overview</span>
@@ -464,7 +464,7 @@ export default function PropertyDetails() {
         {/* Overview Tab */}
         <TabsContent value="overview" className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            <div>
+            <div id="property-details">
               <h3 className="text-base font-semibold mb-3">Property Details</h3>
               <div className="space-y-3">
                 <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 md:gap-4">
@@ -531,7 +531,7 @@ export default function PropertyDetails() {
               <div className="space-y-3">
                 <Card>
                   <CardContent className="pt-4">
-                    <div className="space-y-3">
+                    <div id="investment-overview" className="space-y-3">
                       <div className="flex justify-between items-center pb-1.5 border-b">
                         <span className="text-muted-foreground">Target Return</span>
                         <span className="font-semibold">{formatPercent(property.targetReturn)}</span>
@@ -665,7 +665,7 @@ export default function PropertyDetails() {
               </div>
             </div>
             
-            <div>
+            <div id="risk-assessment">
               <h3 className="text-base font-semibold mb-3">Risk Assessment</h3>
               <Card>
                 <CardContent className="pt-4">
