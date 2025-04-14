@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const investmentSchema = new mongoose.Schema({
   user: {
@@ -112,4 +112,4 @@ investmentSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('Investment', investmentSchema);
+export const Investment = mongoose.model('Investment', investmentSchema);

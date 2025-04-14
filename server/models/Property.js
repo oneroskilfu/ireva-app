@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const propertySchema = new mongoose.Schema({
   name: {
@@ -133,4 +133,4 @@ propertySchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('Property', propertySchema);
+export const Property = mongoose.model('Property', propertySchema);
