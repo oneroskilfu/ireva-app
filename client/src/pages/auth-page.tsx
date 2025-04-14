@@ -33,11 +33,17 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { user, loginMutation, registerMutation } = useAuth();
   const { triggerMilestone } = useMilestones();
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  
+  // Get tab parameter from URL
+  const params = new URLSearchParams(location.split('?')[1]);
+  const tabParam = params.get('tab');
+  const initialTab = tabParam === 'login' ? 'login' : 'register';
+  
+  const [activeTab, setActiveTab] = useState<"login" | "register">(initialTab);
   const [showMFAVerification, setShowMFAVerification] = useState(false);
   const [mfaMethod, setMfaMethod] = useState<string>("app");
   
@@ -199,9 +205,9 @@ export default function AuthPage() {
                           {loginMutation.isPending ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Creating...
+                              Signing in...
                             </>
-                          ) : "Create"}
+                          ) : "Sign In"}
                         </Button>
                         <div className="text-center text-sm">
                           Don't have an account?{" "}

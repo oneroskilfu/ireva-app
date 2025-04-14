@@ -143,11 +143,18 @@ export default function Header() {
                 </DropdownMenu>
               </>
             ) : (
-              <AnimatedLink href="/auth">
-                <Button variant="default" size="sm">
-                  Create
-                </Button>
-              </AnimatedLink>
+              <div className="flex space-x-3">
+                <AnimatedLink href="/auth?tab=login">
+                  <Button variant="outline" size="sm">
+                    Login
+                  </Button>
+                </AnimatedLink>
+                <AnimatedLink href="/auth">
+                  <Button variant="default" size="sm">
+                    Create Account
+                  </Button>
+                </AnimatedLink>
+              </div>
             )}
           </div>
         </div>
