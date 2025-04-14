@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import api from '../services/api';
+import API from '../services/api';
 
 const Login = ({ setUser }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +30,8 @@ const Login = ({ setUser }) => {
       setIsLoading(true);
       setError('');
       
-      const data = await api.login(formData);
+      const response = await API.post('/auth/login', formData);
+      const data = response.data;
       
       // Save token to localStorage
       localStorage.setItem('token', data.token);
