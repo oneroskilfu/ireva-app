@@ -10,7 +10,7 @@ export default function HeroSection() {
             Invest in Real Estate Together
           </h1>
           <p className="mt-3 max-w-md mx-auto text-lg text-gray-300">
-            Access high-quality real estate investments with as little as $1,000.
+            Access high-quality real estate investments with as little as ₦100,000.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-0">
             <div className="sm:inline-flex rounded-md shadow">

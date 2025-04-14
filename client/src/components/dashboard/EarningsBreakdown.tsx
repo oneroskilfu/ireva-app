@@ -109,7 +109,7 @@ export default function EarningsBreakdown() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center">
-            <DollarSign className="h-5 w-5 mr-2" />
+            <Banknote className="h-5 w-5 mr-2" />
             Earnings Summary
           </CardTitle>
         </CardHeader>
@@ -117,15 +117,15 @@ export default function EarningsBreakdown() {
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="p-4 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-500">Total Invested</p>
-              <p className="text-2xl font-bold">${totalInvested.toLocaleString()}</p>
+              <p className="text-2xl font-bold">₦{totalInvested.toLocaleString()}</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-500">Current Value</p>
-              <p className="text-2xl font-bold">${totalCurrentValue.toLocaleString()}</p>
+              <p className="text-2xl font-bold">₦{totalCurrentValue.toLocaleString()}</p>
             </div>
             <div className="p-4 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-500">Total Earnings</p>
-              <p className="text-2xl font-bold text-emerald-600">${totalEarnings.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-emerald-600">₦{totalEarnings.toLocaleString()}</p>
               <p className="text-xs text-emerald-600">
                 <TrendingUp className="inline h-3 w-3 mr-1" />
                 {percentGain.toFixed(1)}% growth
@@ -134,7 +134,7 @@ export default function EarningsBreakdown() {
             <div className="p-4 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-500">Annual Yield</p>
               <p className="text-2xl font-bold text-amber-600">{annualYield.toFixed(1)}%</p>
-              <p className="text-xs text-gray-500">${annualEarnings.toFixed(0)} per year</p>
+              <p className="text-xs text-gray-500">₦{annualEarnings.toFixed(0)} per year</p>
             </div>
           </div>
           
@@ -144,7 +144,7 @@ export default function EarningsBreakdown() {
                 <Calendar className="h-4 w-4 mr-1" />
                 Monthly Income
               </h4>
-              <p className="text-sm font-medium text-emerald-600">${monthlyEarnings.toFixed(0)}</p>
+              <p className="text-sm font-medium text-emerald-600">₦{monthlyEarnings.toFixed(0)}</p>
             </div>
             <div className="space-y-2">
               {investments.map(inv => {
@@ -155,7 +155,7 @@ export default function EarningsBreakdown() {
                   <div key={inv.id} className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span>{inv.property.name}</span>
-                      <span>${monthlyReturn.toFixed(0)}/month</span>
+                      <span>₦{monthlyReturn.toFixed(0)}/month</span>
                     </div>
                     <Progress value={percentage} className="h-1.5" />
                   </div>
