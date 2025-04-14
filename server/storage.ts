@@ -4,7 +4,10 @@ import {
   investments, type Investment, type InsertInvestment,
   forumPosts, type ForumPost, type InsertForumPost,
   qaQuestions, type QAQuestion, type InsertQAQuestion,
-  qaAnswers, type QAAnswer, type InsertQAAnswer
+  qaAnswers, type QAAnswer, type InsertQAAnswer,
+  supportTickets, type SupportTicket, type InsertSupportTicket,
+  supportMessages, type SupportMessage, type InsertSupportMessage,
+  supportFaqs, type SupportFaq, type InsertSupportFaq
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -60,6 +63,21 @@ export interface IStorage {
   markQuestionAsAnswered(id: number, isAnswered: boolean): Promise<QAQuestion | undefined>;
   markAnswerAsAccepted(id: number, isAccepted: boolean): Promise<QAAnswer | undefined>;
   
+  // Customer Support methods
+  getSupportTicket(id: number): Promise<SupportTicket | undefined>;
+  getUserSupportTickets(userId: number): Promise<SupportTicket[]>;
+  getAllSupportTickets(): Promise<SupportTicket[]>;
+  getSupportTicketsByStatus(status: string): Promise<SupportTicket[]>;
+  createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket>;
+  updateSupportTicket(id: number, ticketData: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined>;
+  deleteSupportTicket(id: number): Promise<boolean>;
+  getSupportMessages(ticketId: number): Promise<SupportMessage[]>;
+  createSupportMessage(message: InsertSupportMessage): Promise<SupportMessage>;
+  getSupportFaqs(category?: string): Promise<SupportFaq[]>;
+  createSupportFaq(faq: InsertSupportFaq): Promise<SupportFaq>;
+  updateSupportFaq(id: number, faqData: Partial<InsertSupportFaq>): Promise<SupportFaq | undefined>;
+  deleteSupportFaq(id: number): Promise<boolean>;
+  
   // Session store
   sessionStore: any; // Using any for session store to avoid type issues
 }
@@ -71,12 +89,18 @@ export class MemStorage implements IStorage {
   private forumPosts: Map<number, ForumPost>;
   private qaQuestions: Map<number, QAQuestion>;
   private qaAnswers: Map<number, QAAnswer>;
+  private supportTickets: Map<number, SupportTicket>;
+  private supportMessages: Map<number, SupportMessage>;
+  private supportFaqs: Map<number, SupportFaq>;
   private userIdCounter: number;
   private propertyIdCounter: number;
   private investmentIdCounter: number;
   private forumPostIdCounter: number;
   private qaQuestionIdCounter: number;
   private qaAnswerIdCounter: number;
+  private supportTicketIdCounter: number;
+  private supportMessageIdCounter: number;
+  private supportFaqIdCounter: number;
   sessionStore: any; // Using any for the session store type
 
   constructor() {
@@ -86,12 +110,18 @@ export class MemStorage implements IStorage {
     this.forumPosts = new Map();
     this.qaQuestions = new Map();
     this.qaAnswers = new Map();
+    this.supportTickets = new Map();
+    this.supportMessages = new Map();
+    this.supportFaqs = new Map();
     this.userIdCounter = 1;
     this.propertyIdCounter = 1;
     this.investmentIdCounter = 1;
     this.forumPostIdCounter = 1;
     this.qaQuestionIdCounter = 1;
     this.qaAnswerIdCounter = 1;
+    this.supportTicketIdCounter = 1;
+    this.supportMessageIdCounter = 1;
+    this.supportFaqIdCounter = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
@@ -559,6 +589,160 @@ export class MemStorage implements IStorage {
 
     this.qaAnswers.set(id, updatedAnswer);
     return updatedAnswer;
+  }
+  
+  // Customer Support methods
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    return this.supportTickets.get(id);
+  }
+
+  async getUserSupportTickets(userId: number): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values()).filter(
+      (ticket) => ticket.userId === userId
+    );
+  }
+
+  async getAllSupportTickets(): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values());
+  }
+
+  async getSupportTicketsByStatus(status: string): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values()).filter(
+      (ticket) => ticket.status === status
+    );
+  }
+
+  async createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket> {
+    const id = this.supportTicketIdCounter++;
+    const newTicket: SupportTicket = {
+      id,
+      userId: ticket.userId,
+      subject: ticket.subject,
+      description: ticket.description,
+      priority: ticket.priority || "medium",
+      status: ticket.status || "new",
+      category: ticket.category,
+      channel: ticket.channel || "in_app",
+      propertyId: ticket.propertyId || null,
+      investmentId: ticket.investmentId || null,
+      assignedToUserId: ticket.assignedToUserId || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      resolvedAt: null
+    };
+    this.supportTickets.set(id, newTicket);
+    return newTicket;
+  }
+
+  async updateSupportTicket(id: number, ticketData: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> {
+    const ticket = await this.getSupportTicket(id);
+    if (!ticket) return undefined;
+    
+    // Check if we're resolving the ticket
+    let resolvedAt = ticket.resolvedAt;
+    if (ticketData.status === "resolved" && ticket.status !== "resolved") {
+      resolvedAt = new Date();
+    }
+
+    const updatedTicket: SupportTicket = {
+      ...ticket,
+      ...ticketData,
+      id: ticket.id,
+      createdAt: ticket.createdAt,
+      updatedAt: new Date(),
+      resolvedAt: resolvedAt
+    };
+    
+    this.supportTickets.set(id, updatedTicket);
+    return updatedTicket;
+  }
+
+  async deleteSupportTicket(id: number): Promise<boolean> {
+    // First delete all associated messages
+    const messages = await this.getSupportMessages(id);
+    for (const message of messages) {
+      this.supportMessages.delete(message.id);
+    }
+    
+    return this.supportTickets.delete(id);
+  }
+
+  async getSupportMessages(ticketId: number): Promise<SupportMessage[]> {
+    return Array.from(this.supportMessages.values())
+      .filter(message => message.ticketId === ticketId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  async createSupportMessage(message: InsertSupportMessage): Promise<SupportMessage> {
+    const id = this.supportMessageIdCounter++;
+    const newMessage: SupportMessage = {
+      id,
+      ticketId: message.ticketId,
+      userId: message.userId,
+      content: message.content,
+      isFromStaff: message.isFromStaff || false,
+      attachmentUrl: message.attachmentUrl || null,
+      createdAt: new Date()
+    };
+    
+    this.supportMessages.set(id, newMessage);
+    
+    // Update the ticket status if needed (reopening a closed ticket)
+    const ticket = await this.getSupportTicket(message.ticketId);
+    if (ticket && (ticket.status === "closed" || ticket.status === "resolved")) {
+      await this.updateSupportTicket(ticket.id, { status: "open", updatedAt: new Date() });
+    }
+    
+    return newMessage;
+  }
+
+  async getSupportFaqs(category?: string): Promise<SupportFaq[]> {
+    let faqs = Array.from(this.supportFaqs.values())
+      .filter(faq => faq.isPublished)
+      .sort((a, b) => a.order - b.order);
+    
+    if (category) {
+      faqs = faqs.filter(faq => faq.category === category);
+    }
+    
+    return faqs;
+  }
+
+  async createSupportFaq(faq: InsertSupportFaq): Promise<SupportFaq> {
+    const id = this.supportFaqIdCounter++;
+    const newFaq: SupportFaq = {
+      id,
+      question: faq.question,
+      answer: faq.answer,
+      category: faq.category,
+      order: faq.order || 0,
+      isPublished: faq.isPublished !== undefined ? faq.isPublished : true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.supportFaqs.set(id, newFaq);
+    return newFaq;
+  }
+
+  async updateSupportFaq(id: number, faqData: Partial<InsertSupportFaq>): Promise<SupportFaq | undefined> {
+    const faq = this.supportFaqs.get(id);
+    if (!faq) return undefined;
+    
+    const updatedFaq: SupportFaq = {
+      ...faq,
+      ...faqData,
+      id: faq.id,
+      createdAt: faq.createdAt,
+      updatedAt: new Date()
+    };
+    
+    this.supportFaqs.set(id, updatedFaq);
+    return updatedFaq;
+  }
+
+  async deleteSupportFaq(id: number): Promise<boolean> {
+    return this.supportFaqs.delete(id);
   }
 
   // Seed properties

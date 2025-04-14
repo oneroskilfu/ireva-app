@@ -259,3 +259,91 @@ export type InsertQAQuestion = z.infer<typeof insertQAQuestionSchema>;
 
 export type QAAnswer = typeof qaAnswers.$inferSelect;
 export type InsertQAAnswer = z.infer<typeof insertQAAnswerSchema>;
+
+// Customer Support Schema
+export const supportChannelEnum = pgEnum("support_channel", [
+  "email",
+  "phone",
+  "live_chat",
+  "in_app"
+]);
+
+export const supportPriorityEnum = pgEnum("support_priority", [
+  "low", 
+  "medium", 
+  "high", 
+  "urgent"
+]);
+
+export const supportStatusEnum = pgEnum("support_status", [
+  "new",
+  "open",
+  "pending",
+  "resolved",
+  "closed"
+]);
+
+export const supportTickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  subject: text("subject").notNull(),
+  description: text("description").notNull(),
+  priority: supportPriorityEnum("priority").default("medium"),
+  status: supportStatusEnum("status").default("new"),
+  category: text("category").notNull(),
+  channel: supportChannelEnum("channel").default("in_app"),
+  propertyId: integer("property_id").references(() => properties.id),
+  investmentId: integer("investment_id").references(() => investments.id),
+  assignedToUserId: integer("assigned_to_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+});
+
+export const supportMessages = pgTable("support_messages", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").references(() => supportTickets.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  isFromStaff: boolean("is_from_staff").default(false),
+  attachmentUrl: text("attachment_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const supportFaqs = pgTable("support_faqs", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  category: text("category").notNull(),
+  order: integer("order").default(0),
+  isPublished: boolean("is_published").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSupportTicketSchema = createInsertSchema(supportTickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true
+});
+
+export const insertSupportMessageSchema = createInsertSchema(supportMessages).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertSupportFaqSchema = createInsertSchema(supportFaqs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = z.infer<typeof insertSupportTicketSchema>;
+
+export type SupportMessage = typeof supportMessages.$inferSelect;
+export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
+
+export type SupportFaq = typeof supportFaqs.$inferSelect;
+export type InsertSupportFaq = z.infer<typeof insertSupportFaqSchema>;
