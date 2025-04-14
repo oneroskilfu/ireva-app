@@ -111,11 +111,11 @@ export default function ActiveProjects() {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-gray-500">Invested</p>
-                  <p className="text-sm font-medium">${totalInvested.toLocaleString()}</p>
+                  <p className="text-sm font-medium">₦{totalInvested.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Current Value</p>
-                  <p className="text-sm font-medium">${totalCurrentValue.toLocaleString()}</p>
+                  <p className="text-sm font-medium">₦{totalCurrentValue.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Return</p>

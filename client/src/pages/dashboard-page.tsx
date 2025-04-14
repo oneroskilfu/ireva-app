@@ -132,7 +132,7 @@ export default function DashboardPage() {
     onSuccess: (data) => {
       toast({
         title: "Withdrawal Successful",
-        description: `Withdrawal of $${data.amount} has been initiated. It will be processed within 1-3 business days.`,
+        description: `Withdrawal of ₦${data.amount.toLocaleString()} has been initiated. It will be processed within 1-3 business days.`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/wallet'] });
       setWithdrawDialogOpen(false);

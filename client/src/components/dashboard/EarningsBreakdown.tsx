@@ -216,7 +216,7 @@ export default function EarningsBreakdown() {
                   </div>
                   <div className="flex justify-between text-xs text-gray-500">
                     <span>{count} properties</span>
-                    <span>${earnings.toLocaleString()} earnings</span>
+                    <span>₦{earnings.toLocaleString()} earnings</span>
                   </div>
                 </div>
               </div>
