@@ -1,6 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { UserRound, LayoutDashboard, Building2, Users, BarChartBig, Settings, HelpCircle, LogOut, TrendingUp } from 'lucide-react';
+import { 
+  UserRound, 
+  LayoutDashboard, 
+  Building2, 
+  Users, 
+  BarChartBig, 
+  Settings, 
+  HelpCircle, 
+  LogOut, 
+  TrendingUp, 
+  MessageSquare, 
+  Mail
+} from 'lucide-react';
 
 interface SidebarProps {
   onLogout: () => void;
