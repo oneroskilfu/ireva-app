@@ -9,11 +9,13 @@ import DashboardPage from "@/pages/dashboard-page";
 import CommunityPage from "@/pages/community-page";
 import MarketTrendsPage from "@/pages/market-trends-page";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminSettingsPage from "@/pages/admin-settings-page";
 import AccountSecurityPage from "@/pages/account-security";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import SupportPage from "@/pages/support-page";
 import HowItWorksPage from "@/pages/how-it-works";
 import JwtAuthTest from "@/pages/jwt-auth-test";
+import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "./pages/login-page";
 import Projects from "./components/Projects";
 import Users from "./components/Users";
@@ -74,6 +76,11 @@ function Router() {
           component={AdminDashboard}
           allowedRoles={['admin']} 
         />
+        <RoleProtectedRoute 
+          path="/admin/settings" 
+          component={AdminSettingsPage}
+          allowedRoles={['admin']} 
+        />
         <ProtectedRoute path="/account/security" component={AccountSecurityPage} />
         <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
         
@@ -97,6 +104,7 @@ function Router() {
         <Route path="/support" component={SupportPage} />
         <Route path="/how-it-works" component={HowItWorksPage} />
         <Route path="/jwt-auth-test" component={JwtAuthTest} />
+        <Route path="/unauthorized" component={UnauthorizedPage} />
         <Route component={NotFound} />
       </Switch>
     </>
