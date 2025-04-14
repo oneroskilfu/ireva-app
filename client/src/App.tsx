@@ -23,7 +23,7 @@ import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
 import { OnboardingProvider } from "./contexts/onboarding-context";
 import OnboardingWrapper from "./components/onboarding/OnboardingWrapper";
-import { getToken, setToken as setAuthToken, logout } from "./utils/auth";
+import { getToken, setToken as setAuthToken, logout } from "./utils/auth.js";
 
 // Create a context for auth
 import React from "react";

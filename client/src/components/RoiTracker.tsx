@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { getToken } from '../utils/auth';
+import { getToken } from '../utils/auth.js';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import {
