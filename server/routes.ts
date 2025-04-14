@@ -1229,6 +1229,534 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch analytics dashboard data" });
     }
   });
+
+  // ===== FORUM DISCUSSION ROUTES =====
+  
+  // Get all forum posts or recent ones
+  app.get("/api/forums", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const posts = await storage.getRecentForumPosts(limit);
+      
+      // Add author information to each post
+      const postsWithAuthors = await Promise.all(
+        posts.map(async (post) => {
+          const author = await storage.getUser(post.userId);
+          return {
+            ...post,
+            author: author ? {
+              id: author.id,
+              username: author.username,
+              firstName: author.firstName,
+              lastName: author.lastName
+            } : null
+          };
+        })
+      );
+      
+      res.json(postsWithAuthors);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch forum posts" });
+    }
+  });
+  
+  // Get forums for a specific property
+  app.get("/api/forums/property/:propertyId", async (req, res) => {
+    try {
+      const propertyId = parseInt(req.params.propertyId);
+      if (isNaN(propertyId)) {
+        return res.status(400).json({ message: "Invalid property ID" });
+      }
+      
+      const posts = await storage.getForumPostsByProperty(propertyId);
+      res.json(posts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch property forum posts" });
+    }
+  });
+  
+  // Get forums created by a specific user
+  app.get("/api/forums/user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const posts = await storage.getForumPostsByUser(userId);
+      res.json(posts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user forum posts" });
+    }
+  });
+  
+  // Get a specific forum post with its replies
+  app.get("/api/forums/:postId", async (req, res) => {
+    try {
+      const postId = parseInt(req.params.postId);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "Invalid post ID" });
+      }
+      
+      const post = await storage.getForumPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      
+      // Get post author
+      const author = await storage.getUser(post.userId);
+      
+      // Get replies to this post
+      const replies = await storage.getForumThreads(postId);
+      
+      // Add authors to replies
+      const repliesWithAuthors = await Promise.all(
+        replies.map(async (reply) => {
+          const replyAuthor = await storage.getUser(reply.userId);
+          return {
+            ...reply,
+            author: replyAuthor ? {
+              id: replyAuthor.id,
+              username: replyAuthor.username,
+              firstName: replyAuthor.firstName,
+              lastName: replyAuthor.lastName
+            } : null
+          };
+        })
+      );
+      
+      res.json({
+        ...post,
+        author: author ? {
+          id: author.id,
+          username: author.username,
+          firstName: author.firstName,
+          lastName: author.lastName
+        } : null,
+        replies: repliesWithAuthors
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch forum post" });
+    }
+  });
+  
+  // Create a new forum post
+  app.post("/api/forums", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to create a post" });
+      }
+      
+      const postData = insertForumPostSchema.parse({
+        ...req.body,
+        userId: req.user.id
+      });
+      
+      const post = await storage.createForumPost(postData);
+      
+      // Get the author info
+      const author = await storage.getUser(post.userId);
+      
+      res.status(201).json({
+        ...post,
+        author: author ? {
+          id: author.id,
+          username: author.username,
+          firstName: author.firstName,
+          lastName: author.lastName
+        } : null
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid post data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to create forum post" });
+    }
+  });
+  
+  // Update a forum post
+  app.put("/api/forums/:postId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to update a post" });
+      }
+      
+      const postId = parseInt(req.params.postId);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "Invalid post ID" });
+      }
+      
+      const post = await storage.getForumPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      
+      if (post.userId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ message: "You can only edit your own posts" });
+      }
+      
+      const postData = insertForumPostSchema.partial().parse(req.body);
+      
+      const updatedPost = await storage.updateForumPost(postId, postData);
+      res.json(updatedPost);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid post data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to update forum post" });
+    }
+  });
+  
+  // Delete a forum post
+  app.delete("/api/forums/:postId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to delete a post" });
+      }
+      
+      const postId = parseInt(req.params.postId);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "Invalid post ID" });
+      }
+      
+      const post = await storage.getForumPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      
+      if (post.userId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ message: "You can only delete your own posts" });
+      }
+      
+      const success = await storage.deleteForumPost(postId);
+      if (success) {
+        res.status(204).end();
+      } else {
+        res.status(500).json({ message: "Failed to delete post" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete forum post" });
+    }
+  });
+  
+  // ===== Q&A ROUTES =====
+  
+  // Get all questions or recent ones
+  app.get("/api/questions", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const questions = await storage.getRecentQuestions(limit);
+      
+      // Add author information to each question
+      const questionsWithDetails = await Promise.all(
+        questions.map(async (question) => {
+          const author = await storage.getUser(question.userId);
+          const property = await storage.getProperty(question.propertyId);
+          const answers = await storage.getAnswers(question.id);
+          
+          return {
+            ...question,
+            author: author ? {
+              id: author.id,
+              username: author.username,
+              firstName: author.firstName,
+              lastName: author.lastName
+            } : null,
+            property: property ? {
+              id: property.id,
+              name: property.name,
+              type: property.type,
+              location: property.location,
+              imageUrl: property.imageUrl
+            } : null,
+            answerCount: answers.length
+          };
+        })
+      );
+      
+      res.json(questionsWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch questions" });
+    }
+  });
+  
+  // Get questions for a specific property
+  app.get("/api/questions/property/:propertyId", async (req, res) => {
+    try {
+      const propertyId = parseInt(req.params.propertyId);
+      if (isNaN(propertyId)) {
+        return res.status(400).json({ message: "Invalid property ID" });
+      }
+      
+      const questions = await storage.getQuestionsByProperty(propertyId);
+      
+      // Add author information and answer count to each question
+      const questionsWithDetails = await Promise.all(
+        questions.map(async (question) => {
+          const author = await storage.getUser(question.userId);
+          const answers = await storage.getAnswers(question.id);
+          
+          return {
+            ...question,
+            author: author ? {
+              id: author.id,
+              username: author.username,
+              firstName: author.firstName,
+              lastName: author.lastName
+            } : null,
+            answerCount: answers.length
+          };
+        })
+      );
+      
+      res.json(questionsWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch property questions" });
+    }
+  });
+  
+  // Get a specific question with its answers
+  app.get("/api/questions/:questionId", async (req, res) => {
+    try {
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      
+      const question = await storage.getQuestion(questionId);
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      // Get question author
+      const author = await storage.getUser(question.userId);
+      
+      // Get property details
+      const property = await storage.getProperty(question.propertyId);
+      
+      // Get answers to this question
+      const answers = await storage.getAnswers(questionId);
+      
+      // Add authors to answers
+      const answersWithAuthors = await Promise.all(
+        answers.map(async (answer) => {
+          const answerAuthor = await storage.getUser(answer.userId);
+          return {
+            ...answer,
+            author: answerAuthor ? {
+              id: answerAuthor.id,
+              username: answerAuthor.username,
+              firstName: answerAuthor.firstName,
+              lastName: answerAuthor.lastName
+            } : null
+          };
+        })
+      );
+      
+      // Sort answers - accepted answer first, then by date
+      const sortedAnswers = answersWithAuthors.sort((a, b) => {
+        if (a.isAccepted && !b.isAccepted) return -1;
+        if (!a.isAccepted && b.isAccepted) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      res.json({
+        ...question,
+        author: author ? {
+          id: author.id,
+          username: author.username,
+          firstName: author.firstName,
+          lastName: author.lastName
+        } : null,
+        property: property ? {
+          id: property.id,
+          name: property.name,
+          type: property.type,
+          location: property.location,
+          imageUrl: property.imageUrl
+        } : null,
+        answers: sortedAnswers
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch question" });
+    }
+  });
+  
+  // Ask a new question
+  app.post("/api/questions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to ask a question" });
+      }
+      
+      const questionData = insertQAQuestionSchema.parse({
+        ...req.body,
+        userId: req.user.id
+      });
+      
+      // Verify the property exists
+      const property = await storage.getProperty(questionData.propertyId);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      const question = await storage.createQuestion(questionData);
+      
+      // Get the author info
+      const author = await storage.getUser(question.userId);
+      
+      res.status(201).json({
+        ...question,
+        author: author ? {
+          id: author.id,
+          username: author.username,
+          firstName: author.firstName,
+          lastName: author.lastName
+        } : null,
+        property: {
+          id: property.id,
+          name: property.name,
+          type: property.type,
+          location: property.location,
+          imageUrl: property.imageUrl
+        }
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid question data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to create question" });
+    }
+  });
+  
+  // Post an answer to a question
+  app.post("/api/questions/:questionId/answers", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to answer a question" });
+      }
+      
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      
+      const question = await storage.getQuestion(questionId);
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      const answerData = insertQAAnswerSchema.parse({
+        ...req.body,
+        userId: req.user.id,
+        questionId
+      });
+      
+      const answer = await storage.createAnswer(answerData);
+      
+      // Get the author info
+      const author = await storage.getUser(answer.userId);
+      
+      res.status(201).json({
+        ...answer,
+        author: author ? {
+          id: author.id,
+          username: author.username,
+          firstName: author.firstName,
+          lastName: author.lastName
+        } : null
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid answer data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to create answer" });
+    }
+  });
+  
+  // Mark question as answered/unanswered
+  app.patch("/api/questions/:questionId/answered", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to update a question" });
+      }
+      
+      const questionId = parseInt(req.params.questionId);
+      if (isNaN(questionId)) {
+        return res.status(400).json({ message: "Invalid question ID" });
+      }
+      
+      const question = await storage.getQuestion(questionId);
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      if (question.userId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ message: "You can only update your own questions" });
+      }
+      
+      const isAnswered = req.body.isAnswered === true;
+      const updatedQuestion = await storage.markQuestionAsAnswered(questionId, isAnswered);
+      res.json(updatedQuestion);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update question" });
+    }
+  });
+  
+  // Mark answer as accepted/unaccepted
+  app.patch("/api/answers/:answerId/accepted", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "You must be logged in to accept an answer" });
+      }
+      
+      const answerId = parseInt(req.params.answerId);
+      if (isNaN(answerId)) {
+        return res.status(400).json({ message: "Invalid answer ID" });
+      }
+      
+      // Find the answer in all answers (ideally we'd have a getAnswer method for a single answer)
+      const answers = await storage.getAnswers(answerId);
+      const answer = answers.find(a => a.id === answerId);
+      
+      if (!answer) {
+        return res.status(404).json({ message: "Answer not found" });
+      }
+      
+      const question = await storage.getQuestion(answer.questionId);
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      if (question.userId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ message: "You can only accept answers to your own questions" });
+      }
+      
+      const isAccepted = req.body.isAccepted === true;
+      const updatedAnswer = await storage.markAnswerAsAccepted(answerId, isAccepted);
+      
+      // If accepting an answer, also mark the question as answered
+      if (isAccepted) {
+        await storage.markQuestionAsAnswered(question.id, true);
+      }
+      
+      res.json(updatedAnswer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update answer" });
+    }
+  });
   
   const httpServer = createServer(app);
   
