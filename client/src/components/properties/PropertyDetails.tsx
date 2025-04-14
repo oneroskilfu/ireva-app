@@ -425,35 +425,35 @@ export default function PropertyDetails() {
       {/* Detailed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="gap-1 mb-6 md:w-auto overflow-auto p-0.5 flex w-full no-scrollbar">
-          <TabsTrigger value="overview" className="flex items-center gap-1.5 text-sm">
-            <Info className="h-3.5 w-3.5" />
-            <span>Overview</span>
+          <TabsTrigger value="overview" className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm">
+            <Info className="h-3 md:h-3.5 w-3 md:w-3.5" />
+            <span className="truncate">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="financials" className="flex items-center gap-1.5 text-sm">
-            <LineChart className="h-3.5 w-3.5" />
-            <span>Financials</span>
+          <TabsTrigger value="financials" className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm">
+            <LineChart className="h-3 md:h-3.5 w-3 md:w-3.5" />
+            <span className="truncate">Financials</span>
           </TabsTrigger>
-          <TabsTrigger value="location" className="flex items-center gap-1.5 text-sm">
-            <MapPin className="h-3.5 w-3.5" />
-            <span>Location</span>
+          <TabsTrigger value="location" className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm">
+            <MapPin className="h-3 md:h-3.5 w-3 md:w-3.5" />
+            <span className="truncate">Location</span>
           </TabsTrigger>
-          <TabsTrigger value="developer" className="flex items-center gap-1.5 text-sm">
-            <User className="h-3.5 w-3.5" />
-            <span>Developer</span>
+          <TabsTrigger value="developer" className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm">
+            <User className="h-3 md:h-3.5 w-3 md:w-3.5" />
+            <span className="truncate">Developer</span>
           </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-1.5 text-sm">
-            <FileText className="h-3.5 w-3.5" />
-            <span>Documents</span>
+          <TabsTrigger value="documents" className="flex items-center gap-1 md:gap-1.5 text-xs md:text-sm">
+            <FileText className="h-3 md:h-3.5 w-3 md:w-3.5" />
+            <span className="truncate">Documents</span>
           </TabsTrigger>
         </TabsList>
         
         {/* Overview Tab */}
         <TabsContent value="overview" className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div>
               <h3 className="text-base font-semibold mb-3">Property Details</h3>
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 md:gap-4">
                   <PropertyDetailItem 
                     icon={<Building2 className="h-4 w-4 text-primary" />}
                     label="Property Type"
@@ -489,9 +489,9 @@ export default function PropertyDetails() {
               
               {/* Property Features */}
               {property.features && (
-                <div className="mt-8">
+                <div className="mt-6 md:mt-8">
                   <h3 className="text-base font-semibold mb-3">Features</h3>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                     {JSON.parse(property.features || '[]').map((feature: string, index: number) => (
                       <FeatureItem key={index} feature={feature} />
                     ))}
@@ -501,9 +501,9 @@ export default function PropertyDetails() {
               
               {/* Property Amenities */}
               {property.amenities && (
-                <div className="mt-8">
+                <div className="mt-6 md:mt-8">
                   <h3 className="text-base font-semibold mb-3">Amenities</h3>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
                     {JSON.parse(property.amenities || '[]').map((amenity: string, index: number) => (
                       <FeatureItem key={index} feature={amenity} />
                     ))}
@@ -575,7 +575,7 @@ export default function PropertyDetails() {
         
         {/* Financials Tab */}
         <TabsContent value="financials" className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div>
               <h3 className="text-base font-semibold mb-3">Financial Projections</h3>
               <Card>
@@ -685,7 +685,7 @@ export default function PropertyDetails() {
         
         {/* Location Tab */}
         <TabsContent value="location" className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div>
               <h3 className="text-base font-semibold mb-3">Location Details</h3>
               <Card>
@@ -801,7 +801,7 @@ export default function PropertyDetails() {
         
         {/* Developer Tab */}
         <TabsContent value="developer" className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div>
               <h3 className="text-base font-semibold mb-3">Developer Information</h3>
               <Card>
