@@ -307,8 +307,8 @@ export function FilterBar({
                   <Slider
                     value={[localFilters.minInvestment[0], localFilters.minInvestment[1]]}
                     min={0}
-                    max={10000}
-                    step={100}
+                    max={10000000}
+                    step={100000}
                     onValueChange={(value) => updateFilter('minInvestment', [value[0], value[1]])}
                   />
                 </div>
@@ -530,8 +530,8 @@ export function FilterBar({
                       <Slider
                         value={[localFilters.minInvestment[0], localFilters.minInvestment[1]]}
                         min={0}
-                        max={10000}
-                        step={100}
+                        max={10000000}
+                        step={100000}
                         onValueChange={(value) => updateFilter('minInvestment', [value[0], value[1]])}
                       />
                     </div>

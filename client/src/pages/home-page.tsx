@@ -16,7 +16,7 @@ export default function HomePage() {
     search: "",
     location: "all",
     type: "all",
-    minInvestment: [0, 10000],
+    minInvestment: [0, 10000000],
     minReturn: 0,
     riskLevel: "all",
     sort: "default"
@@ -50,7 +50,7 @@ export default function HomePage() {
     let count = 0;
     if (filters.type !== 'all') count++;
     if (filters.location !== 'all') count++;
-    if (filters.minInvestment[0] > 0 || filters.minInvestment[1] < 10000) count++;
+    if (filters.minInvestment[0] > 0 || filters.minInvestment[1] < 10000000) count++;
     if (filters.minReturn > 0) count++;
     if (filters.riskLevel !== 'all') count++;
     if (filters.search) count++;
@@ -73,7 +73,7 @@ export default function HomePage() {
     let result = [...properties];
     
     // Filter by minimum investment amount
-    if (filters.minInvestment[0] > 0 || filters.minInvestment[1] < 10000) {
+    if (filters.minInvestment[0] > 0 || filters.minInvestment[1] < 10000000) {
       result = result.filter(
         p => p.minimumInvestment >= filters.minInvestment[0] && 
              p.minimumInvestment <= filters.minInvestment[1]
