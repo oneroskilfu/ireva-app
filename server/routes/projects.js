@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { Project } from '../models/Project.js';
+import { Property } from '../models/Property.js';
+import { auth, admin, developer } from '../middleware/auth.js';
+
 const router = express.Router();
-const Project = require('../models/Project');
-const Property = require('../models/Property');
-const { auth, admin, developer } = require('../middleware/auth');
 
 // @route   GET /api/projects
 // @desc    Get all projects
@@ -406,4 +407,4 @@ router.post('/clone/:id', auth, developer, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import { User } from '../models/User.js';
+import { auth, admin } from '../middleware/auth.js';
+
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const { auth, admin } = require('../middleware/auth');
 
 // @route   GET /api/users
 // @desc    Get all users
@@ -117,4 +118,4 @@ router.delete('/:id', auth, admin, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
