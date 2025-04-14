@@ -10,6 +10,7 @@ import MarketTrendsPage from "@/pages/market-trends-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AccountSecurityPage from "@/pages/account-security";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
+import SupportPage from "@/pages/support-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -26,6 +27,7 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/account/security" component={AccountSecurityPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
+      <Route path="/support" component={SupportPage} />
       <Route component={NotFound} />
     </Switch>
   );
