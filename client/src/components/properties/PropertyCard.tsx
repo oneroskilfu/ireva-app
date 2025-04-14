@@ -40,7 +40,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   
   const handleViewDetails = () => {
     startLoading();
-    navigate(`/property/${property.id}`);
+    navigate(`/properties/${property.id}`);
     // In a real scenario, we'd stop loading when the page is loaded
     // Here we'll just set a timeout for demo purposes
     setTimeout(() => {
