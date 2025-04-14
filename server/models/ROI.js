@@ -123,4 +123,4 @@ roiSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('ROI', roiSchema);
+export const ROI = mongoose.model('ROI', roiSchema);

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const MessageSchema = new mongoose.Schema({
   sender: {
@@ -41,4 +41,4 @@ const MessageSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Message', MessageSchema);
+export const Message = mongoose.model('Message', MessageSchema);

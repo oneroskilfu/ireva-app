@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import mongoose from 'mongoose';
+import { Message } from '../models/Message.js';
+import { User } from '../models/User.js';
+import { auth, admin } from '../middleware/auth.js';
+
 const router = express.Router();
-const mongoose = require('mongoose');
-const Message = require('../models/Message');
-const User = require('../models/User');
-const { auth, admin } = require('../middleware/auth');
 
 // Create a Notification schema to store user notifications
 const notificationSchema = new mongoose.Schema({
@@ -540,4 +541,4 @@ router.get('/notifications/count', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
