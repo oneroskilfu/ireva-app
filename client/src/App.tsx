@@ -26,6 +26,7 @@ import SimpleDashboardPage from "./pages/simple-dashboard-page";
 import SimpleInvestmentsPage from "./pages/simple-investments-page";
 import SimpleRoiPage from "./pages/simple-roi-page";
 import SimpleMessagesPage from "./pages/simple-messages-page";
+import MessagesPage from "./pages/messages-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -84,6 +85,7 @@ function Router() {
         <ProtectedRoute path="/simple-investments" component={SimpleInvestmentsPage} />
         <ProtectedRoute path="/simple-roi" component={SimpleRoiPage} />
         <ProtectedRoute path="/simple-messages" component={SimpleMessagesPage} />
+        <ProtectedRoute path="/api-messages" component={MessagesPage} />
         <ProtectedRoute path="/community" component={CommunityPage} />
         <Route path="/market-trends" component={MarketTrendsPage} />
         <ProtectedRoute path="/admin" component={AdminDashboard} />

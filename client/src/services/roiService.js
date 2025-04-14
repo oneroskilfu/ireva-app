@@ -1,12 +1,9 @@
-import axios from 'axios';
-
-// Create axios instance with baseURL pointing to our backend API
-const API_URL = '/api';
+import API from '../api/axios';
 
 // Get ROI data for all user investments
 export const getUserROI = async (timeframe) => {
   try {
-    const response = await axios.get(`${API_URL}/investments/roi`, {
+    const response = await API.get('/investments/roi', {
       params: { timeframe }
     });
     return response.data;
@@ -19,7 +16,7 @@ export const getUserROI = async (timeframe) => {
 // Get ROI data for a specific investment
 export const getInvestmentROI = async (investmentId, timeframe) => {
   try {
-    const response = await axios.get(`${API_URL}/investments/${investmentId}/roi`, {
+    const response = await API.get(`/investments/${investmentId}/roi`, {
       params: { timeframe }
     });
     return response.data;
@@ -32,7 +29,7 @@ export const getInvestmentROI = async (investmentId, timeframe) => {
 // Admin: Add a new ROI record
 export const addROIRecord = async (roiData) => {
   try {
-    const response = await axios.post(`${API_URL}/investments/roi`, roiData);
+    const response = await API.post('/investments/roi', roiData);
     return response.data;
   } catch (error) {
     console.error('Error adding ROI record:', error);
@@ -43,7 +40,7 @@ export const addROIRecord = async (roiData) => {
 // Admin: Update an ROI record
 export const updateROIRecord = async (id, roiData) => {
   try {
-    const response = await axios.put(`${API_URL}/investments/roi/${id}`, roiData);
+    const response = await API.put(`/investments/roi/${id}`, roiData);
     return response.data;
   } catch (error) {
     console.error(`Error updating ROI record ${id}:`, error);
@@ -54,7 +51,7 @@ export const updateROIRecord = async (id, roiData) => {
 // Get ROI metrics such as average return
 export const getROIMetrics = async () => {
   try {
-    const response = await axios.get(`${API_URL}/investments/roi/metrics`);
+    const response = await API.get('/investments/roi/metrics');
     return response.data;
   } catch (error) {
     console.error('Error fetching ROI metrics:', error);
