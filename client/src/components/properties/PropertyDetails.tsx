@@ -277,7 +277,7 @@ export default function PropertyDetails() {
             </div>
           </div>
           
-          {/* CTA Button */}
+          {/* CTA Button and Social Share */}
           <div className="mt-auto">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               {user ? (
@@ -342,8 +342,11 @@ export default function PropertyDetails() {
                   Sign in to Invest
                 </Button>
               )}
-              
-              {/* Social Share Buttons */}
+            </div>
+            
+            {/* Social Share Buttons - Separated for better visibility */}
+            <div className="flex items-center mt-4">
+              <span className="text-sm text-muted-foreground mr-3">Share:</span>
               <SocialShareButtons
                 title={`Check out ${property.name} - ${property.targetReturn}% returns on REVA`}
                 description={`${property.description} - Invest with as little as ₦100,000 in this property in ${property.location}`}
