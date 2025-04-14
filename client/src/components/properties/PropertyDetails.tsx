@@ -279,68 +279,78 @@ export default function PropertyDetails() {
           
           {/* CTA Button */}
           <div className="mt-auto">
-            {user ? (
-              <Dialog open={investDialogOpen} onOpenChange={setInvestDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full sm:w-auto px-8">
-                    Invest Now
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Invest in {property.name}</DialogTitle>
-                    <DialogDescription>
-                      Enter the amount you would like to invest. Minimum investment is ₦100,000.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <Form {...investmentForm}>
-                    <form onSubmit={investmentForm.handleSubmit(onInvestSubmit)} className="space-y-3">
-                      <FormField
-                        control={investmentForm.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Investment Amount (₦)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter amount" 
-                                {...field} 
-                                type="number"
-                                min={property.minimumInvestment}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs">
-                              Minimum investment: ₦100,000
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <DialogFooter>
-                        {isInvesting ? (
-                          <PaystackCheckout 
-                            property={property}
-                            amount={Number(investmentForm.getValues().amount)}
-                            onSuccess={handlePaymentSuccess}
-                            onError={handlePaymentError}
-                          />
-                        ) : (
-                          <Button type="submit">
-                            Continue to Payment
-                          </Button>
-                        )}
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            ) : (
-              <Button className="w-full sm:w-auto px-8" onClick={() => setLocation("/auth")}>
-                Sign in to Invest
-              </Button>
-            )}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              {user ? (
+                <Dialog open={investDialogOpen} onOpenChange={setInvestDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full sm:w-auto px-8">
+                      Invest Now
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Invest in {property.name}</DialogTitle>
+                      <DialogDescription>
+                        Enter the amount you would like to invest. Minimum investment is ₦100,000.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <Form {...investmentForm}>
+                      <form onSubmit={investmentForm.handleSubmit(onInvestSubmit)} className="space-y-3">
+                        <FormField
+                          control={investmentForm.control}
+                          name="amount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Investment Amount (₦)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Enter amount" 
+                                  {...field} 
+                                  type="number"
+                                  min={property.minimumInvestment}
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs">
+                                Minimum investment: ₦100,000
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <DialogFooter>
+                          {isInvesting ? (
+                            <PaystackCheckout 
+                              property={property}
+                              amount={Number(investmentForm.getValues().amount)}
+                              onSuccess={handlePaymentSuccess}
+                              onError={handlePaymentError}
+                            />
+                          ) : (
+                            <Button type="submit">
+                              Continue to Payment
+                            </Button>
+                          )}
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <Button className="w-full sm:w-auto px-8" onClick={() => setLocation("/auth")}>
+                  Sign in to Invest
+                </Button>
+              )}
+              
+              {/* Social Share Buttons */}
+              <SocialShareButtons
+                title={`Check out ${property.name} - ${property.targetReturn}% returns on REVA`}
+                description={`${property.description} - Invest with as little as ₦100,000 in this property in ${property.location}`}
+                url={`${window.location.origin}/properties/${property.id}`}
+                compact
+              />
+            </div>
           </div>
         </div>
       </div>
