@@ -15,6 +15,7 @@ import { useLocation } from "wouter";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { MFAVerification } from "@/components/auth/MFAVerification";
+import { useMilestones } from "@/contexts/milestone-context";
 
 // Extended schemas with validation
 const loginSchema = z.object({
@@ -35,6 +36,7 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user, loginMutation, registerMutation } = useAuth();
+  const { triggerMilestone } = useMilestones();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showMFAVerification, setShowMFAVerification] = useState(false);
   const [mfaMethod, setMfaMethod] = useState<string>("app");
@@ -79,6 +81,14 @@ export default function AuthPage() {
   const onRegisterSubmit = (data: RegisterFormValues) => {
     registerMutation.mutate(data, {
       onSuccess: () => {
+        // Trigger account created milestone
+        triggerMilestone('account_created');
+        
+        // If the user provided first and last name, trigger profile completed milestone
+        if (data.firstName && data.lastName && data.phoneNumber) {
+          triggerMilestone('profile_completed');
+        }
+        
         navigate("/");
       },
     });
@@ -86,6 +96,10 @@ export default function AuthPage() {
   
   const handleMFAVerified = () => {
     setShowMFAVerification(false);
+    
+    // Trigger first login milestone
+    triggerMilestone('first_login');
+    
     navigate("/");
   };
   
