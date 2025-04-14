@@ -43,6 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+  
+  // Check if Firebase is properly configured
+  const isFirebaseAvailable = Boolean(
+    import.meta.env.VITE_FIREBASE_API_KEY && 
+    import.meta.env.VITE_FIREBASE_APP_ID &&
+    import.meta.env.VITE_FIREBASE_PROJECT_ID
+  );
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -105,6 +112,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+  
+  const socialLoginMutation = useMutation({
+    mutationFn: async (socialData: SocialLoginData) => {
+      const res = await apiRequest("POST", "/api/social-login", socialData);
+      return await res.json();
+    },
+    onSuccess: (user: SelectUser) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Welcome!",
+        description: "You have successfully signed in with social account.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Social login failed",
+        description: error.message || "Could not sign in with social account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <AuthContext.Provider
@@ -115,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        socialLoginMutation,
+        isFirebaseAvailable,
       }}
     >
       {children}
@@ -127,5 +157,71 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  
+  // Helper functions to handle social login
+  const handleGoogleLogin = async () => {
+    if (!context.isFirebaseAvailable) {
+      context.socialLoginMutation.reset();
+      throw new Error("Firebase is not properly configured. Please check your environment variables.");
+    }
+    
+    try {
+      const result = await signInWithGoogle();
+      if (!result) return;
+      
+      // Get token and user info from the Firebase response
+      const token = result.user.accessToken;
+      const userData = {
+        email: result.user.email || "",
+        name: result.user.displayName || "",
+        photoURL: result.user.photoURL || "",
+      };
+      
+      // Call the socialLoginMutation with the obtained data
+      context.socialLoginMutation.mutate({
+        provider: "google",
+        token,
+        userData,
+      });
+      
+    } catch (error) {
+      console.error("Google sign in error:", error);
+    }
+  };
+  
+  const handleFacebookLogin = async () => {
+    if (!context.isFirebaseAvailable) {
+      context.socialLoginMutation.reset();
+      throw new Error("Firebase is not properly configured. Please check your environment variables.");
+    }
+    
+    try {
+      const result = await signInWithFacebook();
+      if (!result) return;
+      
+      // Get token and user info from the Firebase response
+      const token = result.user.accessToken;
+      const userData = {
+        email: result.user.email || "",
+        name: result.user.displayName || "",
+        photoURL: result.user.photoURL || "",
+      };
+      
+      // Call the socialLoginMutation with the obtained data
+      context.socialLoginMutation.mutate({
+        provider: "facebook",
+        token,
+        userData,
+      });
+      
+    } catch (error) {
+      console.error("Facebook sign in error:", error);
+    }
+  };
+  
+  return {
+    ...context,
+    handleGoogleLogin,
+    handleFacebookLogin,
+  };
 }

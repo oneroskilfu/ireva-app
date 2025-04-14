@@ -473,6 +473,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // ===== SOCIAL AUTHENTICATION ROUTES =====
+  
+  // Social login endpoint
+  app.post("/api/social-login", async (req, res) => {
+    try {
+      const { provider, token, userData } = req.body;
+      
+      if (!provider || !token || !userData || !userData.email) {
+        return res.status(400).json({ message: "Missing social authentication data" });
+      }
+      
+      // Check if user exists with this email
+      let user = await storage.getUserByEmail(userData.email);
+      
+      if (user) {
+        // User exists, login
+        req.login(user, (err) => {
+          if (err) return res.status(500).json({ message: "Authentication failed" });
+          return res.json(user);
+        });
+      } else {
+        // New user, create account
+        const username = userData.email.split("@")[0] + "-" + Math.random().toString(36).substring(2, 8);
+        
+        // Generate a random password for the user (they'll use social login, not password)
+        const randomPassword = Math.random().toString(36).substring(2, 15) + 
+                               Math.random().toString(36).substring(2, 15);
+        
+        // Create user record
+        const newUser = await storage.createUser({
+          username,
+          email: userData.email,
+          password: randomPassword, // This will be hashed in the storage implementation
+          firstName: userData.name?.split(" ")[0] || null,
+          lastName: userData.name?.split(" ").slice(1).join(" ") || null,
+          profileImage: userData.photoURL || null,
+          socialProvider: provider,
+          socialId: token,
+        });
+        
+        // Log in the new user
+        req.login(newUser, (err) => {
+          if (err) return res.status(500).json({ message: "Authentication failed" });
+          return res.status(201).json(newUser);
+        });
+      }
+    } catch (error) {
+      console.error("Social login error:", error);
+      res.status(500).json({ message: "Social authentication failed" });
+    }
+  });
+
   // ===== ADMIN ROUTES =====
   
   // Get all users (admin only)
