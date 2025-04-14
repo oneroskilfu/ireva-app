@@ -100,7 +100,7 @@ export default function PropertyDetails() {
     if (amount < property.minimumInvestment) {
       toast({
         title: "Invalid amount",
-        description: `Minimum investment is $${property.minimumInvestment}`,
+        description: `Minimum investment is ₦100,000`,
         variant: "destructive"
       });
       return;
@@ -245,7 +245,7 @@ export default function PropertyDetails() {
               <span className="text-xs text-muted-foreground">Minimum</span>
               <span className="font-semibold flex items-center text-sm">
                 <span className="text-primary font-semibold mr-1">₦</span>
-                {property.minimumInvestment.toLocaleString()}
+                100,000
               </span>
             </div>
             <div className="flex flex-col">
@@ -627,7 +627,7 @@ export default function PropertyDetails() {
                           1
                         </div>
                         <h4 className="font-medium text-sm mb-0.5">Initial Investment</h4>
-                        <p className="text-xs text-muted-foreground">Min. ${property.minimumInvestment.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Min. ₦100,000</p>
                       </div>
                       
                       <div className="mb-5 relative">
@@ -890,7 +890,7 @@ export default function PropertyDetails() {
                       </div>
                       <div>
                         <h4 className="font-medium text-lg mb-1">Portfolio Value</h4>
-                        <p className="text-xl font-semibold">$2+ Billion</p>
+                        <p className="text-xl font-semibold">₦2+ Billion</p>
                         <p className="text-sm text-muted-foreground mt-1">
                           Total value of developed properties
                         </p>
