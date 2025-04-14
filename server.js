@@ -9,7 +9,9 @@ const userRoutes = require('./routes/users');
 const propertyRoutes = require('./routes/properties');
 const developerRoutes = require('./routes/developers');
 const projectRoutes = require('./routes/projects');
+const investmentRoutes = require('./routes/investments');
 const roiRoutes = require('./routes/roi');
+const adminRoutes = require('./routes/admin');
 
 // Initialize Express app
 const app = express();
@@ -33,7 +35,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/developers', developerRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/investments', investmentRoutes);
 app.use('/api/roi', roiRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {
