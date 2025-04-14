@@ -25,6 +25,7 @@ const loginSchema = z.object({
 const registerSchema = insertUserSchema.extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(7, "Please enter a valid phone number").optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -56,6 +57,7 @@ export default function AuthPage() {
       email: "",
       firstName: "",
       lastName: "",
+      phoneNumber: "",
     },
   });
   
@@ -174,7 +176,7 @@ export default function AuthPage() {
                           )}
                         </div>
                       </CardContent>
-                      <CardFooter>
+                      <CardFooter className="flex flex-col space-y-4">
                         <Button 
                           type="submit" 
                           className="w-full" 
@@ -187,6 +189,16 @@ export default function AuthPage() {
                             </>
                           ) : "Create"}
                         </Button>
+                        <div className="text-center text-sm">
+                          Don't have an account?{" "}
+                          <button 
+                            type="button"
+                            className="text-primary hover:underline font-medium" 
+                            onClick={() => setActiveTab("register")}
+                          >
+                            Create one now
+                          </button>
+                        </div>
                       </CardFooter>
                     </form>
                   </Card>
@@ -262,6 +274,21 @@ export default function AuthPage() {
                         </div>
                         
                         <div className="space-y-2">
+                          <Label htmlFor="register-phone">Phone Number</Label>
+                          <Input
+                            id="register-phone"
+                            type="tel"
+                            placeholder="+1234567890"
+                            {...registerForm.register("phoneNumber")}
+                          />
+                          {registerForm.formState.errors.phoneNumber && (
+                            <p className="text-sm text-red-500">
+                              {registerForm.formState.errors.phoneNumber.message}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
                           <Label htmlFor="register-password">Password</Label>
                           <Input
                             id="register-password"
@@ -275,7 +302,7 @@ export default function AuthPage() {
                           )}
                         </div>
                       </CardContent>
-                      <CardFooter>
+                      <CardFooter className="flex flex-col space-y-4">
                         <Button 
                           type="submit" 
                           className="w-full" 
@@ -288,6 +315,16 @@ export default function AuthPage() {
                             </>
                           ) : "Create account"}
                         </Button>
+                        <div className="text-center text-sm">
+                          Already have an account?{" "}
+                          <button 
+                            type="button"
+                            className="text-primary hover:underline font-medium" 
+                            onClick={() => setActiveTab("login")}
+                          >
+                            Sign in
+                          </button>
+                        </div>
                       </CardFooter>
                     </form>
                   </Card>
