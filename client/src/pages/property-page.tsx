@@ -37,18 +37,8 @@ export default function PropertyPage() {
                 onComplete={() => console.log("Guided tutorial completed")} 
                 autoStart={false} // Set to false while we fix the error
               />
-              {/* Show property_viewed badge if the user has viewed this property */}
-              {hasViewedProperty && (
-                <AchievementBadge type="property_viewed" size="sm" />
-              )}
             </div>
             <div className="flex items-center gap-2">
-              {/* Compact achievements display */}
-              <AchievementsDisplay 
-                userId={user?.id} 
-                compact={true} 
-              />
-              
               <Button 
                 variant="outline" 
                 size="sm" 
