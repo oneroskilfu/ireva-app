@@ -590,7 +590,7 @@ export default function PropertyDetails() {
         {/* Financials Tab */}
         <TabsContent value="financials" className="pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            <div>
+            <div id="financial-details">
               <h3 className="text-base font-semibold mb-3">Financial Projections</h3>
               <Card>
                 <CardContent className="pt-4">
