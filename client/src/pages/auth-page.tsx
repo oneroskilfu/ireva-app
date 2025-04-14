@@ -121,7 +121,7 @@ export default function AuthPage() {
             <div className="w-full lg:w-1/2 p-6 sm:p-10">
               <div className="flex items-center mb-6">
                 <Building className="h-6 w-6 text-primary mr-2" />
-                <span className="text-xl font-bold">InvestProperty</span>
+                <span className="text-xl font-bold">REVA</span>
               </div>
               
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>

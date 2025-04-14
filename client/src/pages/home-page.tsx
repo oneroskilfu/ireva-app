@@ -212,7 +212,7 @@ export default function HomePage() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900">How It Works</h2>
               <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                InvestProperty makes real estate investing accessible, transparent, and simple.
+                REVA makes real estate investing accessible, transparent, and simple.
               </p>
             </div>
             
@@ -255,7 +255,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">About InvestProperty</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">About REVA</h2>
                 <p className="text-lg text-gray-600 mb-4">
                   We're on a mission to democratize real estate investing by making institutional-quality investments accessible to everyone.
                 </p>
