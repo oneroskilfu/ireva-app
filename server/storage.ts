@@ -359,7 +359,7 @@ export class MemStorage implements IStorage {
         size: "120 Units, 85,000 sq ft",
         builtYear: "2020",
         occupancy: "92%",
-        cashFlow: "$450,000/year",
+        cashFlow: "₦45,000,000/year",
         daysLeft: 28,
         
         // Detailed location information
@@ -441,7 +441,7 @@ export class MemStorage implements IStorage {
         size: "45 Units, 125,000 sq ft",
         builtYear: "2015",
         occupancy: "88%",
-        cashFlow: "$780,000/year",
+        cashFlow: "₦78,000,000/year",
         daysLeft: 45,
         
         // Detailed location information
@@ -509,7 +509,7 @@ export class MemStorage implements IStorage {
         size: "100,000 sq ft",
         builtYear: "2018",
         occupancy: "95%",
-        cashFlow: "$1,100,000/year",
+        cashFlow: "₦110,000,000/year",
         daysLeft: 60
       },
       {
@@ -527,7 +527,7 @@ export class MemStorage implements IStorage {
         size: "65 Units",
         builtYear: "2021",
         occupancy: "85%",
-        cashFlow: "$2,500,000/year",
+        cashFlow: "₦250,000,000/year",
         daysLeft: 15
       },
       {
@@ -545,7 +545,7 @@ export class MemStorage implements IStorage {
         size: "80,000 sq ft",
         builtYear: "2019",
         occupancy: "90%",
-        cashFlow: "$1,800,000/year",
+        cashFlow: "₦180,000,000/year",
         daysLeft: 30
       },
       {
