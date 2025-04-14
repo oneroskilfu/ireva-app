@@ -21,6 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { PaystackCheckout } from "@/components/payments/PaystackCheckout";
 import { 
+  Banknote,
   Building2, 
   Calendar, 
   CheckCircle, 
@@ -480,7 +481,7 @@ export default function PropertyDetails() {
                     value={property.occupancy || "N/A"}
                   />
                   <PropertyDetailItem 
-                    icon={<DollarSign className="h-4 w-4 text-primary" />}
+                    icon={<Banknote className="h-4 w-4 text-primary" />}
                     label="Cash Flow"
                     value={property.cashFlow || "N/A"}
                   />
