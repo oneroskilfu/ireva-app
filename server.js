@@ -1,58 +1,56 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const morgan = require('morgan');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const path = require('path');
 
 // Import routes
+const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
-const propertyRoutes = require('./routes/properties');
-const developerRoutes = require('./routes/developers');
 const projectRoutes = require('./routes/projects');
-const investmentRoutes = require('./routes/investments');
-const roiRoutes = require('./routes/roi');
-const adminRoutes = require('./routes/admin');
 
-// Initialize Express app
+// Load environment variables
+dotenv.config();
+
 const app = express();
-const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(express.urlencoded({ extended: true }));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/reva_platform';
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/properties', propertyRoutes);
-app.use('/api/developers', developerRoutes);
 app.use('/api/projects', projectRoutes);
-app.use('/api/investments', investmentRoutes);
-app.use('/api/roi', roiRoutes);
-app.use('/api/admin', adminRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to REVA Admin Dashboard API' });
-});
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/build')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
-// Start server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-module.exports = app;

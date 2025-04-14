@@ -12,6 +12,7 @@ import AccountSecurityPage from "@/pages/account-security";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import SupportPage from "@/pages/support-page";
 import HowItWorksPage from "@/pages/how-it-works";
+import JwtAuthTest from "@/pages/jwt-auth-test";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -32,6 +33,7 @@ function Router() {
       <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
       <Route path="/support" component={SupportPage} />
       <Route path="/how-it-works" component={HowItWorksPage} />
+      <Route path="/jwt-auth-test" component={JwtAuthTest} />
       <Route component={NotFound} />
     </Switch>
   );
