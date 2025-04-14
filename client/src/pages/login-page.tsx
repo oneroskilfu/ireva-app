@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   TextField, 
@@ -16,7 +16,7 @@ import {
 import type { Theme } from '@mui/material/styles';
 import type { SxProps } from '@mui/system';
 import { VisibilityOff, Visibility, Login as LoginIcon } from '@mui/icons-material';
-import { AuthContext } from '../App';
+import { useAuth } from '../contexts/auth-context';
 import API from '../api/axios';
 import { useLocation } from 'wouter';
 
@@ -26,7 +26,7 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { setToken } = useContext(AuthContext);
+  const { login } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleTogglePasswordVisibility = () => {
@@ -44,8 +44,8 @@ const LoginPage: React.FC = () => {
       
       // Check if a token was returned in the response
       if (response.data && response.data.token) {
-        // Use the setToken function from AuthContext to update auth state
-        setToken(response.data.token);
+        // Use the login function from useAuth to update auth state
+        login(response.data.token);
         
         // Navigate to the dashboard after successful login
         setLocation('/dashboard');

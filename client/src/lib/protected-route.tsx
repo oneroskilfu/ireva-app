@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Route, Redirect } from "wouter";
-import { AuthContext } from "../App";
+import { useAuth } from "../contexts/auth-context";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -18,7 +18,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   path,
   ...rest
 }) => {
-  const { token } = React.useContext(AuthContext);
+  const { token, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -47,7 +47,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       path={path}
       {...rest}
     >
-      {token ? (
+      {isAuthenticated ? (
         <Component />
       ) : (
         <Redirect to="/login" />

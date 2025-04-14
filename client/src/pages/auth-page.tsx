@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { 
   Box, 
@@ -17,8 +17,8 @@ import {
   CircularProgress
 } from '@mui/material';
 import { LockOutlined, Person, PersonAdd, Email, Phone } from '@mui/icons-material';
-import { AuthContext } from '../App';
-import { login, register, LoginCredentials, RegisterData } from '../api/authService';
+import { useAuth } from '../contexts/auth-context';
+import { login as apiLogin, register, LoginCredentials, RegisterData } from '../api/authService';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,7 +49,7 @@ function TabPanel(props: TabPanelProps) {
 const AuthPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [, setLocation] = useLocation();
-  const { setToken } = useContext(AuthContext);
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -33,43 +33,20 @@ import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";
 import { OnboardingProvider } from "./contexts/onboarding-context";
 import OnboardingWrapper from "./components/onboarding/OnboardingWrapper";
-// Define auth utilities directly to avoid import issues
-const getToken = () => {
-  return localStorage.getItem('token') || localStorage.getItem('authToken');
-};
-
-const setAuthToken = (token: string) => {
-  localStorage.setItem('token', token);
-  localStorage.setItem('authToken', token);
-};
-
-const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('authToken');
-};
-
-// Create a context for auth
+// Import auth context
 import React from "react";
-export const AuthContext = React.createContext<{
-  token: string | null;
-  setToken: (token: string | null) => void;
-  handleLogout: () => void;
-}>({
-  token: null,
-  setToken: () => {},
-  handleLogout: () => {},
-});
+import { AuthProvider, useAuth } from "./contexts/auth-context";
+import { RoleProtectedRoute } from "./lib/role-protected-route";
 
 function Router() {
-  const [, setLocation] = useLocation();
-  const { token, handleLogout } = React.useContext(AuthContext);
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <>
-      {token && (
+      {isAuthenticated && (
         <div className="fixed top-0 right-0 p-4 z-50">
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
           >
             Logout
@@ -90,11 +67,29 @@ function Router() {
         <ProtectedRoute path="/api-messages" component={MessagesPage} />
         <ProtectedRoute path="/community" component={CommunityPage} />
         <Route path="/market-trends" component={MarketTrendsPage} />
-        <ProtectedRoute path="/admin" component={AdminDashboard} />
+        
+        {/* Admin-only routes with role-based protection */}
+        <RoleProtectedRoute 
+          path="/admin" 
+          component={AdminDashboard}
+          allowedRoles={['admin']} 
+        />
         <ProtectedRoute path="/account/security" component={AccountSecurityPage} />
         <ProtectedRoute path="/analytics" component={AnalyticsDashboard} />
-        <ProtectedRoute path="/projects" component={Projects} />
-        <ProtectedRoute path="/users" component={Users} />
+        
+        {/* Routes that require admin role */}
+        <RoleProtectedRoute 
+          path="/projects" 
+          component={Projects}
+          allowedRoles={['admin']} 
+        />
+        <RoleProtectedRoute 
+          path="/users" 
+          component={Users}
+          allowedRoles={['admin']} 
+        />
+        
+        {/* Standard protected routes for investors */}
         <ProtectedRoute path="/roi" component={RoiTracker} />
         <ProtectedRoute path="/properties" component={Properties} />
         <ProtectedRoute path="/messages" component={Messages} />
@@ -109,26 +104,8 @@ function Router() {
 }
 
 function App() {
-  const [token, setTokenState] = useState<string | null>(getToken());
-  const [, setLocation] = useLocation();
-
-  const setToken = (newToken: string | null) => {
-    if (newToken) {
-      setAuthToken(newToken);
-    } else {
-      logout();
-    }
-    setTokenState(newToken);
-  };
-
-  const handleLogout = () => {
-    logout();
-    setTokenState(null);
-    setLocation('/auth');
-  };
-
   return (
-    <AuthContext.Provider value={{ token, setToken, handleLogout }}>
+    <AuthProvider>
       <PageTransitionProvider>
         <OnboardingProvider>
           <OnboardingWrapper>
@@ -138,7 +115,7 @@ function App() {
           </OnboardingWrapper>
         </OnboardingProvider>
       </PageTransitionProvider>
-    </AuthContext.Provider>
+    </AuthProvider>
   );
 }
 

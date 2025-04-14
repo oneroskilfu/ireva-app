@@ -72,6 +72,7 @@
     "framer-motion": "^11.18.2",
     "input-otp": "^1.2.4",
     "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.453.0",
     "memorystore": "^1.6.7",
     "mongoose": "^8.13.2",
