@@ -7,6 +7,7 @@ import {
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { signInWithGoogle, signInWithFacebook } from "@/lib/firebase";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -15,9 +16,21 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  socialLoginMutation: UseMutationResult<SelectUser, Error, SocialLoginData>;
+  isFirebaseAvailable: boolean;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
+
+type SocialLoginData = {
+  provider: "google" | "facebook";
+  token: string;
+  userData: {
+    email: string;
+    name?: string;
+    photoURL?: string;
+  };
+};
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
