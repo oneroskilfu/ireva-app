@@ -10,6 +10,7 @@ import { Property } from "@shared/schema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import { Link } from "wouter";
 
 export default function HomePage() {
   // Define default filter values
@@ -235,6 +236,16 @@ export default function HomePage() {
               <p className="mt-4 text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
                 REVA makes real estate investing accessible, transparent, and simple for everyone in Nigeria.
               </p>
+              <div className="flex justify-center mb-8">
+                <Button variant="outline" size="lg" className="gap-2 rounded-full shadow-sm border-primary/20 hover:bg-primary/5" asChild>
+                  <Link href="/how-it-works">
+                    Learn More
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </Link>
+                </Button>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
@@ -415,13 +426,13 @@ export default function HomePage() {
             <div className="mt-16 text-center">
               <div className="inline-block relative z-10 group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-primary-dark rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-200"></div>
-                <a href="/auth" className="relative bg-white dark:bg-slate-900 px-8 py-4 rounded-lg flex items-center justify-center shadow-md">
+                <Link href="/auth" className="relative bg-white dark:bg-slate-900 px-8 py-4 rounded-lg flex items-center justify-center shadow-md">
                   <span className="font-bold text-lg bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">Start Investing Today</span>
                   <svg className="w-5 h-5 ml-2 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M5 12H19" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M12 5L19 12L12 19" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

@@ -93,7 +93,7 @@ export default function HeroSection() {
               </Link>
             </div>
             
-            <Link href="#how-it-works">
+            <Link href="/how-it-works">
               <Button 
                 size="lg" 
                 variant="outline" 
