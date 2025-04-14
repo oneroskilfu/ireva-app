@@ -563,7 +563,7 @@ export class MemStorage implements IStorage {
         size: "85 Residential / 20 Retail",
         builtYear: "2020",
         occupancy: "93%",
-        cashFlow: "$1,400,000/year",
+        cashFlow: "₦140,000,000/year",
         daysLeft: 20
       }
     ];

@@ -116,14 +116,14 @@ const MILESTONE_CONFIGS: Record<MilestoneType, {
     toast: true
   },
   wallet_threshold_1000: {
-    title: '$1,000 in Wallet',
-    description: 'Your wallet now has over $1,000. Ready to make some investments?',
+    title: '₦100,000 in Wallet',
+    description: 'Your wallet now has over ₦100,000. Ready to make some investments?',
     icon: 'star',
     toast: true
   },
   wallet_threshold_5000: {
-    title: '$5,000 in Wallet',
-    description: 'With $5,000 in your wallet, you have access to a wide range of investment opportunities.',
+    title: '₦500,000 in Wallet',
+    description: 'With ₦500,000 in your wallet, you have access to a wide range of investment opportunities.',
     variant: 'award',
     icon: 'medal'
   },
