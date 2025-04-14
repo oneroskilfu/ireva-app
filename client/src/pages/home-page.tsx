@@ -427,39 +427,159 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* About Section */}
-        <section id="about" className="py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        {/* About Section - World-class design */}
+        <section id="about" className="py-24 relative overflow-hidden">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 bg-slate-50/50 dark:bg-slate-950/50"></div>
+          <div className="absolute inset-0 bg-grid-slate-100/[0.05] bg-[length:20px_20px] dark:bg-grid-slate-700/[0.05]"></div>
+          
+          {/* Decorative accent elements */}
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-60 h-60 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute left-1/2 top-1/4 transform -translate-x-1/2 w-1/2 h-1/2 bg-gradient-to-b from-primary/[0.03] to-transparent rounded-full blur-3xl"></div>
+          
+          {/* Content */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">About REVA</h2>
-                <p className="text-lg text-gray-600 mb-4">
-                  We're on a mission to democratize real estate investing by making institutional-quality investments accessible to everyone.
-                </p>
-                <p className="text-lg text-gray-600 mb-4">
-                  Our team has decades of combined experience in real estate, finance, and technology, allowing us to identify and secure the best opportunities for our investors.
-                </p>
-                <p className="text-lg text-gray-600">
-                  By pooling capital from multiple investors, we can access higher-quality real estate deals that would otherwise be out of reach for individual investors.
-                </p>
+                {/* Section heading */}
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-sm text-primary font-medium mb-6">
+                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 16V12" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 8H12.01" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  About Us
+                </div>
+                
+                <h2 className="text-4xl font-bold tracking-tight mb-6 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                  Transforming Real Estate Investing in Nigeria
+                </h2>
+                
+                <div className="space-y-6">
+                  <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+                    We're on a mission to democratize real estate investing by making institutional-quality investments accessible to everyone in Nigeria, regardless of their income level or investment experience.
+                  </p>
+                  
+                  <div className="relative pl-6 border-l-2 border-primary/30">
+                    <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed italic">
+                      Our team has decades of combined experience in real estate, finance, and technology, allowing us to identify and secure the best opportunities for our investors.
+                    </p>
+                  </div>
+                  
+                  <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+                    By pooling capital from multiple investors, we can access higher-quality real estate deals that would otherwise be out of reach for individual investors, while providing complete transparency throughout the investment process.
+                  </p>
+                </div>
+                
+                {/* Features grid */}
+                <div className="mt-10 grid grid-cols-2 gap-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary mr-4">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 12L11 14L15 10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-base font-semibold text-gray-900 dark:text-white">Nigerian Focus</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Exclusive focus on Nigerian property markets</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary mr-4">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 12L11 14L15 10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-base font-semibold text-gray-900 dark:text-white">Low Minimums</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Start with just ₦100,000</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary mr-4">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 12L11 14L15 10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-base font-semibold text-gray-900 dark:text-white">Transparency</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Full disclosure on all investments</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary mr-4">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 12L11 14L15 10" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-base font-semibold text-gray-900 dark:text-white">AI-Powered</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Smart property recommendations</p>
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-primary/5 p-6 rounded-lg">
-                  <h3 className="text-4xl font-bold text-primary mb-2">₦250M+</h3>
-                  <p className="text-gray-600">Total investment volume</p>
-                </div>
-                <div className="bg-primary/5 p-6 rounded-lg">
-                  <h3 className="text-4xl font-bold text-primary mb-2">12.5%</h3>
-                  <p className="text-gray-600">Average annual returns</p>
-                </div>
-                <div className="bg-primary/5 p-6 rounded-lg">
-                  <h3 className="text-4xl font-bold text-primary mb-2">15K+</h3>
-                  <p className="text-gray-600">Active investors</p>
-                </div>
-                <div className="bg-primary/5 p-6 rounded-lg">
-                  <h3 className="text-4xl font-bold text-primary mb-2">98%</h3>
-                  <p className="text-gray-600">Investment success rate</p>
+              {/* Stats cards with premium design */}
+              <div className="relative">
+                {/* Abstract decorative element */}
+                <div className="absolute -top-10 -right-10 -bottom-10 -left-10 bg-gradient-to-br from-primary/5 to-transparent rounded-3xl blur-3xl z-0 pointer-events-none"></div>
+                
+                {/* Grid of stat cards */}
+                <div className="grid grid-cols-2 gap-6 relative z-10">
+                  <div className="group bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg shadow-gray-200/50 dark:shadow-slate-900/30 border border-gray-100 dark:border-slate-700 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-6 group-hover:bg-primary/20 transition-colors">
+                      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-primary" strokeWidth="1.5" stroke="currentColor">
+                        <path d="M8 6.5H16M8 11.5H13M21 10V8C21 5 19.5 3 16 3H8C4.5 3 3 5 3 8V16C3 19 4.5 21 8 21H11" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M19.9999 17H16.9999M16.9999 17V14M16.9999 17L19.9999 14" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-dark to-primary mb-1">₦250M+</h3>
+                    <p className="text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">Total investment volume</p>
+                  </div>
+                  
+                  <div className="group bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg shadow-gray-200/50 dark:shadow-slate-900/30 border border-gray-100 dark:border-slate-700 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-6 group-hover:bg-primary/20 transition-colors">
+                      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-primary" strokeWidth="1.5" stroke="currentColor">
+                        <path d="M8.99982 14.1999L14.9998 8.19995M8.99982 8.19995L14.9998 14.1999" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-dark to-primary mb-1">12.5%</h3>
+                    <p className="text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">Average annual returns</p>
+                  </div>
+                  
+                  <div className="group bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg shadow-gray-200/50 dark:shadow-slate-900/30 border border-gray-100 dark:border-slate-700 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-6 group-hover:bg-primary/20 transition-colors">
+                      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-primary" strokeWidth="1.5" stroke="currentColor">
+                        <path d="M9.15957 10.87C9.05957 10.86 8.93957 10.86 8.82957 10.87C6.44957 10.79 4.55957 8.84 4.55957 6.44C4.55957 3.99 6.53957 2 8.99957 2C11.4496 2 13.4396 3.99 13.4396 6.44C13.4296 8.84 11.5396 10.79 9.15957 10.87Z" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M16.4103 4C18.3503 4 19.9103 5.57 19.9103 7.5C19.9103 9.39 18.4103 10.93 16.5403 11C16.4603 10.99 16.3703 10.99 16.2803 11" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M4.15973 14.56C1.73973 16.18 1.73973 18.82 4.15973 20.43C6.90973 22.27 11.4197 22.27 14.1697 20.43C16.5897 18.81 16.5897 16.17 14.1697 14.56C11.4297 12.73 6.91973 12.73 4.15973 14.56Z" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M18.3398 20C19.0598 19.85 19.7398 19.56 20.2998 19.13C21.8598 17.96 21.8598 16.03 20.2998 14.86C19.7498 14.44 19.0798 14.16 18.3698 14" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-dark to-primary mb-1">15K+</h3>
+                    <p className="text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">Active investors</p>
+                  </div>
+                  
+                  <div className="group bg-white dark:bg-slate-800 rounded-xl p-8 shadow-lg shadow-gray-200/50 dark:shadow-slate-900/30 border border-gray-100 dark:border-slate-700 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-6 group-hover:bg-primary/20 transition-colors">
+                      <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-primary" strokeWidth="1.5" stroke="currentColor">
+                        <path d="M22 11V17C22 21 21 22 17 22H7C3 22 2 21 2 17V7C2 3 3 2 7 2H8.5C10 2 10.33 2.44 10.9 3.2L12.4 5.2C12.78 5.7 13 6 14 6H17C21 6 22 7 22 11Z" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M8.32031 15.2695L10.8103 17.1495C11.1903 17.4295 11.7803 17.2395 11.9303 16.7695L14.0003 10.0195" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h3 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-dark to-primary mb-1">98%</h3>
+                    <p className="text-gray-600 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">Investment success rate</p>
+                  </div>
                 </div>
               </div>
             </div>
