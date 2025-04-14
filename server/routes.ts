@@ -1225,5 +1225,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   const httpServer = createServer(app);
+  
+  // Set up WebSocket server for real-time updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    
+    // Send initial market data
+    const marketData = generateMarketData();
+    ws.send(JSON.stringify({
+      type: 'market_data',
+      data: marketData
+    }));
+    
+    // Set up interval to send periodic updates
+    const interval = setInterval(() => {
+      if (ws.readyState === ws.OPEN) {
+        const marketData = generateMarketData();
+        ws.send(JSON.stringify({
+          type: 'market_data_update',
+          data: marketData
+        }));
+      }
+    }, 30000); // Send updates every 30 seconds
+    
+    // Handle investment tracking data for authenticated users
+    ws.on('message', (message) => {
+      try {
+        const parsedMessage = JSON.parse(message.toString());
+        
+        if (parsedMessage.type === 'subscribe_investments' && parsedMessage.userId) {
+          // In a real app, we would verify the user's authentication token here
+          const userId = parsedMessage.userId;
+          
+          // Send an update for this specific user's investments
+          // This would normally be triggered by database changes
+          const sendInvestmentUpdates = async () => {
+            if (ws.readyState === ws.OPEN) {
+              // Get user investments
+              const investments = await storage.getUserInvestments(userId);
+              
+              // Get property details for each investment
+              const investmentsWithDetails = await Promise.all(
+                investments.map(async (investment) => {
+                  const property = await storage.getProperty(investment.propertyId);
+                  return {
+                    ...investment,
+                    property,
+                    // Add real-time data like current value, appreciation, etc.
+                    currentValue: investment.amount * (1 + (Math.random() * 0.05)),
+                    appreciation: (Math.random() * 8).toFixed(2),
+                    rentalIncome: (investment.amount * 0.008).toFixed(2),
+                    distributions: (investment.amount * 0.006).toFixed(2),
+                    lastUpdated: new Date().toISOString()
+                  };
+                })
+              );
+              
+              ws.send(JSON.stringify({
+                type: 'investment_update',
+                data: investmentsWithDetails
+              }));
+            }
+          };
+          
+          // Send initial data
+          sendInvestmentUpdates();
+          
+          // Set up interval for this user's investment updates
+          const investmentInterval = setInterval(sendInvestmentUpdates, 20000);
+          
+          // Store interval ID to clear it when connection closes
+          ws.on('close', () => {
+            clearInterval(investmentInterval);
+          });
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    // Clear interval when connection closes
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      clearInterval(interval);
+    });
+  });
   return httpServer;
 }

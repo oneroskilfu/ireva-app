@@ -11,6 +11,8 @@ import ActiveProjects from "@/components/dashboard/ActiveProjects";
 import CompletedProjects from "@/components/dashboard/CompletedProjects";
 import EarningsBreakdown from "@/components/dashboard/EarningsBreakdown";
 import AdvancedAnalytics from "@/components/dashboard/AdvancedAnalytics";
+import PortfolioManagement from "@/components/dashboard/PortfolioManagement";
+import RealTimeInvestmentTracker from "@/components/dashboard/RealTimeInvestmentTracker";
 import { 
   Download, 
   Plus, 
@@ -622,13 +624,21 @@ export default function DashboardPage() {
             {/* Portfolio Tab Content */}
             <TabsContent value="portfolio">
               <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-lg">Active Projects</h4>
-                  <Button variant="ghost" size="sm" className="text-xs flex items-center">
-                    View All <ChevronDown className="ml-1 h-3 w-3" />
-                  </Button>
+                <PortfolioManagement />
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <RealTimeInvestmentTracker />
+                
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-lg">Active Projects</h4>
+                    <Button variant="ghost" size="sm" className="text-xs flex items-center">
+                      View All <ChevronDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </div>
+                  <ActiveProjects />
                 </div>
-                <ActiveProjects />
               </div>
               
               <div className="mb-6">
