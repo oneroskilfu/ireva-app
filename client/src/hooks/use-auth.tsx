@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { getQueryFn, apiRequest, queryClient, setAuthToken, removeAuthToken } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { signInWithGoogle, signInWithFacebook } from "@/lib/firebase";
 
@@ -54,7 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const data = await res.json();
+      // Store the JWT token if present in response
+      if (data.token) {
+        setAuthToken(data.token);
+      }
+      return data;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -64,6 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      // Clear any existing token on login error
+      removeAuthToken();
       toast({
         title: "Login failed",
         description: error.message,
@@ -75,7 +82,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
       const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      const data = await res.json();
+      // Store the JWT token if present in response
+      if (data.token) {
+        setAuthToken(data.token);
+      }
+      return data;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -85,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      // Clear any existing token on registration error
+      removeAuthToken();
       toast({
         title: "Registration failed",
         description: error.message,
@@ -99,12 +113,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      // Remove the JWT token on logout
+      removeAuthToken();
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
     },
     onError: (error: Error) => {
+      // Still remove token on error as a precaution 
+      // (avoids staying in a logged-in state with an invalid token)
+      removeAuthToken();
       toast({
         title: "Logout failed",
         description: error.message,
