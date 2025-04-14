@@ -10,8 +10,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  SelectChangeEvent
+  SelectChangeEvent,
+  CircularProgress,
+  Alert
 } from '@mui/material';
+import { getUserROI, getROIMetrics } from '../services/roiService';
 
 // For chart, we would typically use a library like Recharts
 // but we'll create a simple component for demonstration
@@ -73,13 +76,57 @@ const SimpleChart: React.FC<{ data: number[], labels: string[] }> = ({ data, lab
 
 const SimpleRoiPage: React.FC = () => {
   const [timeframe, setTimeframe] = React.useState('monthly');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [roiData, setRoiData] = React.useState<{ returns: number[], labels: string[] } | null>(null);
+  const [metrics, setMetrics] = React.useState<{ totalReturn: number, averageROI: number } | null>(null);
+  
+  // Load ROI data when timeframe changes
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError('');
+      
+      try {
+        // Fetch ROI data from the API
+        const data = await getUserROI(timeframe);
+        
+        // Fetch ROI metrics
+        const metricsData = await getROIMetrics();
+        
+        // Transform API response to the format we need
+        const formattedData = {
+          returns: data.returns || [],
+          labels: data.labels || []
+        };
+        
+        // Update state with fetched data
+        setRoiData(formattedData);
+        setMetrics({
+          totalReturn: metricsData.totalReturn || 0,
+          averageROI: metricsData.averageROI || 0
+        });
+      } catch (err) {
+        console.error('Error fetching ROI data:', err);
+        setError('Failed to load ROI data. Please try again later.');
+        
+        // Fallback to empty data
+        setRoiData({ returns: [], labels: [] });
+        setMetrics({ totalReturn: 0, averageROI: 0 });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [timeframe]);
   
   const handleTimeframeChange = (event: SelectChangeEvent) => {
     setTimeframe(event.target.value);
   };
   
-  // Sample data for different timeframes
-  const data = {
+  // Fallback data for demonstration when API returns no data
+  const fallbackData = {
     monthly: {
       returns: [120000, 135000, 142000, 150000, 165000, 180000],
       labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
@@ -94,74 +141,10 @@ const SimpleRoiPage: React.FC = () => {
     }
   };
   
-  // Calculate total returns
-  const calculateTotal = () => {
-    switch(timeframe) {
-      case 'monthly':
-        return data.monthly.returns.reduce((sum, val) => sum + val, 0);
-      case 'quarterly':
-        return data.quarterly.returns.reduce((sum, val) => sum + val, 0);
-      case 'yearly':
-        return data.yearly.returns.reduce((sum, val) => sum + val, 0);
-      default:
-        return 0;
-    }
-  };
-  
-  // Calculate average ROI (as a percentage)
-  const calculateAverageROI = () => {
-    let total = 0;
-    let count = 0;
-    
-    switch(timeframe) {
-      case 'monthly':
-        total = data.monthly.returns.reduce((sum, val) => sum + val, 0);
-        count = data.monthly.returns.length;
-        break;
-      case 'quarterly':
-        total = data.quarterly.returns.reduce((sum, val) => sum + val, 0);
-        count = data.quarterly.returns.length;
-        break;
-      case 'yearly':
-        total = data.yearly.returns.reduce((sum, val) => sum + val, 0);
-        count = data.yearly.returns.length;
-        break;
-      default:
-        return 0;
-    }
-    
-    // Assuming a total investment of 10,000,000 Naira
-    const totalInvestment = 10000000;
-    const averageReturn = count > 0 ? total / count : 0;
-    
-    // Annualized ROI calculation
-    let annualizedROI = 0;
-    if (timeframe === 'monthly') {
-      annualizedROI = (averageReturn * 12) / totalInvestment * 100;
-    } else if (timeframe === 'quarterly') {
-      annualizedROI = (averageReturn * 4) / totalInvestment * 100;
-    } else {
-      annualizedROI = averageReturn / totalInvestment * 100;
-    }
-    
-    return annualizedROI.toFixed(2);
-  };
-  
-  // Get current chart data based on selected timeframe
-  const getCurrentData = () => {
-    switch(timeframe) {
-      case 'monthly':
-        return data.monthly;
-      case 'quarterly':
-        return data.quarterly;
-      case 'yearly':
-        return data.yearly;
-      default:
-        return data.monthly;
-    }
-  };
-  
-  const currentData = getCurrentData();
+  // Use the fallback data if API returns no data
+  const currentData = roiData && roiData.returns.length > 0 
+    ? roiData 
+    : fallbackData[timeframe as keyof typeof fallbackData];
   
   return (
     <SimpleLayout>

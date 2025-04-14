@@ -1,12 +1,9 @@
-import axios from 'axios';
-
-// Create axios instance with baseURL pointing to our backend API
-const API_URL = '/api';
+import API from '../api/axios';
 
 // Get all investments for the current user
 export const getUserInvestments = async () => {
   try {
-    const response = await axios.get(`${API_URL}/investments`);
+    const response = await API.get('/investments');
     return response.data;
   } catch (error) {
     console.error('Error fetching investments:', error);
@@ -17,7 +14,7 @@ export const getUserInvestments = async () => {
 // Get a single investment by ID
 export const getInvestmentById = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/investments/${id}`);
+    const response = await API.get(`/investments/${id}`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching investment ${id}:`, error);
@@ -28,7 +25,7 @@ export const getInvestmentById = async (id) => {
 // Create a new investment
 export const createInvestment = async (investmentData) => {
   try {
-    const response = await axios.post(`${API_URL}/investments`, investmentData);
+    const response = await API.post('/investments', investmentData);
     return response.data;
   } catch (error) {
     console.error('Error creating investment:', error);
@@ -39,7 +36,7 @@ export const createInvestment = async (investmentData) => {
 // Update an investment status (admin only)
 export const updateInvestmentStatus = async (id, status) => {
   try {
-    const response = await axios.put(`${API_URL}/investments/${id}/status`, { status });
+    const response = await API.put(`/investments/${id}/status`, { status });
     return response.data;
   } catch (error) {
     console.error(`Error updating investment ${id} status:`, error);
@@ -50,7 +47,7 @@ export const updateInvestmentStatus = async (id, status) => {
 // Get investment statistics for the user
 export const getInvestmentStats = async () => {
   try {
-    const response = await axios.get(`${API_URL}/investments/stats`);
+    const response = await API.get('/investments/stats');
     return response.data;
   } catch (error) {
     console.error('Error fetching investment stats:', error);
