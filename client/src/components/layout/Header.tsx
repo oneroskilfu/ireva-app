@@ -57,13 +57,41 @@ export default function Header() {
               <span className="text-xl font-bold">REVA</span>
             </AnimatedLink>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <AnimatedLink href="/" className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                location === "/" 
-                  ? "border-primary text-primary" 
-                  : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              }`}>
-                Properties
-              </AnimatedLink>
+              {/* Properties dropdown with horizontal submenu */}
+              <div className="relative group">
+                <div className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer ${
+                  location === "/" 
+                    ? "border-primary text-primary" 
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                }`}>
+                  <span>Properties</span>
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+                
+                {/* Horizontal dropdown */}
+                <div className="absolute left-0 mt-1 w-auto hidden group-hover:flex group-hover:opacity-100 transition-opacity duration-300 z-50">
+                  <div className="bg-white py-2 px-1 rounded-md shadow-lg border border-gray-200 flex flex-row">
+                    <Link href="/?type=all" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                      All Properties
+                    </Link>
+                    <Link href="/?type=residential" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                      Residential
+                    </Link>
+                    <Link href="/?type=commercial" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                      Commercial
+                    </Link>
+                    <Link href="/?type=industrial" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                      Industrial
+                    </Link>
+                    <Link href="/?type=mixed-use" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                      Mixed-Use
+                    </Link>
+                  </div>
+                </div>
+              </div>
+              
               <AnimatedLink href="/#how-it-works" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 How It Works
               </AnimatedLink>
@@ -104,12 +132,42 @@ export default function Header() {
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col space-y-4">
-                  <SheetClose asChild>
-                    <Link href="/" className={`flex items-center p-2 rounded-md ${location === "/" ? "bg-primary/10 text-primary" : "hover:bg-gray-100"}`}>
+                  {/* Properties menu with submenu */}
+                  <div className="mb-2">
+                    <div className={`flex items-center p-2 rounded-md ${location === "/" ? "bg-primary/10 text-primary" : ""}`}>
                       <Home className="h-5 w-5 mr-2" />
-                      Properties
-                    </Link>
-                  </SheetClose>
+                      <span>Properties</span>
+                    </div>
+                    
+                    {/* Property type submenu (horizontal grid layout) */}
+                    <div className="ml-8 grid grid-cols-2 gap-1 mt-1">
+                      <SheetClose asChild>
+                        <Link href="/?type=all" className="p-2 text-sm rounded-md hover:bg-gray-100">
+                          All Properties
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/?type=residential" className="p-2 text-sm rounded-md hover:bg-gray-100">
+                          Residential
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/?type=commercial" className="p-2 text-sm rounded-md hover:bg-gray-100">
+                          Commercial
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/?type=industrial" className="p-2 text-sm rounded-md hover:bg-gray-100">
+                          Industrial
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/?type=mixed-use" className="p-2 text-sm rounded-md hover:bg-gray-100">
+                          Mixed-Use
+                        </Link>
+                      </SheetClose>
+                    </div>
+                  </div>
                   <SheetClose asChild>
                     <Link href="/#how-it-works" className="flex items-center p-2 rounded-md hover:bg-gray-100">
                       <Info className="h-5 w-5 mr-2" />
