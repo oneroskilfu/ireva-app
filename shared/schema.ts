@@ -87,17 +87,59 @@ export const properties = pgTable("properties", {
   description: text("description").notNull(),
   type: propertyTypeEnum("type").notNull(),
   imageUrl: text("image_url").notNull(),
+  // Multiple media items stored as JSON array
+  additionalImages: text("additional_images"), // JSON string array of image URLs
+  videoUrl: text("video_url"), // URL to a video tour or promo
+  virtualTourUrl: text("virtual_tour_url"), // URL to a 360 virtual tour
+  
+  // Financial details
   targetReturn: decimal("target_return").notNull(),
   minimumInvestment: integer("minimum_investment").notNull(),
   term: integer("term").notNull(), // in months
   totalFunding: integer("total_funding").notNull(),
   currentFunding: integer("current_funding").notNull(),
+  
+  // Project metrics
   numberOfInvestors: integer("number_of_investors").default(0),
-  size: text("size"),
+  size: text("size"), // Property size in sq ft/meters
   builtYear: text("built_year"),
-  occupancy: text("occupancy"),
-  cashFlow: text("cash_flow"),
-  daysLeft: integer("days_left").default(30),
+  occupancy: text("occupancy"), // Occupancy rate for rental properties
+  cashFlow: text("cash_flow"), // Expected monthly cash flow
+  daysLeft: integer("days_left").default(30), // Days left in funding period
+  
+  // Detailed location information
+  address: text("address"), // Full address
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  latitude: decimal("latitude"), // For map display
+  longitude: decimal("longitude"), // For map display
+  neighborhoodDescription: text("neighborhood_description"), // Details about the area
+  
+  // Developer/Sponsor information
+  developerName: text("developer_name"), // Name of the property developer
+  developerDescription: text("developer_description"), // Developer background & track record
+  developerLogoUrl: text("developer_logo_url"), // Developer's logo
+  
+  // Project timeline
+  acquisitionDate: timestamp("acquisition_date"), // When the property was acquired
+  constructionStartDate: timestamp("construction_start_date"),
+  estimatedCompletionDate: timestamp("estimated_completion_date"),
+  
+  // Due diligence
+  documentUrls: text("document_urls"), // JSON string array of document URLs
+  riskRating: text("risk_rating"), // Low, Medium, High risk assessment
+  riskDescription: text("risk_description"), // Detailed risk explanation
+  
+  // Detailed financial projections
+  projectedIrr: decimal("projected_irr"), // Internal Rate of Return
+  projectedCashYield: decimal("projected_cash_yield"), // Annual cash yield
+  projectedAppreciation: decimal("projected_appreciation"), // Expected appreciation
+  projectedTotalReturn: decimal("projected_total_return"), // Total return over investment period
+  
+  // Property features & amenities
+  features: text("features"), // JSON string array of property features
+  amenities: text("amenities"), // JSON string array of property amenities
 });
 
 export const insertPropertySchema = createInsertSchema(properties).omit({
