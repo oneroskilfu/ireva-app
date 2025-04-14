@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Login from '../components/Login';
 import Register from '../components/Register';
+import { handleLogout, getCurrentUser } from '../utils/auth';
 
 // Placeholder Dashboard components
 const AdminDashboard = () => (
@@ -25,10 +26,7 @@ const AdminDashboard = () => (
     </div>
     <button 
       className="logout-btn" 
-      onClick={() => {
-        localStorage.removeItem('token');
-        window.location.reload();
-      }}
+      onClick={handleLogout}
     >
       Logout
     </button>
@@ -57,10 +55,7 @@ const InvestorView = () => (
     </div>
     <button 
       className="logout-btn" 
-      onClick={() => {
-        localStorage.removeItem('token');
-        window.location.reload();
-      }}
+      onClick={handleLogout}
     >
       Logout
     </button>
@@ -89,10 +84,7 @@ const ProjectOwnerView = () => (
     </div>
     <button 
       className="logout-btn" 
-      onClick={() => {
-        localStorage.removeItem('token');
-        window.location.reload();
-      }}
+      onClick={handleLogout}
     >
       Logout
     </button>
@@ -104,15 +96,10 @@ function SimplifiedApp() {
   const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser(payload);
-      } catch (error) {
-        console.error('Invalid token', error);
-        localStorage.removeItem('token');
-      }
+    // Use the getCurrentUser utility
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      setUser(currentUser);
     }
   }, []);
 

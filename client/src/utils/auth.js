@@ -1,75 +1,107 @@
-// src/utils/auth.js
 /**
- * Get JWT token from localStorage
- * For compatibility with existing code, this checks for both 'token' and 'authToken'
+ * Auth utilities for the REVA crowdfunding platform
+ */
+
+/**
+ * Get token from local storage
+ * @returns {string|null} The token or null if not found
  */
 export const getToken = () => {
-  return localStorage.getItem('token') || localStorage.getItem('authToken');
+  return localStorage.getItem('token');
 };
 
 /**
- * Set JWT token in localStorage
- * Stores in both 'token' and 'authToken' for compatibility
+ * Set token in local storage
+ * @param {string} token - The JWT token to store
  */
 export const setToken = (token) => {
   localStorage.setItem('token', token);
-  localStorage.setItem('authToken', token);
 };
 
 /**
- * Remove JWT token from localStorage
- * Clears both 'token' and 'authToken'
- */
-export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('authToken');
-};
-
-/**
- * Check if user is authenticated
- */
-export const isAuthenticated = () => {
-  return !!getToken();
-};
-
-/**
- * Add token to API requests
- */
-export const configureAxiosAuth = (axios) => {
-  axios.interceptors.request.use(
-    (config) => {
-      const token = getToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-};
-
-/**
- * Decode JWT token payload
+ * Decode JWT token to get payload
+ * @param {string} token - The JWT token to decode
+ * @returns {Object|null} The decoded payload or null if invalid
  */
 export const decodeToken = (token) => {
+  if (!token) return null;
+  
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(window.atob(base64));
-    
+    const payload = JSON.parse(atob(token.split('.')[1]));
     return payload;
   } catch (error) {
-    console.error('Error decoding token:', error);
+    console.error('Failed to decode token:', error);
     return null;
   }
 };
 
 /**
- * Get user info from token
+ * Handle user logout
+ * Removes the token from localStorage and refreshes the page
  */
-export const getUserFromToken = () => {
+export const handleLogout = () => {
+  localStorage.removeItem('token');
+  window.location.reload();
+};
+
+/**
+ * Logout user and clear token
+ */
+export const logout = () => {
+  localStorage.removeItem('token');
+  window.location.reload();
+};
+
+/**
+ * Get the current user from the stored token
+ * @returns {Object|null} The user object or null if no token exists
+ */
+export const getCurrentUser = () => {
   const token = getToken();
   if (!token) return null;
   
-  return decodeToken(token);
+  try {
+    const payload = decodeToken(token);
+    if (!payload) return null;
+    
+    // Check if token is expired
+    const currentTime = Date.now() / 1000;
+    if (payload.exp && payload.exp < currentTime) {
+      localStorage.removeItem('token');
+      return null;
+    }
+    return payload;
+  } catch (error) {
+    console.error('Invalid token', error);
+    localStorage.removeItem('token');
+    return null;
+  }
 };
+
+/**
+ * Check if user has a specific role
+ * @param {string} role - The role to check
+ * @returns {boolean} True if user has the role, false otherwise
+ */
+export const hasRole = (role) => {
+  const user = getCurrentUser();
+  return user?.role === role;
+};
+
+/**
+ * Check if user is an admin
+ * @returns {boolean} True if user is admin, false otherwise
+ */
+export const isAdmin = () => hasRole('admin');
+
+/**
+ * Check if user is an investor
+ * @returns {boolean} True if user is investor, false otherwise
+ */
+export const isInvestor = () => hasRole('investor');
+
+/**
+ * Check if user is a project owner
+ * @returns {boolean} True if user is project owner, false otherwise
+ */
+export const isProjectOwner = () => hasRole('project_owner');
