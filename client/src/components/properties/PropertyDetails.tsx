@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { PaystackCheckout } from "@/components/payments/PaystackCheckout";
+import { SocialShareButtons } from "@/components/social/SocialShareButtons";
 import { 
   Banknote,
   Building2, 
