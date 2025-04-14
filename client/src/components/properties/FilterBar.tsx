@@ -292,7 +292,7 @@ export function FilterBar({
                 )}
               >
                 <BarChart3 className="h-4 w-4" />
-                <span>Investment: ${localFilters.minInvestment[0]}-${localFilters.minInvestment[1]}</span>
+                <span>Investment: ₦{localFilters.minInvestment[0]}-₦{localFilters.minInvestment[1]}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </PopoverTrigger>

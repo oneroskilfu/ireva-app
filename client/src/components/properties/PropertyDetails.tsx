@@ -26,7 +26,6 @@ import {
   Calendar, 
   CheckCircle, 
   Clock, 
-  DollarSign, 
   Download,
   ExternalLink,
   FileText,
