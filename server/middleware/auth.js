@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import { User } from '../models/User.js';
 
 // Authenticate token middleware
 const auth = async (req, res, next) => {
@@ -46,4 +46,4 @@ const developer = (req, res, next) => {
   next();
 };
 
-module.exports = { auth, admin, developer };
+export { auth, admin, developer };
