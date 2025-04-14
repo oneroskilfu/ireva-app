@@ -16,6 +16,85 @@ body {
   line-height: 1.5;
 }
 
+/* Simplified styles for the app */
+.App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+form {
+  width: 100%;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-auth {
+  margin-top: 15px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.toggle-auth button {
+  background: none;
+  border: none;
+  color: #1e40af;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  display: inline;
+  width: auto;
+}
+
+h1, h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #1e40af;
+}
+
+input {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background-color: #1e40af;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #1c366b;
+}
+
+p {
+  margin-top: 10px;
+  color: #ef4444;
+  text-align: center;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

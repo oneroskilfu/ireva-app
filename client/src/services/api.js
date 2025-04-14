@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+// Use a relative URL to avoid CORS issues when running in the same domain
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: '/api',  // This will make requests relative to the current domain
 });
 
 API.interceptors.request.use((req) => {
