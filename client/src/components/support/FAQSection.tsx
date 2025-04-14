@@ -1,109 +1,96 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
+import { 
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
+  AccordionTrigger
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search } from "lucide-react";
+import { Search, Bookmark, FileQuestion, AlertCircle } from "lucide-react";
 
 interface FAQ {
   id: number;
   question: string;
   answer: string;
   category: string;
-  order: number;
-  isPublished: boolean;
+  isPopular: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 const FAQSection = () => {
-  const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  // Query to fetch FAQs
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [categories, setCategories] = useState<Set<string>>(new Set(["all"]));
+  
+  // Fetch FAQs
   const { data: faqs, isLoading } = useQuery<FAQ[]>({
     queryKey: ['/api/support/faqs'],
     queryFn: async () => {
       const response = await fetch('/api/support/faqs');
+      
       if (!response.ok) {
         throw new Error('Failed to fetch FAQs');
       }
+      
       return response.json();
     }
   });
-
-  // Get unique categories from FAQs
-  const categories = faqs 
-    ? [...new Set(faqs.map(faq => faq.category))]
-    : [];
-
-  // Filter FAQs based on active category and search query
-  const filteredFAQs = faqs?.filter(faq => {
-    // Filter by category
-    const categoryMatch = activeCategory === "all" || faq.category === activeCategory;
-    
-    // Filter by search query
-    const searchMatch = searchQuery === "" || 
+  
+  // Extract unique categories
+  useEffect(() => {
+    if (faqs && faqs.length > 0) {
+      const categorySet = new Set(["all"]);
+      faqs.forEach(faq => categorySet.add(faq.category));
+      setCategories(categorySet);
+    }
+  }, [faqs]);
+  
+  // Filter FAQs by search query and category
+  const filteredFaqs = faqs?.filter(faq => {
+    const searchMatch = 
+      searchQuery === "" || 
       faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
     
-    return categoryMatch && searchMatch;
+    const categoryMatch = 
+      activeCategory === "all" || 
+      faq.category === activeCategory;
+    
+    return searchMatch && categoryMatch;
   });
 
   // Group FAQs by category
-  const faqsByCategory = filteredFAQs?.reduce<Record<string, FAQ[]>>((acc, faq) => {
+  const faqsByCategory = filteredFaqs?.reduce((acc, faq) => {
     if (!acc[faq.category]) {
       acc[faq.category] = [];
     }
     acc[faq.category].push(faq);
     return acc;
-  }, {});
-
-  // Handle search
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // Nothing needed here since we're already filtering based on searchQuery state
-  };
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Frequently Asked Questions</CardTitle>
-          <CardDescription>Browse common questions and answers about REVA</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-10 w-full mb-4" />
-          <Skeleton className="h-10 w-full max-w-md mx-auto mb-6" />
-          <div className="space-y-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  }, {} as Record<string, FAQ[]>);
+  
   return (
     <Card>
       <CardHeader>
         <CardTitle>Frequently Asked Questions</CardTitle>
-        <CardDescription>Browse common questions and answers about REVA</CardDescription>
+        <CardDescription>Find answers to common questions about the REVA platform</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Search */}
-        <form onSubmit={handleSearch} className="flex w-full max-w-md mx-auto mb-6">
-          <div className="relative flex-1">
+        {/* Search input */}
+        <div className="mb-6">
+          <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -113,91 +100,150 @@ const FAQSection = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button type="submit" className="ml-2">Search</Button>
-        </form>
-
-        {/* Category Tabs */}
-        {categories.length > 0 && (
-          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full mb-6">
-            <TabsList className="w-full max-w-xl mx-auto flex flex-wrap h-auto py-2 justify-center">
-              <TabsTrigger value="all" className="m-1">All</TabsTrigger>
-              {categories.map((category) => (
-                <TabsTrigger key={category} value={category} className="m-1 capitalize">
-                  {category.replace("-", " ")}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        )}
-
-        {/* FAQs */}
-        {filteredFAQs && filteredFAQs.length > 0 ? (
-          <div className="space-y-6">
-            {activeCategory === "all" ? (
-              // Show FAQs grouped by category
-              Object.entries(faqsByCategory || {}).map(([category, categoryFaqs]) => (
-                <div key={category} className="mb-8">
-                  <h3 className="text-lg font-medium mb-4 capitalize">
-                    {category.replace("-", " ")}
-                  </h3>
-                  <Accordion type="single" collapsible className="w-full">
-                    {categoryFaqs.map((faq) => (
-                      <AccordionItem key={faq.id} value={`faq-${faq.id}`}>
-                        <AccordionTrigger className="text-left">
-                          {faq.question}
-                        </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground">
-                          <div dangerouslySetInnerHTML={{ __html: faq.answer }} />
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </div>
-              ))
-            ) : (
-              // Show FAQs for selected category
-              <Accordion type="single" collapsible className="w-full">
-                {filteredFAQs.map((faq) => (
-                  <AccordionItem key={faq.id} value={`faq-${faq.id}`}>
-                    <AccordionTrigger className="text-left">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      <div dangerouslySetInnerHTML={{ __html: faq.answer }} />
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
-          </div>
-        ) : (
-          // Empty state
-          <div className="text-center py-12 border rounded-md bg-gray-50">
-            <p className="text-muted-foreground mb-2">
-              {searchQuery
-                ? `No FAQs matching "${searchQuery}" found in the ${activeCategory === "all" ? "database" : activeCategory} category.`
-                : `No FAQs found in the ${activeCategory} category.`}
-            </p>
-            {searchQuery && (
+        </div>
+        
+        {/* Category filter tabs */}
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="mb-6">
+          <TabsList className="flex flex-wrap h-auto p-1 mb-4">
+            {Array.from(categories).map(category => (
+              <TabsTrigger 
+                key={category} 
+                value={category}
+                className="capitalize"
+              >
+                {category}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          {/* FAQs by category */}
+          {isLoading ? (
+            // Loading state
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </div>
+          ) : filteredFaqs && filteredFaqs.length > 0 ? (
+            // Display FAQs
+            <div className="space-y-8">
+              {activeCategory === "all" ? (
+                // Show all categories grouped
+                Object.entries(faqsByCategory || {}).map(([category, categoryFaqs]) => (
+                  <div key={category} className="space-y-4">
+                    <h3 className="text-lg font-medium capitalize flex items-center">
+                      <FileQuestion className="h-5 w-5 mr-2 text-primary" />
+                      {category}
+                    </h3>
+                    <Accordion type="single" collapsible className="w-full">
+                      {categoryFaqs.map((faq) => (
+                        <AccordionItem key={faq.id} value={faq.id.toString()}>
+                          <AccordionTrigger className="text-left">
+                            <div className="flex items-start">
+                              <span className="flex-1">{faq.question}</span>
+                              {faq.isPopular && (
+                                <Badge variant="outline" className="ml-2 bg-primary/10 text-primary">
+                                  Popular
+                                </Badge>
+                              )}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="pt-2">
+                              <p className="text-muted-foreground whitespace-pre-line">{faq.answer}</p>
+                              <div className="flex justify-end mt-4">
+                                <Button variant="ghost" size="sm" className="text-xs">
+                                  <Bookmark className="h-3 w-3 mr-1" />
+                                  Save
+                                </Button>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                ))
+              ) : (
+                // Show only selected category
+                <Accordion type="single" collapsible className="w-full">
+                  {filteredFaqs.map((faq) => (
+                    <AccordionItem key={faq.id} value={faq.id.toString()}>
+                      <AccordionTrigger className="text-left">
+                        <div className="flex items-start">
+                          <span className="flex-1">{faq.question}</span>
+                          {faq.isPopular && (
+                            <Badge variant="outline" className="ml-2 bg-primary/10 text-primary">
+                              Popular
+                            </Badge>
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="pt-2">
+                          <p className="text-muted-foreground whitespace-pre-line">{faq.answer}</p>
+                          <div className="flex justify-end mt-4">
+                            <Button variant="ghost" size="sm" className="text-xs">
+                              <Bookmark className="h-3 w-3 mr-1" />
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+            </div>
+          ) : (
+            // No FAQs found
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="bg-muted w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">No FAQs Found</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                {searchQuery 
+                  ? `No FAQs matching "${searchQuery}" were found. Try a different search term or browse by category.` 
+                  : "There are no FAQs in this category yet. Please check another category or contact support."}
+              </p>
               <Button 
                 variant="outline" 
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveCategory("all");
+                }}
               >
-                Clear Search
+                View All FAQs
               </Button>
-            )}
+            </div>
+          )}
+        </Tabs>
+        
+        {/* Need more help */}
+        <div className="mt-8 bg-muted/30 rounded-lg p-4 border">
+          <div className="flex flex-col sm:flex-row items-center">
+            <div className="flex-1">
+              <h3 className="font-medium mb-1">Need more help?</h3>
+              <p className="text-muted-foreground text-sm">
+                If you can't find the answer to your question, you can create a support ticket for personalized assistance.
+              </p>
+            </div>
+            <Button 
+              onClick={() => document.querySelector('[value="new"]')?.dispatchEvent(new Event('click'))}
+              className="mt-4 sm:mt-0 w-full sm:w-auto"
+            >
+              Create Support Ticket
+            </Button>
           </div>
-        )}
-
-        {/* Still need help */}
-        <div className="mt-8 p-4 border rounded-md bg-muted/30">
-          <h3 className="text-lg font-medium mb-2">Still need help?</h3>
-          <p className="text-muted-foreground mb-4">
-            If you couldn't find the answer to your question, please create a support ticket and our team will assist you.
-          </p>
-          <Button onClick={() => document.querySelector('[value="new"]')?.dispatchEvent(new Event('click'))}>
-            Create Support Ticket
-          </Button>
         </div>
       </CardContent>
     </Card>

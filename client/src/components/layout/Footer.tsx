@@ -29,7 +29,7 @@ export default function Footer() {
               <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Blog</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Knowledge Base</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Support</a></li>
+              <li><a href="/support" className="text-muted-foreground hover:text-foreground transition-colors">Customer Support</a></li>
             </ul>
           </div>
           
