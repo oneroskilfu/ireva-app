@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useLocation } from 'wouter';
 import { usePageTransition } from '@/contexts/page-transition-context';
-import { Building2, Calendar, Clock, DollarSign, MapPin, Percent, Users } from 'lucide-react';
+import { Building2, Calendar, Clock, MapPin, Percent, Users } from 'lucide-react';
 
 interface PropertyCardProps {
   property: Property;
@@ -85,8 +85,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
             <span className="text-sm font-medium">{property.targetReturn}% Return</span>
           </div>
           <div className="flex items-center gap-1">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Min ${formatNumber(property.minimumInvestment)}</span>
+            <span className="text-primary font-semibold h-4 w-4 flex items-center justify-center">₦</span>
+            <span className="text-sm font-medium">Min ₦100,000</span>
           </div>
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4 text-primary" />
@@ -101,8 +101,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
         {/* Funding Progress */}
         <div className="mt-auto">
           <div className="flex justify-between mb-1 text-sm">
-            <span className="font-medium">${formatNumber(property.currentFunding)} raised</span>
-            <span className="text-muted-foreground">${formatNumber(property.totalFunding)} target</span>
+            <span className="font-medium">₦{formatNumber(property.currentFunding)} raised</span>
+            <span className="text-muted-foreground">₦{formatNumber(property.totalFunding)} target</span>
           </div>
           <Progress className="h-2 mb-1" value={fundingProgress} />
           <div className="flex justify-between text-xs text-muted-foreground">

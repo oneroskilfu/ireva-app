@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Property, Investment } from "@shared/schema";
-import { Loader2, DollarSign, Calendar, TrendingUp, BarChart3 } from "lucide-react";
+import { Loader2, Banknote, Calendar, TrendingUp, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
