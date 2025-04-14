@@ -15,7 +15,7 @@ import { useLocation } from "wouter";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { MFAVerification } from "@/components/auth/MFAVerification";
-import { useMilestones } from "@/contexts/milestone-context";
+import { useSafeMilestones } from "@/hooks/use-safe-milestones";
 
 // Extended schemas with validation
 const loginSchema = z.object({
@@ -36,7 +36,7 @@ export default function AuthPage() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { user, loginMutation, registerMutation } = useAuth();
-  const { triggerMilestone } = useMilestones();
+  const { triggerMilestone } = useSafeMilestones();
   
   // Get tab parameter from URL
   const params = new URLSearchParams(location.split('?')[1]);

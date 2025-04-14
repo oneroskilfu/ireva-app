@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
@@ -695,6 +696,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+  
+  // ===== MARKET DATA ROUTES =====
+  
+  // Get all market data
+  app.get("/api/market-data", async (req, res) => {
+    try {
+      // Generate market data for Nigeria's property market
+      const marketData = generateMarketData();
+      res.json(marketData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch market data" });
+    }
+  });
+
+  // Get market data for a specific location
+  app.get("/api/market-data/:location", async (req, res) => {
+    try {
+      const location = req.params.location;
+      const marketData = generateMarketData();
+      const locationData = marketData.find(data => data.location.toLowerCase() === location.toLowerCase());
+      
+      if (!locationData) {
+        return res.status(404).json({ message: "Location data not found" });
+      }
+      
+      res.json(locationData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch market data for location" });
     }
   });
   
