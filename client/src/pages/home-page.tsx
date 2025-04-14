@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/home/HeroSection";
 import { FilterBar, type PropertyFilters } from "@/components/properties/FilterBar";
 import { PropertyCard } from "@/components/properties/PropertyCard";
+import { TestimonialSection } from "@/components/testimonials/TestimonialSection";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Property } from "@shared/schema";
@@ -288,6 +289,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        
+        {/* Testimonials Section */}
+        <TestimonialSection />
       </main>
       <Footer />
     </div>
