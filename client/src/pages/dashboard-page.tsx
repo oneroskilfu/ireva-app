@@ -629,7 +629,7 @@ export default function DashboardPage() {
                 <InvestmentPortfolio />
               </div>
               
-              <div>
+              <div id="ai-recommendations">
                 <h4 className="font-semibold text-lg mb-4">AI-Powered Recommendations</h4>
                 <AIRecommendations />
               </div>
@@ -642,9 +642,11 @@ export default function DashboardPage() {
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <RealTimeInvestmentTracker />
+                <div id="portfolio-section">
+                  <RealTimeInvestmentTracker />
+                </div>
                 
-                <div>
+                <div id="recent-activity">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-semibold text-lg">Active Projects</h4>
                     <Button variant="ghost" size="sm" className="text-xs flex items-center">

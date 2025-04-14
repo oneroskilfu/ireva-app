@@ -11,6 +11,8 @@ import { HelpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { AchievementsDisplay } from "@/components/gamification/AchievementsDisplay";
 import { AchievementBadge } from "@/components/gamification/AchievementBadge";
+import { useOnboarding } from "@/contexts/onboarding-context";
+import StartOnboardingButton from "@/components/onboarding/StartOnboardingButton";
 
 export default function PropertyPage() {
   const [showBasicTutorial, setShowBasicTutorial] = useState(false);
@@ -39,6 +41,13 @@ export default function PropertyPage() {
               />
             </div>
             <div className="flex items-center gap-2">
+              <StartOnboardingButton 
+                flow="property"
+                variant="outline"
+                className="mr-2"
+              >
+                Property Guide
+              </StartOnboardingButton>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -51,7 +60,9 @@ export default function PropertyPage() {
             </div>
           </div>
           
-          <PropertyDetails />
+          <div id="property-overview">
+            <PropertyDetails />
+          </div>
           
           {/* Investment tutorial dialog */}
           {showBasicTutorial && (
