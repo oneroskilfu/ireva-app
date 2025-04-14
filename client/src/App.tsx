@@ -62,6 +62,7 @@ function Router() {
         <Route path="/properties/:id" component={PropertyPage} />
         <Route path="/auth" component={AuthPage} />
         <ProtectedRoute path="/dashboard" component={DashboardPage} />
+        <ProtectedRoute path="/mui-dashboard" component={MuiDashboardPage} />
         <ProtectedRoute path="/community" component={CommunityPage} />
         <Route path="/market-trends" component={MarketTrendsPage} />
         <ProtectedRoute path="/admin" component={AdminDashboard} />

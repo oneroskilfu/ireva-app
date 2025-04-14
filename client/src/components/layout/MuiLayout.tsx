@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, CssBaseline } from '@mui/material';
 import MuiSidebar from './MuiSidebar';
 import { useLocation } from 'wouter';
-import { logout } from '../../utils/auth';
+import { logout } from '../../utils/auth.js';
 
 interface MuiLayoutProps {
   children: React.ReactNode;

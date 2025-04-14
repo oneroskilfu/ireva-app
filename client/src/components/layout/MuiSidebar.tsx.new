@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, Link as RouterLink } from 'wouter';
+import { useLocation } from 'wouter';
 import { 
   Drawer, 
   List, 
@@ -81,8 +81,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         
         <ListItem sx={{ p: 0, mb: 0.5 }}>
           <ListItemButton
-            component={Link as any} 
-            href="/projects"
+            onClick={handleNavigation('/projects')}
             sx={{ 
               borderRadius: 1,
               backgroundColor: location === '/projects' ? '#eff6ff' : 'transparent',
@@ -99,8 +98,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         
         <ListItem sx={{ p: 0, mb: 0.5 }}>
           <ListItemButton
-            component={Link as any} 
-            href="/users"
+            onClick={handleNavigation('/users')}
             sx={{ 
               borderRadius: 1,
               backgroundColor: location === '/users' ? '#eff6ff' : 'transparent',
@@ -117,8 +115,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         
         <ListItem sx={{ p: 0, mb: 0.5 }}>
           <ListItemButton
-            component={Link as any} 
-            href="/properties"
+            onClick={handleNavigation('/properties')}
             sx={{ 
               borderRadius: 1,
               backgroundColor: location === '/properties' ? '#eff6ff' : 'transparent',
@@ -135,8 +132,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         
         <ListItem sx={{ p: 0, mb: 0.5 }}>
           <ListItemButton
-            component={Link as any} 
-            href="/roi"
+            onClick={handleNavigation('/roi')}
             sx={{ 
               borderRadius: 1,
               backgroundColor: location === '/roi' ? '#eff6ff' : 'transparent',
@@ -153,8 +149,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         
         <ListItem sx={{ p: 0, mb: 0.5 }}>
           <ListItemButton
-            component={Link as any} 
-            href="/investments"
+            onClick={handleNavigation('/investments')}
             sx={{ 
               borderRadius: 1,
               backgroundColor: location === '/investments' ? '#eff6ff' : 'transparent',
@@ -171,8 +166,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         
         <ListItem sx={{ p: 0, mb: 0.5 }}>
           <ListItemButton
-            component={Link as any} 
-            href="/messages"
+            onClick={handleNavigation('/messages')}
             sx={{ 
               borderRadius: 1,
               backgroundColor: location === '/messages' ? '#eff6ff' : 'transparent',
@@ -189,8 +183,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         
         <ListItem sx={{ p: 0, mb: 0.5 }}>
           <ListItemButton
-            component={Link as any} 
-            href="/settings"
+            onClick={handleNavigation('/settings')}
             sx={{ 
               borderRadius: 1,
               backgroundColor: location === '/settings' ? '#eff6ff' : 'transparent',
