@@ -1,123 +1,67 @@
 const express = require('express');
-const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const router = express.Router();
 
-// @route   POST /api/auth/register
-// @desc    Register a new user
-// @access  Public
+// Register a new user
 router.post('/register', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-
+    
     // Check if user already exists
-    let user = await User.findOne({ username });
-    if (user) {
-      return res.status(400).json({ msg: 'User already exists' });
-    }
-
+    const existingUser = await User.findOne({ username });
+    if (existingUser) return res.status(400).send('User already exists');
+    
     // Create new user
-    user = new User({
+    const user = new User({
       username,
       password,
       role: role || 'user'
     });
-
+    
     // Hash password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
-
+    
     await user.save();
-
-    // Create and return JWT token
-    const payload = {
-      user: {
-        id: user.id,
-        role: user.role
-      }
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
+    
+    // Generate token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    res.status(201).json({ token });
   } catch (err) {
-    console.error(err.message);
+    console.error(err);
     res.status(500).send('Server error');
   }
 });
 
-// @route   POST /api/auth/login
-// @desc    Authenticate user & get token
-// @access  Public
+// Login user
 router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  if (!user) return res.status(404).send('User not found');
 
-    // Check if user exists
-    let user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
-    }
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return res.status(403).send('Invalid credentials');
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
-    }
-
-    // Create and return JWT token
-    const payload = {
-      user: {
-        id: user.id,
-        role: user.role
-      }
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      }
-    );
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+  res.json({ token });
 });
 
-// @route   GET /api/auth/user
-// @desc    Get logged in user
-// @access  Private
+// Get current user
 router.get('/user', async (req, res) => {
   try {
-    // Check for token in header
     const token = req.header('x-auth-token');
-    if (!token) {
-      return res.status(401).json({ msg: 'No token, authorization denied' });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.user.id).select('-password');
+    if (!token) return res.status(401).send('Access denied. No token provided');
     
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user) return res.status(404).send('User not found');
     
     res.json(user);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(401).send('Invalid token');
   }
 });
 
