@@ -77,6 +77,7 @@ export const propertyTypeEnum = pgEnum("property_type", [
   "commercial",
   "industrial",
   "mixed-use",
+  "land",
 ]);
 
 // Property schema

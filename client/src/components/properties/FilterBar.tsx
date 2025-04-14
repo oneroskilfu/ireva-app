@@ -124,7 +124,8 @@ export function FilterBar({
     { value: 'residential', label: 'Residential' },
     { value: 'commercial', label: 'Commercial' },
     { value: 'industrial', label: 'Industrial' },
-    { value: 'mixed-use', label: 'Mixed-Use' }
+    { value: 'mixed-use', label: 'Mixed-Use' },
+    { value: 'land', label: 'Land' }
   ];
   
   const riskLevels = [

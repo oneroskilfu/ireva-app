@@ -88,6 +88,9 @@ export default function Header() {
                     <Link href="/?type=mixed-use" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
                       Mixed-Use
                     </Link>
+                    <Link href="/?type=land" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded whitespace-nowrap">
+                      Land
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -164,6 +167,11 @@ export default function Header() {
                       <SheetClose asChild>
                         <Link href="/?type=mixed-use" className="p-2 text-sm rounded-md hover:bg-gray-100">
                           Mixed-Use
+                        </Link>
+                      </SheetClose>
+                      <SheetClose asChild>
+                        <Link href="/?type=land" className="p-2 text-sm rounded-md hover:bg-gray-100">
+                          Land
                         </Link>
                       </SheetClose>
                     </div>
