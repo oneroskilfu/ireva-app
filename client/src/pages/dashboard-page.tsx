@@ -194,7 +194,7 @@ export default function DashboardPage() {
     defaultValues: {
       idType: "",
       idNumber: "",
-      phoneNumber: user?.phoneNumber || "",
+      phoneNumber: user?.phoneNumber || "+234", // Use Nigeria dialing code as default
     },
   });
 
@@ -313,7 +313,7 @@ export default function DashboardPage() {
                       <>
                         <div className="flex items-end mb-4">
                           <span className="text-3xl font-bold mr-2">
-                            ${walletQuery.data?.walletBalance?.toLocaleString() || '0'}
+                            ₦{walletQuery.data?.walletBalance?.toLocaleString() || '0'}
                           </span>
                           <span className="text-gray-500 text-sm mb-1">Available Balance</span>
                         </div>
@@ -338,12 +338,12 @@ export default function DashboardPage() {
                                     name="amount"
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Amount ($)</FormLabel>
+                                        <FormLabel>Amount (₦)</FormLabel>
                                         <FormControl>
                                           <Input placeholder="Enter amount" {...field} type="number" min="1" />
                                         </FormControl>
                                         <FormDescription>
-                                          Minimum deposit: $100
+                                          Minimum deposit: ₦100,000
                                         </FormDescription>
                                         <FormMessage />
                                       </FormItem>
@@ -386,12 +386,12 @@ export default function DashboardPage() {
                                     name="amount"
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Amount ($)</FormLabel>
+                                        <FormLabel>Amount (₦)</FormLabel>
                                         <FormControl>
                                           <Input placeholder="Enter amount" {...field} type="number" min="1" />
                                         </FormControl>
                                         <FormDescription>
-                                          Available balance: ${walletQuery.data?.walletBalance || 0}
+                                          Available balance: ₦{walletQuery.data?.walletBalance?.toLocaleString() || 0}
                                         </FormDescription>
                                         <FormMessage />
                                       </FormItem>
@@ -581,8 +581,11 @@ export default function DashboardPage() {
                                       <FormItem>
                                         <FormLabel>Phone Number</FormLabel>
                                         <FormControl>
-                                          <Input placeholder="Enter phone number" {...field} />
+                                          <Input placeholder="+2341234567890" {...field} />
                                         </FormControl>
+                                        <FormDescription>
+                                          Nigerian format: +234 followed by 10 digits
+                                        </FormDescription>
                                         <FormMessage />
                                       </FormItem>
                                     )}
