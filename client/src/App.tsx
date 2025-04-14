@@ -21,6 +21,7 @@ import RoiTracker from "./components/RoiTracker";
 import Messages from "./components/Messages";
 import Investments from "./components/Investments";
 import Dashboard from "./components/Dashboard";
+import MuiDashboardPage from "./pages/mui-dashboard-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { PageTransitionProvider } from "./contexts/page-transition-context";
 import { PageLoading } from "@/components/ui/page-loading";

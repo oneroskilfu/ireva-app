@@ -4,14 +4,14 @@ import { getToken } from '../utils/auth.js';
 import { useToast } from '@/hooks/use-toast';
 
 // MUI components
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  Grid, 
-  Paper, 
-  Stack, 
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  Paper,
+  Stack,
   Divider,
   LinearProgress,
   Avatar,
@@ -24,15 +24,14 @@ import {
 } from '@mui/material';
 
 // Lucide icons
-import { 
-  TrendingUp, 
-  Building, 
-  Users, 
-  DollarSign, 
-  Calendar, 
-  User, 
+import {
+  TrendingUp,
+  Building,
+  Users,
+  DollarSign,
+  Calendar,
+  User,
   MessageSquare,
-  HomeIcon,
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
@@ -107,8 +106,7 @@ const Dashboard = () => {
         setError('Failed to load dashboard data. Please try again later.');
         setLoading(false);
         
-        // Since we might not have these endpoints implemented yet,
-        // we'll set some example data for demonstration purposes
+        // Since the endpoints aren't implemented, use sample data
         setStats({
           totalProperties: 12,
           totalInvestors: 48,
@@ -213,7 +211,7 @@ const Dashboard = () => {
     }
   };
 
-  const getEventChipColor = (type: string) => {
+  const getEventChipColor = (type: string): 'success' | 'primary' | 'warning' | 'default' => {
     switch(type) {
       case 'launch':
         return 'success';
@@ -240,7 +238,7 @@ const Dashboard = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, ml: '18rem', p: 4 }}>
+    <Box sx={{ flexGrow: 1, p: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
         Dashboard Overview
       </Typography>
@@ -269,7 +267,7 @@ const Dashboard = () => {
       ) : (
         <>
           {/* Stats Cards */}
-          <Grid container spacing={3} mb={4}>
+          <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={3}>
               <Card elevation={2}>
                 <CardContent>
@@ -426,7 +424,7 @@ const Dashboard = () => {
                                 <Chip 
                                   label={event.type} 
                                   size="small" 
-                                  color={getEventChipColor(event.type) as any}
+                                  color={getEventChipColor(event.type)}
                                   sx={{ height: 20 }}
                                 />
                               </Stack>
