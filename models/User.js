@@ -1,201 +1,132 @@
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const UserSchema = new mongoose.Schema({
+const UserSchema = new Schema({
   username: {
     type: String,
     required: true,
-    unique: true,
-    trim: true
+    unique: true
   },
   email: {
     type: String,
     required: true,
-    unique: true,
-    trim: true
+    unique: true
   },
   password: {
     type: String,
     required: true
   },
-  name: {
+  fullName: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
-  phone: {
+  phoneNumber: {
     type: String,
-    trim: true
+    required: false
   },
   role: {
     type: String,
-    enum: ['admin', 'investor', 'developer', 'staff'],
+    enum: ['investor', 'admin', 'projectOwner'],
     default: 'investor'
   },
-  profileImage: {
-    type: String
+  avatar: {
+    type: String,
+    default: ''
   },
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String,
-    country: { type: String, default: 'Nigeria' }
+  walletBalance: {
+    type: Number,
+    default: 0
   },
+  investments: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Investment'
+  }],
+  // KYC verification status
   kycVerified: {
     type: Boolean,
     default: false
   },
   kycDocuments: {
-    idType: {
-      type: String,
-      enum: ['nationalId', 'driverLicense', 'passport', 'voterCard', ''],
-      default: ''
-    },
-    idNumber: String,
-    idFrontImage: String,
-    idBackImage: String,
-    selfieWithId: String,
-    proofOfAddress: String,
-    submissionDate: Date,
-    verificationDate: Date,
-    status: {
-      type: String,
-      enum: ['not_submitted', 'pending', 'approved', 'rejected'],
-      default: 'not_submitted'
-    },
-    rejectionReason: String
+    idDocument: { type: String, default: '' },
+    addressProof: { type: String, default: '' },
+    photo: { type: String, default: '' },
+    submitted: { type: Boolean, default: false },
+    reviewedAt: { type: Date, default: null }
   },
-  financialInfo: {
-    bankName: String,
-    accountNumber: String,
-    accountName: String,
-    bankCode: String,
-    bvn: String,
-    walletBalance: {
-      type: Number,
-      default: 0
-    }
+  // Authentication and security
+  mfaEnabled: {
+    type: Boolean,
+    default: false
   },
-  security: {
-    mfaEnabled: {
-      type: Boolean,
-      default: false
-    },
-    mfaMethod: {
-      type: String,
-      enum: ['none', 'app', 'sms', 'email'],
-      default: 'none'
-    },
-    mfaSecret: String,
-    backupCodes: [String],
-    passwordChangedAt: Date,
-    passwordResetToken: String,
-    passwordResetExpires: Date,
-    loginAttempts: {
-      type: Number,
-      default: 0
-    },
-    lockedUntil: Date
+  mfaMethod: {
+    type: String,
+    enum: ['app', 'sms', 'email', null],
+    default: null
   },
-  socialAuth: {
-    provider: String,
-    providerId: String
+  mfaSecret: {
+    type: String,
+    default: null
   },
+  backupCodes: [{
+    code: String,
+    used: { type: Boolean, default: false }
+  }],
+  lastLogin: {
+    type: Date,
+    default: null
+  },
+  securityQuestions: [{
+    question: String,
+    answer: String
+  }],
+  // Preferences and notification settings
   preferences: {
-    language: {
-      type: String,
-      default: 'en'
-    },
-    currency: {
-      type: String,
-      default: 'NGN'
-    },
-    emailNotifications: {
-      type: Boolean,
-      default: true
-    },
-    smsNotifications: {
-      type: Boolean,
-      default: true
-    },
-    appNotifications: {
-      type: Boolean,
-      default: true
-    },
-    marketingEmails: {
-      type: Boolean,
-      default: true
-    }
+    emailNotifications: { type: Boolean, default: true },
+    smsNotifications: { type: Boolean, default: false },
+    pushNotifications: { type: Boolean, default: false },
+    language: { type: String, default: 'en' },
+    currency: { type: String, default: 'NGN' }
   },
-  investmentPreferences: {
-    riskTolerance: {
-      type: Number,
-      min: 1,
-      max: 5,
-      default: 3
-    },
-    preferredLocations: [String],
-    preferredPropertyTypes: [String],
-    targetReturns: Number,
-    investmentHorizon: Number // in months
+  // Social media integration
+  socialAccounts: {
+    facebook: { type: String, default: '' },
+    twitter: { type: String, default: '' },
+    linkedin: { type: String, default: '' }
   },
-  statistics: {
-    totalInvested: {
-      type: Number,
-      default: 0
-    },
-    totalReturns: {
-      type: Number,
-      default: 0
-    },
-    activeInvestments: {
-      type: Number,
-      default: 0
-    },
-    completedInvestments: {
-      type: Number,
-      default: 0
-    },
-    averageReturn: {
-      type: Number,
-      default: 0
-    },
-    lastLoginDate: Date
+  // Additional metadata
+  bio: {
+    type: String,
+    default: ''
   },
-  achievements: {
-    badges: [{
-      name: String,
-      description: String,
-      iconUrl: String,
-      earnedAt: Date
-    }],
-    level: {
-      type: Number,
-      default: 1
-    },
-    points: {
-      type: Number,
-      default: 0
-    },
-    milestones: [{
-      name: String,
-      completed: Boolean,
-      completedAt: Date
-    }]
+  location: {
+    city: String,
+    state: String,
+    country: { type: String, default: 'Nigeria' }
   },
-  profileComplete: {
-    type: Boolean,
-    default: false
+  // Session management
+  activeSessions: [{
+    token: String,
+    device: String,
+    ip: String,
+    createdAt: { type: Date, default: Date.now },
+    lastActive: { type: Date, default: Date.now }
+  }],
+  // Community and social features
+  referredBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  lastActive: Date,
+  referrals: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  achievements: [{
+    type: { type: String },
+    name: String,
+    description: String,
+    dateEarned: { type: Date, default: Date.now }
+  }],
   createdAt: {
     type: Date,
     default: Date.now
@@ -206,40 +137,10 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-// Pre-save middleware to update the updatedAt timestamp
+// Update the updatedAt field on save
 UserSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  
-  // Update lastActive on login
-  if (this.isModified('lastActive')) {
-    this.statistics.lastLoginDate = this.lastActive;
-  }
-  
-  // Ensure security.passwordChangedAt is updated when password changes
-  if (this.isModified('password')) {
-    this.security.passwordChangedAt = new Date();
-  }
-  
+  this.updatedAt = Date.now();
   next();
 });
-
-// Instance method to check if password is correct
-UserSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
-
-// Virtual for full name
-UserSchema.virtual('fullName').get(function() {
-  return this.name;
-});
-
-// Virtual for KYC status
-UserSchema.virtual('kycStatus').get(function() {
-  return this.kycVerified ? 'Verified' : this.kycDocuments.status;
-});
-
-// Enable virtuals in JSON
-UserSchema.set('toJSON', { virtuals: true });
-UserSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('User', UserSchema);

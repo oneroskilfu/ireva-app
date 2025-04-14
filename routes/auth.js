@@ -1,10 +1,9 @@
 const express = require('express');
-const User = require('../models/User');
+const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const verifyToken = require('../middleware/authMiddleware');
-
-const router = express.Router();
+const { verifyToken } = require('../middleware/authMiddleware');
+const User = require('../models/User');
 
 /**
  * @route POST /api/auth/register
@@ -13,64 +12,54 @@ const router = express.Router();
  */
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, username, password, phone, role = 'investor' } = req.body;
+    const { username, email, password, fullName, phoneNumber } = req.body;
 
     // Check if user already exists
-    const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({ message: 'Email already registered' });
+    let user = await User.findOne({ $or: [{ email }, { username }] });
+    if (user) {
+      return res.status(400).json({ message: 'User already exists' });
     }
 
-    const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({ message: 'Username already taken' });
-    }
+    // Create new user
+    user = new User({
+      username,
+      email,
+      password,
+      fullName,
+      phoneNumber,
+      role: 'investor' // Default role
+    });
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    user.password = await bcrypt.hash(password, salt);
 
-    // Create new user
-    const newUser = new User({
-      name,
-      email,
-      username,
-      password: hashedPassword,
-      phone,
-      role,
-      profileComplete: false,
-      kycVerified: false
-    });
+    // Save user to database
+    await user.save();
 
-    await newUser.save();
-
-    // Create and sign JWT token
+    // Create JWT payload
     const payload = {
-      id: newUser.id,
-      username: newUser.username,
-      role: newUser.role
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
     };
 
+    // Sign token
     jwt.sign(
       payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
+      process.env.JWT_SECRET || 'your_jwt_secret_key',
+      { expiresIn: '1d' },
       (err, token) => {
         if (err) throw err;
-
-        // Return user data and token
-        const userData = { ...newUser._doc };
-        delete userData.password;
-
-        res.status(201).json({
-          token,
-          user: userData
-        });
+        res.json({ token });
       }
     );
-  } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
@@ -83,48 +72,41 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({ 
-      $or: [{ username }, { email: username }]
-    });
-
+    // Check for user
+    const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Validate password
+    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Create and sign JWT token
+    // Create JWT payload
     const payload = {
-      id: user.id,
-      username: user.username,
-      role: user.role
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
     };
 
+    // Sign token
     jwt.sign(
       payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
+      process.env.JWT_SECRET || 'your_jwt_secret_key',
+      { expiresIn: '1d' },
       (err, token) => {
         if (err) throw err;
-
-        // Return user data and token
-        const userData = { ...user._doc };
-        delete userData.password;
-
-        res.json({
-          token,
-          user: userData
-        });
+        res.json({ token });
       }
     );
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
@@ -135,14 +117,20 @@ router.post('/login', async (req, res) => {
  */
 router.get('/verify', verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    // req.user was set in the middleware
+    const userId = req.user.user.id;
+    
+    // Find user without returning password
+    const user = await User.findById(userId).select('-password');
+    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    
     res.json(user);
-  } catch (error) {
-    console.error('Error verifying user:', error);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
@@ -154,14 +142,15 @@ router.get('/verify', verifyToken, async (req, res) => {
 router.post('/change-password', verifyToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    const userId = req.user.user.id;
 
-    // Get user from database
-    const user = await User.findById(req.user.id);
+    // Find user
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check current password
+    // Verify current password
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Current password is incorrect' });
@@ -170,81 +159,14 @@ router.post('/change-password', verifyToken, async (req, res) => {
     // Hash new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
-    
+
+    // Save updated user
     await user.save();
 
     res.json({ message: 'Password updated successfully' });
-  } catch (error) {
-    console.error('Error changing password:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-/**
- * @route POST /api/auth/social-login
- * @desc Login or register with social account
- * @access Public
- */
-router.post('/social-login', async (req, res) => {
-  try {
-    const { provider, token, userData } = req.body;
-    
-    if (!provider || !token || !userData || !userData.email) {
-      return res.status(400).json({ message: 'Missing required social login data' });
-    }
-    
-    // Check if user already exists
-    let user = await User.findOne({ email: userData.email });
-    
-    if (!user) {
-      // Create new user if they don't exist
-      const username = userData.email.split('@')[0] + Math.floor(Math.random() * 1000);
-      
-      user = new User({
-        name: userData.name || username,
-        email: userData.email,
-        username,
-        password: await bcrypt.hash(Math.random().toString(36).slice(-10), 10),
-        profileImage: userData.photoURL || '',
-        role: 'investor',
-        profileComplete: false,
-        kycVerified: false,
-        socialAuth: {
-          provider,
-          providerId: userData.email,
-        }
-      });
-      
-      await user.save();
-    }
-    
-    // Create and sign JWT token
-    const payload = {
-      id: user.id,
-      username: user.username,
-      role: user.role
-    };
-    
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
-      (err, jwtToken) => {
-        if (err) throw err;
-        
-        // Return user data and token
-        const userData = { ...user._doc };
-        delete userData.password;
-        
-        res.json({
-          token: jwtToken,
-          user: userData
-        });
-      }
-    );
-  } catch (error) {
-    console.error('Error in social login:', error);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
   }
 });
 
