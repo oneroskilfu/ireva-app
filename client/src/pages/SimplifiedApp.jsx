@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Login from './Login';
 import Register from './Register';
 import AdminDashboard from './AdminDashboard';
-import InvestorView from './InvestorView';
+import InvestorDashboard from './InvestorDashboard';
 
 const SimplifiedApp = () => {
   const [user, setUser] = useState(null);
@@ -66,7 +66,7 @@ const SimplifiedApp = () => {
     return <AdminDashboard />;
   }
 
-  return <InvestorView />;
+  return <InvestorDashboard />;
 };
 
 export default SimplifiedApp;
