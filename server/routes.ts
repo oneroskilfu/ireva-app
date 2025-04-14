@@ -3,8 +3,14 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertInvestmentSchema } from "@shared/schema";
+import { 
+  insertInvestmentSchema, 
+  insertForumPostSchema, 
+  insertQAQuestionSchema, 
+  insertQAAnswerSchema 
+} from "@shared/schema";
 import { ZodError } from "zod";
+import { fromZodError } from "zod-validation-error";
 import paystackController from "./paystack";
 import { 
   getPropertyRecommendations,

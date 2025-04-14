@@ -369,6 +369,198 @@ export class MemStorage implements IStorage {
     return this.investments.delete(id);
   }
 
+  // Forum methods
+  async getForumPost(id: number): Promise<ForumPost | undefined> {
+    return this.forumPosts.get(id);
+  }
+
+  async getForumPostsByProperty(propertyId: number): Promise<ForumPost[]> {
+    return Array.from(this.forumPosts.values()).filter(
+      (post) => post.propertyId === propertyId
+    );
+  }
+
+  async getForumPostsByUser(userId: number): Promise<ForumPost[]> {
+    return Array.from(this.forumPosts.values()).filter(
+      (post) => post.userId === userId
+    );
+  }
+
+  async getForumThreads(parentId: number): Promise<ForumPost[]> {
+    return Array.from(this.forumPosts.values()).filter(
+      (post) => post.parentId === parentId
+    );
+  }
+
+  async getRecentForumPosts(limit: number = 10): Promise<ForumPost[]> {
+    return Array.from(this.forumPosts.values())
+      .filter(post => !post.parentId) // Only get top-level posts
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  async createForumPost(post: InsertForumPost): Promise<ForumPost> {
+    const id = this.forumPostIdCounter++;
+    const newPost: ForumPost = {
+      id,
+      title: post.title,
+      content: post.content,
+      userId: post.userId,
+      propertyId: post.propertyId || null,
+      parentId: post.parentId || null,
+      status: post.status || "published",
+      isPinned: post.isPinned || false,
+      isAnnouncement: post.isAnnouncement || false,
+      likes: 0,
+      views: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.forumPosts.set(id, newPost);
+    return newPost;
+  }
+
+  async updateForumPost(id: number, postData: Partial<InsertForumPost>): Promise<ForumPost | undefined> {
+    const post = await this.getForumPost(id);
+    if (!post) return undefined;
+
+    const updatedPost: ForumPost = {
+      ...post,
+      ...postData,
+      id: post.id,
+      createdAt: post.createdAt,
+      updatedAt: new Date(),
+      likes: post.likes,
+      views: post.views
+    };
+
+    this.forumPosts.set(id, updatedPost);
+    return updatedPost;
+  }
+
+  async deleteForumPost(id: number): Promise<boolean> {
+    // Also delete any child posts (replies)
+    const replies = await this.getForumThreads(id);
+    for (const reply of replies) {
+      await this.deleteForumPost(reply.id);
+    }
+    
+    return this.forumPosts.delete(id);
+  }
+
+  // Q&A methods
+  async getQuestion(id: number): Promise<QAQuestion | undefined> {
+    return this.qaQuestions.get(id);
+  }
+
+  async getQuestionsByProperty(propertyId: number): Promise<QAQuestion[]> {
+    return Array.from(this.qaQuestions.values()).filter(
+      (question) => question.propertyId === propertyId
+    );
+  }
+
+  async getQuestionsByUser(userId: number): Promise<QAQuestion[]> {
+    return Array.from(this.qaQuestions.values()).filter(
+      (question) => question.userId === userId
+    );
+  }
+
+  async getAnswers(questionId: number): Promise<QAAnswer[]> {
+    return Array.from(this.qaAnswers.values()).filter(
+      (answer) => answer.questionId === questionId
+    );
+  }
+
+  async getRecentQuestions(limit: number = 10): Promise<QAQuestion[]> {
+    return Array.from(this.qaQuestions.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  async createQuestion(question: InsertQAQuestion): Promise<QAQuestion> {
+    const id = this.qaQuestionIdCounter++;
+    const newQuestion: QAQuestion = {
+      id,
+      question: question.question,
+      details: question.details || null,
+      userId: question.userId,
+      propertyId: question.propertyId,
+      isAnswered: false,
+      isFeatured: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.qaQuestions.set(id, newQuestion);
+    return newQuestion;
+  }
+
+  async createAnswer(answer: InsertQAAnswer): Promise<QAAnswer> {
+    const id = this.qaAnswerIdCounter++;
+    const newAnswer: QAAnswer = {
+      id,
+      answer: answer.answer,
+      userId: answer.userId,
+      questionId: answer.questionId,
+      isAccepted: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.qaAnswers.set(id, newAnswer);
+    
+    // Check if there are any answers for this question
+    const question = await this.getQuestion(answer.questionId);
+    if (question && !question.isAnswered) {
+      // Mark the question as answered when the first answer is created
+      await this.markQuestionAsAnswered(answer.questionId, true);
+    }
+    
+    return newAnswer;
+  }
+
+  async markQuestionAsAnswered(id: number, isAnswered: boolean): Promise<QAQuestion | undefined> {
+    const question = await this.getQuestion(id);
+    if (!question) return undefined;
+
+    const updatedQuestion: QAQuestion = {
+      ...question,
+      isAnswered,
+      updatedAt: new Date()
+    };
+
+    this.qaQuestions.set(id, updatedQuestion);
+    return updatedQuestion;
+  }
+
+  async markAnswerAsAccepted(id: number, isAccepted: boolean): Promise<QAAnswer | undefined> {
+    const answer = this.qaAnswers.get(id);
+    if (!answer) return undefined;
+
+    // If we're marking this answer as accepted, first unmark any other accepted answers
+    if (isAccepted) {
+      const otherAnswers = Array.from(this.qaAnswers.values()).filter(
+        a => a.questionId === answer.questionId && a.id !== id && a.isAccepted
+      );
+      
+      for (const otherAnswer of otherAnswers) {
+        const updatedAnswer: QAAnswer = {
+          ...otherAnswer,
+          isAccepted: false,
+          updatedAt: new Date()
+        };
+        this.qaAnswers.set(otherAnswer.id, updatedAnswer);
+      }
+    }
+
+    const updatedAnswer: QAAnswer = {
+      ...answer,
+      isAccepted,
+      updatedAt: new Date()
+    };
+
+    this.qaAnswers.set(id, updatedAnswer);
+    return updatedAnswer;
+  }
+
   // Seed properties
   private seedProperties() {
     const properties: Omit<Property, 'id'>[] = [
