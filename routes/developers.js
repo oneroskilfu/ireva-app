@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { getDevelopers, createDeveloper } = require('../controllers/developerController');
+const developerController = require('../controllers/developerController');
 
-router.get('/', getDevelopers);
-router.post('/', createDeveloper);
+// GET all developers
+router.get('/', developerController.getDevelopers);
+
+// POST create new developer
+router.post('/', developerController.createDeveloper);
 
 module.exports = router;
