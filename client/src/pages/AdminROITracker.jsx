@@ -10,11 +10,18 @@ export default function AdminROITracker() {
     setLoading(true);
     axios.get('/api/admin/roi-summary')
       .then(res => {
-        setRoiData(res.data);
+        // The API returns a complex object with multiple data sections
+        // We'll use the recentDistributions for our data table
+        if (res.data && res.data.recentDistributions) {
+          setRoiData(res.data.recentDistributions);
+        } else {
+          // Fallback to the entire response if structure is different
+          setRoiData(Array.isArray(res.data) ? res.data : []);
+        }
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        console.error('Error fetching ROI data:', err);
         setLoading(false);
       });
   }, []);
@@ -23,8 +30,37 @@ export default function AdminROITracker() {
     alert('Navigate to create ROI distribution form');
   };
 
-  const handleProcessPayment = (id) => {
-    alert(`Process payment for distribution ${id}`);
+  const handleProcessPayment = (distribution) => {
+    if (!distribution || !distribution.id) {
+      alert('Invalid distribution data');
+      return;
+    }
+    
+    setLoading(true);
+    axios.post(`/api/admin/roi-distributions/${distribution.id}/process`)
+      .then(res => {
+        alert(`Distribution processed successfully. ${res.data.transactionsCreated} transactions created.`);
+        
+        // Refresh the data after processing
+        axios.get('/api/admin/roi-summary')
+          .then(res => {
+            if (res.data && res.data.recentDistributions) {
+              setRoiData(res.data.recentDistributions);
+            } else {
+              setRoiData(Array.isArray(res.data) ? res.data : []);
+            }
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error('Error refreshing ROI data:', err);
+            setLoading(false);
+          });
+      })
+      .catch(err => {
+        console.error('Error processing distribution:', err);
+        alert(`Error processing distribution: ${err.response?.data?.message || err.message}`);
+        setLoading(false);
+      });
   };
 
   const renderTab = () => {
