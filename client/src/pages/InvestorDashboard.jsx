@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import API from '../services/api';
+import { authService, propertyService, investmentService } from '../services/api';
 import MessagePanel from '../components/MessagePanel';
 import ProjectTable from '../components/ProjectTable';
 import InvestmentChart from '../components/InvestmentChart';
@@ -45,21 +45,69 @@ const InvestorDashboard = () => {
     { sender: 'Support', text: 'New investment opportunity available' }
   ]);
   
+  // State for loading indicators and errors
+  const [loading, setLoading] = useState({
+    user: false,
+    investments: false,
+    properties: false
+  });
+  const [error, setError] = useState(null);
+  const [featuredProperties, setFeaturedProperties] = useState([]);
+  const [filteredInvestments, setFilteredInvestments] = useState([]);
+
   useEffect(() => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const userData = JSON.parse(atob(token.split('.')[1]));
-        setUserData(userData);
-      }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      handleLogout();
-    }
+    // Set initial loading states
+    setLoading(prev => ({ ...prev, user: true, investments: true }));
     
-    // In a real application, we would fetch real investment data
-    // API.get('/investments').then(res => setInvestments(res.data)).catch(err => console.error(err));
+    // Fetch user profile
+    authService.getProfile()
+      .then(response => {
+        setUserData(response.data);
+      })
+      .catch(error => {
+        console.error('Failed to fetch user profile:', error);
+        if (error.response && error.response.status === 401) {
+          handleLogout();
+        }
+      })
+      .finally(() => {
+        setLoading(prev => ({ ...prev, user: false }));
+      });
+    
+    // Fetch user investments
+    investmentService.getUserInvestments()
+      .then(response => {
+        const investmentsData = response.data;
+        setInvestments(investmentsData);
+        setFilteredInvestments(investmentsData);
+      })
+      .catch(error => {
+        console.error('Failed to fetch investments:', error);
+        setError('Failed to load investments. Please try again later.');
+        // Keep the mock data in case of error for demo purposes
+      })
+      .finally(() => {
+        setLoading(prev => ({ ...prev, investments: false }));
+      });
+      
+    // Fetch featured properties
+    setLoading(prev => ({ ...prev, properties: true }));
+    propertyService.getFeaturedProperties()
+      .then(response => {
+        setFeaturedProperties(response.data);
+      })
+      .catch(error => {
+        console.error('Failed to fetch featured properties:', error);
+      })
+      .finally(() => {
+        setLoading(prev => ({ ...prev, properties: false }));
+      });
   }, []);
+  
+  // Handle filtered investments when using the search filter
+  const handleFilterInvestments = (filtered) => {
+    setFilteredInvestments(filtered);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
