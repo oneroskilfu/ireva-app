@@ -1,116 +1,60 @@
-/**
- * Auth utilities for the REVA crowdfunding platform
- */
+// Authentication utility functions
 
 /**
- * Get token from local storage
- * @returns {string|null} The token or null if not found
- */
-export const getToken = () => {
-  return localStorage.getItem('token');
-};
-
-/**
- * Set token in local storage
- * @param {string} token - The JWT token to store
- */
-export const setToken = (token) => {
-  localStorage.setItem('token', token);
-};
-
-/**
- * Decode JWT token to get payload
- * @param {string} token - The JWT token to decode
- * @returns {Object|null} The decoded payload or null if invalid
- */
-export const decodeToken = (token) => {
-  if (!token) return null;
-  
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload;
-  } catch (error) {
-    console.error('Failed to decode token:', error);
-    return null;
-  }
-};
-
-/**
- * Handle user logout
- * Removes the token from localStorage and refreshes the page
- */
-export const handleLogout = () => {
-  localStorage.removeItem('token');
-  window.location.reload();
-};
-
-/**
- * Logout user and clear token
- */
-export const logout = () => {
-  localStorage.removeItem('token');
-  window.location.reload();
-};
-
-/**
- * Get the current user from the stored token
- * @returns {Object|null} The user object or null if no token exists
+ * Get the current authenticated user from localStorage
+ * @returns {Object|null} User object or null if not authenticated
  */
 export const getCurrentUser = () => {
-  const token = getToken();
-  if (!token) return null;
-  
   try {
-    const payload = decodeToken(token);
-    if (!payload) return null;
-    
-    // Check if token is expired
-    const currentTime = Date.now() / 1000;
-    if (payload.exp && payload.exp < currentTime) {
-      localStorage.removeItem('token');
-      return null;
-    }
-    return payload;
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
   } catch (error) {
-    console.error('Invalid token', error);
-    localStorage.removeItem('token');
+    console.error('Error getting current user:', error);
     return null;
   }
 };
 
 /**
- * Check if user has a specific role
- * @param {string} role - The role to check
- * @returns {boolean} True if user has the role, false otherwise
- */
-export const hasRole = (role) => {
-  const user = getCurrentUser();
-  return user?.role === role;
-};
-
-/**
- * Check if user is an admin
- * @returns {boolean} True if user is admin, false otherwise
- */
-export const isAdmin = () => hasRole('admin');
-
-/**
- * Check if user is an investor
- * @returns {boolean} True if user is investor, false otherwise
- */
-export const isInvestor = () => hasRole('investor');
-
-/**
- * Check if user is a project owner
- * @returns {boolean} True if user is project owner, false otherwise
- */
-export const isProjectOwner = () => hasRole('project_owner');
-
-/**
- * Get the current user's role
- * @returns {string|null} The user's role or null if not authenticated
+ * Get user's role from localStorage
+ * @returns {string} User role ('admin', 'investor', etc.) or empty string if not found
  */
 export const getUserRole = () => {
   const user = getCurrentUser();
-  return user?.role || null;
+  return user?.role || '';
+};
+
+/**
+ * Check if user is authenticated (has a valid token)
+ * @returns {boolean} True if authenticated, false otherwise
+ */
+export const isAuthenticated = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return false;
+  
+  // Check if token is expired (if it has an expiration)
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp) {
+      const expirationTime = payload.exp * 1000;
+      if (Date.now() >= expirationTime) {
+        // Token expired, remove it
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return false;
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    return false;
+  }
+};
+
+/**
+ * Log out the current user
+ */
+export const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/';
 };
