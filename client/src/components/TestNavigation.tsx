@@ -1,48 +1,86 @@
 import React from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link } from 'wouter';
 
 const TestNavigation: React.FC = () => {
-  const [location] = useLocation();
+  const [userInfo, setUserInfo] = React.useState<any>(null);
   
-  // Create direct links to HTML test pages
-  const testLoginUrl = '/basic-login.html';
-  const testHtmlUrl = '/test-login.html';
-  
+  React.useEffect(() => {
+    // Check for user in localStorage
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserInfo(user);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUserInfo(null);
+    window.location.href = '/';
+  };
+
+  // Simple style for navigation bar
+  const navStyle: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '10px 20px',
+    backgroundColor: '#f0f0f0',
+    borderBottom: '1px solid #ddd',
+    marginBottom: '20px',
+  };
+
+  const linkStyle: React.CSSProperties = {
+    margin: '0 10px',
+    textDecoration: 'none',
+    color: '#333',
+  };
+
   return (
-    <div className="bg-yellow-100 border-yellow-400 border-t border-b p-3">
-      <div className="container mx-auto">
-        <h2 className="font-bold text-yellow-800 mb-2">Testing Tools</h2>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/login">
-            <span className={`px-3 py-1 rounded text-sm cursor-pointer ${location === '/login' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>
-              Login Page
+    <div style={navStyle}>
+      <div>
+        <Link href="/" style={linkStyle}>Home</Link>
+        {userInfo ? (
+          <>
+            {userInfo.role === 'admin' || userInfo.isAdmin ? (
+              <Link href="/admin" style={linkStyle}>Admin Dashboard</Link>
+            ) : (
+              <Link href="/dashboard" style={linkStyle}>User Dashboard</Link>
+            )}
+          </>
+        ) : (
+          <>
+            <Link href="/login" style={linkStyle}>Login</Link>
+            <Link href="/auth" style={linkStyle}>Register</Link>
+          </>
+        )}
+        <Link href="/test-auth" style={linkStyle}>Test Auth</Link>
+      </div>
+      <div>
+        {userInfo && (
+          <>
+            <span style={{ marginRight: '10px' }}>
+              Hello, {userInfo.username} ({userInfo.role || (userInfo.isAdmin ? 'admin' : 'user')})
             </span>
-          </Link>
-          
-          <Link href="/test-auth">
-            <span className={`px-3 py-1 rounded text-sm cursor-pointer ${location === '/test-auth' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}>
-              Test Auth
-            </span>
-          </Link>
-          
-          <a 
-            href={testLoginUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="px-3 py-1 rounded text-sm bg-green-100 text-green-700 hover:bg-green-200"
-          >
-            Basic Login HTML
-          </a>
-          
-          <a 
-            href={testHtmlUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="px-3 py-1 rounded text-sm bg-green-100 text-green-700 hover:bg-green-200"
-          >
-            Test Login HTML
-          </a>
-        </div>
+            <button 
+              onClick={handleLogout}
+              style={{
+                background: '#e53e3e',
+                color: 'white',
+                border: 'none',
+                padding: '5px 10px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Logout
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

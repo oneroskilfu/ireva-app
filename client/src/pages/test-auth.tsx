@@ -1,134 +1,242 @@
-import { useState, useEffect } from 'react';
-import API from '../api/axios';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 
-export default function TestAuth() {
-  const [response, setResponse] = useState<any>(null);
+const TestAuth: React.FC = () => {
+  const [, setLocation] = useLocation();
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('password');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [localStorageData, setLocalStorageData] = useState<any>({});
-  
-  // Fetch current localStorage on load
+  const [response, setResponse] = useState<any>(null);
+  const [storedUser, setStoredUser] = useState<any>(null);
+  const [directLoginOutput, setDirectLoginOutput] = useState<string>('');
+
   useEffect(() => {
-    updateLocalStorageView();
-  }, []);
-  
-  // Update the localStorage view
-  const updateLocalStorageView = () => {
-    const items: Record<string, any> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        try {
-          items[key] = JSON.parse(localStorage.getItem(key) || '');
-        } catch (e) {
-          items[key] = localStorage.getItem(key);
-        }
+    // Check localStorage on mount
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        setStoredUser(JSON.parse(userStr));
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
       }
     }
-    setLocalStorageData(items);
-  };
-  
-  // Test login
-  const testLogin = async () => {
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
     setResponse(null);
     
     try {
-      console.log('Making test login request');
-      const response = await API.post('/login', {
-        username: 'admin',
-        password: 'password'
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: 'include',
       });
       
-      console.log('Test login response:', response);
-      setResponse(response.data);
+      const data = await res.json();
+      setResponse(data);
       
-      // Set role-based token in localStorage
-      const userData = response.data;
-      if (userData) {
+      if (res.ok) {
+        // Convert isAdmin to role for consistency
         const userWithRole = {
-          ...userData,
-          role: userData.isAdmin ? 'admin' : 'investor'
+          ...data,
+          role: data.isAdmin ? 'admin' : 'investor'
         };
         
+        // Store in localStorage
         localStorage.setItem('user', JSON.stringify(userWithRole));
         localStorage.setItem('token', 'session-auth-token');
-        updateLocalStorageView();
+        
+        // Update the stored user state
+        setStoredUser(userWithRole);
+      } else {
+        setError(`Error: ${res.status} - ${data?.message || 'Unknown error'}`);
       }
-    } catch (error: any) {
-      console.error('Test login error:', error);
-      setError(
-        error.response 
-          ? `${error.response.status}: ${JSON.stringify(error.response.data)}` 
-          : error.message
-      );
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(`${err}`);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Clear localStorage
-  const clearStorage = () => {
-    localStorage.clear();
-    updateLocalStorageView();
+
+  const handleDirectLogin = async () => {
+    setDirectLoginOutput('Testing direct login...');
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: 'include',
+      });
+      
+      const data = await res.json();
+      setDirectLoginOutput(JSON.stringify({
+        status: res.status,
+        statusText: res.statusText,
+        cookies: document.cookie,
+        data
+      }, null, 2));
+    } catch (err) {
+      setDirectLoginOutput(`Error: ${err}`);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setStoredUser(null);
     setResponse(null);
   };
-  
+
+  const boxStyle: React.CSSProperties = {
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    padding: '20px',
+    marginBottom: '20px',
+    backgroundColor: '#f9f9f9',
+  };
+
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Authentication Test</h1>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+      <h1>Authentication Test Page</h1>
       
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-        <div className="border rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-2">Test Actions</h2>
-          <div className="space-y-4">
-            <Button 
-              onClick={testLogin} 
+      <div style={boxStyle}>
+        <h2>Login Form</h2>
+        <form onSubmit={handleLogin} style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{ width: '100%', padding: '8px' }}
+            />
+          </div>
+          <div style={{ marginBottom: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: '100%', padding: '8px' }}
+            />
+          </div>
+          <div>
+            <button 
+              type="submit" 
               disabled={loading}
-              className="w-full"
+              style={{
+                background: '#3182ce',
+                color: 'white',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
             >
-              {loading ? 'Testing...' : 'Test Login (admin/password)'}
-            </Button>
-            
-            <Button 
-              onClick={clearStorage}
-              variant="outline" 
-              className="w-full"
+              {loading ? 'Loading...' : 'Login'}
+            </button>
+            <button 
+              type="button"
+              onClick={handleDirectLogin}
+              style={{
+                background: '#38a169',
+                color: 'white',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '4px',
+                marginLeft: '10px',
+                cursor: 'pointer',
+              }}
             >
-              Clear LocalStorage
-            </Button>
+              Test Direct API
+            </button>
           </div>
-          
-          <div className="mt-4">
-            <h3 className="font-semibold">Current localStorage:</h3>
-            <pre className="bg-muted p-2 rounded text-xs mt-2 max-h-40 overflow-auto">
-              {JSON.stringify(localStorageData, null, 2)}
-            </pre>
-          </div>
-        </div>
+        </form>
         
-        <div className="border rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-2">API Response</h2>
-          
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded mb-4">
-              <strong>Error:</strong> {error}
-            </div>
-          )}
-          
-          {response && (
-            <pre className="bg-muted p-2 rounded text-xs max-h-96 overflow-auto">
+        {error && (
+          <div style={{ color: 'red', marginBottom: '10px', fontWeight: 'bold' }}>
+            {error}
+          </div>
+        )}
+        
+        {response && (
+          <div>
+            <h3>Response:</h3>
+            <pre style={{ backgroundColor: '#eee', padding: '10px', overflow: 'auto' }}>
               {JSON.stringify(response, null, 2)}
             </pre>
-          )}
-          
-          {!response && !error && (
-            <p className="text-muted-foreground">No response yet. Click "Test Login" to begin.</p>
-          )}
-        </div>
+          </div>
+        )}
+
+        {directLoginOutput && (
+          <div>
+            <h3>Direct API Test:</h3>
+            <pre style={{ backgroundColor: '#eee', padding: '10px', overflow: 'auto' }}>
+              {directLoginOutput}
+            </pre>
+          </div>
+        )}
+      </div>
+      
+      <div style={boxStyle}>
+        <h2>LocalStorage User</h2>
+        {storedUser ? (
+          <div>
+            <p><strong>Username:</strong> {storedUser.username}</p>
+            <p><strong>Role:</strong> {storedUser.role || (storedUser.isAdmin ? 'admin' : 'user')}</p>
+            <pre style={{ backgroundColor: '#eee', padding: '10px', overflow: 'auto' }}>
+              {JSON.stringify(storedUser, null, 2)}
+            </pre>
+            <button 
+              onClick={handleLogout}
+              style={{
+                background: '#e53e3e',
+                color: 'white',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Logout
+            </button>
+            <button 
+              onClick={() => setLocation(storedUser.isAdmin || storedUser.role === 'admin' ? '/admin' : '/dashboard')}
+              style={{
+                background: '#805ad5',
+                color: 'white',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '4px',
+                marginLeft: '10px',
+                cursor: 'pointer',
+              }}
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        ) : (
+          <p>No user data in localStorage</p>
+        )}
+      </div>
+      
+      <div style={boxStyle}>
+        <h2>Debug Info</h2>
+        <p><strong>Current URL:</strong> {window.location.href}</p>
+        <p><strong>Current cookies:</strong> {document.cookie || 'No cookies'}</p>
       </div>
     </div>
   );
-}
+};
+
+export default TestAuth;
