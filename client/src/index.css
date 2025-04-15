@@ -108,24 +108,8 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    /* Border styling for the entire page */
     @apply mx-auto relative;
     max-width: 1920px;
     min-height: 100vh;
-    padding: 16px;
-  }
-
-  /* Wrapper for the page content */
-  .page-border {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-    pointer-events: none;
-    z-index: 100;
-    border: 6px solid #3b82f6;
-    border-radius: 2px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   }
 }
