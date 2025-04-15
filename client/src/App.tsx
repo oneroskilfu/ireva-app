@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Route, Router } from "wouter";
+import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,48 +13,11 @@ import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "@/pages/login-page";
 import TestAuth from "@/pages/test-auth";
 import PrivateRoute from "@/components/PrivateRoute";
-import TestNavigation from "@/components/TestNavigation";
-
-// A custom hook that builds on useLocation to parse the query string
-function useHashLocation(): [string, (to: string) => void] {
-  const [location, setLocation] = React.useState<string>(
-    window.location.hash.replace("#", "") || "/"
-  );
-
-  React.useEffect(() => {
-    // Handle hash change and initial hash
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace("#", "") || "/";
-      setLocation(hash);
-    };
-
-    window.addEventListener("hashchange", handleHashChange);
-    
-    // Handle initial hash on load
-    if (!window.location.hash && window.location.pathname !== "/") {
-      // If no hash but a path exists, convert to hash
-      window.location.hash = window.location.pathname;
-    } else {
-      // Otherwise just ensure we have the right initial state
-      handleHashChange();
-    }
-
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
-
-  // To change the location, we need to update the hash
-  const setHashLocation = (to: string) => {
-    window.location.hash = to;
-  };
-
-  return [location, setHashLocation];
-}
 
 function App() {
   return (
-    <Router hook={useHashLocation}>
-      <div>
-        <TestNavigation />
+    <div>
+      <div className="app-container">
         <Switch>
           {/* Public routes */}
           <Route path="/" component={HomePage} />
@@ -93,7 +56,7 @@ function App() {
           theme="light"
         />
       </div>
-    </Router>
+    </div>
   );
 }
 

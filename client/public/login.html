@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    /* Navigation */
+    .primary-nav {
+      background-color: #3b82f6;
+      color: white;
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+    }
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      transition: background-color 0.2s;
+    }
+    .nav-links a:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    /* Login Form */
+    .login-container {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 2rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      margin-top: 0;
+      color: #3b82f6;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #2563eb;
+    }
+    
+    button:disabled {
+      background-color: #94a3b8;
+      cursor: not-allowed;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 0.5rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error {
+      color: #ef4444;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    
+    .success {
+      color: #10b981;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    
+    .login-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+    
+    .login-footer a {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+    
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Response display */
+    .response-container {
+      margin-top: 2rem;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    pre {
+      background-color: #f1f5f9;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Primary Navigation -->
+  <nav class="primary-nav">
+    <div class="container">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/login.html">Login</a>
+        <a href="/test-login.html">Login Test</a>
+        <a href="/register.html">Register</a>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="container">
+    <div class="login-container">
+      <h1>Sign in to iREVA</h1>
+      <div id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" value="admin" placeholder="Enter your username">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" value="password" placeholder="Enter your password">
+        </div>
+        
+        <button id="loginButton" type="button">Sign In</button>
+        
+        <div id="message" class=""></div>
+        
+        <div class="login-footer">
+          Don't have an account? <a href="/register.html">Sign up</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="response-container">
+      <h2>Response:</h2>
+      <pre id="response">No response yet</pre>
+      
+      <h2>LocalStorage:</h2>
+      <pre id="storage">No user data in localStorage</pre>
+      
+      <div id="dashboard-link" style="display: none; text-align: center; margin-top: 1rem;">
+        <a href="#" id="dashboardButton" style="display: inline-block; padding: 0.75rem 1.5rem; background-color: #10b981; color: white; text-decoration: none; border-radius: 4px;">
+          Go to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Display current localStorage data on page load
+      updateStorageDisplay();
+      checkUserLogin();
+      
+      // Login button click handler
+      document.getElementById('loginButton').addEventListener('click', async function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const messageEl = document.getElementById('message');
+        const responseEl = document.getElementById('response');
+        const loginButton = document.getElementById('loginButton');
+        
+        if (!username || !password) {
+          messageEl.textContent = 'Please enter both username and password';
+          messageEl.className = 'error';
+          return;
+        }
+        
+        // Show loading state
+        loginButton.disabled = true;
+        loginButton.innerHTML = '<span class="spinner"></span> Signing in...';
+        messageEl.textContent = '';
+        messageEl.className = '';
+        
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+          });
+          
+          const data = await response.json();
+          responseEl.textContent = JSON.stringify(data, null, 2);
+          
+          if (response.ok) {
+            messageEl.textContent = 'Login successful!';
+            messageEl.className = 'success';
+            
+            // Convert isAdmin to role for consistency
+            const userWithRole = {
+              ...data,
+              role: data.isAdmin ? 'admin' : 'investor'
+            };
+            
+            // Store in localStorage
+            localStorage.setItem('user', JSON.stringify(userWithRole));
+            localStorage.setItem('token', 'session-auth-token');
+            
+            // Update storage display
+            updateStorageDisplay();
+            checkUserLogin();
+          } else {
+            messageEl.textContent = `Login failed: ${data.message || 'Invalid credentials'}`;
+            messageEl.className = 'error';
+          }
+        } catch (error) {
+          messageEl.textContent = `Error: ${error.message}`;
+          messageEl.className = 'error';
+          responseEl.textContent = error.toString();
+        } finally {
+          // Reset button state
+          loginButton.disabled = false;
+          loginButton.textContent = 'Sign In';
+        }
+      });
+      
+      // Helper function to update storage display
+      function updateStorageDisplay() {
+        const storageEl = document.getElementById('storage');
+        const userStr = localStorage.getItem('user');
+        
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            storageEl.textContent = JSON.stringify(user, null, 2);
+          } catch (e) {
+            storageEl.textContent = `Error parsing user data: ${e.message}`;
+          }
+        } else {
+          storageEl.textContent = 'No user data in localStorage';
+        }
+      }
+      
+      // Check if user is logged in and show dashboard link
+      function checkUserLogin() {
+        const userStr = localStorage.getItem('user');
+        const dashboardLinkEl = document.getElementById('dashboard-link');
+        const dashboardButtonEl = document.getElementById('dashboardButton');
+        
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            dashboardLinkEl.style.display = 'block';
+            
+            if (user.isAdmin || user.role === 'admin') {
+              dashboardButtonEl.textContent = 'Go to Admin Dashboard';
+              dashboardButtonEl.href = '/admin.html';
+            } else {
+              dashboardButtonEl.textContent = 'Go to Dashboard';
+              dashboardButtonEl.href = '/dashboard.html';
+            }
+          } catch (e) {
+            console.error('Error parsing user data:', e);
+          }
+        } else {
+          dashboardLinkEl.style.display = 'none';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
