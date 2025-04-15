@@ -7,7 +7,9 @@ import {
   qaAnswers, type QAAnswer, type InsertQAAnswer,
   supportTickets, type SupportTicket, type InsertSupportTicket,
   supportMessages, type SupportMessage, type InsertSupportMessage,
-  supportFaqs, type SupportFaq, type InsertSupportFaq
+  supportFaqs, type SupportFaq, type InsertSupportFaq,
+  roiDistributions, type ROIDistribution, type InsertROIDistribution,
+  roiTransactions, type ROITransaction, type InsertROITransaction
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -29,6 +31,8 @@ export interface IStorage {
   getAllProperties(): Promise<Property[]>;
   getPropertiesByType(type: string): Promise<Property[]>;
   getPropertiesByLocation(location: string): Promise<Property[]>;
+  getPropertiesByStatus(status: string): Promise<Property[]>;
+  getPropertiesByDeveloper(developerId: number): Promise<Property[]>;
   searchProperties(search: string): Promise<Property[]>;
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: number, propertyData: Partial<InsertProperty>): Promise<Property | undefined>;
@@ -37,10 +41,30 @@ export interface IStorage {
   // Investment methods
   getInvestment(id: number): Promise<Investment | undefined>;
   getUserInvestments(userId: number): Promise<Investment[]>;
+  getPropertyInvestments(propertyId: number): Promise<Investment[]>;
   getAllInvestments(): Promise<Investment[]>;
   createInvestment(investment: InsertInvestment): Promise<Investment>;
   updateInvestment(id: number, investmentData: Partial<InsertInvestment>): Promise<Investment | undefined>;
   deleteInvestment(id: number): Promise<boolean>;
+  
+  // ROI methods
+  getROIDistribution(id: number): Promise<ROIDistribution | undefined>;
+  getAllROIDistributions(): Promise<ROIDistribution[]>;
+  getROIDistributionsByProperty(propertyId: number): Promise<ROIDistribution[]>;
+  getROIDistributionsByStatus(status: string): Promise<ROIDistribution[]>;
+  createROIDistribution(distribution: InsertROIDistribution): Promise<ROIDistribution>;
+  updateROIDistribution(id: number, distributionData: Partial<InsertROIDistribution>): Promise<ROIDistribution | undefined>;
+  deleteROIDistribution(id: number): Promise<boolean>;
+  
+  // ROI Transaction methods
+  getROITransaction(id: number): Promise<ROITransaction | undefined>;
+  getAllROITransactions(): Promise<ROITransaction[]>;
+  getROITransactionsByUserId(userId: number): Promise<ROITransaction[]>;
+  getROITransactionsByInvestmentId(investmentId: number): Promise<ROITransaction[]>;
+  getROITransactionsByDistributionId(distributionId: number): Promise<ROITransaction[]>;
+  createROITransaction(transaction: InsertROITransaction): Promise<ROITransaction>;
+  updateROITransaction(id: number, transactionData: Partial<InsertROITransaction>): Promise<ROITransaction | undefined>;
+  deleteROITransaction(id: number): Promise<boolean>;
   
   // Forum methods
   getForumPost(id: number): Promise<ForumPost | undefined>;
@@ -92,6 +116,8 @@ export class MemStorage implements IStorage {
   private supportTickets: Map<number, SupportTicket>;
   private supportMessages: Map<number, SupportMessage>;
   private supportFaqs: Map<number, SupportFaq>;
+  private roiDistributions: Map<number, ROIDistribution>;
+  private roiTransactions: Map<number, ROITransaction>;
   private userIdCounter: number;
   private propertyIdCounter: number;
   private investmentIdCounter: number;
@@ -101,6 +127,8 @@ export class MemStorage implements IStorage {
   private supportTicketIdCounter: number;
   private supportMessageIdCounter: number;
   private supportFaqIdCounter: number;
+  private roiDistributionIdCounter: number;
+  private roiTransactionIdCounter: number;
   sessionStore: any; // Using any for the session store type
 
   constructor() {
@@ -113,6 +141,8 @@ export class MemStorage implements IStorage {
     this.supportTickets = new Map();
     this.supportMessages = new Map();
     this.supportFaqs = new Map();
+    this.roiDistributions = new Map();
+    this.roiTransactions = new Map();
     this.userIdCounter = 1;
     this.propertyIdCounter = 1;
     this.investmentIdCounter = 1;
@@ -122,6 +152,8 @@ export class MemStorage implements IStorage {
     this.supportTicketIdCounter = 1;
     this.supportMessageIdCounter = 1;
     this.supportFaqIdCounter = 1;
+    this.roiDistributionIdCounter = 1;
+    this.roiTransactionIdCounter = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
@@ -325,6 +357,12 @@ export class MemStorage implements IStorage {
   async getUserInvestments(userId: number): Promise<Investment[]> {
     return Array.from(this.investments.values()).filter(
       (investment) => investment.userId === userId,
+    );
+  }
+
+  async getPropertyInvestments(propertyId: number): Promise<Investment[]> {
+    return Array.from(this.investments.values()).filter(
+      (investment) => investment.propertyId === propertyId,
     );
   }
 

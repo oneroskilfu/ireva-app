@@ -24,6 +24,7 @@ import { isAdmin } from "./middleware/isAdmin";
 
 // Import route handlers
 import authRouter from './routes/auth'; // Updated import for TypeScript
+import adminRoutes from './routes/admin';
 import usersRoutes from './routes/users.js';
 import projectsRoutes from './routes/projects.js';
 import propertiesRoutes from './routes/properties.js';
@@ -173,7 +174,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
   
-  // We now use the imported isAdmin middleware
+  // Register admin routes
+  app.use('/api/admin', adminRoutes);
 
   // Get all properties
   app.get("/api/properties", async (req, res) => {

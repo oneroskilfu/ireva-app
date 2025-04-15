@@ -19,6 +19,21 @@ export const mfaMethodEnum = pgEnum("mfa_method", [
   "app"
 ]);
 
+// User role enum
+export const userRoleEnum = pgEnum("user_role", [
+  "admin",
+  "investor",
+  "developer"
+]);
+
+// ROI distribution status enum
+export const roiStatusEnum = pgEnum("roi_status", [
+  "Pending",
+  "Processing",
+  "Completed",
+  "Failed"
+]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -27,6 +42,9 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   isAdmin: boolean("is_admin").default(false).notNull(),
+  role: userRoleEnum("role").default("investor"),
+  active: boolean("active").default(true),
+  profileImage: text("profile_image"),
   createdAt: timestamp("created_at").defaultNow(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
   phoneNumber: text("phone_number"),
@@ -53,6 +71,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   isAdmin: true,
+  role: true,
+  active: true,
+  profileImage: true,
   phoneNumber: true,
   bankName: true,
   bankAccountNumber: true,
@@ -348,3 +369,46 @@ export type InsertSupportMessage = z.infer<typeof insertSupportMessageSchema>;
 
 export type SupportFaq = typeof supportFaqs.$inferSelect;
 export type InsertSupportFaq = z.infer<typeof insertSupportFaqSchema>;
+
+// ROI Distribution Schema
+export const roiDistributions = pgTable("roi_distributions", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").references(() => properties.id).notNull(),
+  percentage: decimal("percentage").notNull(),
+  amount: integer("amount").notNull(),
+  date: timestamp("date").notNull(),
+  status: roiStatusEnum("status").default("Pending"),
+  notes: text("notes"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const roiTransactions = pgTable("roi_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  investmentId: integer("investment_id").references(() => investments.id).notNull(),
+  distributionId: integer("distribution_id").references(() => roiDistributions.id).notNull(),
+  amount: integer("amount").notNull(),
+  date: timestamp("date").notNull(),
+  status: roiStatusEnum("status").default("Completed"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRoiDistributionSchema = createInsertSchema(roiDistributions).omit({
+  id: true,
+  processedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRoiTransactionSchema = createInsertSchema(roiTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ROIDistribution = typeof roiDistributions.$inferSelect;
+export type InsertROIDistribution = z.infer<typeof insertRoiDistributionSchema>;
+
+export type ROITransaction = typeof roiTransactions.$inferSelect;
+export type InsertROITransaction = z.infer<typeof insertRoiTransactionSchema>;
