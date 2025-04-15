@@ -12,10 +12,12 @@ import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "@/pages/login-page";
 import TestAuth from "@/pages/test-auth";
 import PrivateRoute from "@/components/PrivateRoute";
+import TestNavigation from "@/components/TestNavigation";
 
 function App() {
   return (
     <div>
+      <TestNavigation />
       <Switch>
         {/* Public routes */}
         <Route path="/" component={HomePage} />
