@@ -57,6 +57,9 @@ export default function Header() {
                   <Link href="/properties/mixed-use" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
                     Mixed-use
                   </Link>
+                  <Link href="/properties/land" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Land
+                  </Link>
                 </div>
               </div>
               <Link href="/" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
