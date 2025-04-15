@@ -18,7 +18,19 @@ import {
 } from '@mui/material';
 import { LockOutlined, Person, PersonAdd, Email, Phone } from '@mui/icons-material';
 import { useAuth } from '../contexts/auth-context';
-import { login as apiLogin, register, LoginCredentials, RegisterData, AuthResponse } from '../api/authService';
+
+interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  phone: string;
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
