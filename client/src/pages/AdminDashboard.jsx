@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useLocation } from 'wouter';
+import { Link } from 'wouter';
 import Sidebar from '../components/Sidebar';
 import { getCurrentUser } from '../utils/auth';
 import { 
@@ -38,7 +39,7 @@ const roiData = [
 ];
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [userData, setUserData] = useState({});
   const [stats, setStats] = useState({
     totalUsers: 1250,
@@ -61,7 +62,7 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/');
+    setLocation('/');
   };
 
   return (

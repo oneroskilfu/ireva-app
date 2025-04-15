@@ -39,6 +39,12 @@ function App() {
           </Route>
           
           {/* Admin routes */}
+          <Route path="/admin/dashboard">
+            <PrivateRoute role="admin">
+              <AdminDashboard />
+            </PrivateRoute>
+          </Route>
+          
           <Route path="/admin">
             <PrivateRoute role="admin">
               <AdminDashboard />
