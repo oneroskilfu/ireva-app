@@ -45,7 +45,7 @@ export default function Footer() {
       <div className="container px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <h4 className="font-medium text-base">REVA</h4>
+            <h4 className="font-medium text-base">iREVA</h4>
             <p className="text-sm text-muted-foreground">
               Invest in premium real estate opportunities with our transparent and secure platform.
             </p>

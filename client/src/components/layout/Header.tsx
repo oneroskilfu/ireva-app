@@ -54,7 +54,7 @@ export default function Header() {
           <div className="flex items-center">
             <AnimatedLink href="/" className="flex-shrink-0 flex items-center">
               <Building className="h-6 w-6 text-primary mr-2" />
-              <span className="text-xl font-bold">REVA</span>
+              <span className="text-xl font-bold">iREVA</span>
             </AnimatedLink>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {/* Properties dropdown with horizontal submenu */}
@@ -135,7 +135,7 @@ export default function Header() {
                 <SheetHeader className="mb-6">
                   <SheetTitle className="flex items-center text-left">
                     <Building className="h-6 w-6 text-primary mr-2" />
-                    <span className="text-xl font-bold">REVA</span>
+                    <span className="text-xl font-bold">iREVA</span>
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col space-y-4">
