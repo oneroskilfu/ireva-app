@@ -15,13 +15,20 @@ function App() {
   return (
     <div>
       <Switch>
+        {/* Public routes */}
         <Route path="/" component={HomePage} />
-        <Route path="/auth" component={AuthPage} />
         <Route path="/login" component={LoginPage} />
+        <Route path="/auth" component={AuthPage} />
         <Route path="/unauthorized" component={UnauthorizedPage} />
         <Route path="/properties/:id" component={PropertyPage} />
         
-        {/* Admin route with role-based access control */}
+        {/* Protected routes */}
+        <Route path="/dashboard">
+          <PrivateRoute role="investor">
+            <HomePage />
+          </PrivateRoute>
+        </Route>
+        
         <Route path="/admin">
           <PrivateRoute role="admin">
             <AdminDashboard />
