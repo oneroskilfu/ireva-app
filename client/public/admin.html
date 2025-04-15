@@ -917,6 +917,22 @@
       checkAuth();
       const appEl = document.getElementById('app');
       
+      // Add click handler for KYC link
+      document.querySelector('.kyc-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load KYC content
+        loadKYCVerificationContent();
+      });
+      
       // Mock data for demonstration
       const mockUsers = [
         { id: 1, name: 'Admin User', username: 'admin', email: 'admin@ireva.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
@@ -960,6 +976,183 @@
         { id: 4, name: 'Rivers Estate Developers', contact: 'info@red.com.ng', properties: 1 },
         { id: 5, name: 'Lagos Commercial Developers', contact: 'info@lagoscommercial.com', properties: 1 }
       ];
+      
+      // KYC Verification Tab
+      function loadKYCVerificationContent() {
+        // Get reference to the main content area
+        const mainContent = document.querySelector('main');
+        
+        // Update header title
+        document.querySelector('header h1').textContent = 'KYC Verification';
+        
+        // Generate KYC content
+        mainContent.innerHTML = `
+          <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-200">
+              <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">KYC Verification Management</h1>
+              </div>
+              <p class="mt-2 text-gray-600">
+                Review and verify user identity documents. All verifications must follow compliance guidelines.
+              </p>
+            </div>
+            
+            <div class="p-8">
+              <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-4">Pending Verifications</h2>
+                <div class="bg-white rounded-lg border overflow-hidden">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documents</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Mary Adebayo</div>
+                              <div class="text-sm text-gray-500">mary@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">ID Card, Proof of Address, Selfie</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 12, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="bg-[#553627] text-white px-3 py-1 rounded hover:bg-[#664332]">Review</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Joseph Okonkwo</div>
+                              <div class="text-sm text-gray-500">joseph@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">ID Card, Proof of Address, Selfie</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 14, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="bg-[#553627] text-white px-3 py-1 rounded hover:bg-[#664332]">Review</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div>
+                <h2 class="text-lg font-semibold mb-4">Recent Verifications</h2>
+                <div class="bg-white rounded-lg border overflow-hidden">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified On</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified By</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">John Okafor</div>
+                              <div class="text-sm text-gray-500">john@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Verified
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 10, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Admin User</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="text-blue-600 hover:text-blue-900">View</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Sarah Nnamdi</div>
+                              <div class="text-sm text-gray-500">sarah@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Verified
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 8, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Admin User</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="text-blue-600 hover:text-blue-900">View</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Peter Johnson</div>
+                              <div class="text-sm text-gray-500">peter@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Rejected
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 5, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Admin User</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="text-blue-600 hover:text-blue-900">View</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
       
       // Utility functions for formatting
       function formatCurrency(amount) {
