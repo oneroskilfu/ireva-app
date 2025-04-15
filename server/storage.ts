@@ -107,6 +107,18 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  // Implementing methods for Property Status and Developer
+  async getPropertiesByStatus(status: string): Promise<Property[]> {
+    return Array.from(this.properties.values()).filter(
+      property => 'status' in property && property['status'] === status
+    );
+  }
+
+  async getPropertiesByDeveloper(developerId: number): Promise<Property[]> {
+    return Array.from(this.properties.values()).filter(
+      property => 'developerId' in property && property['developerId'] === developerId
+    );
+  }
   private users: Map<number, User>;
   private properties: Map<number, Property>;
   private investments: Map<number, Investment>;
@@ -785,6 +797,184 @@ export class MemStorage implements IStorage {
 
   async deleteSupportFaq(id: number): Promise<boolean> {
     return this.supportFaqs.delete(id);
+  }
+  
+  // ROI Distribution methods
+  async getROIDistribution(id: number): Promise<ROIDistribution | undefined> {
+    return this.roiDistributions.get(id);
+  }
+
+  async getAllROIDistributions(): Promise<ROIDistribution[]> {
+    return Array.from(this.roiDistributions.values());
+  }
+
+  async getROIDistributionsByProperty(propertyId: number): Promise<ROIDistribution[]> {
+    return Array.from(this.roiDistributions.values()).filter(
+      distribution => distribution.propertyId === propertyId
+    );
+  }
+
+  async getROIDistributionsByStatus(status: string): Promise<ROIDistribution[]> {
+    return Array.from(this.roiDistributions.values()).filter(
+      distribution => distribution.status === status
+    );
+  }
+
+  async createROIDistribution(distribution: InsertROIDistribution): Promise<ROIDistribution> {
+    const id = this.roiDistributionIdCounter++;
+    const newDistribution: ROIDistribution = {
+      id,
+      propertyId: distribution.propertyId,
+      percentage: distribution.percentage,
+      amount: distribution.amount,
+      date: distribution.date,
+      status: distribution.status || "Pending",
+      notes: distribution.notes || null,
+      processedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.roiDistributions.set(id, newDistribution);
+    return newDistribution;
+  }
+
+  async updateROIDistribution(id: number, distributionData: Partial<InsertROIDistribution>): Promise<ROIDistribution | undefined> {
+    const distribution = this.roiDistributions.get(id);
+    if (!distribution) return undefined;
+
+    // Handle special case when the status changes to Completed
+    let processedAt = distribution.processedAt;
+    if (distributionData.status === "Completed" && distribution.status !== "Completed") {
+      processedAt = new Date();
+    }
+
+    const updatedDistribution: ROIDistribution = {
+      ...distribution,
+      ...distributionData,
+      id: distribution.id,
+      createdAt: distribution.createdAt,
+      updatedAt: new Date(),
+      processedAt
+    };
+
+    this.roiDistributions.set(id, updatedDistribution);
+    return updatedDistribution;
+  }
+
+  async deleteROIDistribution(id: number): Promise<boolean> {
+    // First check if there are any transactions for this distribution
+    const transactions = Array.from(this.roiTransactions.values()).filter(
+      trans => trans.distributionId === id
+    );
+    
+    // If there are transactions, don't allow deletion
+    if (transactions.length > 0) {
+      return false;
+    }
+    
+    return this.roiDistributions.delete(id);
+  }
+
+  // ROI Transaction methods
+  async getROITransaction(id: number): Promise<ROITransaction | undefined> {
+    return this.roiTransactions.get(id);
+  }
+
+  async getAllROITransactions(): Promise<ROITransaction[]> {
+    return Array.from(this.roiTransactions.values());
+  }
+
+  async getROITransactionsByUserId(userId: number): Promise<ROITransaction[]> {
+    return Array.from(this.roiTransactions.values()).filter(
+      transaction => transaction.userId === userId
+    );
+  }
+
+  async getROITransactionsByInvestmentId(investmentId: number): Promise<ROITransaction[]> {
+    return Array.from(this.roiTransactions.values()).filter(
+      transaction => transaction.investmentId === investmentId
+    );
+  }
+
+  async getROITransactionsByDistributionId(distributionId: number): Promise<ROITransaction[]> {
+    return Array.from(this.roiTransactions.values()).filter(
+      transaction => transaction.distributionId === distributionId
+    );
+  }
+
+  async createROITransaction(transaction: InsertROITransaction): Promise<ROITransaction> {
+    const id = this.roiTransactionIdCounter++;
+    const newTransaction: ROITransaction = {
+      id,
+      userId: transaction.userId,
+      investmentId: transaction.investmentId,
+      distributionId: transaction.distributionId,
+      amount: transaction.amount,
+      date: transaction.date,
+      status: transaction.status || "Completed",
+      createdAt: new Date()
+    };
+    this.roiTransactions.set(id, newTransaction);
+    
+    // Update the investment earnings
+    const investment = await this.getInvestment(transaction.investmentId);
+    if (investment) {
+      const updatedInvestment = {
+        ...investment,
+        earnings: investment.earnings + transaction.amount,
+        returns: investment.returns + (transaction.amount / investment.amount) * 100
+      };
+      this.investments.set(investment.id, updatedInvestment);
+    }
+    
+    return newTransaction;
+  }
+
+  async updateROITransaction(id: number, transactionData: Partial<InsertROITransaction>): Promise<ROITransaction | undefined> {
+    const transaction = this.roiTransactions.get(id);
+    if (!transaction) return undefined;
+    
+    // If amount is being updated, adjust the investment earnings
+    if (transactionData.amount !== undefined && transactionData.amount !== transaction.amount) {
+      const investment = await this.getInvestment(transaction.investmentId);
+      if (investment) {
+        const amountDifference = transactionData.amount - transaction.amount;
+        const updatedInvestment = {
+          ...investment,
+          earnings: investment.earnings + amountDifference,
+          returns: (investment.earnings + amountDifference) / investment.amount * 100
+        };
+        this.investments.set(investment.id, updatedInvestment);
+      }
+    }
+    
+    const updatedTransaction: ROITransaction = {
+      ...transaction,
+      ...transactionData,
+      id: transaction.id,
+      createdAt: transaction.createdAt
+    };
+    
+    this.roiTransactions.set(id, updatedTransaction);
+    return updatedTransaction;
+  }
+
+  async deleteROITransaction(id: number): Promise<boolean> {
+    const transaction = this.roiTransactions.get(id);
+    if (!transaction) return false;
+    
+    // Update the investment earnings
+    const investment = await this.getInvestment(transaction.investmentId);
+    if (investment) {
+      const updatedInvestment = {
+        ...investment,
+        earnings: Math.max(0, investment.earnings - transaction.amount),
+        returns: Math.max(0, investment.earnings - transaction.amount) / investment.amount * 100
+      };
+      this.investments.set(investment.id, updatedInvestment);
+    }
+    
+    return this.roiTransactions.delete(id);
   }
 
   // Seed properties
