@@ -16,18 +16,18 @@ export default function SupportPage() {
         <div className="w-full md:w-1/2">
           <h1 className="text-3xl font-bold mb-2">Customer Support</h1>
           <p className="text-muted-foreground">
-            Get help with your REVA experience. Browse our FAQs or create a support ticket if you need personalized assistance.
+            Get help with your iREVA experience. Browse our FAQs or create a support ticket if you need personalized assistance.
           </p>
         </div>
         <div className="w-full md:w-1/2 flex flex-col md:items-end justify-center">
           <div className="flex items-center space-x-4">
             <div className="flex items-center text-muted-foreground">
               <MessageSquare className="h-5 w-5 mr-2" />
-              <span>Email: support@reva.ng</span>
+              <span>Email: support@ireva.ng</span>
             </div>
             <div className="flex items-center text-muted-foreground">
               <LifeBuoy className="h-5 w-5 mr-2" />
-              <span>Call: +234-8000-REVA</span>
+              <span>Call: +234-8000-iREVA</span>
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function SupportPage() {
         <Card>
           <CardHeader>
             <CardTitle>Need More Assistance?</CardTitle>
-            <CardDescription>REVA offers multiple ways to connect with our support team</CardDescription>
+            <CardDescription>iREVA offers multiple ways to connect with our support team</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -76,8 +76,8 @@ export default function SupportPage() {
                 <p className="text-sm text-muted-foreground mb-2">
                   Email us anytime for general inquiries or assistance with your investments.
                 </p>
-                <a href="mailto:support@reva.ng" className="text-primary hover:underline font-medium">
-                  support@reva.ng
+                <a href="mailto:support@ireva.ng" className="text-primary hover:underline font-medium">
+                  support@ireva.ng
                 </a>
               </div>
               
@@ -87,7 +87,7 @@ export default function SupportPage() {
                 <p className="text-sm text-muted-foreground mb-2">
                   Available Monday - Friday, 9am - 5pm WAT for urgent matters.
                 </p>
-                <a href="tel:+2348000REVA" className="text-primary hover:underline font-medium">
+                <a href="tel:+2348000iREVA" className="text-primary hover:underline font-medium">
                   +234-8000-iREVA
                 </a>
               </div>

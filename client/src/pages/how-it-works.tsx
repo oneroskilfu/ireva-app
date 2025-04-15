@@ -76,7 +76,7 @@ export default function HowItWorksPage() {
             className="text-center max-w-3xl mx-auto"
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text">
-              How REVA Works
+              How iREVA Works
             </h1>
             <p className="text-lg md:text-xl text-gray-700 mb-8 leading-relaxed">
               Discover how easy it is to invest in premium Nigerian real estate through our innovative platform, building wealth with as little as ₦100,000.
