@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
+import { setupVerificationRoutes } from "./auth/verification";
 import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
 import { ZodError } from "zod";
@@ -8,6 +9,9 @@ import { ZodError } from "zod";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Set up verification routes
+  setupVerificationRoutes(app);
 
   // Get all properties
   app.get("/api/properties", async (req, res) => {
@@ -107,6 +111,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create investment
       const investment = await storage.createInvestment(validatedData);
       
+      // Create notification for the user
+      await storage.createNotification({
+        userId,
+        type: "investment",
+        title: "Investment Successful",
+        message: `Your investment of $${validatedData.amount} in ${property.name} was successful.`,
+        link: `/property/${property.id}`
+      });
+      
       // Get updated property
       const updatedProperty = await storage.getProperty(property.id);
       
@@ -120,6 +133,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ message: "Failed to create investment" });
       }
+    }
+  });
+  
+  // Get user notifications
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = (req.user as Express.User).id;
+      const notifications = await storage.getUserNotifications(userId);
+      
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+  
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const notificationId = parseInt(req.params.id);
+      const updatedNotification = await storage.markNotificationAsRead(notificationId);
+      
+      res.json(updatedNotification);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update notification" });
     }
   });
 

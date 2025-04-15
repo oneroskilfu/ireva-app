@@ -1,343 +1,254 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 import { Redirect } from "wouter";
-
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { Layout } from "@/components/layout/Layout";
 import { PhoneVerificationForm } from "@/components/auth/PhoneVerification";
 import { KycVerificationForm } from "@/components/auth/KycVerification";
-import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Shield, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Steps,
-  StepIndicator,
-  StepStatus,
-  StepTitle,
-  StepDescription,
-  StepSeparator,
-  StepNumber,
-} from "@/components/ui/steps";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Steps, StepIndicator, StepSeparator, StepTitle, StepDescription } from "@/components/ui/steps";
+import { apiRequest } from "@/lib/queryClient";
+
+type VerificationStatus = {
+  isPhoneVerified: boolean;
+  kycStatus: "not_started" | "pending" | "verified" | "rejected";
+  kycSubmittedAt: string | null;
+  kycVerifiedAt: string | null;
+};
 
 export default function VerificationPage() {
-  const { user, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [kycSubmitted, setKycSubmitted] = useState(false);
+  const { user, isLoading } = useAuth();
+  const [activeStep, setActiveStep] = useState(0);
   
-  // Get user verification status
-  const { data: verificationStatus, isLoading: statusLoading } = useQuery({
+  const { data: verificationStatus, isLoading: isVerificationLoading, refetch } = useQuery<VerificationStatus>({
     queryKey: ["/api/auth/verification-status"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/auth/verification-status");
+      if (res.status === 401) {
+        throw new Error("Unauthorized");
+      }
       return res.json();
     },
-    enabled: !!user, // Only run if user is logged in
+    enabled: !!user,
+    refetchOnWindowFocus: false,
   });
-
+  
   useEffect(() => {
-    // Determine starting step based on verification status
-    if (verificationStatus) {
-      if (verificationStatus.isPhoneVerified) {
-        setPhoneVerified(true);
-        setCurrentStep(1); // Move to KYC step
-      }
-      
-      if (verificationStatus.kycStatus !== "not_started") {
-        setKycSubmitted(true);
-      }
+    // If user has verified phone, move to KYC step
+    if (verificationStatus?.isPhoneVerified) {
+      setActiveStep(1);
+    }
+    
+    // If user has verified KYC, move to completion step
+    if (verificationStatus?.kycStatus === "verified") {
+      setActiveStep(2);
     }
   }, [verificationStatus]);
-
-  const handlePhoneVerified = (phoneNumber: string) => {
-    setPhoneVerified(true);
-    toast({
-      title: "Phone verified successfully!",
-      description: "Your phone number has been verified.",
-    });
-    setCurrentStep(1); // Move to KYC step
-  };
-
-  const handleKycSubmitted = () => {
-    setKycSubmitted(true);
-    setCurrentStep(2); // Move to completion step
-  };
-
-  // Handle loading state
-  if (authLoading || statusLoading) {
+  
+  // Handle loading and unauthenticated states
+  if (isLoading || isVerificationLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          <p className="text-gray-500">Loading verification status...</p>
+      <Layout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
-      </div>
+      </Layout>
     );
   }
-
-  // Redirect if user is not logged in
-  if (!user && !authLoading) {
-    toast({
-      title: "Authentication required",
-      description: "Please sign in to access the verification page.",
-      variant: "destructive",
-    });
+  
+  if (!user) {
     return <Redirect to="/auth" />;
   }
-
-  const getKycStatusForUI = (): "not_started" | "pending" | "verified" | "rejected" => {
-    if (!verificationStatus) return "not_started";
-    return verificationStatus.kycStatus as "not_started" | "pending" | "verified" | "rejected";
+  
+  const handlePhoneVerified = () => {
+    refetch();
   };
-
+  
+  const handleKycSubmitted = () => {
+    refetch();
+  };
+  
+  const getStepStatus = (step: number) => {
+    if (step === 0) {
+      return verificationStatus?.isPhoneVerified
+        ? "complete"
+        : "current";
+    }
+    
+    if (step === 1) {
+      if (verificationStatus?.kycStatus === "verified") {
+        return "complete";
+      }
+      
+      if (verificationStatus?.isPhoneVerified) {
+        return "current";
+      }
+      
+      return "upcoming";
+    }
+    
+    if (step === 2) {
+      if (verificationStatus?.kycStatus === "verified") {
+        return "current";
+      }
+      
+      return "upcoming";
+    }
+    
+    return "upcoming";
+  };
+  
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-1 bg-gray-50">
-        <div className="container mx-auto px-4 py-12">
-          <div className="mb-8">
-            <Button 
-              variant="ghost" 
-              className="mb-4"
-              onClick={() => window.history.back()}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            
-            <h1 className="text-3xl font-bold">Account Verification</h1>
-            <p className="text-gray-600 mt-2">
-              Complete the verification process to unlock all platform features
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-1">
-              <Card className="sticky top-24">
-                <CardHeader>
-                  <CardTitle>Verification Process</CardTitle>
-                  <CardDescription>
-                    Complete these steps to fully verify your account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Steps orientation="vertical" activeStep={currentStep}>
-                    <div className="space-y-4">
-                      <Step
-                        title="Phone Verification"
-                        description="Verify your phone number via SMS"
-                        status={phoneVerified ? "complete" : "active"}
-                      />
-                      
-                      <Step
-                        title="Identity Verification"
-                        description="Submit documents to verify your identity"
-                        status={
-                          !phoneVerified 
-                            ? "inactive" 
-                            : kycSubmitted 
-                              ? "complete" 
-                              : "active"
-                        }
-                      />
-                      
-                      <Step
-                        title="Verification Complete"
-                        description="Enjoy all platform features"
-                        status={
-                          kycSubmitted && verificationStatus?.kycStatus === "verified"
-                            ? "complete"
-                            : "inactive"
-                        }
-                      />
-                    </div>
-                  </Steps>
-                  
-                  <Alert className="mt-6">
-                    <Shield className="h-4 w-4" />
-                    <AlertTitle>Secured & Protected</AlertTitle>
-                    <AlertDescription>
-                      All your verification documents are encrypted and securely stored
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="md:col-span-2">
-              {currentStep === 0 && (
-                <PhoneVerificationForm 
-                  onVerificationComplete={handlePhoneVerified}
-                  initialPhoneNumber={user?.phoneNumber}
-                />
-              )}
-              
-              {currentStep === 1 && (
-                <KycVerificationForm 
-                  onVerificationSubmitted={handleKycSubmitted}
-                  kycStatus={getKycStatusForUI()}
-                />
-              )}
-              
-              {currentStep === 2 && (
-                <Card className="w-full">
-                  <CardHeader>
-                    <CardTitle>Verification Status</CardTitle>
-                    <CardDescription>
-                      Status of your account verification
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {verificationStatus?.kycStatus === "pending" && (
-                      <Alert className="bg-orange-50 border-orange-200">
-                        <AlertCircle className="h-4 w-4 text-orange-500" />
-                        <AlertTitle className="text-orange-700">
-                          Verification in Progress
-                        </AlertTitle>
-                        <AlertDescription className="text-orange-600">
-                          Your identity verification is currently under review. This usually takes 24-48 hours.
-                          We'll notify you once the review is complete.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    {verificationStatus?.kycStatus === "verified" && (
-                      <Alert className="bg-green-50 border-green-200">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <AlertTitle className="text-green-700">
-                          Verification Complete
-                        </AlertTitle>
-                        <AlertDescription className="text-green-600">
-                          Congratulations! Your account is fully verified. You now have access to all platform features.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    {verificationStatus?.kycStatus === "rejected" && (
-                      <Alert className="bg-red-50 border-red-200">
-                        <AlertCircle className="h-4 w-4 text-red-500" />
-                        <AlertTitle className="text-red-700">
-                          Verification Rejected
-                        </AlertTitle>
-                        <AlertDescription className="text-red-600">
-                          Your identity verification was rejected. Please check your email for more details
-                          about why verification failed and how to resubmit.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    <div className="space-y-4 mt-8">
-                      <h3 className="text-lg font-medium">Verification Summary</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 rounded-md bg-gray-50">
-                          <div className="flex items-center">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-                            <span>Phone Verification</span>
-                          </div>
-                          <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">
-                            Complete
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-3 rounded-md bg-gray-50">
-                          <div className="flex items-center">
-                            {verificationStatus?.kycStatus === "verified" && (
-                              <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-                            )}
-                            {verificationStatus?.kycStatus === "pending" && (
-                              <Loader2 className="h-5 w-5 text-orange-500 mr-2 animate-spin" />
-                            )}
-                            {verificationStatus?.kycStatus === "rejected" && (
-                              <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-                            )}
-                            <span>Identity Verification</span>
-                          </div>
-                          <Badge 
-                            variant="outline" 
-                            className={
-                              verificationStatus?.kycStatus === "verified"
-                                ? "text-green-600 bg-green-50 border-green-200"
-                                : verificationStatus?.kycStatus === "pending"
-                                ? "text-orange-600 bg-orange-50 border-orange-200"
-                                : "text-red-600 bg-red-50 border-red-200"
-                            }
-                          >
-                            {verificationStatus?.kycStatus === "verified" && "Complete"}
-                            {verificationStatus?.kycStatus === "pending" && "In Progress"}
-                            {verificationStatus?.kycStatus === "rejected" && "Failed"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-center mt-8">
-                      <Button className="w-full md:w-48" asChild>
-                        <a href="/dashboard">
-                          Go to Dashboard
-                        </a>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+    <Layout>
+      <div className="container max-w-4xl px-4 py-8">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold mb-2">Verify Your Account</h1>
+          <p className="text-muted-foreground">
+            Complete these steps to verify your account and gain full access to iREVA.
+          </p>
         </div>
-      </main>
-      <Footer />
-    </div>
+        
+        <div className="mb-8">
+          <Steps activeStep={activeStep} className="mb-10">
+            <div className="flex items-center">
+              <StepIndicator step={0}>1</StepIndicator>
+              <div className="ml-4">
+                <StepTitle>Phone Verification</StepTitle>
+                <StepDescription>Verify your phone number</StepDescription>
+              </div>
+            </div>
+            <StepSeparator />
+            <div className="flex items-center">
+              <StepIndicator step={1}>2</StepIndicator>
+              <div className="ml-4">
+                <StepTitle>Identity Verification</StepTitle>
+                <StepDescription>Submit your KYC documents</StepDescription>
+              </div>
+            </div>
+            <StepSeparator />
+            <div className="flex items-center">
+              <StepIndicator step={2}>3</StepIndicator>
+              <div className="ml-4">
+                <StepTitle>Verification Complete</StepTitle>
+                <StepDescription>Your account is verified</StepDescription>
+              </div>
+            </div>
+          </Steps>
+        </div>
+        
+        {activeStep === 0 && (
+          <PhoneVerificationForm 
+            onVerificationComplete={handlePhoneVerified} 
+            initialPhoneNumber={user.phoneNumber || undefined}
+          />
+        )}
+        
+        {activeStep === 1 && (
+          <KycVerificationForm 
+            onVerificationSubmitted={handleKycSubmitted}
+            kycStatus={verificationStatus?.kycStatus}
+          />
+        )}
+        
+        {activeStep === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Verification Complete</CardTitle>
+              <CardDescription>
+                Your account has been fully verified
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center py-6">
+                <div className="bg-green-100 rounded-full p-3 mb-4">
+                  <CheckCircle className="h-12 w-12 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">All Verification Steps Completed</h3>
+                <p className="text-center text-muted-foreground mb-6">
+                  Congratulations! Your account has been fully verified. You now have access to all features of iREVA, including investment opportunities.
+                </p>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <Button variant="default" className="flex items-center" href="/dashboard">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" className="flex items-center" href="/properties">
+                    Browse Investment Properties
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {verificationStatus?.kycStatus === "rejected" && (
+          <Card className="mt-6 border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                <CardTitle className="text-red-600">Verification Issue</CardTitle>
+              </div>
+              <CardDescription>
+                There was an issue with your verification documents
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Your KYC verification was rejected. This could be due to issues with document quality, information mismatch, or other verification problems.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">
+                Contact Support
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+      </div>
+    </Layout>
   );
 }
 
-// Step component for the vertical stepper
 function Step({ title, description, status }: { 
-  title: string; 
-  description: string; 
-  status: "inactive" | "active" | "complete";
+  title: string;
+  description: string;
+  status: "complete" | "current" | "upcoming";
 }) {
   return (
-    <div className="flex">
-      <StepIndicator>
-        <StepStatus
-          complete={<CheckCircle2 className="h-6 w-6" />}
-          incomplete={<StepNumber />}
-          active={<StepNumber />}
-        />
-      </StepIndicator>
-
+    <div className="flex items-center">
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${
+          status === "complete"
+            ? "border-primary bg-primary text-primary-foreground"
+            : status === "current"
+            ? "border-primary text-primary"
+            : "border-muted-foreground text-muted-foreground"
+        }`}
+      >
+        {status === "complete" ? (
+          <CheckCircle className="h-5 w-5" />
+        ) : (
+          <span>{title.charAt(0)}</span>
+        )}
+      </div>
       <div className="ml-4">
-        <StepTitle 
-          className={
-            status === "inactive" 
-              ? "text-gray-400" 
-              : status === "complete" 
-                ? "text-green-700" 
-                : ""
-          }
+        <p
+          className={`text-sm font-medium ${
+            status === "upcoming" ? "text-muted-foreground" : ""
+          }`}
         >
           {title}
-        </StepTitle>
-        <StepDescription
-          className={
-            status === "inactive" 
-              ? "text-gray-400" 
-              : ""
-          }
+        </p>
+        <p
+          className={`text-sm ${
+            status === "upcoming" ? "text-muted-foreground/70" : "text-muted-foreground"
+          }`}
         >
           {description}
-        </StepDescription>
+        </p>
       </div>
     </div>
   );

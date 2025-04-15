@@ -1,37 +1,33 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { CheckIcon } from "lucide-react";
 
 interface StepsContextValue {
   activeStep: number;
   orientation: "vertical" | "horizontal";
 }
 
-const StepsContext = createContext<StepsContextValue>({
-  activeStep: 0,
-  orientation: "horizontal",
-});
+const StepsContext = createContext<StepsContextValue | null>(null);
 
 export function Steps({
-  activeStep = 0,
+  activeStep,
   orientation = "horizontal",
-  children,
   className,
-  ...props
+  children,
 }: {
-  activeStep?: number;
+  activeStep: number;
   orientation?: "vertical" | "horizontal";
-  children: ReactNode;
   className?: string;
+  children: ReactNode;
 }) {
   return (
     <StepsContext.Provider value={{ activeStep, orientation }}>
       <div
         className={cn(
-          "flex",
-          orientation === "vertical" ? "flex-col space-y-4" : "space-x-4",
+          "flex gap-4",
+          orientation === "vertical" ? "flex-col" : "",
           className
         )}
-        {...props}
       >
         {children}
       </div>
@@ -40,103 +36,142 @@ export function Steps({
 }
 
 export function StepIndicator({
-  children,
+  step,
   className,
+  children,
 }: {
-  children: ReactNode;
+  step: number;
   className?: string;
+  children?: ReactNode;
 }) {
-  const { orientation } = useContext(StepsContext);
+  const context = useContext(StepsContext);
+  if (!context) {
+    throw new Error("StepIndicator must be used within a Steps component");
+  }
+
+  const { activeStep } = context;
+  const isCompleted = activeStep > step;
+  const isActive = activeStep === step;
+
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center rounded-full w-8 h-8 bg-primary/20 border border-primary/30",
-        orientation === "vertical" ? "z-10" : "",
+        "flex h-8 w-8 items-center justify-center rounded-full border text-sm font-medium",
+        isCompleted
+          ? "border-primary bg-primary text-primary-foreground"
+          : isActive
+          ? "border-primary text-primary"
+          : "border-muted-foreground text-muted-foreground",
         className
       )}
     >
-      {children}
+      {isCompleted ? (
+        <CheckIcon className="h-4 w-4" />
+      ) : children ? (
+        children
+      ) : (
+        step + 1
+      )}
     </div>
   );
 }
 
 export function StepSeparator({
   className,
-  ...props
 }: {
   className?: string;
 }) {
-  const { orientation } = useContext(StepsContext);
+  const context = useContext(StepsContext);
+  if (!context) {
+    throw new Error("StepSeparator must be used within a Steps component");
+  }
+
+  const { orientation } = context;
+  
   return (
     <div
       className={cn(
-        "flex-1 bg-muted",
-        orientation === "vertical"
-          ? "w-px h-8 ml-4 -my-3"
-          : "h-px w-full",
+        "flex-1 bg-border",
+        orientation === "vertical" ? "w-0.5 min-h-[1rem]" : "h-0.5 min-w-[1rem]",
         className
       )}
-      {...props}
-    />
+    ></div>
   );
 }
 
 export function StepStatus({
+  step,
   complete,
   incomplete,
   active,
 }: {
+  step: number;
   complete: ReactNode;
   incomplete: ReactNode;
   active: ReactNode;
 }) {
-  const { activeStep } = useContext(StepsContext);
-  const stepIndex = Array.from(
-    document.querySelectorAll("[data-step]")
-  ).indexOf(document.activeElement as HTMLElement);
+  const context = useContext(StepsContext);
+  if (!context) {
+    throw new Error("StepStatus must be used within a Steps component");
+  }
 
-  if (stepIndex !== -1 && stepIndex < activeStep) {
+  const { activeStep } = context;
+  const isCompleted = activeStep > step;
+  const isActive = activeStep === step;
+
+  if (isCompleted) {
     return <>{complete}</>;
   }
-
-  if (stepIndex === activeStep) {
+  
+  if (isActive) {
     return <>{active}</>;
   }
-
+  
   return <>{incomplete}</>;
 }
 
 export function StepTitle({
-  children,
   className,
+  children,
 }: {
-  children: ReactNode;
   className?: string;
+  children: ReactNode;
 }) {
   return (
-    <p className={cn("text-base font-medium", className)}>
+    <div className={cn("font-semibold", className)}>
       {children}
-    </p>
+    </div>
   );
 }
 
 export function StepDescription({
-  children,
   className,
+  children,
 }: {
-  children: ReactNode;
   className?: string;
+  children: ReactNode;
 }) {
   return (
-    <p className={cn("text-sm text-muted-foreground", className)}>
+    <div className={cn("text-sm text-muted-foreground", className)}>
       {children}
-    </p>
+    </div>
   );
 }
 
 export function StepNumber() {
-  const stepIndex = Array.from(
-    document.querySelectorAll("[data-step]")
-  ).indexOf(document.activeElement as HTMLElement);
-  return <span>{stepIndex + 1}</span>;
+  const context = useContext(StepsContext);
+  if (!context) {
+    throw new Error("StepNumber must be used within a Steps component");
+  }
+  
+  return context.activeStep + 1;
+}
+
+export function useSteps() {
+  const context = useContext(StepsContext);
+  if (!context) {
+    throw new Error("useSteps must be used within a Steps component");
+  }
+  
+  return context;
 }
