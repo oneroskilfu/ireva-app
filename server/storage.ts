@@ -1,4 +1,10 @@
-import { users, type User, type InsertUser, properties, type Property, type InsertProperty, investments, type Investment, type InsertInvestment } from "@shared/schema";
+import { 
+  users, type User, type InsertUser, 
+  properties, type Property, type InsertProperty, 
+  investments, type Investment, type InsertInvestment,
+  notifications, type Notification, type InsertNotification,
+  type KycDocument 
+} from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
@@ -9,6 +15,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPhone(userId: number, phoneNumber: string, isVerified: boolean): Promise<User>;
+  updateUserKyc(userId: number, status: string, documents: any, submittedAt: Date): Promise<User>;
+  updateUserKycStatus(userId: number, status: string, rejectionReason?: string, verifiedAt?: Date): Promise<User>;
   
   // Property methods
   getProperty(id: number): Promise<Property | undefined>;
@@ -23,6 +32,11 @@ export interface IStorage {
   getUserInvestments(userId: number): Promise<Investment[]>;
   createInvestment(investment: InsertInvestment): Promise<Investment>;
   
+  // Notification methods
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<Notification>;
+  
   // Session store
   sessionStore: session.SessionStore;
 }
@@ -31,18 +45,22 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private properties: Map<number, Property>;
   private investments: Map<number, Investment>;
+  private notifications: Map<number, Notification>;
   private userIdCounter: number;
   private propertyIdCounter: number;
   private investmentIdCounter: number;
-  sessionStore: session.SessionStore;
+  private notificationIdCounter: number;
+  sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
     this.properties = new Map();
     this.investments = new Map();
+    this.notifications = new Map();
     this.userIdCounter = 1;
     this.propertyIdCounter = 1;
     this.investmentIdCounter = 1;
+    this.notificationIdCounter = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
@@ -64,9 +82,74 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { id, ...insertUser, createdAt: new Date() };
+    const user: User = { 
+      id, 
+      ...insertUser, 
+      createdAt: new Date(),
+      isPhoneVerified: false,
+      kycStatus: "not_started",
+      kycDocuments: null,
+      kycRejectionReason: null,
+      kycSubmittedAt: null,
+      kycVerifiedAt: null,
+      lastLoginAt: null
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserPhone(userId: number, phoneNumber: string, isVerified: boolean): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    const updatedUser = {
+      ...user,
+      phoneNumber,
+      isPhoneVerified: isVerified
+    };
+    
+    this.users.set(userId, updatedUser);
+    
+    return updatedUser;
+  }
+
+  async updateUserKyc(userId: number, status: string, documents: KycDocument, submittedAt: Date): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    const updatedUser = {
+      ...user,
+      kycStatus: status,
+      kycDocuments: documents,
+      kycSubmittedAt: submittedAt,
+      kycRejectionReason: null
+    };
+    
+    this.users.set(userId, updatedUser);
+    
+    return updatedUser;
+  }
+
+  async updateUserKycStatus(userId: number, status: string, rejectionReason?: string, verifiedAt?: Date): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    const updatedUser = {
+      ...user,
+      kycStatus: status,
+      kycRejectionReason: rejectionReason || null,
+      kycVerifiedAt: verifiedAt || null
+    };
+    
+    this.users.set(userId, updatedUser);
+    
+    return updatedUser;
   }
 
   // Property methods
@@ -135,6 +218,43 @@ export class MemStorage implements IStorage {
     }
     
     return newInvestment;
+  }
+  
+  // Notification methods
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const id = this.notificationIdCounter++;
+    const newNotification: Notification = { 
+      id, 
+      ...notification, 
+      isRead: false,
+      createdAt: new Date(),
+      readAt: null
+    };
+    this.notifications.set(id, newNotification);
+    return newNotification;
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    const notification = this.notifications.get(id);
+    if (!notification) {
+      throw new Error(`Notification with ID ${id} not found`);
+    }
+    
+    const updatedNotification = {
+      ...notification,
+      isRead: true,
+      readAt: new Date()
+    };
+    
+    this.notifications.set(id, updatedNotification);
+    
+    return updatedNotification;
   }
 
   // Seed properties
