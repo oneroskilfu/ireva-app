@@ -262,7 +262,20 @@
             
             // Update storage display
             updateStorageDisplay();
-            checkUserLogin();
+            
+            // Show redirect message
+            messageEl.textContent = 'Login successful! Redirecting to dashboard...';
+            
+            // Redirect to appropriate dashboard
+            if (userWithRole.isAdmin || userWithRole.role === 'admin') {
+              setTimeout(() => {
+                window.location.href = '/admin.html';
+              }, 1000);
+            } else {
+              setTimeout(() => {
+                window.location.href = '/dashboard.html';
+              }, 1000);
+            }
           } else {
             messageEl.textContent = `Login failed: ${data.message || 'Invalid credentials'}`;
             messageEl.className = 'error';
@@ -309,9 +322,13 @@
             if (user.isAdmin || user.role === 'admin') {
               dashboardButtonEl.textContent = 'Go to Admin Dashboard';
               dashboardButtonEl.href = '/admin.html';
+              // Auto redirect to admin dashboard
+              window.location.href = '/admin.html';
             } else {
               dashboardButtonEl.textContent = 'Go to Dashboard';
               dashboardButtonEl.href = '/dashboard.html';
+              // Auto redirect to user dashboard
+              window.location.href = '/dashboard.html';
             }
           } catch (e) {
             console.error('Error parsing user data:', e);
