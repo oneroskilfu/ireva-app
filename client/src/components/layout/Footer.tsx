@@ -11,8 +11,11 @@ export default function Footer() {
               <Building className="h-6 w-6 text-white mr-2" />
               <span className="text-xl font-bold">iREVA</span>
             </div>
-            <p className="text-gray-300 text-sm mb-4">
+            <p className="text-gray-300 text-sm mb-2">
               Access institutional-quality real estate investments with as little as ₦100,000.
+            </p>
+            <p className="text-gray-300 text-sm mb-4">
+              Join thousands of investors building wealth through real estate with iREVA's easy-to-use platform. Your future self will thank you.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-300 hover:text-white">

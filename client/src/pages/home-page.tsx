@@ -200,7 +200,7 @@ export default function HomePage() {
                   size="lg"
                   className="border-white text-white hover:bg-white/10"
                 >
-                  Schedule a Demo
+                  Download Our App
                 </Button>
               </div>
             </motion.div>
