@@ -1,6 +1,21 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// KYC status enum
+export const kycStatusEnum = pgEnum("kyc_status", [
+  "not_started",
+  "pending",
+  "verified",
+  "rejected"
+]);
+
+// Verification method enum
+export const verificationMethodEnum = pgEnum("verification_method", [
+  "otp",
+  "email",
+  "document"
+]);
 
 // User schema
 export const users = pgTable("users", {
@@ -10,7 +25,15 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  phoneNumber: text("phone_number"),
+  isPhoneVerified: boolean("is_phone_verified").default(false),
+  kycStatus: kycStatusEnum("kyc_status").default("not_started"),
+  kycDocuments: jsonb("kyc_documents"),
+  kycRejectionReason: text("kyc_rejection_reason"),
+  kycSubmittedAt: timestamp("kyc_submitted_at"),
+  kycVerifiedAt: timestamp("kyc_verified_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  lastLoginAt: timestamp("last_login_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -19,6 +42,22 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   firstName: true,
   lastName: true,
+  phoneNumber: true,
+});
+
+export const phoneVerificationSchema = z.object({
+  phoneNumber: z.string().min(10).max(15),
+  code: z.string().length(6),
+});
+
+export const kycDocumentSchema = z.object({
+  idType: z.enum(["national_id", "drivers_license", "passport", "voters_card"]),
+  idNumber: z.string().min(3),
+  frontImage: z.string(),
+  backImage: z.string().optional(),
+  selfieImage: z.string(),
+  addressProofImage: z.string().optional(),
+  addressProofType: z.enum(["utility_bill", "bank_statement", "tax_document", "rental_agreement"]).optional(),
 });
 
 // Property type enum
@@ -78,9 +117,48 @@ export const insertInvestmentSchema = createInsertSchema(investments).omit({
   id: true,
 });
 
+// Notification type enum
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "system",
+  "investment",
+  "property",
+  "kyc",
+  "payment",
+  "social",
+  "forum"
+]);
+
+// Notification schema
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  link: text("link"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  readAt: timestamp("read_at"),
+  metadata: jsonb("metadata"),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  isRead: true,
+  readAt: true,
+  createdAt: true,
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type PhoneVerification = z.infer<typeof phoneVerificationSchema>;
+export type KycDocument = z.infer<typeof kycDocumentSchema>;
+export type KycStatus = "not_started" | "pending" | "verified" | "rejected";
+export type VerificationMethod = "otp" | "email" | "document";
+export type NotificationType = "system" | "investment" | "property" | "kyc" | "payment" | "social" | "forum";
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type Property = typeof properties.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
