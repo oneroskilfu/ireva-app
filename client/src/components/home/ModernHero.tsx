@@ -204,35 +204,87 @@ export default function ModernHero() {
                       </div>
                     </div>
                     
-                    {/* ROI Chart */}
+                    {/* Enhanced ROI Chart */}
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 mb-4 rounded-lg">
-                      <div className="flex justify-between items-center mb-3">
+                      <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-white font-medium">ROI Performance</span>
                         <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">Last 6 months</span>
                       </div>
                       
-                      {/* Simple Chart */}
-                      <div className="h-32 flex items-end space-x-2 mb-2">
-                        {[15, 28, 20, 40, 30, 50].map((height, i) => (
+                      {/* Enhanced data markers */}
+                      <div className="flex justify-between mb-1">
+                        <div className="text-[9px] text-gray-400">
+                          <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                          Actual
+                        </div>
+                        <div className="text-[9px] text-gray-400">
+                          <span className="inline-block w-2 h-2 bg-blue-400 rounded-full mr-1"></span>
+                          Benchmark
+                        </div>
+                        <div className="text-[9px] text-gray-400">
+                          <span className="inline-block w-2 h-2 bg-purple-400 rounded-full mr-1"></span>
+                          Projected
+                        </div>
+                      </div>
+                      
+                      {/* Colorful Chart with data overlays */}
+                      <div className="h-32 flex items-end space-x-2 mb-2 relative">
+                        {/* Reference lines */}
+                        <div className="absolute left-0 right-0 h-[1px] bg-gray-600 opacity-30" style={{ bottom: '25%' }}></div>
+                        <div className="absolute left-0 right-0 h-[1px] bg-gray-600 opacity-30" style={{ bottom: '50%' }}></div>
+                        <div className="absolute left-0 right-0 h-[1px] bg-gray-600 opacity-30" style={{ bottom: '75%' }}></div>
+                        
+                        {/* Reference labels */}
+                        <div className="absolute -left-1 text-[8px] text-gray-500" style={{ bottom: '25%', transform: 'translateY(50%)' }}>5%</div>
+                        <div className="absolute -left-1 text-[8px] text-gray-500" style={{ bottom: '50%', transform: 'translateY(50%)' }}>10%</div>
+                        <div className="absolute -left-1 text-[8px] text-gray-500" style={{ bottom: '75%', transform: 'translateY(50%)' }}>15%</div>
+                        
+                        {/* Bars with enhanced styling */}
+                        {[
+                          { month: 'Jan', actual: 15, benchmark: 10, projected: 15 },
+                          { month: 'Feb', actual: 28, benchmark: 11, projected: 20 },
+                          { month: 'Mar', actual: 20, benchmark: 12, projected: 25 },
+                          { month: 'Apr', actual: 40, benchmark: 15, projected: 33 },
+                          { month: 'May', actual: 30, benchmark: 17, projected: 40 },
+                          { month: 'Jun', actual: 50, benchmark: 20, projected: 55 }
+                        ].map((data, i) => (
                           <div key={i} className="flex-1 flex flex-col items-center">
-                            <div className={`w-full rounded-t-sm ${
-                              i === 5 ? 'bg-gradient-to-t from-blue-500 to-indigo-400' : 'bg-gradient-to-t from-blue-500/50 to-indigo-400/50'
-                            }`} style={{ height: `${height}%` }}></div>
+                            {/* Bars group */}
+                            <div className="w-full flex justify-center">
+                              {/* Benchmark bar in the back */}
+                              <div className="w-[30%] mr-[2px] bg-blue-400/40 rounded-t-sm" 
+                                   style={{ height: `${data.benchmark}%` }}></div>
+                              
+                              {/* Main bar - actual performance */}
+                              <div className={`w-[40%] rounded-t-sm ${
+                                i === 5 ? 'bg-gradient-to-t from-green-500 to-green-300' : 
+                                         'bg-gradient-to-t from-green-500/80 to-green-300/80'
+                              }`} style={{ height: `${data.actual}%` }}>
+                                {data.actual > 25 && (
+                                  <div className="text-[8px] text-white font-bold text-center leading-tight pt-[2px]">
+                                    {data.actual/5}%
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Projected bar */}
+                              <div className="w-[30%] ml-[2px] bg-purple-400/40 rounded-t-sm" 
+                                   style={{ height: `${data.projected}%` }}></div>
+                            </div>
+                            
+                            {/* Month indicator */}
                             <div className="w-full h-[1px] bg-gray-700"></div>
                             <div className="text-gray-400 text-[10px] mt-1">
-                              {i === 0 ? 'Jan' : 
-                               i === 1 ? 'Feb' : 
-                               i === 2 ? 'Mar' : 
-                               i === 3 ? 'Apr' : 
-                               i === 4 ? 'May' : 'Jun'}
+                              {data.month}
                             </div>
                           </div>
                         ))}
                       </div>
                       
                       <div className="flex justify-between text-xs text-gray-400">
-                        <div>Average ROI: <span className="text-green-400">14.2%</span></div>
-                        <div>Projected: <span className="text-blue-400">16.8%</span></div>
+                        <div>Average: <span className="text-green-400">14.2%</span></div>
+                        <div>YTD: <span className="text-green-500">+32.5%</span></div>
+                        <div>Target: <span className="text-blue-400">16.8%</span></div>
                       </div>
                     </div>
                     
