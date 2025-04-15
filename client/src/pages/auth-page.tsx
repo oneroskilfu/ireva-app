@@ -89,16 +89,28 @@ const AuthPage: React.FC = () => {
     setError(null);
 
     try {
-      const result = await apiLogin(loginData);
-      if (result.token) {
-        login(result.token);
-        setLocation('/simple-dashboard');
-      } else {
-        setError('Login failed: No authentication token received');
+      // Direct API call to session-based login
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+        credentials: 'include' // Important for session cookies
+      });
+      
+      if (!response.ok) {
+        throw new Error('Login failed: ' + response.statusText);
       }
+      
+      const userData = await response.json();
+      console.log('Login successful:', userData);
+      
+      // Redirect to dashboard
+      setLocation('/simple-dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Invalid username or password');
+      setError(err.message || 'Invalid username or password');
     } finally {
       setLoading(false);
     }
@@ -110,16 +122,29 @@ const AuthPage: React.FC = () => {
     setError(null);
 
     try {
-      const result = await register(registerData);
-      if (result.token) {
-        login(result.token);
-        setLocation('/simple-dashboard');
-      } else {
-        setError('Registration failed: No authentication token received');
+      // Direct API call to session-based registration
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerData),
+        credentials: 'include' // Important for session cookies
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Registration failed: ' + response.statusText);
       }
+      
+      const userData = await response.json();
+      console.log('Registration successful:', userData);
+      
+      // Redirect to dashboard
+      setLocation('/simple-dashboard');
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
