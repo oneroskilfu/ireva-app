@@ -44,9 +44,12 @@ const LoginPage = () => {
   // Handle form submission
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    console.log('Submitting login data:', data);
     
     try {
+      console.log('Making API request to /login');
       const response = await API.post('/login', data);
+      console.log('Login API response:', response);
       
       // Store user data in localStorage
       const userData = response.data;
@@ -81,9 +84,22 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response,
+        stack: error.stack
+      });
+      
+      let errorMessage = 'Invalid credentials. Please try again.';
+      if (error.response) {
+        errorMessage = `Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`;
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please try again.';
+      }
+      
       toast({
         title: 'Login Failed',
-        description: 'Invalid credentials. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

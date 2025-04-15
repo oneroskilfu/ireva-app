@@ -10,6 +10,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import Dashboard from "@/pages/Dashboard";
 import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "@/pages/login-page";
+import TestAuth from "@/pages/test-auth";
 import PrivateRoute from "@/components/PrivateRoute";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" component={HomePage} />
         <Route path="/login" component={LoginPage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/test-auth" component={TestAuth} />
         <Route path="/unauthorized" component={UnauthorizedPage} />
         <Route path="/properties/:id" component={PropertyPage} />
         
