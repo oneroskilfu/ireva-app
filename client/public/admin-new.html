@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f5f5f7;
+    }
+    
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .role-admin {
+      background-color: #e0f2fe;
+      color: #0369a1;
+    }
+    
+    .role-investor {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    
+    .role-developer {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    
+    .status-active {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    
+    .status-inactive {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+    
+    .kyc-verified {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+    
+    .kyc-pending {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    
+    .kyc-rejected {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    /* Login required notification */
+    .login-required {
+      margin-top: 2rem;
+      text-align: center;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .login-button {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #553627;
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+  <div id="app" class="flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#553627] text-white">
+      <div class="p-4 border-b border-[#664332]">
+        <h1 class="text-xl font-bold">iREVA Admin</h1>
+        <p class="text-sm opacity-75">Real Estate Platform</p>
+      </div>
+      
+      <nav class="mt-6">
+        <a href="#" class="dashboard-link flex items-center px-4 py-3 text-white hover:bg-[#664332] bg-[#664332]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Dashboard
+        </a>
+        
+        <a href="#" class="users-link flex items-center px-4 py-3 text-white hover:bg-[#664332]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          Users
+        </a>
+        
+        <a href="#" class="properties-link flex items-center px-4 py-3 text-white hover:bg-[#664332]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          Properties
+        </a>
+        
+        <a href="#" class="investments-link flex items-center px-4 py-3 text-white hover:bg-[#664332]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Investments
+        </a>
+        
+        <a href="#" class="kyc-link flex items-center px-4 py-3 text-white hover:bg-[#664332]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          KYC Verification
+        </a>
+        
+        <a href="#" class="roi-link flex items-center px-4 py-3 text-white hover:bg-[#664332]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          ROI Tracking
+        </a>
+        
+        <a href="#" class="settings-link flex items-center px-4 py-3 text-white hover:bg-[#664332]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Settings
+        </a>
+        
+        <div class="mt-6 border-t border-[#664332] pt-6 px-4">
+          <a href="#" id="logout-btn" class="flex items-center py-3 text-white hover:text-red-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </a>
+        </div>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Top Header -->
+      <header class="bg-white border-b flex items-center justify-between p-4">
+        <h1 class="text-xl font-bold text-gray-800">Dashboard</h1>
+        
+        <div class="flex items-center">
+          <div class="mr-4 text-sm text-gray-600">
+            Welcome, <span class="font-medium">Admin User</span>
+          </div>
+          
+          <div class="relative">
+            <div class="h-10 w-10 rounded-full bg-[#553627] text-white flex items-center justify-center text-lg font-semibold">A</div>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <!-- Content will be loaded dynamically here -->
+      </main>
+    </div>
+  </div>
+  
+  <script>
+    // Utility functions
+    function formatCurrency(amount) {
+      if (amount >= 1000000) {
+        return `₦${(amount / 1000000).toFixed(1)}M`;
+      } else if (amount >= 1000) {
+        return `₦${(amount / 1000).toFixed(1)}K`;
+      }
+      return `₦${amount.toFixed(2)}`;
+    }
+    
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return new Intl.DateTimeFormat('en-NG').format(date);
+    }
+    
+    // Mock data
+    const mockUsers = [
+      { id: 1, name: 'Admin User', username: 'admin', email: 'admin@ireva.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 2, name: 'John Okafor', username: 'johno', email: 'john@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 2400000 },
+      { id: 3, name: 'Mary Adebayo', username: 'marya', email: 'mary@example.com', role: 'investor', active: true, kycStatus: 'Pending', balance: 850000 },
+      { id: 4, name: 'David Okeke', username: 'davido', email: 'david@example.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 5, name: 'Sarah Nnamdi', username: 'sarahn', email: 'sarah@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 3700000 },
+      { id: 6, name: 'Peter Johnson', username: 'peterj', email: 'peter@example.com', role: 'investor', active: false, kycStatus: 'Rejected', balance: 0 },
+      { id: 7, name: 'Chioma Eze', username: 'chiomae', email: 'chioma@example.com', role: 'developer', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 8, name: 'Emeka Obi', username: 'emekao', email: 'emeka@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 1200000 }
+    ];
+    
+    const mockProperties = [
+      { id: 1, name: 'Lekki Gardens Villa', type: 'Residential', location: 'Lekki, Lagos', price: 72600000, roi: 18, duration: 5, developer: 'Lekki Homes Ltd', status: 'Active', investments: 72600000, description: 'Luxury villa in the heart of Lekki Phase 1' },
+      { id: 2, name: 'Victoria Island Commercial', type: 'Commercial', location: 'Victoria Island, Lagos', price: 134200000, roi: 22, duration: 5, developer: 'Prime Properties', status: 'Active', investments: 134200000, description: 'Prime commercial space with high rental yield' },
+      { id: 3, name: 'Abuja Heights Apartments', type: 'Residential', location: 'Maitama, Abuja', price: 56400000, roi: 15, duration: 5, developer: 'Abuja Realty', status: 'Active', investments: 56400000, description: 'Modern apartment complex in upscale Maitama' },
+      { id: 4, name: 'Port Harcourt Residences', type: 'Mixed-Use', location: 'GRA, Port Harcourt', price: 45000000, roi: 14, duration: 5, developer: 'Rivers Estate Developers', status: 'Pending', investments: 0, description: 'Mixed-use development in Port Harcourt GRA' },
+      { id: 5, name: 'Ikeja Commercial Center', type: 'Commercial', location: 'Ikeja, Lagos', price: 95000000, roi: 20, duration: 5, developer: 'Lagos Commercial Developers', status: 'Active', investments: 67500000, description: 'Office space in the business district of Ikeja' }
+    ];
+    
+    const mockInvestments = [
+      { id: 1, userId: 2, propertyId: 1, amount: 1000000, date: '2023-10-15', status: 'Active' },
+      { id: 2, userId: 3, propertyId: 1, amount: 500000, date: '2023-10-20', status: 'Active' },
+      { id: 3, userId: 5, propertyId: 1, amount: 2000000, date: '2023-11-05', status: 'Active' },
+      { id: 4, userId: 2, propertyId: 2, amount: 1400000, date: '2023-11-10', status: 'Active' },
+      { id: 5, userId: 5, propertyId: 2, amount: 1700000, date: '2023-11-15', status: 'Active' },
+      { id: 6, userId: 8, propertyId: 3, amount: 1200000, date: '2023-12-01', status: 'Active' },
+      { id: 7, userId: 3, propertyId: 5, amount: 350000, date: '2024-01-05', status: 'Active' }
+    ];
+    
+    const mockROI = [
+      { id: 1, propertyId: 1, percentage: 4.5, amount: 3267000, date: '2024-04-15', status: 'Pending', notes: 'Q2 2024 distribution' },
+      { id: 2, propertyId: 2, percentage: 5.5, amount: 7381000, date: '2024-05-10', status: 'Pending', notes: 'Q2 2024 distribution' },
+      { id: 3, propertyId: 3, percentage: 3.75, amount: 2115000, date: '2024-06-01', status: 'Pending', notes: 'Q2 2024 distribution' }
+    ];
+    
+    const mockDevelopers = [
+      { id: 1, name: 'Lekki Homes Ltd', contact: 'info@lekkihomes.com', properties: 1 },
+      { id: 2, name: 'Prime Properties', contact: 'contact@primeproperties.ng', properties: 1 },
+      { id: 3, name: 'Abuja Realty', contact: 'info@abujarealty.com', properties: 1 },
+      { id: 4, name: 'Rivers Estate Developers', contact: 'info@red.com.ng', properties: 1 },
+      { id: 5, name: 'Lagos Commercial Developers', contact: 'info@lagoscommercial.com', properties: 1 }
+    ];
+    
+    // Authentication Check
+    function checkAuth() {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      if (!token || !user) {
+        // For demo purposes, create a simulated admin user if none exists
+        const adminUser = {
+          id: 1,
+          name: 'Admin User',
+          username: 'admin',
+          email: 'admin@ireva.com',
+          role: 'admin',
+          isAdmin: true
+        };
+        localStorage.setItem('user', JSON.stringify(adminUser));
+        localStorage.setItem('token', 'demo-token-for-testing');
+        return true;
+      }
+      
+      try {
+        const userData = JSON.parse(user);
+        const isAdmin = userData.isAdmin || userData.role === 'admin';
+        
+        if (!isAdmin) {
+          document.getElementById('app').innerHTML = `
+            <div class="login-required">
+              <h2>Admin Access Required</h2>
+              <p>You do not have permission to access the admin dashboard.</p>
+              <a href="/dashboard.html" class="login-button">Go to User Dashboard</a>
+            </div>
+          `;
+          return false;
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        
+        document.getElementById('app').innerHTML = `
+          <div class="login-required">
+            <h2>Admin Access Required</h2>
+            <p>You need to log in as an administrator to view this dashboard.</p>
+            <a href="/login-page.html" class="login-button">Go to Login</a>
+          </div>
+        `;
+        return false;
+      }
+    }
+    
+    // Notification function
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 bg-white p-4 rounded-lg shadow-lg border-l-4 ${
+        type === 'success' ? 'border-green-500' :
+        type === 'error' ? 'border-red-500' :
+        type === 'warning' ? 'border-yellow-500' :
+        'border-blue-500'
+      } z-50 fade-in max-w-md`;
+      
+      notification.innerHTML = `
+        <div class="flex">
+          <div class="flex-shrink-0">
+            ${type === 'success' ? `
+              <svg class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ` : type === 'error' ? `
+              <svg class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ` : type === 'warning' ? `
+              <svg class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            ` : `
+              <svg class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            `}
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-gray-900">${type.charAt(0).toUpperCase() + type.slice(1)}</p>
+            <p class="mt-1 text-sm text-gray-500">${message}</p>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Remove notification after 5 seconds
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+      }, 5000);
+    }
+    
+    // Dashboard Content function
+    function loadDashboardContent() {
+      // Update active link
+      document.querySelectorAll('nav a').forEach(link => {
+        link.classList.remove('bg-[#664332]');
+        link.classList.add('hover:bg-[#664332]');
+      });
+      document.querySelector('.dashboard-link').classList.add('bg-[#664332]');
+      document.querySelector('.dashboard-link').classList.remove('hover:bg-[#664332]');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Dashboard';
+      
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Total investors, total investments, total ROI paid, etc.
+      const totalInvestors = mockUsers.filter(user => user.role === 'investor').length;
+      const totalInvestment = mockInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+      const totalROIPaid = mockROI.reduce((sum, roi) => 
+        roi.status === 'Completed' ? sum + roi.amount : sum, 0);
+      const pendingKYC = mockUsers.filter(user => user.kycStatus === 'Pending').length;
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Investors</h2>
+                <p class="text-2xl font-bold text-gray-800">${totalInvestors}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+12%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Total Investments</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(totalInvestment)}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+8.5%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">ROI Paid</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(totalROIPaid)}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+5.2%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Pending KYC</h2>
+                <p class="text-2xl font-bold text-gray-800">${pendingKYC}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-yellow-500">+2</span> new submissions
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent activities -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-800">Recent Investments</h2>
+            </div>
+            <div class="p-4">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    ${mockInvestments.slice(0, 5).map(inv => {
+                      const user = mockUsers.find(u => u.id === inv.userId);
+                      const property = mockProperties.find(p => p.id === inv.propertyId);
+                      return `
+                        <tr>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${user ? user.name : 'Unknown'}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${property ? property.name : 'Unknown'}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${formatCurrency(inv.amount)}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${formatDate(inv.date)}</div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-800">Properties Overview</h2>
+            </div>
+            <div class="p-4">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    ${mockProperties.map(prop => {
+                      const progress = prop.price > 0 ? (prop.investments / prop.price) * 100 : 0;
+                      return `
+                        <tr>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${prop.name}</div>
+                            <div class="text-xs text-gray-500">${prop.location}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${prop.type}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${formatCurrency(prop.investments)}</div>
+                            <div class="text-xs text-gray-500">of ${formatCurrency(prop.price)}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                              <div class="bg-[#553627] h-2.5 rounded-full" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${Math.round(progress)}% Complete</div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Users Management Content
+    function loadUsersContent() {
+      // Update active link
+      document.querySelectorAll('nav a').forEach(link => {
+        link.classList.remove('bg-[#664332]');
+        link.classList.add('hover:bg-[#664332]');
+      });
+      document.querySelector('.users-link').classList.add('bg-[#664332]');
+      document.querySelector('.users-link').classList.remove('hover:bg-[#664332]');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Users Management';
+      
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Users</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New User</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- Search and filter controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <div class="relative flex-grow">
+                <input type="text" id="user-search" placeholder="Search users..." class="w-full px-4 py-2 pl-10 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex gap-4">
+                <select id="role-filter" class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="investor">Investor</option>
+                  <option value="developer">Developer</option>
+                </select>
+                
+                <select id="status-filter" class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Users Table -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+                  ${mockUsers.map(user => {
+                    let roleBadgeClass = 'bg-blue-100 text-blue-800';
+                    if (user.role === 'admin') roleBadgeClass = 'bg-purple-100 text-purple-800';
+                    if (user.role === 'developer') roleBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    
+                    let kycBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if (user.kycStatus === 'Verified') kycBadgeClass = 'bg-green-100 text-green-800';
+                    if (user.kycStatus === 'Rejected') kycBadgeClass = 'bg-red-100 text-red-800';
+                    
+                    return `
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">${user.name}</div>
+                              <div class="text-xs text-gray-500">@${user.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${user.email}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${roleBadgeClass}">
+                            ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${user.active ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${kycBadgeClass}">
+                            ${user.kycStatus}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatCurrency(user.balance)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 rounded px-2 py-1 text-xs">Edit</button>
+                            <button class="text-${user.active ? 'red' : 'green'}-600 hover:text-${user.active ? 'red' : 'green'}-900 bg-${user.active ? 'red' : 'green'}-100 hover:bg-${user.active ? 'red' : 'green'}-200 rounded px-2 py-1 text-xs">
+                              ${user.active ? 'Disable' : 'Enable'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Properties Management Content
+    function loadPropertiesContent() {
+      // Update active link
+      document.querySelectorAll('nav a').forEach(link => {
+        link.classList.remove('bg-[#664332]');
+        link.classList.add('hover:bg-[#664332]');
+      });
+      document.querySelector('.properties-link').classList.add('bg-[#664332]');
+      document.querySelector('.properties-link').classList.remove('hover:bg-[#664332]');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Properties Management';
+      
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Properties</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New Property</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- Search and filter controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <div class="relative flex-grow">
+                <input type="text" placeholder="Search properties..." class="w-full px-4 py-2 pl-10 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex gap-4">
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Types</option>
+                  <option value="Residential">Residential</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Mixed-Use">Mixed-Use</option>
+                  <option value="Land">Land</option>
+                </select>
+                
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Properties Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${mockProperties.map(prop => {
+                const progress = prop.price > 0 ? (prop.investments / prop.price) * 100 : 0;
+                return `
+                  <div class="bg-white rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div class="h-48 bg-gray-200 relative">
+                      <div class="absolute top-2 right-2">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                          prop.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                          prop.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }">
+                          ${prop.status}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div class="p-4">
+                      <h3 class="text-lg font-semibold text-gray-800 mb-1">${prop.name}</h3>
+                      <p class="text-sm text-gray-500 mb-2">${prop.location}</p>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">Type:</span>
+                        <span class="text-sm font-medium">${prop.type}</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">Price:</span>
+                        <span class="text-sm font-medium">${formatCurrency(prop.price)}</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">ROI:</span>
+                        <span class="text-sm font-medium">${prop.roi}%</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-3">
+                        <span class="text-sm text-gray-600">Duration:</span>
+                        <span class="text-sm font-medium">${prop.duration} years</span>
+                      </div>
+                      
+                      <div class="mb-3">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                          <div class="bg-[#553627] h-2 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1 text-xs text-gray-500">
+                          <span>Funded: ${formatCurrency(prop.investments)}</span>
+                          <span>${Math.round(progress)}%</span>
+                        </div>
+                      </div>
+                      
+                      <div class="flex gap-2 mt-4">
+                        <button class="flex-1 bg-[#553627] text-white px-3 py-1.5 rounded hover:bg-[#664332] text-sm">Edit</button>
+                        <button class="flex-1 border border-[#553627] text-[#553627] px-3 py-1.5 rounded hover:bg-[#553627] hover:text-white text-sm">Details</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Investments Management Content
+    function loadInvestmentsContent() {
+      // Update active link
+      document.querySelectorAll('nav a').forEach(link => {
+        link.classList.remove('bg-[#664332]');
+        link.classList.add('hover:bg-[#664332]');
+      });
+      document.querySelector('.investments-link').classList.add('bg-[#664332]');
+      document.querySelector('.investments-link').classList.remove('hover:bg-[#664332]');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Investments Management';
+      
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Investment Records</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New Investment</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- Search and filter controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <div class="relative flex-grow">
+                <input type="text" placeholder="Search investments..." class="w-full px-4 py-2 pl-10 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex gap-4">
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Properties</option>
+                  ${mockProperties.map(prop => `<option value="${prop.id}">${prop.name}</option>`).join('')}
+                </select>
+                
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Investors</option>
+                  ${mockUsers.filter(user => user.role === 'investor').map(user => `<option value="${user.id}">${user.name}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            
+            <!-- Investments Table -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  ${mockInvestments.map(inv => {
+                    const user = mockUsers.find(u => u.id === inv.userId);
+                    const property = mockProperties.find(p => p.id === inv.propertyId);
+                    
+                    return `
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">#${inv.id}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-8 w-8 bg-gray-300 rounded-full"></div>
+                            <div class="ml-3">
+                              <div class="text-sm font-medium text-gray-900">${user ? user.name : 'Unknown'}</div>
+                              <div class="text-xs text-gray-500">${user ? user.email : ''}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${property ? property.name : 'Unknown'}</div>
+                          <div class="text-xs text-gray-500">${property ? property.location : ''}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm font-medium text-gray-900">${formatCurrency(inv.amount)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatDate(inv.date)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            ${inv.status}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 rounded px-2 py-1 text-xs">View</button>
+                            <button class="text-[#553627] hover:text-[#664332] bg-gray-100 hover:bg-gray-200 rounded px-2 py-1 text-xs">Edit</button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // KYC Verification Content
+    function loadKYCVerificationContent() {
+      // Update active link
+      document.querySelectorAll('nav a').forEach(link => {
+        link.classList.remove('bg-[#664332]');
+        link.classList.add('hover:bg-[#664332]');
+      });
+      document.querySelector('.kyc-link').classList.add('bg-[#664332]');
+      document.querySelector('.kyc-link').classList.remove('hover:bg-[#664332]');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'KYC Verification';
+      
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="px-8 py-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+              <h1 class="text-2xl font-bold text-gray-800">KYC Verification Management</h1>
+            </div>
+            <p class="mt-2 text-gray-600">
+              Review and verify user identity documents. All verifications must follow compliance guidelines.
+            </p>
+          </div>
+          
+          <div class="p-8">
+            <div class="mb-6">
+              <h2 class="text-lg font-semibold mb-4">Pending Verifications</h2>
+              <div class="bg-white rounded-lg border overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documents</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                          <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">Mary Adebayo</div>
+                            <div class="text-sm text-gray-500">mary@example.com</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">ID Card, Proof of Address, Selfie</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">Apr 12, 2024</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <button class="bg-[#553627] text-white px-3 py-1 rounded hover:bg-[#664332]">Review</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div>
+              <h2 class="text-lg font-semibold mb-4">Recent Verifications</h2>
+              <div class="bg-white rounded-lg border overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified On</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified By</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <tr>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                          <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">John Okafor</div>
+                            <div class="text-sm text-gray-500">john@example.com</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Verified
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">Apr 10, 2024</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">Admin User</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <button class="text-blue-600 hover:text-blue-900">View</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                          <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">Sarah Nnamdi</div>
+                            <div class="text-sm text-gray-500">sarah@example.com</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Verified
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">Apr 8, 2024</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">Admin User</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <button class="text-blue-600 hover:text-blue-900">View</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                          <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">Peter Johnson</div>
+                            <div class="text-sm text-gray-500">peter@example.com</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          Rejected
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">Apr 5, 2024</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">Admin User</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <button class="text-blue-600 hover:text-blue-900">View</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // ROI Tracking Content
+    function loadROIContent() {
+      // Update active link
+      document.querySelectorAll('nav a').forEach(link => {
+        link.classList.remove('bg-[#664332]');
+        link.classList.add('hover:bg-[#664332]');
+      });
+      document.querySelector('.roi-link').classList.add('bg-[#664332]');
+      document.querySelector('.roi-link').classList.remove('hover:bg-[#664332]');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'ROI Tracking';
+      
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Total ROI Paid</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(mockROI.reduce((sum, roi) => sum + roi.amount, 0))}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Average ROI</h2>
+                <p class="text-2xl font-bold text-gray-800">18.5%</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Next Distribution</h2>
+                <p class="text-2xl font-bold text-gray-800">15 May</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ROI Distributions -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">ROI Distributions</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">New Distribution</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- ROI Table -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  ${mockROI.map(roi => {
+                    const property = mockProperties.find(p => p.id === roi.propertyId);
+                    
+                    let statusBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if (roi.status === 'Completed') statusBadgeClass = 'bg-green-100 text-green-800';
+                    if (roi.status === 'Failed') statusBadgeClass = 'bg-red-100 text-red-800';
+                    
+                    return `
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm font-medium text-gray-900">${property ? property.name : 'Unknown'}</div>
+                          <div class="text-xs text-gray-500">${property ? property.location : ''}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${roi.percentage}%</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatCurrency(roi.amount)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatDate(roi.date)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusBadgeClass}">
+                            ${roi.status}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-500">${roi.notes || 'No notes'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 rounded px-2 py-1 text-xs">Edit</button>
+                            ${roi.status === 'Pending' ? `
+                              <button class="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 rounded px-2 py-1 text-xs">Process</button>
+                            ` : ''}
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Property ROI Performance -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="p-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">Property ROI Performance</h2>
+          </div>
+          
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              ${mockProperties.slice(0, 4).map(prop => {
+                return `
+                  <div class="bg-white rounded-lg border shadow-sm p-4">
+                    <div class="flex justify-between items-center mb-4">
+                      <h3 class="text-md font-semibold text-gray-800">${prop.name}</h3>
+                      <span class="text-sm font-medium text-[#553627]">${prop.roi}% Target</span>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q1 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q2 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 60%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q3 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-gray-400 h-1.5 rounded-full" style="width: 0%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q4 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-gray-400 h-1.5 rounded-full" style="width: 0%"></div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Settings Content
+    function loadSettingsContent() {
+      // Update active link
+      document.querySelectorAll('nav a').forEach(link => {
+        link.classList.remove('bg-[#664332]');
+        link.classList.add('hover:bg-[#664332]');
+      });
+      document.querySelector('.settings-link').classList.add('bg-[#664332]');
+      document.querySelector('.settings-link').classList.remove('hover:bg-[#664332]');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Settings';
+      
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Admin Profile Settings -->
+          <div class="md:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Admin Profile</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="flex flex-col md:flex-row gap-6">
+                  <div class="md:w-1/3 flex flex-col items-center">
+                    <div class="w-32 h-32 bg-gray-300 rounded-full overflow-hidden mb-4">
+                      <img src="https://via.placeholder.com/128" alt="Admin" class="w-full h-full object-cover" />
+                    </div>
+                    <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332] w-full mb-2">Change Photo</button>
+                    <button class="border border-[#553627] text-[#553627] px-4 py-2 rounded-md hover:bg-[#553627] hover:text-white w-full">Remove Photo</button>
+                  </div>
+                  
+                  <div class="md:w-2/3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" value="Admin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" value="User" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" value="admin@ireva.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input type="text" value="+234 801 234 5678" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                    </div>
+                    
+                    <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Save Changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Security Settings -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Security</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="mb-6">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Change Password</h3>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Update Password</button>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-200">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Two-Factor Authentication</h3>
+                  
+                  <div class="flex items-center justify-between mb-4">
+                    <div>
+                      <p class="text-sm text-gray-700">Secure your account with two-factor authentication</p>
+                      <p class="text-xs text-gray-500 mt-1">When two-factor authentication is enabled, you will be prompted for a secure, random code during authentication.</p>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <span class="mr-3 text-sm font-medium text-gray-900">Off</span>
+                      <button type="button" class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                      <span class="ml-3 text-sm font-medium text-gray-400">On</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- System Settings -->
+          <div class="md:col-span-1">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">System Settings</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="mb-6">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Notifications</h3>
+                  
+                  <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">Email Notifications</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">KYC Alerts</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">Investment Alerts</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-200">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">App Settings</h3>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Currency</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      <option selected>Nigerian Naira (₦)</option>
+                      <option>US Dollar ($)</option>
+                      <option>Euro (€)</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      <option selected>DD/MM/YYYY</option>
+                      <option>MM/DD/YYYY</option>
+                      <option>YYYY-MM-DD</option>
+                    </select>
+                  </div>
+                  
+                  <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332] w-full">Save Settings</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Event Listeners for Sidebar Links
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check authentication on page load
+      if (checkAuth()) {
+        // Load dashboard by default
+        loadDashboardContent();
+        
+        // Setup sidebar navigation
+        document.querySelector('.dashboard-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          loadDashboardContent();
+        });
+        
+        document.querySelector('.users-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          loadUsersContent();
+        });
+        
+        document.querySelector('.properties-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          loadPropertiesContent();
+        });
+        
+        document.querySelector('.investments-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          loadInvestmentsContent();
+        });
+        
+        document.querySelector('.kyc-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          loadKYCVerificationContent();
+        });
+        
+        document.querySelector('.roi-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          loadROIContent();
+        });
+        
+        document.querySelector('.settings-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          loadSettingsContent();
+        });
+        
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function(e) {
+          e.preventDefault();
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = "/login-page.html";
+        });
+        
+        // Show welcome notification
+        showNotification('Welcome to iREVA Admin Dashboard');
+      }
+    });
+  </script>
+</body>
+</html>
