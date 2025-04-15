@@ -882,6 +882,65 @@
   </div>
   
   <script>
+    // Utility functions
+    function formatCurrency(amount) {
+      if (amount >= 1000000) {
+        return `₦${(amount / 1000000).toFixed(1)}M`;
+      } else if (amount >= 1000) {
+        return `₦${(amount / 1000).toFixed(1)}K`;
+      }
+      return `₦${amount.toFixed(2)}`;
+    }
+    
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return new Intl.DateTimeFormat('en-NG').format(date);
+    }
+    
+    // Mock data initialization
+    const mockUsers = [
+      { id: 1, name: 'Admin User', username: 'admin', email: 'admin@ireva.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 2, name: 'John Okafor', username: 'johno', email: 'john@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 2400000 },
+      { id: 3, name: 'Mary Adebayo', username: 'marya', email: 'mary@example.com', role: 'investor', active: true, kycStatus: 'Pending', balance: 850000 },
+      { id: 4, name: 'David Okeke', username: 'davido', email: 'david@example.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 5, name: 'Sarah Nnamdi', username: 'sarahn', email: 'sarah@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 3700000 },
+      { id: 6, name: 'Peter Johnson', username: 'peterj', email: 'peter@example.com', role: 'investor', active: false, kycStatus: 'Rejected', balance: 0 },
+      { id: 7, name: 'Chioma Eze', username: 'chiomae', email: 'chioma@example.com', role: 'developer', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 8, name: 'Emeka Obi', username: 'emekao', email: 'emeka@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 1200000 }
+    ];
+    
+    const mockProperties = [
+      { id: 1, name: 'Lekki Gardens Villa', type: 'Residential', location: 'Lekki, Lagos', price: 72600000, roi: 18, duration: 5, developer: 'Lekki Homes Ltd', status: 'Active', investments: 72600000, description: 'Luxury villa in the heart of Lekki Phase 1' },
+      { id: 2, name: 'Victoria Island Commercial', type: 'Commercial', location: 'Victoria Island, Lagos', price: 134200000, roi: 22, duration: 5, developer: 'Prime Properties', status: 'Active', investments: 134200000, description: 'Prime commercial space with high rental yield' },
+      { id: 3, name: 'Abuja Heights Apartments', type: 'Residential', location: 'Maitama, Abuja', price: 56400000, roi: 15, duration: 5, developer: 'Abuja Realty', status: 'Active', investments: 56400000, description: 'Modern apartment complex in upscale Maitama' },
+      { id: 4, name: 'Port Harcourt Residences', type: 'Mixed-Use', location: 'GRA, Port Harcourt', price: 45000000, roi: 14, duration: 5, developer: 'Rivers Estate Developers', status: 'Pending', investments: 0, description: 'Mixed-use development in Port Harcourt GRA' },
+      { id: 5, name: 'Ikeja Commercial Center', type: 'Commercial', location: 'Ikeja, Lagos', price: 95000000, roi: 20, duration: 5, developer: 'Lagos Commercial Developers', status: 'Active', investments: 67500000, description: 'Office space in the business district of Ikeja' }
+    ];
+    
+    const mockInvestments = [
+      { id: 1, userId: 2, propertyId: 1, amount: 1000000, date: '2023-10-15', status: 'Active' },
+      { id: 2, userId: 3, propertyId: 1, amount: 500000, date: '2023-10-20', status: 'Active' },
+      { id: 3, userId: 5, propertyId: 1, amount: 2000000, date: '2023-11-05', status: 'Active' },
+      { id: 4, userId: 2, propertyId: 2, amount: 1400000, date: '2023-11-10', status: 'Active' },
+      { id: 5, userId: 5, propertyId: 2, amount: 1700000, date: '2023-11-15', status: 'Active' },
+      { id: 6, userId: 8, propertyId: 3, amount: 1200000, date: '2023-12-01', status: 'Active' },
+      { id: 7, userId: 3, propertyId: 5, amount: 350000, date: '2024-01-05', status: 'Active' }
+    ];
+    
+    const mockROI = [
+      { id: 1, propertyId: 1, percentage: 4.5, amount: 3267000, date: '2024-04-15', status: 'Pending', notes: 'Q2 2024 distribution' },
+      { id: 2, propertyId: 2, percentage: 5.5, amount: 7381000, date: '2024-05-10', status: 'Pending', notes: 'Q2 2024 distribution' },
+      { id: 3, propertyId: 3, percentage: 3.75, amount: 2115000, date: '2024-06-01', status: 'Pending', notes: 'Q2 2024 distribution' }
+    ];
+    
+    const mockDevelopers = [
+      { id: 1, name: 'Lekki Homes Ltd', contact: 'info@lekkihomes.com', properties: 1 },
+      { id: 2, name: 'Prime Properties', contact: 'contact@primeproperties.ng', properties: 1 },
+      { id: 3, name: 'Abuja Realty', contact: 'info@abujarealty.com', properties: 1 },
+      { id: 4, name: 'Rivers Estate Developers', contact: 'info@red.com.ng', properties: 1 },
+      { id: 5, name: 'Lagos Commercial Developers', contact: 'info@lagoscommercial.com', properties: 1 }
+    ];
+    
     // Authentication Check
     function checkAuth() {
       const token = localStorage.getItem('token');
@@ -904,6 +963,31 @@
         console.error('Error parsing user data:', error);
         window.location.href = "/login-page.html";
       }
+    }
+    
+    // Notification function
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.innerHTML = `
+        <div class="notification-title">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
+        <div class="notification-message">${message}</div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Show notification
+      setTimeout(() => {
+        notification.classList.add('active');
+      }, 10);
+      
+      // Hide and remove notification
+      setTimeout(() => {
+        notification.classList.remove('active');
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 300);
+      }, 5000);
     }
     
     // Logout functionality
