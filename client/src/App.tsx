@@ -9,6 +9,7 @@ import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
 // Import from JSX file directly for the updated admin dashboard
 import AdminDashboard from "@/pages/AdminDashboard.jsx";
+import AdminKYCPage from "@/pages/AdminKYCPage.jsx";
 import Dashboard from "@/pages/Dashboard";
 import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "@/pages/login-page";
@@ -53,12 +54,6 @@ function App() {
           
           <Route path="/admin/properties">
             <PrivateRoute role="admin">
-              <AdminDashboard />
-            </PrivateRoute>
-          </Route>
-          
-          <Route path="/admin/properties">
-            <PrivateRoute role="admin">
               <PropertyManagement />
             </PrivateRoute>
           </Route>
@@ -66,6 +61,12 @@ function App() {
           <Route path="/admin/roi-tracker">
             <PrivateRoute role="admin">
               <RoiTracker />
+            </PrivateRoute>
+          </Route>
+          
+          <Route path="/admin/kyc">
+            <PrivateRoute role="admin">
+              <AdminKYCPage />
             </PrivateRoute>
           </Route>
           
