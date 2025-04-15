@@ -850,6 +850,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update user role (admin only)
+  app.put("/api/admin/users/:id/role", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      if (!role) {
+        return res.status(400).json({ message: "Role is required" });
+      }
+      
+      // Validate role
+      if (!['admin', 'investor', 'developer'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be admin, investor, or developer" });
+      }
+      
+      // Update isAdmin flag based on role
+      const isAdmin = role === 'admin';
+      
+      const updatedUser = await storage.updateUser(userId, { 
+        role,
+        isAdmin 
+      });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        message: `User role updated to ${role}`,
+        user: updatedUser
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+  
+  // Update user status (active/inactive) (admin only)
+  app.put("/api/admin/users/:id/status", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { active } = req.body;
+      
+      if (active === undefined) {
+        return res.status(400).json({ message: "Active status is required" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, { active });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        message: `User ${active ? 'activated' : 'deactivated'} successfully`,
+        user: updatedUser
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+  
   // Delete a user (admin only)
   app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
@@ -961,6 +1022,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete investment" });
+    }
+  });
+  
+  // Get all ROI distributions (admin only)
+  app.get("/api/admin/roi-distributions", isAdmin, async (req, res) => {
+    try {
+      const distributions = await storage.getAllROIDistributions();
+      
+      // Get property details for each distribution
+      const distributionsWithDetails = await Promise.all(
+        distributions.map(async (distribution) => {
+          const property = await storage.getProperty(distribution.propertyId);
+          return {
+            ...distribution,
+            property,
+          };
+        })
+      );
+      
+      res.json(distributionsWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch ROI distributions" });
+    }
+  });
+  
+  // Create new ROI distribution (admin only)
+  app.post("/api/admin/roi-distributions", isAdmin, async (req, res) => {
+    try {
+      const { propertyId, percentage, date, notes } = req.body;
+      
+      if (!propertyId || !percentage || !date) {
+        return res.status(400).json({ message: "Property ID, percentage, and date are required" });
+      }
+      
+      // Validate property exists
+      const property = await storage.getProperty(parseInt(propertyId));
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      // Calculate distribution amount based on total investments for the property
+      const propertyInvestments = await storage.getPropertyInvestments(parseInt(propertyId));
+      const totalInvested = propertyInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+      const amount = (totalInvested * parseFloat(percentage)) / 100;
+      
+      const newDistribution = await storage.createROIDistribution({
+        propertyId: parseInt(propertyId),
+        percentage: parseFloat(percentage),
+        amount,
+        date,
+        status: 'Pending',
+        notes: notes || ''
+      });
+      
+      res.status(201).json(newDistribution);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create ROI distribution" });
+    }
+  });
+  
+  // Process ROI distribution (change status to Completed) (admin only)
+  app.put("/api/admin/roi-distributions/:id/process", isAdmin, async (req, res) => {
+    try {
+      const distributionId = parseInt(req.params.id);
+      
+      // Get the distribution
+      const distribution = await storage.getROIDistribution(distributionId);
+      if (!distribution) {
+        return res.status(404).json({ message: "ROI distribution not found" });
+      }
+      
+      // Check if already processed
+      if (distribution.status === 'Completed') {
+        return res.status(400).json({ message: "This ROI distribution has already been processed" });
+      }
+      
+      // Update the distribution status
+      const updatedDistribution = await storage.updateROIDistribution(distributionId, {
+        status: 'Completed',
+        processedAt: new Date().toISOString()
+      });
+      
+      // Get property investments
+      const propertyInvestments = await storage.getPropertyInvestments(distribution.propertyId);
+      
+      // For each investment, distribute ROI proportionally
+      for (const investment of propertyInvestments) {
+        const investorShare = (investment.amount / distribution.amount) * distribution.percentage;
+        
+        // Get the user
+        const user = await storage.getUser(investment.userId);
+        if (user) {
+          // Update user wallet balance
+          await storage.updateUser(user.id, {
+            walletBalance: (user.walletBalance || 0) + investorShare
+          });
+          
+          // Create ROI transaction record
+          await storage.createROITransaction({
+            userId: user.id,
+            investmentId: investment.id,
+            distributionId: distribution.id,
+            amount: investorShare,
+            date: new Date().toISOString()
+          });
+        }
+      }
+      
+      res.json({
+        message: "ROI distribution processed successfully",
+        distribution: updatedDistribution
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to process ROI distribution" });
     }
   });
   
