@@ -19,6 +19,14 @@ const Login = () => {
       localStorage.setItem('token', res.data.token);
       const user = JSON.parse(atob(res.data.token.split('.')[1]));
       
+      // Store user data in localStorage for components that need it
+      localStorage.setItem('user', JSON.stringify({
+        id: user.id,
+        name: user.username || 'User',
+        email: user.email,
+        role: user.role || 'user'
+      }));
+      
       toast.success('Login successful!');
       
       // Redirect based on role after a short delay to show the toast

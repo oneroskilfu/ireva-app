@@ -46,9 +46,10 @@ API.interceptors.response.use(
       const status = error.response.status;
       
       if (status === 401) {
-        // Unauthorized - clear token and redirect to login
+        // Unauthorized - clear token and user data, then redirect to login
         localStorage.removeItem('token');
-        window.location.href = '/login';
+        localStorage.removeItem('user');
+        window.location.href = '/';
         return Promise.reject(new Error('Authentication expired. Please log in again.'));
       }
       
