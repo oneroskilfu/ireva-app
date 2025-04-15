@@ -263,16 +263,19 @@ const PropertyManagement = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Property Management</h2>
-        <button 
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-        >
-          {showAddForm ? 'Cancel' : 'Add New Property'}
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Property Management</h2>
+          <button 
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors shadow-sm"
+          >
+            {showAddForm ? 'Cancel' : 'Add New Property'}
+          </button>
+        </div>
       
       {showAddForm && (
         <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8 p-6">
