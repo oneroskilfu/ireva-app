@@ -15,6 +15,14 @@ export const getCurrentUser = () => {
 };
 
 /**
+ * Get authentication token from localStorage
+ * @returns {string|null} Token string or null if not found
+ */
+export const getToken = () => {
+  return localStorage.getItem('token');
+};
+
+/**
  * Get user's role from localStorage
  * @returns {string} User role ('admin', 'investor', etc.) or empty string if not found
  */
@@ -28,7 +36,7 @@ export const getUserRole = () => {
  * @returns {boolean} True if authenticated, false otherwise
  */
 export const isAuthenticated = () => {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   if (!token) return false;
   
   // Check if token is expired (if it has an expiration)

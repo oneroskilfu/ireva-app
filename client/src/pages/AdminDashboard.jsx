@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import API from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import { getCurrentUser } from '../utils/auth';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -21,15 +22,9 @@ const AdminDashboard = () => {
   ]);
   
   useEffect(() => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const userData = JSON.parse(atob(token.split('.')[1]));
-        setUserData(userData);
-      }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      handleLogout();
+    const user = getCurrentUser();
+    if (user) {
+      setUserData(user);
     }
     
     // In a real application, we would fetch real stats
@@ -39,6 +34,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/');
   };
 
@@ -61,74 +57,105 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="dashboard admin-dashboard">
-      <header className="dashboard-header">
-        <h1>iREVA Admin Dashboard</h1>
-        <div className="user-welcome">
-          <span>Welcome, {userData.username || 'Admin'}</span>
-          <button onClick={handleLogout} className="logout-btn">Logout</button>
-        </div>
-      </header>
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
       
-      <div className="statistics">
-        <div className="stat-box">
-          <h3>Total Users</h3>
-          <p className="stat-value">{stats.totalUsers}</p>
-        </div>
-        <div className="stat-box">
-          <h3>Ongoing Projects</h3>
-          <p className="stat-value">{stats.ongoingProjects}</p>
-        </div>
-        <div className="stat-box">
-          <h3>Total ROI Paid</h3>
-          <p className="stat-value">₦{(stats.roiPaid / 1000000).toFixed(1)}M</p>
-        </div>
-        <div className="stat-box">
-          <h3>Total Investments</h3>
-          <p className="stat-value">₦{(stats.totalInvestments / 1000000).toFixed(1)}M</p>
-        </div>
-      </div>
-      
-      <div className="admin-sections">
-        <div className="admin-section">
-          <h2>Recent Activities</h2>
-          <div className="activities-list">
-            {recentActivities.map(activity => (
-              <div className="activity-item" key={activity.id}>
-                {getActivityDescription(activity)}
-                <span className="activity-time">{activity.time}</span>
-              </div>
-            ))}
+      <div className="flex-1 p-8">
+        <div className="mb-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
+            <div className="flex items-center space-x-4">
+              <span className="text-gray-600">Welcome, {userData.name || 'Admin'}</span>
+            </div>
           </div>
         </div>
         
-        <div className="admin-section">
-          <h2>Admin Tools</h2>
-          <div className="admin-tools">
-            <button className="admin-tool-btn">
-              <span className="tool-icon">👥</span>
-              <span>Manage Users</span>
-            </button>
-            <button className="admin-tool-btn">
-              <span className="tool-icon">🏢</span>
-              <span>Manage Properties</span>
-            </button>
-            <button className="admin-tool-btn">
-              <span className="tool-icon">📊</span>
-              <span>View Analytics</span>
-            </button>
-            <button className="admin-tool-btn">
-              <span className="tool-icon">💰</span>
-              <span>ROI Payments</span>
-            </button>
-            <button className="admin-tool-btn">
-              <span className="tool-icon">📝</span>
-              <span>KYC Verifications</span>
-            </button>
-            <button className="admin-tool-btn">
-              <span className="tool-icon">⚙️</span>
-              <span>System Settings</span>
-            </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-gray-500 text-sm font-medium">Total Users</h3>
+            <p className="text-3xl font-bold mt-2">{stats.totalUsers}</p>
+            <p className="text-green-500 text-sm mt-1">+8% from last month</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-gray-500 text-sm font-medium">Ongoing Projects</h3>
+            <p className="text-3xl font-bold mt-2">{stats.ongoingProjects}</p>
+            <p className="text-green-500 text-sm mt-1">+2 new this month</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-gray-500 text-sm font-medium">Total ROI Paid</h3>
+            <p className="text-3xl font-bold mt-2">₦{(stats.roiPaid / 1000000).toFixed(1)}M</p>
+            <p className="text-red-500 text-sm mt-1">-2.3% from last month</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-gray-500 text-sm font-medium">Total Investments</h3>
+            <p className="text-3xl font-bold mt-2">₦{(stats.totalInvestments / 1000000).toFixed(1)}M</p>
+            <p className="text-green-500 text-sm mt-1">+12.5% from last month</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Recent Activities</h2>
+            <div className="space-y-4">
+              {recentActivities.map(activity => (
+                <div className="flex justify-between items-center py-3 border-b border-gray-100" key={activity.id}>
+                  <div className="text-gray-700">
+                    {getActivityDescription(activity)}
+                  </div>
+                  <span className="text-gray-400 text-sm">{activity.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Admin Tools</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Link to="/admin/users" className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
+                <div className="w-12 h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-full mb-2">
+                  <span className="text-xl">👥</span>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Users</span>
+              </Link>
+              
+              <Link to="/admin/properties" className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
+                <div className="w-12 h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-full mb-2">
+                  <span className="text-xl">🏢</span>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Properties</span>
+              </Link>
+              
+              <Link to="/admin/analytics" className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
+                <div className="w-12 h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-full mb-2">
+                  <span className="text-xl">📊</span>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Analytics</span>
+              </Link>
+              
+              <Link to="/admin/roi" className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
+                <div className="w-12 h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-full mb-2">
+                  <span className="text-xl">💰</span>
+                </div>
+                <span className="text-sm font-medium text-gray-700">ROI</span>
+              </Link>
+              
+              <Link to="/admin/kyc" className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
+                <div className="w-12 h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-full mb-2">
+                  <span className="text-xl">📝</span>
+                </div>
+                <span className="text-sm font-medium text-gray-700">KYC</span>
+              </Link>
+              
+              <Link to="/admin/settings" className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
+                <div className="w-12 h-12 flex items-center justify-center bg-red-100 text-red-600 rounded-full mb-2">
+                  <span className="text-xl">⚙️</span>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Settings</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
