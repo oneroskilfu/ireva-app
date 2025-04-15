@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import API from '../api/axios';
 
 export default function AdminROITracker() {
   const [roiData, setRoiData] = useState([]);
@@ -8,7 +8,7 @@ export default function AdminROITracker() {
 
   useEffect(() => {
     setLoading(true);
-    axios.get('/api/admin/roi-summary')
+    API.get('/admin/roi-summary')
       .then(res => {
         // The API returns a complex object with multiple data sections
         // We'll use the recentDistributions for our data table
@@ -37,7 +37,7 @@ export default function AdminROITracker() {
     }
     
     setLoading(true);
-    axios.post(`/api/admin/roi-distributions/${distribution.id}/process`)
+    API.post(`/admin/roi-distributions/${distribution.id}/process`)
       .then(res => {
         alert(`Distribution processed successfully. ${res.data.transactionsCreated} transactions created.`);
         
