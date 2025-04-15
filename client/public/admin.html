@@ -1633,67 +1633,92 @@
   }
   
   function addNewProperty() {
-    // Get the highest ID to create a new ID
-    const highestId = Math.max(...mockProperties.map(p => p.id), 0);
-    const newId = highestId + 1;
-    
-    // Create new property object
-    const newProperty = {
-      id: newId,
-      name: document.getElementById('edit-property-name').value,
-      location: document.getElementById('edit-property-location').value,
-      description: document.getElementById('edit-property-description').value,
-      type: document.getElementById('edit-property-type').value,
-      price: parseFloat(document.getElementById('edit-property-price').value) || 0,
-      minimumInvestment: parseFloat(document.getElementById('edit-property-price').value) || 0,
-      roi: document.getElementById('edit-property-roi').value,
-      targetReturn: document.getElementById('edit-property-roi').value,
-      duration: 5, // Default duration in years
-      status: 'Active',
-      investments: 0,
-      imageUrl: '',
-      additionalImages: '',
-      videoUrl: '',
-      documentUrl: ''
-    };
-    
-    // Handle image uploads
-    const imageInput = document.getElementById('property-images');
-    if (imageInput.files.length > 0) {
-      const mainImageFile = imageInput.files[0];
-      newProperty.imageUrl = URL.createObjectURL(mainImageFile);
+    try {
+      // Get the highest ID to create a new ID
+      const highestId = Math.max(...mockProperties.map(p => p.id), 0);
+      const newId = highestId + 1;
       
-      // Handle additional images
-      const additionalImages = [];
-      for (let i = 1; i < imageInput.files.length; i++) {
-        additionalImages.push(URL.createObjectURL(imageInput.files[i]));
+      // Create new property object
+      const newProperty = {
+        id: newId,
+        name: document.getElementById('edit-property-name').value || 'New Property',
+        location: document.getElementById('edit-property-location').value || 'Lagos, Nigeria',
+        description: document.getElementById('edit-property-description').value || 'Property description',
+        type: document.getElementById('edit-property-type').value || 'residential',
+        price: parseFloat(document.getElementById('edit-property-price').value) || 50000000,
+        minimumInvestment: parseFloat(document.getElementById('edit-property-price').value) / 10 || 5000000,
+        roi: document.getElementById('edit-property-roi').value || '15%',
+        targetReturn: document.getElementById('edit-property-roi').value || '15%',
+        term: 5, // Default term in years
+        duration: 5, // Default duration in years
+        status: 'Active',
+        investments: 0,
+        imageUrl: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914',
+        totalFunding: parseFloat(document.getElementById('edit-property-price').value) || 50000000,
+        currentFunding: 0,
+        daysLeft: 30,
+        additionalImages: '',
+        videoUrl: '',
+        documentUrl: ''
+      };
+      
+      // Handle image uploads
+      const imageInput = document.getElementById('property-images');
+      if (imageInput.files.length > 0) {
+        try {
+          const mainImageFile = imageInput.files[0];
+          newProperty.imageUrl = URL.createObjectURL(mainImageFile);
+          
+          // Handle additional images
+          const additionalImages = [];
+          for (let i = 1; i < imageInput.files.length; i++) {
+            additionalImages.push(URL.createObjectURL(imageInput.files[i]));
+          }
+          if (additionalImages.length > 0) {
+            newProperty.additionalImages = additionalImages.join(',');
+          }
+        } catch (e) {
+          console.error('Error handling image uploads:', e);
+        }
       }
-      if (additionalImages.length > 0) {
-        newProperty.additionalImages = additionalImages.join(',');
+      
+      // Handle video upload
+      const videoInput = document.getElementById('property-video');
+      if (videoInput.files.length > 0) {
+        try {
+          const videoFile = videoInput.files[0];
+          newProperty.videoUrl = URL.createObjectURL(videoFile);
+        } catch (e) {
+          console.error('Error handling video upload:', e);
+        }
       }
+      
+      // Handle document upload
+      const documentInput = document.getElementById('property-document');
+      if (documentInput.files.length > 0) {
+        try {
+          const documentFile = documentInput.files[0];
+          newProperty.documentUrl = URL.createObjectURL(documentFile);
+        } catch (e) {
+          console.error('Error handling document upload:', e);
+        }
+      }
+      
+      // Add the new property to the array
+      mockProperties.push(newProperty);
+      
+      // Close modal and refresh content
+      closePropertyEditModal();
+      
+      // Use setTimeout to ensure the modal is fully closed before refreshing content
+      setTimeout(() => {
+        loadPropertiesContent();
+        showNotification('Property added successfully', 'success');
+      }, 100);
+    } catch(error) {
+      console.error('Error in addNewProperty:', error);
+      showNotification('Error adding property: ' + error.message, 'error');
     }
-    
-    // Handle video upload
-    const videoInput = document.getElementById('property-video');
-    if (videoInput.files.length > 0) {
-      const videoFile = videoInput.files[0];
-      newProperty.videoUrl = URL.createObjectURL(videoFile);
-    }
-    
-    // Handle document upload
-    const documentInput = document.getElementById('property-document');
-    if (documentInput.files.length > 0) {
-      const documentFile = documentInput.files[0];
-      newProperty.documentUrl = URL.createObjectURL(documentFile);
-    }
-    
-    // Add the new property to the array
-    mockProperties.push(newProperty);
-    
-    // Close modal and refresh content
-    closePropertyEditModal();
-    loadPropertiesContent();
-    showNotification('Property added successfully', 'success');
   }
   
   function savePropertyEdits() {
