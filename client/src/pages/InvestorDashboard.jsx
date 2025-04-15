@@ -4,6 +4,7 @@ import API from '../services/api';
 import MessagePanel from '../components/MessagePanel';
 import ProjectTable from '../components/ProjectTable';
 import InvestmentChart from '../components/InvestmentChart';
+import SearchFilter from '../components/SearchFilter';
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
