@@ -42,6 +42,19 @@ const LoginPage = () => {
   });
 
   // Handle form submission
+  // Check if user is already logged in
+  React.useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user.isAdmin || user.role === 'admin') {
+        setLocation('/admin');
+      } else {
+        setLocation('/dashboard');
+      }
+    }
+  }, [setLocation]);
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     console.log('Submitting login data:', data);

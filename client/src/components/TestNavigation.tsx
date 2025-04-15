@@ -1,27 +1,41 @@
 import React from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 const TestNavigation: React.FC = () => {
   const [userInfo, setUserInfo] = React.useState<any>(null);
+  const [, navigate] = useLocation();
   
+  // Listen for localStorage changes to update user state
   React.useEffect(() => {
-    // Check for user in localStorage
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setUserInfo(user);
-      } catch (e) {
-        console.error('Error parsing user data:', e);
+    const checkUserData = () => {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setUserInfo(user);
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      } else {
+        setUserInfo(null);
       }
-    }
+    };
+    
+    // Check initially
+    checkUserData();
+    
+    // Set up storage event listener
+    window.addEventListener('storage', checkUserData);
+    
+    // Clean up
+    return () => window.removeEventListener('storage', checkUserData);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     setUserInfo(null);
-    window.location.href = '/';
+    navigate('/');
   };
 
   // Simple style for navigation bar
