@@ -133,7 +133,7 @@ const AuthPage: React.FC = () => {
           <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
             <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Typography component="h1" variant="h4" fontWeight="bold" color="primary">
-                REVA
+                iREVA
               </Typography>
               <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
                 Real Estate Value Assets
@@ -319,7 +319,7 @@ const AuthPage: React.FC = () => {
               Invest in Real Estate without the Hassle
             </Typography>
             <Typography variant="h6" sx={{ mb: 3, color: 'text.secondary' }}>
-              REVA makes real estate investing accessible to everyone in Nigeria.
+              iREVA makes real estate investing accessible to everyone in Nigeria.
             </Typography>
             
             <Box sx={{ mb: 3 }}>

@@ -41,7 +41,7 @@ const InvestorDashboard = () => {
   ]);
 
   const [messages, setMessages] = useState([
-    { sender: 'Admin', text: 'Welcome to REVA Investments' },
+    { sender: 'Admin', text: 'Welcome to iREVA Investments' },
     { sender: 'System', text: 'Your KYC verification is complete' },
     { sender: 'Support', text: 'New investment opportunity available' }
   ]);
@@ -131,7 +131,7 @@ const InvestorDashboard = () => {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>REVA Investor Dashboard</h1>
+        <h1>iREVA Investor Dashboard</h1>
         <div className="user-welcome">
           <span>Welcome, {userData.username || 'Investor'}</span>
           <button onClick={handleLogout} className="logout-btn">Logout</button>

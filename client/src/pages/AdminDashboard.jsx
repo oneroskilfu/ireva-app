@@ -63,7 +63,7 @@ const AdminDashboard = () => {
   return (
     <div className="dashboard admin-dashboard">
       <header className="dashboard-header">
-        <h1>REVA Admin Dashboard</h1>
+        <h1>iREVA Admin Dashboard</h1>
         <div className="user-welcome">
           <span>Welcome, {userData.username || 'Admin'}</span>
           <button onClick={handleLogout} className="logout-btn">Logout</button>
