@@ -8,7 +8,7 @@ interface PrivateRouteProps {
 }
 
 /**
- * Private route component for authenticated access
+ * Simplified Private route component for authenticated access
  * Optionally checks for a specific role if provided
  * Usage:
  * <Route path="/protected-route">
@@ -20,47 +20,16 @@ interface PrivateRouteProps {
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, role }) => {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
   React.useEffect(() => {
-    const checkAuthStatus = () => {
-      try {
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          setLocation('/login');
-          return;
-        }
-        
-        // Check for user data
-        const userStr = localStorage.getItem('user');
-        if (!userStr) {
-          setLocation('/login');
-          return;
-        }
-        
-        const user = JSON.parse(userStr);
-        
-        // If a specific role is required, check for it
-        if (role && user.role !== role) {
-          console.log(`Role check failed: User role is ${user.role}, required ${role}`);
-          setLocation('/unauthorized');
-          return;
-        }
-        
-        // User is authorized
-        setIsAuthorized(true);
-      } catch (error) {
-        console.error('Authentication check error:', error);
-        setLocation('/login');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkAuthStatus();
-  }, [setLocation, role]);
-  
+    // Short delay to allow rendering
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // If still loading, show a spinner
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -68,8 +37,35 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, role }) => {
       </div>
     );
   }
+
+  // Check if user is authenticated
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
   
-  return isAuthorized ? <>{children}</> : null;
+  if (!token || !userStr) {
+    // Not authenticated, redirect to login
+    setLocation('/login');
+    return null;
+  }
+  
+  // Check role if specified
+  if (role) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role !== role) {
+        console.log(`Role check failed: User role is ${user.role}, required ${role}`);
+        setLocation('/unauthorized');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      setLocation('/login');
+      return null;
+    }
+  }
+
+  // User is authenticated and has proper role
+  return <>{children}</>;
 };
 
 export default PrivateRoute;
