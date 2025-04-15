@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'wouter';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'wouter';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
@@ -40,7 +40,6 @@ const roiData = [
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [userData, setUserData] = useState({});
   const [stats, setStats] = useState({
     totalUsers: 1250,
     activeProjects: 18,
@@ -48,22 +47,8 @@ export default function AdminDashboard() {
     totalInvestments: 2500000,
     fundsRaisedThisMonth: 350000
   });
-  
-  useEffect(() => {
-    // Get user data from localStorage
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        setUserData(JSON.parse(userStr));
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-      }
-    }
-    
-    // In a real application, we would fetch real stats
-    // API.get('/admin/stats').then(res => setStats(res.data)).catch(err => console.error(err));
-  }, []);
 
+  // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
