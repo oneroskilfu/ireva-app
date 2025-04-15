@@ -105,3 +105,12 @@ export const isInvestor = () => hasRole('investor');
  * @returns {boolean} True if user is project owner, false otherwise
  */
 export const isProjectOwner = () => hasRole('project_owner');
+
+/**
+ * Get the current user's role
+ * @returns {string|null} The user's role or null if not authenticated
+ */
+export const getUserRole = () => {
+  const user = getCurrentUser();
+  return user?.role || null;
+};

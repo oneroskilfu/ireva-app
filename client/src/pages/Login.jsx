@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import API from '../services/api';
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -18,13 +19,18 @@ const Login = () => {
       localStorage.setItem('token', res.data.token);
       const user = JSON.parse(atob(res.data.token.split('.')[1]));
       
-      // Redirect based on role
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/investor');
-      }
+      toast.success('Login successful!');
+      
+      // Redirect based on role after a short delay to show the toast
+      setTimeout(() => {
+        if (user.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/investor');
+        }
+      }, 1000);
     } catch (err) {
+      toast.error('Login failed. Check your credentials.');
       setError(err.response?.data?.message || 'Invalid login credentials');
     } finally {
       setLoading(false);
