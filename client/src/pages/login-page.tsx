@@ -82,7 +82,12 @@ const LoginPage = () => {
       } else {
         throw new Error('Invalid response from server');
       }
-    } catch (error) {
+    } catch (err: any) {
+      const error = err as Error & { 
+        response?: { status: number; data?: { message?: string } }; 
+        request?: any;
+      };
+      
       console.error('Login error:', error);
       console.error('Login error details:', {
         message: error.message,
