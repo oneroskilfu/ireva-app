@@ -913,11 +913,821 @@
       window.location.href = "/";
     });
     
+    // Dashboard Content function
+    function loadDashboardContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Dashboard';
+      
+      // Total investors, total investments, total ROI paid, etc.
+      const totalInvestors = mockUsers.filter(user => user.role === 'investor').length;
+      const totalInvestment = mockInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+      const totalROIPaid = mockROI.reduce((sum, roi) => 
+        roi.status === 'Completed' ? sum + roi.amount : sum, 0);
+      const pendingKYC = mockUsers.filter(user => user.kycStatus === 'Pending').length;
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Investors</h2>
+                <p class="text-2xl font-bold text-gray-800">${totalInvestors}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+12%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Total Investments</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(totalInvestment)}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+8.5%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">ROI Paid</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(totalROIPaid)}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+5.2%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Pending KYC</h2>
+                <p class="text-2xl font-bold text-gray-800">${pendingKYC}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-yellow-500">+2</span> new submissions
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent activities -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-800">Recent Investments</h2>
+            </div>
+            <div class="p-4">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    ${mockInvestments.slice(0, 5).map(inv => {
+                      const user = mockUsers.find(u => u.id === inv.userId);
+                      const property = mockProperties.find(p => p.id === inv.propertyId);
+                      return `
+                        <tr>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${user ? user.name : 'Unknown'}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${property ? property.name : 'Unknown'}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${formatCurrency(inv.amount)}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${formatDate(inv.date)}</div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-800">Properties Overview</h2>
+            </div>
+            <div class="p-4">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    ${mockProperties.map(prop => {
+                      const progress = prop.price > 0 ? (prop.investments / prop.price) * 100 : 0;
+                      return `
+                        <tr>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${prop.name}</div>
+                            <div class="text-xs text-gray-500">${prop.location}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${prop.type}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${formatCurrency(prop.investments)}</div>
+                            <div class="text-xs text-gray-500">of ${formatCurrency(prop.price)}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                              <div class="bg-[#553627] h-2.5 rounded-full" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${Math.round(progress)}% Complete</div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Properties Management Content
+    function loadPropertiesContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Properties Management';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Properties</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New Property</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- Search and filter controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <div class="relative flex-grow">
+                <input type="text" placeholder="Search properties..." class="w-full px-4 py-2 pl-10 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex gap-4">
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Types</option>
+                  <option value="Residential">Residential</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Mixed-Use">Mixed-Use</option>
+                  <option value="Land">Land</option>
+                </select>
+                
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Properties Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${mockProperties.map(prop => {
+                const progress = prop.price > 0 ? (prop.investments / prop.price) * 100 : 0;
+                return `
+                  <div class="bg-white rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div class="h-48 bg-gray-200 relative">
+                      <div class="absolute top-2 right-2">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                          prop.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                          prop.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }">
+                          ${prop.status}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div class="p-4">
+                      <h3 class="text-lg font-semibold text-gray-800 mb-1">${prop.name}</h3>
+                      <p class="text-sm text-gray-500 mb-2">${prop.location}</p>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">Type:</span>
+                        <span class="text-sm font-medium">${prop.type}</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">Price:</span>
+                        <span class="text-sm font-medium">${formatCurrency(prop.price)}</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">ROI:</span>
+                        <span class="text-sm font-medium">${prop.roi}%</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-3">
+                        <span class="text-sm text-gray-600">Duration:</span>
+                        <span class="text-sm font-medium">${prop.duration} years</span>
+                      </div>
+                      
+                      <div class="mb-3">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                          <div class="bg-[#553627] h-2 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1 text-xs text-gray-500">
+                          <span>Funded: ${formatCurrency(prop.investments)}</span>
+                          <span>${Math.round(progress)}%</span>
+                        </div>
+                      </div>
+                      
+                      <div class="flex gap-2 mt-4">
+                        <button class="flex-1 bg-[#553627] text-white px-3 py-1.5 rounded hover:bg-[#664332] text-sm">Edit</button>
+                        <button class="flex-1 border border-[#553627] text-[#553627] px-3 py-1.5 rounded hover:bg-[#553627] hover:text-white text-sm">Details</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Users Management Content
+    function loadUsersContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Users Management';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Users</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New User</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- Search and filter controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <div class="relative flex-grow">
+                <input type="text" id="user-search" placeholder="Search users..." class="w-full px-4 py-2 pl-10 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex gap-4">
+                <select id="role-filter" class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="investor">Investor</option>
+                  <option value="developer">Developer</option>
+                </select>
+                
+                <select id="status-filter" class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Users Table -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+                  ${mockUsers.map(user => {
+                    let roleBadgeClass = 'bg-blue-100 text-blue-800';
+                    if (user.role === 'admin') roleBadgeClass = 'bg-purple-100 text-purple-800';
+                    if (user.role === 'developer') roleBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    
+                    let kycBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if (user.kycStatus === 'Verified') kycBadgeClass = 'bg-green-100 text-green-800';
+                    if (user.kycStatus === 'Rejected') kycBadgeClass = 'bg-red-100 text-red-800';
+                    
+                    return `
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">${user.name}</div>
+                              <div class="text-xs text-gray-500">@${user.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${user.email}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${roleBadgeClass}">
+                            ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${user.active ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${kycBadgeClass}">
+                            ${user.kycStatus}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatCurrency(user.balance)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 rounded px-2 py-1 text-xs">Edit</button>
+                            <button class="text-${user.active ? 'red' : 'green'}-600 hover:text-${user.active ? 'red' : 'green'}-900 bg-${user.active ? 'red' : 'green'}-100 hover:bg-${user.active ? 'red' : 'green'}-200 rounded px-2 py-1 text-xs">
+                              ${user.active ? 'Disable' : 'Enable'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // ROI Tracking Content
+    function loadROIContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'ROI Tracking';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Total ROI Paid</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(mockROI.reduce((sum, roi) => sum + roi.amount, 0))}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Average ROI</h2>
+                <p class="text-2xl font-bold text-gray-800">18.5%</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Next Distribution</h2>
+                <p class="text-2xl font-bold text-gray-800">15 May</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ROI Distributions -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">ROI Distributions</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">New Distribution</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- ROI Table -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  ${mockROI.map(roi => {
+                    const property = mockProperties.find(p => p.id === roi.propertyId);
+                    
+                    let statusBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if (roi.status === 'Completed') statusBadgeClass = 'bg-green-100 text-green-800';
+                    if (roi.status === 'Failed') statusBadgeClass = 'bg-red-100 text-red-800';
+                    
+                    return `
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm font-medium text-gray-900">${property ? property.name : 'Unknown'}</div>
+                          <div class="text-xs text-gray-500">${property ? property.location : ''}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${roi.percentage}%</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatCurrency(roi.amount)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatDate(roi.date)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusBadgeClass}">
+                            ${roi.status}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-500">${roi.notes || 'No notes'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 rounded px-2 py-1 text-xs">Edit</button>
+                            ${roi.status === 'Pending' ? `
+                              <button class="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 rounded px-2 py-1 text-xs">Process</button>
+                            ` : ''}
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Property ROI Performance -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="p-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">Property ROI Performance</h2>
+          </div>
+          
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              ${mockProperties.slice(0, 4).map(prop => {
+                return `
+                  <div class="bg-white rounded-lg border shadow-sm p-4">
+                    <div class="flex justify-between items-center mb-4">
+                      <h3 class="text-md font-semibold text-gray-800">${prop.name}</h3>
+                      <span class="text-sm font-medium text-[#553627]">${prop.roi}% Target</span>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q1 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q2 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 60%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q3 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-gray-400 h-1.5 rounded-full" style="width: 0%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q4 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-gray-400 h-1.5 rounded-full" style="width: 0%"></div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Settings Content
+    function loadSettingsContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Settings';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Admin Profile Settings -->
+          <div class="md:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Admin Profile</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="flex flex-col md:flex-row gap-6">
+                  <div class="md:w-1/3 flex flex-col items-center">
+                    <div class="w-32 h-32 bg-gray-300 rounded-full overflow-hidden mb-4">
+                      <img src="https://via.placeholder.com/128" alt="Admin" class="w-full h-full object-cover" />
+                    </div>
+                    <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332] w-full mb-2">Change Photo</button>
+                    <button class="border border-[#553627] text-[#553627] px-4 py-2 rounded-md hover:bg-[#553627] hover:text-white w-full">Remove Photo</button>
+                  </div>
+                  
+                  <div class="md:w-2/3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" value="Admin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" value="User" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" value="admin@ireva.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input type="text" value="+234 801 234 5678" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                    </div>
+                    
+                    <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Save Changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Security Settings -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Security</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="mb-6">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Change Password</h3>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Update Password</button>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-200">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Two-Factor Authentication</h3>
+                  
+                  <div class="flex items-center justify-between mb-4">
+                    <div>
+                      <p class="text-sm text-gray-700">Secure your account with two-factor authentication</p>
+                      <p class="text-xs text-gray-500 mt-1">When two-factor authentication is enabled, you will be prompted for a secure, random code during authentication.</p>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <span class="mr-3 text-sm font-medium text-gray-900">Off</span>
+                      <button type="button" class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                      <span class="ml-3 text-sm font-medium text-gray-400">On</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- System Settings -->
+          <div class="md:col-span-1">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">System Settings</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="mb-6">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Notifications</h3>
+                  
+                  <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">Email Notifications</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">KYC Alerts</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">Investment Alerts</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-200">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">App Settings</h3>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Currency</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      <option selected>Nigerian Naira (₦)</option>
+                      <option>US Dollar ($)</option>
+                      <option>Euro (€)</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      <option selected>DD/MM/YYYY</option>
+                      <option>MM/DD/YYYY</option>
+                      <option>YYYY-MM-DD</option>
+                    </select>
+                  </div>
+                  
+                  <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332] w-full">Save Settings</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
       checkAuth();
       const appEl = document.getElementById('app');
       
-      // Add click handler for KYC link
+      // Add click handlers for all sidebar links
+      document.querySelector('.dashboard-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load dashboard content
+        loadDashboardContent();
+      });
+      
+      document.querySelector('.users-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load users content
+        loadUsersContent();
+      });
+      
+      document.querySelector('.properties-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load properties content
+        loadPropertiesContent();
+      });
+      
       document.querySelector('.kyc-link').addEventListener('click', function(e) {
         e.preventDefault();
         
@@ -932,6 +1742,39 @@
         // Load KYC content
         loadKYCVerificationContent();
       });
+      
+      document.querySelector('.roi-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load ROI content
+        loadROIContent();
+      });
+      
+      document.querySelector('.settings-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load settings content
+        loadSettingsContent();
+      });
+      
+      // Load dashboard content by default
+      loadDashboardContent();
       
       // Mock data for demonstration
       const mockUsers = [
