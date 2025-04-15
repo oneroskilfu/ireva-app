@@ -47,12 +47,19 @@ const LoginPage = () => {
     console.log('Submitting login data:', data);
     
     try {
-      console.log('Making API request to /login');
-      const response = await API.post('/login', data);
-      console.log('Login API response:', response);
+      // Use fetch directly for troubleshooting instead of axios
+      console.log('Making direct fetch request to /api/login');
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        credentials: 'include' // Important for cookies
+      });
       
-      // Store user data in localStorage
-      const userData = response.data;
+      const userData = await response.json();
+      console.log('Login API response:', userData);
       
       if (userData) {
         // Convert isAdmin to role for consistency

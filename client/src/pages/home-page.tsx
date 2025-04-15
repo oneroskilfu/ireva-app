@@ -9,8 +9,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Property } from "@shared/schema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Key } from "lucide-react";
 import { Link } from "wouter";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function HomePage() {
   // Define default filter values

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    form {
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+    .success {
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Login Test</h1>
+  
+  <form id="loginForm">
+    <div class="form-group">
+      <label for="username">Username:</label>
+      <input type="text" id="username" value="admin" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input type="password" id="password" value="password" required>
+    </div>
+    
+    <button type="submit">Login</button>
+    
+    <div id="status" style="margin-top: 10px;"></div>
+  </form>
+  
+  <h2>Response:</h2>
+  <pre id="response">No response yet</pre>
+  
+  <h2>Local Storage:</h2>
+  <pre id="localStorage"></pre>
+  
+  <script>
+    // Update localStorage display
+    function updateLocalStorage() {
+      const output = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          try {
+            output[key] = JSON.parse(localStorage.getItem(key));
+          } catch (e) {
+            output[key] = localStorage.getItem(key);
+          }
+        }
+      }
+      document.getElementById('localStorage').textContent = JSON.stringify(output, null, 2);
+    }
+    
+    // Initial display
+    updateLocalStorage();
+    
+    // Handle form submission
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const statusEl = document.getElementById('status');
+      const responseEl = document.getElementById('response');
+      
+      statusEl.textContent = 'Logging in...';
+      statusEl.className = '';
+      
+      try {
+        console.log('Making login request to /api/login');
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+          credentials: 'include'  // Important for cookies
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          statusEl.textContent = 'Login successful!';
+          statusEl.className = 'success';
+          
+          // Store in localStorage for React components
+          const userWithRole = {
+            ...data,
+            role: data.isAdmin ? 'admin' : 'investor'
+          };
+          
+          localStorage.setItem('user', JSON.stringify(userWithRole));
+          localStorage.setItem('token', 'session-auth-token');
+          
+          // Update localStorage display
+          updateLocalStorage();
+        } else {
+          statusEl.textContent = `Error: ${data.message || 'Login failed'}`;
+          statusEl.className = 'error';
+        }
+        
+        // Display the response
+        responseEl.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        console.error('Login error:', error);
+        statusEl.textContent = `Error: ${error.message}`;
+        statusEl.className = 'error';
+        responseEl.textContent = 'Request failed';
+      }
+    });
+    
+    // Add clear localStorage button
+    const clearButton = document.createElement('button');
+    clearButton.textContent = 'Clear Local Storage';
+    clearButton.style.marginTop = '10px';
+    clearButton.style.backgroundColor = '#f44336';
+    
+    clearButton.addEventListener('click', function() {
+      localStorage.clear();
+      updateLocalStorage();
+      document.getElementById('status').textContent = 'Local storage cleared';
+      document.getElementById('status').className = '';
+    });
+    
+    document.body.appendChild(clearButton);
+  </script>
+</body>
+</html>
