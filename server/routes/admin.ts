@@ -7,14 +7,22 @@ import fs from 'fs';
 
 const router = express.Router();
 
-// Set up file storage for property images and documents
+// Set up file storage for property media files
 const storage_config = multer.diskStorage({
   destination: (req, file, cb) => {
     // Create upload directories if they don't exist
-    const uploadDir = file.fieldname === 'documents' 
-      ? './uploads/documents' 
-      : './uploads/images';
+    let uploadDir = './uploads/images'; // Default for images
     
+    // Determine directory based on file type
+    if (file.fieldname === 'mainImage' || file.fieldname === 'additionalImages') {
+      uploadDir = './uploads/images';
+    } else if (file.fieldname === 'brochure') {
+      uploadDir = './uploads/documents';
+    } else if (file.fieldname === 'video') {
+      uploadDir = './uploads/videos';
+    }
+    
+    // Create necessary directories if they don't exist
     if (!fs.existsSync('./uploads')) {
       fs.mkdirSync('./uploads');
     }
@@ -33,15 +41,30 @@ const storage_config = multer.diskStorage({
 });
 
 const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Accept images and documents only
-  if (file.fieldname === 'images') {
+  // Check file type based on fieldname
+  if (file.fieldname === 'mainImage' || file.fieldname === 'additionalImages') {
+    // For all image fields
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed for images'));
+      cb(new Error('Only image files are allowed for property images'));
     }
-  } else if (file.fieldname === 'documents') {
-    // Accept PDF, DOC, DOCX, XLS, XLSX, TXT files
+  } else if (file.fieldname === 'brochure') {
+    // For property brochures - only PDF
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed for property brochures'));
+    }
+  } else if (file.fieldname === 'video') {
+    // For property videos
+    if (file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only video files are allowed for property videos'));
+    }
+  } else {
+    // For any other document types
     const allowedMimeTypes = [
       'application/pdf',
       'application/msword',
@@ -54,10 +77,8 @@ const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.
     if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF, DOC, DOCX, XLS, XLSX, and TXT files are allowed for documents'));
+      cb(new Error('Unsupported file type'));
     }
-  } else {
-    cb(null, false);
   }
 };
 
@@ -229,10 +250,12 @@ router.get('/properties/:id', async (req, res) => {
   }
 });
 
-// Create property with image and document uploads
+// Create property with image, video, and brochure uploads
 router.post('/properties', upload.fields([
-  { name: 'images', maxCount: 10 },
-  { name: 'documents', maxCount: 5 }
+  { name: 'mainImage', maxCount: 1 },
+  { name: 'additionalImages', maxCount: 10 },
+  { name: 'video', maxCount: 1 },
+  { name: 'brochure', maxCount: 1 }
 ]), async (req, res) => {
   try {
     const propertyData = req.body;
@@ -248,28 +271,39 @@ router.post('/properties', upload.fields([
     
     // Process uploaded files
     if (files) {
-      // Handle images
-      if (files.images && files.images.length > 0) {
-        const imagePaths = files.images.map(file => `/uploads/images/${file.filename}`);
-        
-        // Set main image URL to the first uploaded image
-        propertyData.imageUrl = imagePaths[0];
-        
-        // Save additional images as JSON string
-        if (imagePaths.length > 1) {
-          propertyData.additionalImages = JSON.stringify(imagePaths.slice(1));
-        }
+      // Handle main image
+      if (files.mainImage && files.mainImage.length > 0) {
+        const mainImageFile = files.mainImage[0];
+        propertyData.imageUrl = `/uploads/images/${mainImageFile.filename}`;
       }
       
-      // Handle documents
-      if (files.documents && files.documents.length > 0) {
-        const documentPaths = files.documents.map(file => ({
-          name: file.originalname,
-          path: `/uploads/documents/${file.filename}`,
-          type: file.mimetype
-        }));
+      // Handle additional images
+      if (files.additionalImages && files.additionalImages.length > 0) {
+        const additionalImagePaths = files.additionalImages.map(file => 
+          `/uploads/images/${file.filename}`
+        );
+        propertyData.additionalImages = JSON.stringify(additionalImagePaths);
+      }
+      
+      // Handle video
+      if (files.video && files.video.length > 0) {
+        const videoFile = files.video[0];
+        propertyData.videoUrl = `/uploads/videos/${videoFile.filename}`;
+      }
+      
+      // Handle brochure/PDF
+      if (files.brochure && files.brochure.length > 0) {
+        const brochureFile = files.brochure[0];
         
-        propertyData.documentUrls = JSON.stringify(documentPaths);
+        const documentInfo = {
+          name: brochureFile.originalname,
+          path: `/uploads/documents/${brochureFile.filename}`,
+          type: brochureFile.mimetype,
+          isMainBrochure: true
+        };
+        
+        propertyData.brochureUrl = `/uploads/documents/${brochureFile.filename}`;
+        propertyData.documentUrls = JSON.stringify([documentInfo]);
       }
     }
     
@@ -300,8 +334,10 @@ router.post('/properties', upload.fields([
 
 // Update property
 router.put('/properties/:id', upload.fields([
-  { name: 'images', maxCount: 10 },
-  { name: 'documents', maxCount: 5 }
+  { name: 'mainImage', maxCount: 1 },
+  { name: 'additionalImages', maxCount: 10 },
+  { name: 'video', maxCount: 1 },
+  { name: 'brochure', maxCount: 1 }
 ]), async (req, res) => {
   try {
     const { id } = req.params;
@@ -323,37 +359,66 @@ router.put('/properties/:id', upload.fields([
     
     // Process uploaded files
     if (files) {
-      // Handle images
-      if (files.images && files.images.length > 0) {
-        const imagePaths = files.images.map(file => `/uploads/images/${file.filename}`);
+      // Handle main image
+      if (files.mainImage && files.mainImage.length > 0) {
+        const mainImageFile = files.mainImage[0];
+        propertyData.imageUrl = `/uploads/images/${mainImageFile.filename}`;
+      }
+      
+      // Handle additional images
+      if (files.additionalImages && files.additionalImages.length > 0) {
+        const newImagePaths = files.additionalImages.map(file => 
+          `/uploads/images/${file.filename}`
+        );
         
-        // Set main image URL to the first uploaded image
-        propertyData.imageUrl = imagePaths[0];
-        
-        // Save additional images as JSON string
-        if (imagePaths.length > 1) {
-          propertyData.additionalImages = JSON.stringify(imagePaths.slice(1));
+        // If there are existing additional images, merge them with new ones
+        if (existingProperty.additionalImages) {
+          try {
+            const existingImages = JSON.parse(existingProperty.additionalImages);
+            propertyData.additionalImages = JSON.stringify([...existingImages, ...newImagePaths]);
+          } catch (e) {
+            propertyData.additionalImages = JSON.stringify(newImagePaths);
+          }
+        } else {
+          propertyData.additionalImages = JSON.stringify(newImagePaths);
         }
       }
       
-      // Handle documents
-      if (files.documents && files.documents.length > 0) {
-        const newDocumentPaths = files.documents.map(file => ({
-          name: file.originalname,
-          path: `/uploads/documents/${file.filename}`,
-          type: file.mimetype
-        }));
+      // Handle video
+      if (files.video && files.video.length > 0) {
+        const videoFile = files.video[0];
+        propertyData.videoUrl = `/uploads/videos/${videoFile.filename}`;
+      }
+      
+      // Handle brochure/PDF
+      if (files.brochure && files.brochure.length > 0) {
+        const brochureFile = files.brochure[0];
+        
+        const documentInfo = {
+          name: brochureFile.originalname,
+          path: `/uploads/documents/${brochureFile.filename}`,
+          type: brochureFile.mimetype,
+          isMainBrochure: true
+        };
+        
+        propertyData.brochureUrl = `/uploads/documents/${brochureFile.filename}`;
         
         // If there are existing documents, merge them with new ones
         if (existingProperty.documentUrls) {
           try {
+            // Parse existing documents
             const existingDocuments = JSON.parse(existingProperty.documentUrls);
-            propertyData.documentUrls = JSON.stringify([...existingDocuments, ...newDocumentPaths]);
+            
+            // Remove any document marked as main brochure
+            const filteredDocs = existingDocuments.filter((doc: any) => !doc.isMainBrochure);
+            
+            // Add the new brochure document
+            propertyData.documentUrls = JSON.stringify([...filteredDocs, documentInfo]);
           } catch (e) {
-            propertyData.documentUrls = JSON.stringify(newDocumentPaths);
+            propertyData.documentUrls = JSON.stringify([documentInfo]);
           }
         } else {
-          propertyData.documentUrls = JSON.stringify(newDocumentPaths);
+          propertyData.documentUrls = JSON.stringify([documentInfo]);
         }
       }
     }
