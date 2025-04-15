@@ -61,10 +61,9 @@ function Router() {
         </div>
       )}
       <Switch>
-        <Route path="/" component={AuthPage} />
-        <Route path="/home" component={HomePage} />
-        <Route path="/properties/:id" component={PropertyPage} />
+        <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/properties/:id" component={PropertyPage} />
         <Route path="/login" component={LoginPage} />
         <ProtectedRoute path="/dashboard" component={DashboardPage} />
         <ProtectedRoute path="/welcome-dashboard" component={DashboardWithWelcome} />
