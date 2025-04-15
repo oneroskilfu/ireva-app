@@ -52,7 +52,7 @@ const MuiSidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     >
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e40af' }}>
-          REVA Admin
+          iREVA Admin
         </Typography>
         <Typography variant="subtitle2" sx={{ color: '#64748b' }}>
           Real Estate Investment Platform

@@ -249,7 +249,7 @@ const Dashboard = () => {
         Dashboard Overview
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" mb={4}>
-        Welcome to the REVA Real Estate Investment Platform
+        Welcome to the iREVA Real Estate Investment Platform
       </Typography>
       
       {error && (

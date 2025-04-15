@@ -213,7 +213,7 @@ const JwtAuthExample = () => {
       </CardContent>
       
       <CardFooter className="flex flex-col items-start px-6 py-4 bg-slate-50 text-sm text-slate-600">
-        <p>Testing JWT authentication flow for the REVA application.</p>
+        <p>Testing JWT authentication flow for the iREVA application.</p>
         <p className="mt-1">
           Default admin: <code>admin</code> / <code>password</code>
         </p>

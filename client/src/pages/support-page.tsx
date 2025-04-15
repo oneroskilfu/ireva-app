@@ -88,7 +88,7 @@ export default function SupportPage() {
                   Available Monday - Friday, 9am - 5pm WAT for urgent matters.
                 </p>
                 <a href="tel:+2348000REVA" className="text-primary hover:underline font-medium">
-                  +234-8000-REVA
+                  +234-8000-iREVA
                 </a>
               </div>
               
@@ -99,7 +99,7 @@ export default function SupportPage() {
                   Schedule an appointment to visit our office in Lagos for personalized support.
                 </p>
                 <address className="text-primary not-italic">
-                  <p>REVA Headquarters</p>
+                  <p>iREVA Headquarters</p>
                   <p>Victoria Island, Lagos</p>
                 </address>
               </div>

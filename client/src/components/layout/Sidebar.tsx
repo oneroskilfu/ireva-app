@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 shadow-sm">
       <div className="p-4 border-b">
-        <h2 className="text-xl font-bold">REVA Platform</h2>
+        <h2 className="text-xl font-bold">iREVA Platform</h2>
         <p className="text-sm text-gray-500">Real Estate Investment</p>
       </div>
       

@@ -89,7 +89,7 @@ export default function DashboardSidebar() {
     <div className="hidden md:flex w-64 flex-col h-full border-r bg-white">
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
         <div className="flex items-center flex-shrink-0 px-4 mb-5">
-          <span className="font-semibold text-lg text-primary">REVA</span>
+          <span className="font-semibold text-lg text-primary">iREVA</span>
         </div>
         
         <nav className="mt-2 flex-1 px-4 space-y-1">

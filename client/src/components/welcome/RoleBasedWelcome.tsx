@@ -50,10 +50,10 @@ const RoleBasedWelcome: React.FC<RoleBasedWelcomeProps> = ({ open, onClose }) =>
   const AdminWelcomeContent = () => (
     <Box sx={{ textAlign: 'center', p: 2 }}>
       <Typography variant="h4" gutterBottom color="primary">
-        Welcome to REVA Admin Panel
+        Welcome to iREVA Admin Panel
       </Typography>
       <Typography variant="body1" paragraph>
-        As an administrator, you have access to manage all aspects of the REVA real estate investment platform.
+        As an administrator, you have access to manage all aspects of the iREVA real estate investment platform.
       </Typography>
       <Box sx={{ mt: 4, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
         {[
