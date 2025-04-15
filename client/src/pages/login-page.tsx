@@ -104,7 +104,12 @@ const LoginPage = () => {
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your username" {...field} />
+                      <Input 
+                        placeholder="Enter your username" 
+                        type="text" 
+                        autoComplete="username"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
