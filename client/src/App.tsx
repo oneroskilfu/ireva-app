@@ -42,24 +42,11 @@ import { OnboardingProvider } from "./contexts/onboarding-context";
 import OnboardingWrapper from "./components/onboarding/OnboardingWrapper";
 // Import auth context
 import React from "react";
-import { AuthProvider, useAuth } from "./contexts/auth-context";
 import { RoleProtectedRoute } from "./lib/role-protected-route";
 
 function Router() {
-  const { isAuthenticated, logout } = useAuth();
-
   return (
     <>
-      {isAuthenticated && (
-        <div className="fixed top-0 right-0 p-4 z-50">
-          <button
-            onClick={logout}
-            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-      )}
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
@@ -121,29 +108,22 @@ function Router() {
 
 function App() {
   return (
-    <AuthProvider>
-      <PageTransitionProvider>
-        <OnboardingProvider>
-          <OnboardingWrapper>
-            <PageLoading />
-            <Router />
-            <Toaster />
-            <ToastContainer 
-              position="top-right"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="light"
-            />
-          </OnboardingWrapper>
-        </OnboardingProvider>
-      </PageTransitionProvider>
-    </AuthProvider>
+    <div>
+      <Router />
+      <Toaster />
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+    </div>
   );
 }
 
