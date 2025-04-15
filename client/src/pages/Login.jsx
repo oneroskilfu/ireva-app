@@ -28,7 +28,7 @@ const Login = () => {
   return (
     <div className="auth-container">
       <form onSubmit={handleLogin}>
-        <h2>REVA Login</h2>
+        <h2>iREVA Login</h2>
         <input
           type="email"
           placeholder="Email"

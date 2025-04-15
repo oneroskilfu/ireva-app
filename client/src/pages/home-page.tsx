@@ -231,10 +231,10 @@ export default function HomePage() {
                 Simple 3-step process
               </div>
               <h2 className="text-4xl md:text-5xl font-extrabold mb-6 bg-gradient-to-r from-gray-900 to-primary bg-clip-text text-transparent dark:from-white dark:to-primary">
-                How REVA Works
+                How iREVA Works
               </h2>
               <p className="mt-4 text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-8">
-                REVA makes real estate investing accessible, transparent, and simple for everyone in Nigeria.
+                iREVA makes real estate investing accessible, transparent, and simple for everyone in Nigeria.
               </p>
               <div className="flex justify-center mb-8">
                 <Button variant="outline" size="lg" className="gap-2 rounded-full shadow-sm border-primary/20 hover:bg-primary/5" asChild>

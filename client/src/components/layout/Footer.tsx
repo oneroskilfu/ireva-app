@@ -91,7 +91,7 @@ export default function Footer() {
             </form>
             <div className="pt-4 flex items-center text-sm text-muted-foreground">
               <Mail className="h-4 w-4 mr-2" />
-              <span>support@reva.com</span>
+              <span>support@ireva.com</span>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function Footer() {
         
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-xs text-muted-foreground mb-4 md:mb-0">
-            &copy; 2025 REVA. All rights reserved.
+            &copy; 2025 iREVA. All rights reserved.
           </p>
           <div className="flex space-x-6">
             <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
