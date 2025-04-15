@@ -9,9 +9,9 @@ app.use(express.urlencoded({ extended: false }));
 
 // Configure CORS
 app.use(cors({
-  // Allow requests from any origin in development
-  // In production, this would be restricted to specific domains
-  origin: true,
+  // In Replit environment, we need to be more permissive with CORS
+  // since both frontend and backend are served from the same origin
+  origin: true, // Allow requests from any origin
   credentials: true
 }));
 

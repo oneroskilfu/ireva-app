@@ -6,6 +6,10 @@ import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
+import AdminDashboard from "@/pages/admin-dashboard";
+import UnauthorizedPage from "@/pages/unauthorized-page";
+import LoginPage from "@/pages/login-page";
+import AdminRoute from "@/components/AdminRoute";
 
 function App() {
   return (
@@ -13,7 +17,10 @@ function App() {
       <Switch>
         <Route path="/" component={HomePage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="/unauthorized" component={UnauthorizedPage} />
         <Route path="/properties/:id" component={PropertyPage} />
+        <AdminRoute path="/admin" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
       <Toaster />

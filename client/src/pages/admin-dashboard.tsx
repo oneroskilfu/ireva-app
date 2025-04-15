@@ -1,577 +1,299 @@
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { Redirect, Link } from "wouter";
-import { User, Property, Investment } from "@shared/schema";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ArrowDownIcon, 
-  ArrowUpIcon, 
-  BarChart3, 
-  Building, 
-  DollarSign, 
-  Edit, 
-  Plus, 
-  Trash, 
-  Users 
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { DataTable } from "@/components/ui/data-table";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
-import { useState } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import {
+  BarChart3Icon,
+  HomeIcon,
+  Users2Icon,
+  Building2Icon,
+  BriefcaseIcon,
+  Settings2Icon,
+  LogOutIcon,
+  LayoutDashboardIcon,
+  AlertCircleIcon,
+  ArrowUpRightIcon
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Type definitions for admin dashboard
-interface AdminDashboardData {
-  totalUsers: number;
-  totalProperties: number;
-  totalInvestments: number;
-  totalInvestedAmount: number;
-  propertiesByType: Record<string, number>;
-  investmentsByStatus: Record<string, number>;
-  recentUsers: User[];
-  recentInvestments: (Investment & {
-    user: { id: number; username: string } | null;
-    property: { id: number; name: string } | null;
-  })[];
-}
-
-interface InvestmentWithDetails extends Investment {
-  user: User | null;
-  property: Property | null;
-}
-
-// Reusable stat card component
-function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  change 
-}: { 
-  title: string; 
-  value: string | number; 
-  icon: React.ElementType; 
-  change?: number;
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">
-          {title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {change !== undefined && (
-          <p className="text-xs text-muted-foreground flex items-center">
-            {change > 0 ? (
-              <ArrowUpIcon className="mr-1 h-4 w-4 text-green-600" />
-            ) : (
-              <ArrowDownIcon className="mr-1 h-4 w-4 text-red-600" />
-            )}
-            <span className={change > 0 ? 'text-green-600' : 'text-red-600'}>
-              {Math.abs(change)}%
-            </span>{' '}
-            from last month
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export default function AdminDashboard() {
-  const { user, isLoading } = useAuth();
-  const { toast } = useToast();
-  const [selectedTab, setSelectedTab] = useState("overview");
-
-  // Fetch admin dashboard data
-  const { data: dashboardData, isLoading: isDashboardLoading } = useQuery<AdminDashboardData>({
-    queryKey: ["/api/admin/dashboard"],
-    enabled: !!user?.isAdmin,
-  });
-
-  // Fetch users list
-  const { data: users, isLoading: isUsersLoading } = useQuery<User[]>({
-    queryKey: ["/api/admin/users"],
-    enabled: !!user?.isAdmin && selectedTab === "users",
-  });
-
-  // Fetch properties list
-  const { data: properties, isLoading: isPropertiesLoading } = useQuery<Property[]>({
-    queryKey: ["/api/admin/properties"],
-    enabled: !!user?.isAdmin && selectedTab === "properties",
-  });
-
-  // Fetch investments list
-  const { data: investments, isLoading: isInvestmentsLoading } = useQuery<InvestmentWithDetails[]>({
-    queryKey: ["/api/admin/investments"],
-    enabled: !!user?.isAdmin && selectedTab === "investments",
-  });
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  // Redirect if user is not admin
-  if (!user?.isAdmin) {
-    toast({
-      title: "Unauthorized",
-      description: "You do not have access to the admin dashboard",
-      variant: "destructive",
-    });
-    return <Redirect to="/" />;
-  }
-
-  // Handle delete user
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-    
-    try {
-      await apiRequest("DELETE", `/api/admin/users/${userId}`);
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
-      
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete user",
-        variant: "destructive",
-      });
-    }
+/**
+ * Admin Dashboard page component
+ * Only accessible to users with admin role
+ */
+const AdminDashboard: React.FC = () => {
+  const [, setLocation] = useLocation();
+  
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setLocation('/login');
   };
-
-  // Handle delete property
-  const handleDeleteProperty = async (propertyId: number) => {
-    if (!confirm("Are you sure you want to delete this property?")) return;
-    
-    try {
-      await apiRequest("DELETE", `/api/admin/properties/${propertyId}`);
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/properties"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
-      
-      toast({
-        title: "Success",
-        description: "Property deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete property. It may have active investments.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle delete investment
-  const handleDeleteInvestment = async (investmentId: number) => {
-    if (!confirm("Are you sure you want to delete this investment?")) return;
-    
-    try {
-      await apiRequest("DELETE", `/api/admin/investments/${investmentId}`);
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/investments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
-      
-      toast({
-        title: "Success",
-        description: "Investment deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete investment",
-        variant: "destructive",
-      });
-    }
+  
+  // Dummy data for the dashboard
+  const stats = {
+    totalUsers: 856,
+    activeInvestors: 492,
+    totalProperties: 38,
+    activeInvestments: 1204,
+    totalFunds: '₦892,450,000',
+    returnsPaid: '₦123,560,000',
+    pendingKyc: 24,
+    pendingWithdrawals: 12
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Link href="/">
-          <Button variant="outline">Return to Main Site</Button>
-        </Link>
+    <div className="flex h-screen bg-background">
+      {/* Sidebar */}
+      <div className="hidden md:flex flex-col w-64 bg-muted/30 border-r border-border">
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-primary">iREVA Admin</h2>
+          <p className="text-sm text-muted-foreground">Property Investment Platform</p>
+        </div>
+        
+        <nav className="flex-1 px-4 space-y-1 py-4">
+          <div className="space-y-1">
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link href="/admin" className="flex items-center">
+                <LayoutDashboardIcon className="mr-3 h-5 w-5" />
+                Dashboard
+              </Link>
+            </Button>
+            
+            <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+              <Users2Icon className="mr-3 h-5 w-5" />
+              Users
+            </Button>
+            
+            <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+              <Building2Icon className="mr-3 h-5 w-5" />
+              Properties
+            </Button>
+            
+            <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+              <BriefcaseIcon className="mr-3 h-5 w-5" />
+              Investments
+            </Button>
+            
+            <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+              <BarChart3Icon className="mr-3 h-5 w-5" />
+              Analytics
+            </Button>
+            
+            <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+              <Settings2Icon className="mr-3 h-5 w-5" />
+              Settings
+            </Button>
+          </div>
+        </nav>
+        
+        <div className="p-4 mt-auto border-t border-border">
+          <Button variant="ghost" className="w-full justify-start text-red-500" onClick={handleLogout}>
+            <LogOutIcon className="mr-3 h-5 w-5" />
+            Logout
+          </Button>
+        </div>
       </div>
-
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users Management</TabsTrigger>
-          <TabsTrigger value="properties">Properties Management</TabsTrigger>
-          <TabsTrigger value="investments">Investments Management</TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          {isDashboardLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top header */}
+        <header className="bg-background border-b border-border h-16 flex items-center px-6">
+          <div className="md:hidden mr-4">
+            <Button variant="ghost" size="icon">
+              <LayoutDashboardIcon className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+          
+          <div className="ml-auto flex items-center space-x-4">
+            <Button variant="outline" asChild>
+              <Link href="/" className="flex items-center">
+                <HomeIcon className="mr-2 h-4 w-4" />
+                View Site
+              </Link>
+            </Button>
+            
+            <Button variant="destructive" className="md:hidden" onClick={handleLogout}>
+              <LogOutIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
+        
+        {/* Main dashboard content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="grid gap-6">
+            {/* Stats overview */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Total Users
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +12% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Active Investors
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.activeInvestors}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +8% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Properties Listed
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalProperties}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +3 new this month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Total Investments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.activeInvestments}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    +24% from last month
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-          ) : dashboardData ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                  title="Total Users" 
-                  value={dashboardData.totalUsers} 
-                  icon={Users}
-                  change={5} // Example change value
-                />
-                <StatCard 
-                  title="Total Properties" 
-                  value={dashboardData.totalProperties} 
-                  icon={Building}
-                  change={2} // Example change value
-                />
-                <StatCard 
-                  title="Total Investments" 
-                  value={dashboardData.totalInvestments} 
-                  icon={BarChart3}
-                  change={8} // Example change value
-                />
-                <StatCard 
-                  title="Total Invested" 
-                  value={`$${(dashboardData.totalInvestedAmount / 1000).toFixed(1)}K`} 
-                  icon={DollarSign}
-                  change={12} // Example change value
-                />
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Users</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {dashboardData.recentUsers.map(user => (
-                        <div key={user.id} className="flex justify-between items-center border-b pb-2">
-                          <div>
-                            <p className="font-medium">{user.username}</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                          </div>
-                          <Badge variant={user.isAdmin ? "destructive" : "outline"}>
-                            {user.isAdmin ? "Admin" : "User"}
-                          </Badge>
-                        </div>
-                      ))}
+            
+            {/* Alerts section */}
+            <Card className="border-amber-200 dark:border-amber-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-medium flex items-center">
+                  <AlertCircleIcon className="h-4 w-4 mr-2 text-amber-500" />
+                  Pending Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex items-center gap-2 rounded-md border p-3">
+                    <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-md">
+                      <Users2Icon className="h-4 w-4 text-amber-500" />
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Investments</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {dashboardData.recentInvestments.map(investment => (
-                        <div key={investment.id} className="flex justify-between items-center border-b pb-2">
-                          <div>
-                            <p className="font-medium">
-                              {investment.user?.username || "Unknown User"} → {investment.property?.name || "Unknown Property"}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              ${investment.amount.toLocaleString()} • {investment.date ? new Date(investment.date).toLocaleDateString() : "N/A"}
-                            </p>
-                          </div>
-                          <Badge variant={investment.status === "active" ? "default" : 
-                                         investment.status === "completed" ? "secondary" : "secondary"}>
-                            {investment.status}
-                          </Badge>
-                        </div>
-                      ))}
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">KYC Verifications</p>
+                      <p className="text-xs text-muted-foreground">{stats.pendingKyc} users waiting for approval</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-10">Failed to load dashboard data</div>
-          )}
-        </TabsContent>
-
-        {/* Users Management Tab */}
-        <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Users Management</CardTitle>
-                <Button size="sm" className="flex items-center gap-1">
-                  <Plus className="w-4 h-4" /> Add User
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isUsersLoading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                    <Button size="sm" variant="outline" className="ml-auto">
+                      Review
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 rounded-md border p-3">
+                    <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-md">
+                      <ArrowUpRightIcon className="h-4 w-4 text-amber-500" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Withdrawal Requests</p>
+                      <p className="text-xs text-muted-foreground">{stats.pendingWithdrawals} pending withdrawals</p>
+                    </div>
+                    <Button size="sm" variant="outline" className="ml-auto">
+                      Process
+                    </Button>
+                  </div>
                 </div>
-              ) : users && users.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="py-2 px-4 text-left">ID</th>
-                        <th className="py-2 px-4 text-left">Username</th>
-                        <th className="py-2 px-4 text-left">Email</th>
-                        <th className="py-2 px-4 text-left">Name</th>
-                        <th className="py-2 px-4 text-left">Role</th>
-                        <th className="py-2 px-4 text-left">Created</th>
-                        <th className="py-2 px-4 text-left">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map(user => (
-                        <tr key={user.id} className="border-b hover:bg-muted/50">
-                          <td className="py-2 px-4">{user.id}</td>
-                          <td className="py-2 px-4">{user.username}</td>
-                          <td className="py-2 px-4">{user.email}</td>
-                          <td className="py-2 px-4">{user.firstName} {user.lastName}</td>
-                          <td className="py-2 px-4">
-                            <Badge variant={user.isAdmin ? "destructive" : "outline"}>
-                              {user.isAdmin ? "Admin" : "User"}
-                            </Badge>
-                          </td>
-                          <td className="py-2 px-4">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</td>
-                          <td className="py-2 px-4">
-                            <div className="flex gap-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Edit User</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                      onClick={() => handleDeleteUser(user.id)}
-                                    >
-                                      <Trash className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Delete User</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-10">No users found</div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Properties Management Tab */}
-        <TabsContent value="properties">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Properties Management</CardTitle>
-                <Button size="sm" className="flex items-center gap-1">
-                  <Plus className="w-4 h-4" /> Add Property
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isPropertiesLoading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : properties && properties.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="py-2 px-4 text-left">ID</th>
-                        <th className="py-2 px-4 text-left">Name</th>
-                        <th className="py-2 px-4 text-left">Location</th>
-                        <th className="py-2 px-4 text-left">Type</th>
-                        <th className="py-2 px-4 text-left">Funding</th>
-                        <th className="py-2 px-4 text-left">Target Return</th>
-                        <th className="py-2 px-4 text-left">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {properties.map(property => (
-                        <tr key={property.id} className="border-b hover:bg-muted/50">
-                          <td className="py-2 px-4">{property.id}</td>
-                          <td className="py-2 px-4">{property.name}</td>
-                          <td className="py-2 px-4">{property.location}</td>
-                          <td className="py-2 px-4">
-                            <Badge variant="outline" className="capitalize">
-                              {property.type}
-                            </Badge>
-                          </td>
-                          <td className="py-2 px-4">
-                            ${property.currentFunding.toLocaleString()} / ${property.totalFunding.toLocaleString()}
-                            <div className="w-full bg-muted h-2 rounded-full mt-1">
-                              <div 
-                                className="bg-primary h-2 rounded-full" 
-                                style={{ width: `${Math.min(100, (property.currentFunding / property.totalFunding) * 100)}%` }}
-                              ></div>
-                            </div>
-                          </td>
-                          <td className="py-2 px-4">{property.targetReturn}%</td>
-                          <td className="py-2 px-4">
-                            <div className="flex gap-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Edit Property</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                      onClick={() => handleDeleteProperty(property.id)}
-                                    >
-                                      <Trash className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Delete Property</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-10">No properties found</div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Investments Management Tab */}
-        <TabsContent value="investments">
-          <Card>
-            <CardHeader>
-              <CardTitle>Investments Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isInvestmentsLoading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : investments && investments.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="py-2 px-4 text-left">ID</th>
-                        <th className="py-2 px-4 text-left">User</th>
-                        <th className="py-2 px-4 text-left">Property</th>
-                        <th className="py-2 px-4 text-left">Amount</th>
-                        <th className="py-2 px-4 text-left">Current Value</th>
-                        <th className="py-2 px-4 text-left">Status</th>
-                        <th className="py-2 px-4 text-left">Date</th>
-                        <th className="py-2 px-4 text-left">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {investments.map(investment => (
-                        <tr key={investment.id} className="border-b hover:bg-muted/50">
-                          <td className="py-2 px-4">{investment.id}</td>
-                          <td className="py-2 px-4">{investment.user?.username || 'Unknown'}</td>
-                          <td className="py-2 px-4">{investment.property?.name || 'Unknown'}</td>
-                          <td className="py-2 px-4">${investment.amount.toLocaleString()}</td>
-                          <td className="py-2 px-4">${investment.currentValue.toLocaleString()}</td>
-                          <td className="py-2 px-4">
-                            <Badge variant={
-                              investment.status === "active" ? "default" : 
-                              investment.status === "completed" ? "secondary" : 
-                              "secondary"
-                            }>
-                              {investment.status}
-                            </Badge>
-                          </td>
-                          <td className="py-2 px-4">{investment.date ? new Date(investment.date).toLocaleDateString() : "N/A"}</td>
-                          <td className="py-2 px-4">
-                            <div className="flex gap-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Edit Investment</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                      onClick={() => handleDeleteInvestment(investment.id)}
-                                    >
-                                      <Trash className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Delete Investment</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-10">No investments found</div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+            
+            {/* Financial overview */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Financial Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium">Total Funds Invested</p>
+                        <p className="text-xs text-muted-foreground">Current active investments</p>
+                      </div>
+                      <div className="font-bold">{stats.totalFunds}</div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium">Returns Paid to Investors</p>
+                        <p className="text-xs text-muted-foreground">Total ROI paid to date</p>
+                      </div>
+                      <div className="font-bold">{stats.returnsPaid}</div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium">Average ROI</p>
+                        <p className="text-xs text-muted-foreground">Across all properties</p>
+                      </div>
+                      <div className="font-bold">14.5%</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activities</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-green-500 pl-4 py-2">
+                      <p className="text-sm font-medium">New investment</p>
+                      <p className="text-xs text-muted-foreground">Uzoma I. invested ₦500,000 in Lagos Heights</p>
+                      <p className="text-xs text-muted-foreground">2 hours ago</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-blue-500 pl-4 py-2">
+                      <p className="text-sm font-medium">User registered</p>
+                      <p className="text-xs text-muted-foreground">Chioma E. created a new account</p>
+                      <p className="text-xs text-muted-foreground">4 hours ago</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-amber-500 pl-4 py-2">
+                      <p className="text-sm font-medium">KYC submitted</p>
+                      <p className="text-xs text-muted-foreground">Emeka O. completed KYC verification</p>
+                      <p className="text-xs text-muted-foreground">Yesterday</p>
+                    </div>
+                    
+                    <div className="border-l-4 border-purple-500 pl-4 py-2">
+                      <p className="text-sm font-medium">Property added</p>
+                      <p className="text-xs text-muted-foreground">New property: Lekki Garden Apartments</p>
+                      <p className="text-xs text-muted-foreground">2 days ago</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
-}
+};
+
+export default AdminDashboard;

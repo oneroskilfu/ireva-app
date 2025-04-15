@@ -1,96 +1,51 @@
 import React from 'react';
-import { Container, Typography, Box, Button, Paper } from '@mui/material';
-import { Lock, ArrowLeft, Home } from 'lucide-react';
 import { Link } from 'wouter';
-import { useAuth } from '../contexts/auth-context';
+import { LockIcon, HomeIcon, AlertTriangleIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-const UnauthorizedPage: React.FC = () => {
-  const { user } = useAuth();
-  
+/**
+ * Unauthorized page displayed when a user tries to access a restricted route
+ */
+const UnauthorizedPage = () => {
   return (
-    <Container maxWidth="md" sx={{ py: 8 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 2, textAlign: 'center' }}>
-        <Box 
-          sx={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            backgroundColor: 'error.light',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto',
-            mb: 3
-          }}
-        >
-          <Lock size={40} color="#fff" />
-        </Box>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+      <div className="w-full max-w-lg text-center space-y-6">
+        <div className="bg-red-100 dark:bg-red-900/20 p-6 rounded-lg mb-6 inline-block mx-auto">
+          <LockIcon className="h-16 w-16 text-red-600 dark:text-red-400 mx-auto" />
+        </div>
         
-        <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Access Denied
-        </Typography>
+        </h1>
         
-        <Typography variant="subtitle1" color="text.secondary" paragraph>
-          Sorry, you don't have permission to access this page.
-        </Typography>
+        <div className="bg-muted/50 p-4 rounded-md my-4 flex items-center">
+          <AlertTriangleIcon className="text-amber-500 mr-3 h-5 w-5 flex-shrink-0" />
+          <p className="text-muted-foreground text-sm">
+            You don't have permission to view this page. This area is restricted to administrators only.
+          </p>
+        </div>
         
-        <Box 
-          sx={{ 
-            bgcolor: '#FFF9E6', 
-            p: 3, 
-            borderRadius: 2, 
-            mt: 3, 
-            mb: 4,
-            textAlign: 'left'
-          }}
-        >
-          <Typography variant="body1">
-            {user ? (
-              <>
-                <strong>Current User:</strong> {user.username}<br />
-                <strong>Role Required:</strong> Administrator<br />
-                <strong>Your Role:</strong> {user.role || 'Investor'}<br />
-              </>
-            ) : (
-              <>
-                <strong>Status:</strong> Not Logged In<br />
-                <strong>Role Required:</strong> Administrator<br />
-              </>
-            )}
-          </Typography>
-        </Box>
+        <p className="text-muted-foreground">
+          If you believe you should have access to this page, please contact the system administrator or verify your account credentials.
+        </p>
         
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-          <Button 
-            variant="outlined" 
-            component={Link} 
-            href="/"
-            startIcon={<Home size={18} />}
-          >
-            Go to Home
-          </Button>
-          
-          <Button 
-            variant="outlined" 
-            onClick={() => window.history.back()}
-            startIcon={<ArrowLeft size={18} />}
-          >
-            Go Back
-          </Button>
-          
-          {!user && (
-            <Button 
-              variant="contained" 
-              color="primary"
-              component={Link} 
-              href="/login"
-            >
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+          <Button variant="default" asChild>
+            <Link href="/login" className="flex items-center gap-2">
+              <LockIcon className="h-4 w-4" />
               Log In
-            </Button>
-          )}
-        </Box>
-      </Paper>
-    </Container>
+            </Link>
+          </Button>
+          
+          <Button variant="outline" asChild>
+            <Link href="/" className="flex items-center gap-2">
+              <HomeIcon className="h-4 w-4" />
+              Return Home
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

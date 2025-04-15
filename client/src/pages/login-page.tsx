@@ -1,180 +1,181 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import axios from 'axios';
 import { 
-  Box, 
-  TextField, 
-  Button, 
-  Typography, 
-  Paper, 
-  Container,
-  Grid, 
-  Link, 
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-  Alert
-} from '@mui/material';
-import type { Theme } from '@mui/material/styles';
-import type { SxProps } from '@mui/system';
-import { VisibilityOff, Visibility, Login as LoginIcon } from '@mui/icons-material';
-import { useAuth } from '../contexts/auth-context';
-import API from '../api/axios';
-import { useLocation } from 'wouter';
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { BuildingIcon, LoaderCircleIcon } from 'lucide-react';
 
-const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { login } = useAuth();
+// Form validation schema
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
+/**
+ * Login page component
+ */
+const LoginPage = () => {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
 
-  const handleTogglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
+  // Handle form submission
+  const onSubmit = async (data: LoginFormValues) => {
+    setIsLoading(true);
+    
     try {
-      // Use the API utility to make the POST request to the login endpoint
-      const response = await API.post('/auth/login', { username, password });
+      const response = await axios.post('/api/auth/login', data);
       
-      // Check if a token was returned in the response
-      if (response.data && response.data.token) {
-        // Use the login function from useAuth to update auth state
-        login(response.data.token);
+      // Store token in localStorage
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
         
-        // Navigate to the dashboard after successful login
-        setLocation('/dashboard');
-      } else {
-        setError('Login failed: No authentication token received');
+        // Redirect based on user role
+        if (response.data.user && response.data.user.role === 'admin') {
+          toast({
+            title: 'Admin Login Successful',
+            description: 'Welcome back, administrator!',
+          });
+          setLocation('/admin');
+        } else {
+          toast({
+            title: 'Login Successful',
+            description: 'Welcome back to iREVA!',
+          });
+          setLocation('/');
+        }
       }
-    } catch (err: any) {
-      // Set meaningful error message based on the error response
-      setError(
-        err.response?.data?.message || 
-        err.message || 
-        'An error occurred during login. Please try again.'
-      );
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: 'Invalid credentials. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: '100vh', alignItems: 'center' }}>
-        {/* Login Form */}
-        <Box sx={{ width: { xs: '100%', md: '50%' }, p: 2 }}>
-          <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Welcome Back
-              </Typography>
-              <Typography variant="body1" color="text.secondary" gutterBottom>
-                Sign in to continue to REVA Real Estate Investments
-              </Typography>
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Form Section */}
+      <div className="flex flex-col justify-center items-center p-6 lg:p-10">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <BuildingIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+            <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+            <p className="text-muted-foreground mt-2">
+              Sign in to your iREVA account
+            </p>
+          </div>
 
-              {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {error}
-                </Alert>
-              )}
-
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="username"
-                label="Username"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
                 name="username"
-                autoComplete="username"
-                autoFocus
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                sx={{ mb: 2 }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              
-              <TextField
-                margin="normal"
-                required
-                fullWidth
+
+              <FormField
+                control={form.control}
                 name="password"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={handleTogglePasswordVisibility}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ mb: 2 }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
 
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="primary"
-                size="large"
-                disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
-                sx={{ mt: 2, mb: 2, py: 1.5 }}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading}
               >
-                {loading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? (
+                  <>
+                    <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : 'Sign In'}
               </Button>
+            </form>
+          </Form>
 
-              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                <Link href="#" variant="body2">
-                  Forgot password?
-                </Link>
-                <Link href="/auth" variant="body2">
-                  Don't have an account? Sign Up
-                </Link>
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
+          <div className="text-center mt-6">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Link href="/auth" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
 
-        {/* Hero Section */}
-        <Box sx={{ width: { xs: '100%', md: '50%' }, p: 2 }}>
-          <Box sx={{ p: 4 }}>
-            <Typography variant="h4" component="h2" gutterBottom>
-              Invest in Nigeria's Future
-            </Typography>
-            <Typography variant="body1" paragraph>
-              REVA provides a secure and transparent platform for investing in premium Nigerian real estate properties.
-            </Typography>
-            <Typography variant="body1" paragraph>
-              • Diverse portfolio of properties across Nigeria
-            </Typography>
-            <Typography variant="body1" paragraph>
-              • Minimum investment starting at ₦100,000
-            </Typography>
-            <Typography variant="body1" paragraph>
-              • Projected annual returns of 12-20%
-            </Typography>
-            <Typography variant="body1" paragraph>
-              • Full transparency with real-time ROI tracking
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-    </Container>
+      {/* Hero Section */}
+      <div className="hidden lg:block bg-muted">
+        <div className="h-full flex flex-col justify-center p-10 bg-gradient-to-br from-primary/10 to-secondary/10">
+          <div className="max-w-md mx-auto space-y-6">
+            <h2 className="text-4xl font-bold tracking-tight">
+              Invest in Nigerian Real Estate
+            </h2>
+            <p className="text-lg">
+              Join thousands of investors building wealth through our curated property investments across Nigeria.
+            </p>
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="bg-background p-4 rounded-lg">
+                <h3 className="font-semibold">20+ Properties</h3>
+                <p className="text-sm text-muted-foreground">
+                  Diverse investment options
+                </p>
+              </div>
+              <div className="bg-background p-4 rounded-lg">
+                <h3 className="font-semibold">12-20% ROI</h3>
+                <p className="text-sm text-muted-foreground">
+                  Competitive annual returns
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
