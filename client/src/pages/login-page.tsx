@@ -83,22 +83,24 @@ const LoginPage = () => {
         throw new Error('Invalid response from server');
       }
     } catch (err: any) {
-      const error = err as Error & { 
-        response?: { status: number; data?: { message?: string } }; 
-        request?: any;
+      console.error('Login error:', err);
+      
+      // Extract useful information from the error object
+      const errorDetails = {
+        message: err.message,
+        response: err.response ? {
+          status: err.response.status,
+          data: err.response.data
+        } : undefined,
+        stack: err.stack
       };
       
-      console.error('Login error:', error);
-      console.error('Login error details:', {
-        message: error.message,
-        response: error.response,
-        stack: error.stack
-      });
+      console.error('Login error details:', errorDetails);
       
       let errorMessage = 'Invalid credentials. Please try again.';
-      if (error.response) {
-        errorMessage = `Server error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`;
-      } else if (error.request) {
+      if (err.response) {
+        errorMessage = `Server error: ${err.response.status} - ${err.response.data?.message || 'Unknown error'}`;
+      } else if (err.request) {
         errorMessage = 'No response from server. Please try again.';
       }
       
