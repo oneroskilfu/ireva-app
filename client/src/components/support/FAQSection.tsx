@@ -85,7 +85,7 @@ const FAQSection = () => {
     <Card>
       <CardHeader>
         <CardTitle>Frequently Asked Questions</CardTitle>
-        <CardDescription>Find answers to common questions about the REVA platform</CardDescription>
+        <CardDescription>Find answers to common questions about the iREVA platform</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Search input */}

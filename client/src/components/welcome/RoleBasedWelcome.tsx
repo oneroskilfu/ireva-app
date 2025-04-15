@@ -169,15 +169,15 @@ const RoleBasedWelcome: React.FC<RoleBasedWelcomeProps> = ({ open, onClose }) =>
   const InvestorWelcomeContent = () => (
     <Box sx={{ textAlign: 'center', p: 2 }}>
       <Typography variant="h4" gutterBottom color="primary">
-        Welcome to REVA
+        Welcome to iREVA
       </Typography>
       <Typography variant="body1" paragraph>
         Your gateway to Nigerian real estate investment opportunities.
       </Typography>
       <Box sx={{ my: 4, textAlign: 'center' }}>
         <img 
-          src="https://via.placeholder.com/600x250?text=REVA+Investment+Platform" 
-          alt="REVA Platform Welcome" 
+          src="https://via.placeholder.com/600x250?text=iREVA+Investment+Platform" 
+          alt="iREVA Platform Welcome" 
           style={{ maxWidth: '100%', borderRadius: '8px', border: '1px solid #e0e0e0' }}
         />
       </Box>
@@ -351,7 +351,7 @@ const RoleBasedWelcome: React.FC<RoleBasedWelcomeProps> = ({ open, onClose }) =>
     >
       <DialogTitle sx={{ pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">
-          {isAdmin ? 'Admin Onboarding' : 'Welcome to REVA'}
+          {isAdmin ? 'Admin Onboarding' : 'Welcome to iREVA'}
         </Typography>
         <IconButton onClick={onClose} size="small">
           <X size={20} />
