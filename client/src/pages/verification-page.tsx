@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { PhoneVerificationForm } from "@/components/auth/PhoneVerification";
@@ -170,14 +170,18 @@ export default function VerificationPage() {
                   Congratulations! Your account has been fully verified. You now have access to all features of iREVA, including investment opportunities.
                 </p>
                 <div className="flex flex-col md:flex-row gap-4">
-                  <Button variant="default" className="flex items-center" href="/dashboard">
-                    Go to Dashboard
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" className="flex items-center" href="/properties">
-                    Browse Investment Properties
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                  <Link href="/dashboard">
+                    <Button variant="default" className="flex items-center">
+                      Go to Dashboard
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href="/properties">
+                    <Button variant="outline" className="flex items-center">
+                      Browse Investment Properties
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </CardContent>

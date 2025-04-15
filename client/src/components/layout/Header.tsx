@@ -69,15 +69,26 @@ export default function Header() {
                 </a>
               </Link>
               {user && (
-                <Link href="/community">
-                  <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                    location === "/community" 
-                      ? "border-primary text-primary" 
-                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                  }`}>
-                    Community
-                  </a>
-                </Link>
+                <>
+                  <Link href="/community">
+                    <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      location === "/community" 
+                        ? "border-primary text-primary" 
+                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    }`}>
+                      Community
+                    </a>
+                  </Link>
+                  <Link href="/verification">
+                    <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      location === "/verification" 
+                        ? "border-primary text-primary" 
+                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    }`}>
+                      Verification
+                    </a>
+                  </Link>
+                </>
               )}
             </nav>
           </div>
@@ -88,6 +99,11 @@ export default function Header() {
                   <Button variant="outline" size="sm" className="hidden md:inline-flex mr-3 text-primary">
                     <Building className="h-4 w-4 mr-2" />
                     Dashboard
+                  </Button>
+                </Link>
+                <Link href="/verification">
+                  <Button variant="outline" size="sm" className="hidden md:inline-flex mr-3">
+                    Verify Account
                   </Button>
                 </Link>
                 <Button 

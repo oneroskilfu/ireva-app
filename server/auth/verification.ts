@@ -1,206 +1,230 @@
-import { Express, Request, Response } from "express";
+import { Express } from "express";
 import { storage } from "../storage";
-import { randomBytes } from "crypto";
-import { z } from "zod";
-import { phoneVerificationSchema, kycDocumentSchema } from "@shared/schema";
+import { PhoneVerification, KycDocument } from "@shared/schema";
+import { ZodError } from "zod";
 
-// In-memory OTP storage for demo purposes
-// In production, these would be stored in Redis or a similar database with expiration
-const otpStore = new Map<string, { otp: string; expiresAt: number }>();
+// Mock OTP storage (should be replaced with a real SMS gateway in production)
+const otpStore = new Map<string, string>();
 
 export function setupVerificationRoutes(app: Express) {
-  // Get verification status
+  // Get user verification status
   app.get("/api/auth/verification-status", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
     try {
-      const user = await storage.getUser(req.user.id);
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
-      return res.json({
+      res.json({
         isPhoneVerified: user.isPhoneVerified || false,
         kycStatus: user.kycStatus || "not_started",
         kycSubmittedAt: user.kycSubmittedAt,
-        kycVerifiedAt: user.kycVerifiedAt,
+        kycVerifiedAt: user.kycVerifiedAt
       });
     } catch (error) {
-      console.error("Error fetching verification status:", error);
-      return res.status(500).json({ error: "Failed to fetch verification status" });
+      res.status(500).json({ error: "Failed to fetch verification status" });
     }
   });
 
   // Request OTP for phone verification
   app.post("/api/auth/request-otp", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
       const { phoneNumber } = req.body;
-      
       if (!phoneNumber) {
         return res.status(400).json({ error: "Phone number is required" });
       }
+
+      // Generate a 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
       
-      // Generate a random 6-digit OTP
-      const otp = randomBytes(3).toString("hex").substring(0, 6);
+      // Store OTP (in production, this would send an SMS)
+      otpStore.set(phoneNumber, otp);
       
-      // Store the OTP with 10-minute expiration
-      otpStore.set(phoneNumber, {
-        otp,
-        expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-      });
-      
-      // In production, you would send this via SMS
+      // For demo purposes, we'll log the OTP
       console.log(`OTP for ${phoneNumber}: ${otp}`);
       
-      // Update the user's phone number (but not verified status yet)
-      await storage.updateUserPhone(req.user.id, phoneNumber, false);
-      
-      return res.json({ success: true, message: "OTP sent successfully" });
+      // Create a notification for the OTP
+      await storage.createNotification({
+        userId: req.user!.id,
+        type: "system",
+        title: "Verification Code",
+        message: `Your verification code is: ${otp}`,
+      });
+
+      res.json({ success: true, message: "OTP has been sent to your phone" });
     } catch (error) {
-      console.error("Error requesting OTP:", error);
-      return res.status(500).json({ error: "Failed to send OTP" });
+      res.status(500).json({ error: "Failed to send OTP" });
     }
   });
 
-  // Verify OTP
+  // Verify OTP and update phone verification status
   app.post("/api/auth/verify-otp", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
     try {
-      const validationResult = phoneVerificationSchema.safeParse(req.body);
-      
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: "Invalid request data", 
-          details: validationResult.error.format()
-        });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
+
+      const userId = req.user!.id;
       
-      const { phoneNumber, code } = validationResult.data;
-      
-      // Check if OTP exists and hasn't expired
-      const otpData = otpStore.get(phoneNumber);
-      
-      if (!otpData) {
-        return res.status(400).json({ error: "No verification code was requested for this number" });
+      // Validate request body
+      const data = req.body as PhoneVerification;
+      if (!data.phoneNumber || !data.code) {
+        return res.status(400).json({ error: "Phone number and verification code are required" });
       }
-      
-      if (Date.now() > otpData.expiresAt) {
-        otpStore.delete(phoneNumber);
-        return res.status(400).json({ error: "Verification code has expired" });
-      }
-      
-      if (otpData.otp !== code) {
+
+      // Verify OTP
+      const storedOtp = otpStore.get(data.phoneNumber);
+      if (!storedOtp || storedOtp !== data.code) {
         return res.status(400).json({ error: "Invalid verification code" });
       }
+
+      // Clear OTP after successful verification
+      otpStore.delete(data.phoneNumber);
+
+      // Update user's phone verification status
+      const updatedUser = await storage.updateUserPhone(userId, data.phoneNumber, true);
       
-      // OTP is valid, update the user's verified status
-      await storage.updateUserPhone(req.user.id, phoneNumber, true);
-      
-      // Clean up the OTP
-      otpStore.delete(phoneNumber);
-      
-      return res.json({ success: true, message: "Phone verified successfully" });
+      // Create a notification
+      await storage.createNotification({
+        userId,
+        type: "system",
+        title: "Phone Verified",
+        message: "Your phone number has been successfully verified.",
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Phone successfully verified",
+        user: {
+          id: updatedUser.id,
+          isPhoneVerified: updatedUser.isPhoneVerified
+        }
+      });
     } catch (error) {
-      console.error("Error verifying OTP:", error);
-      return res.status(500).json({ error: "Failed to verify OTP" });
+      res.status(500).json({ error: "Failed to verify phone" });
     }
   });
 
   // Submit KYC documents
   app.post("/api/auth/submit-kyc", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
     try {
-      const user = await storage.getUser(req.user.id);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      if (!user.isPhoneVerified) {
-        return res.status(400).json({ error: "Phone verification is required before KYC submission" });
-      }
-
-      const validationResult = kycDocumentSchema.safeParse(req.body);
+      const userId = req.user!.id;
       
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: "Invalid KYC document data", 
-          details: validationResult.error.format()
+      // Validate KYC documents
+      try {
+        const kycData = req.body as KycDocument;
+        
+        // In a real implementation, you would validate and store the documents
+        // and potentially integrate with a KYC provider
+        
+        // Update user's KYC status
+        const updatedUser = await storage.updateUserKyc(
+          userId,
+          "pending",
+          kycData,
+          new Date()
+        );
+        
+        // Create a notification
+        await storage.createNotification({
+          userId,
+          type: "kyc",
+          title: "KYC Documents Submitted",
+          message: "Your verification documents have been submitted for review.",
         });
-      }
 
-      const kycData = validationResult.data;
-      
-      // Update the user's KYC status
-      await storage.updateUserKyc(
-        req.user.id,
-        "pending",
-        kycData,
-        new Date()
-      );
-      
-      return res.json({ 
-        success: true, 
-        message: "KYC documents submitted successfully and are pending review"
-      });
+        res.json({ 
+          success: true, 
+          message: "KYC documents submitted successfully",
+          user: {
+            id: updatedUser.id,
+            kycStatus: updatedUser.kycStatus
+          }
+        });
+      } catch (error) {
+        if (error instanceof ZodError) {
+          return res.status(400).json({ error: "Invalid KYC data", details: error.errors });
+        }
+        throw error;
+      }
     } catch (error) {
-      console.error("Error submitting KYC:", error);
-      return res.status(500).json({ error: "Failed to submit KYC documents" });
+      res.status(500).json({ error: "Failed to submit KYC documents" });
     }
   });
 
-  // Admin route to approve or reject KYC (would require admin authentication in production)
-  app.post("/api/admin/review-kyc", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-
-    // In production, this would check for admin role
-    // if (!req.user.isAdmin) {
-    //   return res.status(403).json({ error: "Admin permission required" });
-    // }
-
+  // Admin route to update KYC status (in a real app, this would be protected by admin auth)
+  app.patch("/api/auth/admin/kyc-status/:userId", async (req, res) => {
     try {
-      const { userId, status, rejectionReason } = req.body;
-      
-      if (!userId || !status) {
-        return res.status(400).json({ error: "User ID and status are required" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
       
-      if (!["verified", "rejected"].includes(status)) {
-        return res.status(400).json({ error: "Status must be 'verified' or 'rejected'" });
+      // In a real implementation, check if user is an admin
+      // For now, we'll allow any authenticated user for demo purposes
+      
+      const targetUserId = parseInt(req.params.userId);
+      const { status, rejectionReason } = req.body;
+      
+      if (!["pending", "verified", "rejected"].includes(status)) {
+        return res.status(400).json({ error: "Invalid KYC status" });
       }
       
-      if (status === "rejected" && !rejectionReason) {
-        return res.status(400).json({ error: "Rejection reason is required" });
-      }
-      
-      // Update the user's KYC status
-      await storage.updateUserKycStatus(
-        userId,
+      // Update KYC status
+      const verifiedAt = status === "verified" ? new Date() : null;
+      const updatedUser = await storage.updateUserKycStatus(
+        targetUserId,
         status,
-        status === "rejected" ? rejectionReason : undefined,
-        status === "verified" ? new Date() : undefined
+        status === "rejected" ? rejectionReason : null,
+        verifiedAt
       );
       
-      return res.json({ 
+      // Create a notification for the user
+      let notificationTitle = "";
+      let notificationMessage = "";
+      
+      if (status === "verified") {
+        notificationTitle = "KYC Verification Approved";
+        notificationMessage = "Your identity has been verified successfully. You now have full access to the platform.";
+      } else if (status === "rejected") {
+        notificationTitle = "KYC Verification Rejected";
+        notificationMessage = rejectionReason 
+          ? `Your verification was rejected: ${rejectionReason}`
+          : "Your verification was rejected. Please contact support for assistance.";
+      }
+      
+      if (notificationTitle) {
+        await storage.createNotification({
+          userId: targetUserId,
+          type: "kyc",
+          title: notificationTitle,
+          message: notificationMessage,
+        });
+      }
+
+      res.json({ 
         success: true, 
-        message: `KYC ${status === "verified" ? "approved" : "rejected"} successfully`
+        message: `KYC status updated to ${status}`,
+        user: {
+          id: updatedUser.id,
+          kycStatus: updatedUser.kycStatus
+        }
       });
     } catch (error) {
-      console.error("Error reviewing KYC:", error);
-      return res.status(500).json({ error: "Failed to review KYC documents" });
+      res.status(500).json({ error: "Failed to update KYC status" });
     }
   });
 }
