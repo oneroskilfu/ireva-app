@@ -1771,7 +1771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Register API routes
-  app.use('/api/auth', authRoutes);
+  app.use('/api/auth', authRouter);
   app.use('/api/users', usersRoutes);
   app.use('/api/projects', projectsRoutes);
   app.use('/api/properties', propertiesRoutes);

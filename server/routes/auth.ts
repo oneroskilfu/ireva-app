@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.isAdmin ? 'admin' : 'investor' // Map isAdmin to role for frontend
     };
     
     // Sign token
@@ -54,7 +54,7 @@ router.post('/login', async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email || '',
-            role: user.role
+            role: user.isAdmin ? 'admin' : 'investor' // Map isAdmin to role for frontend
           }
         });
       }
@@ -90,7 +90,7 @@ router.post('/register', async (req, res) => {
       username,
       email: email || '',
       password: hashedPassword,
-      role: 'investor' // Default role
+      isAdmin: false // Default is not admin
     });
     
     // Create JWT payload
@@ -98,7 +98,7 @@ router.post('/register', async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: 'investor' // Default role for new users
     };
     
     // Sign token
@@ -116,7 +116,7 @@ router.post('/register', async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email || '',
-            role: user.role
+            role: 'investor' // Default role for frontend
           }
         });
       }
@@ -152,7 +152,7 @@ router.get('/verify', async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email || '',
-        role: user.role
+        role: user.isAdmin ? 'admin' : 'investor' // Map isAdmin to role for frontend
       }
     });
   } catch (error) {
