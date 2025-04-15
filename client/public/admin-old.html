@@ -1,0 +1,3308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    .chart-container {
+      width: 100%;
+      height: 300px;
+    }
+    
+    /* Preserve original styles that are still needed */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    /* Dashboard */
+    .dashboard-container {
+      padding: 1rem 0 2rem;
+    }
+    
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .dashboard-title {
+      margin: 0;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+    }
+    
+    .admin-badge {
+      background-color: #4f46e5;
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+    }
+    
+    .logout-button {
+      padding: 0.5rem 1rem;
+      background-color: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background-color 0.2s;
+    }
+    
+    .logout-button:hover {
+      background-color: #dc2626;
+    }
+    
+    .welcome-card {
+      background-color: white;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #4f46e5;
+    }
+    
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+      background-color: white;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background-color: #4f46e5;
+    }
+    
+    .stat-title {
+      color: #64748b;
+      font-size: 0.875rem;
+      margin: 0 0 0.5rem 0;
+    }
+    
+    .stat-value {
+      color: #1e293b;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .tab {
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      font-weight: 500;
+      color: #64748b;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .tab:hover {
+      color: #4f46e5;
+    }
+    
+    .tab.active {
+      color: #4f46e5;
+      border-bottom-color: #4f46e5;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Admin panel components */
+    .admin-panel {
+      background-color: white;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+    }
+    
+    .section-title {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+    }
+    
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      background-color: #4f46e5;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+    
+    th {
+      text-align: left;
+      padding: 0.75rem;
+      background-color: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 600;
+      color: #64748b;
+    }
+    
+    td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    /* Badges and status indicators */
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .role-admin {
+      background-color: #818cf8;
+      color: white;
+    }
+    
+    .role-investor {
+      background-color: #34d399;
+      color: white;
+    }
+    
+    .role-developer {
+      background-color: #f59e0b;
+      color: white;
+    }
+    
+    .status-active {
+      background-color: #34d399;
+      color: white;
+    }
+    
+    .status-pending {
+      background-color: #fbbf24;
+      color: white;
+    }
+    
+    .status-inactive {
+      background-color: #ef4444;
+      color: white;
+    }
+    
+    .kyc-verified {
+      background-color: #34d399;
+      color: white;
+    }
+    
+    .kyc-pending {
+      background-color: #fbbf24;
+      color: white;
+    }
+    
+    .kyc-rejected {
+      background-color: #ef4444;
+      color: white;
+    }
+    
+    /* Form elements */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: #4f46e5;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #4338ca;
+    }
+    
+    .btn-success {
+      background-color: #10b981;
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background-color: #059669;
+    }
+    
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    
+    .btn-warning {
+      background-color: #f59e0b;
+      color: white;
+    }
+    
+    .btn-warning:hover {
+      background-color: #d97706;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    /* Filters & search */
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .filter-group label {
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+    
+    .filter-group select {
+      width: auto;
+    }
+    
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+    
+    .search-box input {
+      padding-left: 2rem;
+    }
+    
+    .search-icon {
+      position: absolute;
+      left: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
+    
+    /* Action buttons grid */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .action-card {
+      background-color: white;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #4f46e5;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    
+    .action-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .action-title {
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+    }
+    
+    .action-description {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin: 0;
+    }
+    
+    /* Card grid for property items */
+    .property-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    
+    .property-card {
+      background-color: white;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .property-image {
+      height: 150px;
+      background-color: #f1f5f9;
+      position: relative;
+    }
+    
+    .property-image-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+    }
+    
+    .property-details {
+      padding: 1rem;
+    }
+    
+    .property-title {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+    }
+    
+    .property-info {
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .property-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      background-color: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s linear 0.3s, opacity 0.3s;
+    }
+    
+    .modal-backdrop.active {
+      visibility: visible;
+      opacity: 1;
+      transition-delay: 0s;
+    }
+    
+    .modal {
+      background-color: white;
+      border-radius: 0.5rem;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+    
+    .modal-header {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .modal-title {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #64748b;
+    }
+    
+    .modal-body {
+      padding: 1rem;
+    }
+    
+    .modal-footer {
+      padding: 1rem;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 0.5rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Login required message */
+    .login-required {
+      text-align: center;
+      padding: 3rem;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .login-button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: #4f46e5;
+      color: white;
+      text-decoration: none;
+      border-radius: 0.25rem;
+      margin-top: 1rem;
+      transition: background-color 0.2s;
+    }
+    
+    .login-button:hover {
+      background-color: #4338ca;
+    }
+    
+    /* Notifications */
+    .notification {
+      padding: 0.75rem 1rem;
+      border-radius: 0.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .notification-success {
+      background-color: #d1fae5;
+      color: #065f46;
+      border-left: 4px solid #10b981;
+    }
+    
+    .notification-warning {
+      background-color: #fef3c7;
+      color: #92400e;
+      border-left: 4px solid #f59e0b;
+    }
+    
+    .notification-error {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      border-left: 4px solid #ef4444;
+    }
+    
+    .notification-message {
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="flex min-h-screen">
+    <!-- Left Sidebar -->
+    <div class="w-64 bg-[#553627] text-white min-h-screen">
+      <div class="p-4 flex items-center space-x-3">
+        <div class="w-10 h-10 bg-gray-400 rounded-full"></div>
+        <h1 class="text-xl font-semibold">Admin</h1>
+      </div>
+      
+      <nav class="mt-6">
+        <a href="#" class="dashboard-link flex items-center px-4 py-3 bg-[#664332] text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+          </svg>
+          Dashboard
+        </a>
+        
+        <a href="#" class="users-link flex items-center px-4 py-3 text-white hover:bg-[#664332] transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+          </svg>
+          Users
+        </a>
+        
+        <a href="#" class="properties-link flex items-center px-4 py-3 text-white hover:bg-[#664332] transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+          </svg>
+          Properties
+        </a>
+        
+        <a href="#" class="kyc-link flex items-center px-4 py-3 text-white hover:bg-[#664332] transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a3 3 0 006 0h3a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm2.5 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm2.45 4a2.5 2.5 0 10-4.9 0h4.9zM12 9a1 1 0 100 2h3a1 1 0 100-2h-3zm-1 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clipRule="evenodd" />
+          </svg>
+          KYC Verification
+        </a>
+        
+        <a href="#" class="roi-link flex items-center px-4 py-3 text-white hover:bg-[#664332] transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+          </svg>
+          ROI Tracking
+        </a>
+        
+        <a href="#" class="settings-link flex items-center px-4 py-3 text-white hover:bg-[#664332] transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+          </svg>
+          Settings
+        </a>
+        
+        <button id="logout-btn" class="w-full flex items-center px-4 py-3 text-white hover:bg-[#664332] transition-colors mt-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm9 14H5a1 1 0 01-1-1V5h8v11zm1-11.5a.5.5 0 00-.5.5v1a.5.5 0 001 0V6a.5.5 0 00-.5-.5zm0 3a.5.5 0 00-.5.5v1a.5.5 0 001 0V9a.5.5 0 00-.5-.5z" clipRule="evenodd" />
+          </svg>
+          Logout
+        </button>
+      </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1" id="app">
+      <!-- Header with Title, Notification, and Profile -->
+      <header class="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        
+        <div class="flex items-center space-x-4">
+          <button class="p-2 rounded-full hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </button>
+          
+          <div class="flex items-center space-x-2">
+            <div class="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
+              <img src="https://via.placeholder.com/40" alt="Admin" class="w-full h-full object-cover" />
+            </div>
+            <span class="font-medium">Admin</span>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Content will be loaded dynamically -->
+      <main class="p-6">
+        <div class="login-required">
+          <h2>Loading...</h2>
+          <p>Please wait while we check your authentication status.</p>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <!-- Modal template for property form -->
+  <div id="propertyModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Add New Property</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="propertyForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="property-name">Property Name</label>
+              <input type="text" id="property-name" name="name" required>
+            </div>
+            <div class="form-group">
+              <label for="property-type">Property Type</label>
+              <select id="property-type" name="type" required>
+                <option value="">Select Type</option>
+                <option value="Residential">Residential</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Industrial">Industrial</option>
+                <option value="Mixed-Use">Mixed-Use</option>
+                <option value="Land">Land</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="property-location">Location</label>
+              <input type="text" id="property-location" name="location" required>
+            </div>
+            <div class="form-group">
+              <label for="property-price">Total Value (₦)</label>
+              <input type="number" id="property-price" name="price" min="1000000" step="100000" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="property-roi">Expected ROI (%)</label>
+              <input type="number" id="property-roi" name="roi" min="1" max="50" step="0.1" required>
+            </div>
+            <div class="form-group">
+              <label for="property-duration">Investment Duration (years)</label>
+              <input type="number" id="property-duration" name="duration" min="1" max="10" value="5" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="property-description">Description</label>
+            <textarea id="property-description" name="description" rows="3" required></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="property-developer">Developer</label>
+              <select id="property-developer" name="developerId">
+                <option value="">Select Developer</option>
+                <!-- Developers will be populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="property-status">Status</label>
+              <select id="property-status" name="status" required>
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger modal-close-btn">Cancel</button>
+        <button class="btn btn-primary" id="savePropertyBtn">Save Property</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- User Edit Modal -->
+  <div id="userEditModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit User</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="userEditForm">
+          <input type="hidden" id="edit-user-id" name="userId">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-user-name">Name</label>
+              <input type="text" id="edit-user-name" name="name" required>
+            </div>
+            <div class="form-group">
+              <label for="edit-user-email">Email</label>
+              <input type="email" id="edit-user-email" name="email" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-user-role">Role</label>
+              <select id="edit-user-role" name="role" required>
+                <option value="investor">Investor</option>
+                <option value="developer">Developer</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-user-status">Status</label>
+              <select id="edit-user-status" name="active" required>
+                <option value="true">Active</option>
+                <option value="false">Disabled</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="edit-user-kyc">KYC Status</label>
+            <select id="edit-user-kyc" name="kycStatus">
+              <option value="Verified">Verified</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger modal-close-btn">Cancel</button>
+        <button class="btn btn-primary" id="saveUserBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ROI Distribution Modal -->
+  <div id="roiDistributionModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Distribute ROI</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="roiDistributionForm">
+          <div class="form-group">
+            <label for="roi-property">Property</label>
+            <select id="roi-property" name="propertyId" required>
+              <option value="">Select Property</option>
+              <!-- Properties will be populated dynamically -->
+            </select>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="roi-amount">Distribution Amount (%)</label>
+              <input type="number" id="roi-amount" name="amount" min="0.1" max="100" step="0.1" required>
+            </div>
+            <div class="form-group">
+              <label for="roi-date">Distribution Date</label>
+              <input type="date" id="roi-date" name="date" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="roi-notes">Notes</label>
+            <textarea id="roi-notes" name="notes" rows="2"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger modal-close-btn">Cancel</button>
+        <button class="btn btn-primary" id="distributeRoiBtn">Distribute ROI</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Utility functions
+    function formatCurrency(amount) {
+      if (amount >= 1000000) {
+        return `₦${(amount / 1000000).toFixed(1)}M`;
+      } else if (amount >= 1000) {
+        return `₦${(amount / 1000).toFixed(1)}K`;
+      }
+      return `₦${amount.toFixed(2)}`;
+    }
+    
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return new Intl.DateTimeFormat('en-NG').format(date);
+    }
+    
+    // Mock data initialization
+    const mockUsers = [
+      { id: 1, name: 'Admin User', username: 'admin', email: 'admin@ireva.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 2, name: 'John Okafor', username: 'johno', email: 'john@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 2400000 },
+      { id: 3, name: 'Mary Adebayo', username: 'marya', email: 'mary@example.com', role: 'investor', active: true, kycStatus: 'Pending', balance: 850000 },
+      { id: 4, name: 'David Okeke', username: 'davido', email: 'david@example.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 5, name: 'Sarah Nnamdi', username: 'sarahn', email: 'sarah@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 3700000 },
+      { id: 6, name: 'Peter Johnson', username: 'peterj', email: 'peter@example.com', role: 'investor', active: false, kycStatus: 'Rejected', balance: 0 },
+      { id: 7, name: 'Chioma Eze', username: 'chiomae', email: 'chioma@example.com', role: 'developer', active: true, kycStatus: 'Verified', balance: 0 },
+      { id: 8, name: 'Emeka Obi', username: 'emekao', email: 'emeka@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 1200000 }
+    ];
+    
+    const mockProperties = [
+      { id: 1, name: 'Lekki Gardens Villa', type: 'Residential', location: 'Lekki, Lagos', price: 72600000, roi: 18, duration: 5, developer: 'Lekki Homes Ltd', status: 'Active', investments: 72600000, description: 'Luxury villa in the heart of Lekki Phase 1' },
+      { id: 2, name: 'Victoria Island Commercial', type: 'Commercial', location: 'Victoria Island, Lagos', price: 134200000, roi: 22, duration: 5, developer: 'Prime Properties', status: 'Active', investments: 134200000, description: 'Prime commercial space with high rental yield' },
+      { id: 3, name: 'Abuja Heights Apartments', type: 'Residential', location: 'Maitama, Abuja', price: 56400000, roi: 15, duration: 5, developer: 'Abuja Realty', status: 'Active', investments: 56400000, description: 'Modern apartment complex in upscale Maitama' },
+      { id: 4, name: 'Port Harcourt Residences', type: 'Mixed-Use', location: 'GRA, Port Harcourt', price: 45000000, roi: 14, duration: 5, developer: 'Rivers Estate Developers', status: 'Pending', investments: 0, description: 'Mixed-use development in Port Harcourt GRA' },
+      { id: 5, name: 'Ikeja Commercial Center', type: 'Commercial', location: 'Ikeja, Lagos', price: 95000000, roi: 20, duration: 5, developer: 'Lagos Commercial Developers', status: 'Active', investments: 67500000, description: 'Office space in the business district of Ikeja' }
+    ];
+    
+    const mockInvestments = [
+      { id: 1, userId: 2, propertyId: 1, amount: 1000000, date: '2023-10-15', status: 'Active' },
+      { id: 2, userId: 3, propertyId: 1, amount: 500000, date: '2023-10-20', status: 'Active' },
+      { id: 3, userId: 5, propertyId: 1, amount: 2000000, date: '2023-11-05', status: 'Active' },
+      { id: 4, userId: 2, propertyId: 2, amount: 1400000, date: '2023-11-10', status: 'Active' },
+      { id: 5, userId: 5, propertyId: 2, amount: 1700000, date: '2023-11-15', status: 'Active' },
+      { id: 6, userId: 8, propertyId: 3, amount: 1200000, date: '2023-12-01', status: 'Active' },
+      { id: 7, userId: 3, propertyId: 5, amount: 350000, date: '2024-01-05', status: 'Active' }
+    ];
+    
+    const mockROI = [
+      { id: 1, propertyId: 1, percentage: 4.5, amount: 3267000, date: '2024-04-15', status: 'Pending', notes: 'Q2 2024 distribution' },
+      { id: 2, propertyId: 2, percentage: 5.5, amount: 7381000, date: '2024-05-10', status: 'Pending', notes: 'Q2 2024 distribution' },
+      { id: 3, propertyId: 3, percentage: 3.75, amount: 2115000, date: '2024-06-01', status: 'Pending', notes: 'Q2 2024 distribution' }
+    ];
+    
+    const mockDevelopers = [
+      { id: 1, name: 'Lekki Homes Ltd', contact: 'info@lekkihomes.com', properties: 1 },
+      { id: 2, name: 'Prime Properties', contact: 'contact@primeproperties.ng', properties: 1 },
+      { id: 3, name: 'Abuja Realty', contact: 'info@abujarealty.com', properties: 1 },
+      { id: 4, name: 'Rivers Estate Developers', contact: 'info@red.com.ng', properties: 1 },
+      { id: 5, name: 'Lagos Commercial Developers', contact: 'info@lagoscommercial.com', properties: 1 }
+    ];
+    
+    // Authentication Check
+    function checkAuth() {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      if (!token || !user) {
+        window.location.href = "/login-page.html";
+        return;
+      }
+      
+      try {
+        const userData = JSON.parse(user);
+        const isAdmin = userData.isAdmin || userData.role === 'admin';
+        
+        if (!isAdmin) {
+          window.location.href = "/unauthorized.html";
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        window.location.href = "/login-page.html";
+      }
+    }
+    
+    // Notification function
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.innerHTML = `
+        <div class="notification-title">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
+        <div class="notification-message">${message}</div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      // Show notification
+      setTimeout(() => {
+        notification.classList.add('active');
+      }, 10);
+      
+      // Hide and remove notification
+      setTimeout(() => {
+        notification.classList.remove('active');
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 300);
+      }, 5000);
+    }
+    
+    // Logout functionality
+    document.getElementById('logout-btn').addEventListener('click', function() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = "/";
+    });
+    
+    // Dashboard Content function
+    function loadDashboardContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Dashboard';
+      
+      // Total investors, total investments, total ROI paid, etc.
+      const totalInvestors = mockUsers.filter(user => user.role === 'investor').length;
+      const totalInvestment = mockInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+      const totalROIPaid = mockROI.reduce((sum, roi) => 
+        roi.status === 'Completed' ? sum + roi.amount : sum, 0);
+      const pendingKYC = mockUsers.filter(user => user.kycStatus === 'Pending').length;
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Investors</h2>
+                <p class="text-2xl font-bold text-gray-800">${totalInvestors}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+12%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Total Investments</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(totalInvestment)}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+8.5%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">ROI Paid</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(totalROIPaid)}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-green-500">+5.2%</span> from last month
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Pending KYC</h2>
+                <p class="text-2xl font-bold text-gray-800">${pendingKYC}</p>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="text-yellow-500">+2</span> new submissions
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent activities -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-800">Recent Investments</h2>
+            </div>
+            <div class="p-4">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    ${mockInvestments.slice(0, 5).map(inv => {
+                      const user = mockUsers.find(u => u.id === inv.userId);
+                      const property = mockProperties.find(p => p.id === inv.propertyId);
+                      return `
+                        <tr>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${user ? user.name : 'Unknown'}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${property ? property.name : 'Unknown'}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${formatCurrency(inv.amount)}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">${formatDate(inv.date)}</div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-800">Properties Overview</h2>
+            </div>
+            <div class="p-4">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    ${mockProperties.map(prop => {
+                      const progress = prop.price > 0 ? (prop.investments / prop.price) * 100 : 0;
+                      return `
+                        <tr>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${prop.name}</div>
+                            <div class="text-xs text-gray-500">${prop.location}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${prop.type}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${formatCurrency(prop.investments)}</div>
+                            <div class="text-xs text-gray-500">of ${formatCurrency(prop.price)}</div>
+                          </td>
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                              <div class="bg-[#553627] h-2.5 rounded-full" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${Math.round(progress)}% Complete</div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Properties Management Content
+    function loadPropertiesContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Properties Management';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Properties</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New Property</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- Search and filter controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <div class="relative flex-grow">
+                <input type="text" placeholder="Search properties..." class="w-full px-4 py-2 pl-10 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex gap-4">
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Types</option>
+                  <option value="Residential">Residential</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Mixed-Use">Mixed-Use</option>
+                  <option value="Land">Land</option>
+                </select>
+                
+                <select class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Properties Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              ${mockProperties.map(prop => {
+                const progress = prop.price > 0 ? (prop.investments / prop.price) * 100 : 0;
+                return `
+                  <div class="bg-white rounded-lg border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div class="h-48 bg-gray-200 relative">
+                      <div class="absolute top-2 right-2">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                          prop.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                          prop.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }">
+                          ${prop.status}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div class="p-4">
+                      <h3 class="text-lg font-semibold text-gray-800 mb-1">${prop.name}</h3>
+                      <p class="text-sm text-gray-500 mb-2">${prop.location}</p>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">Type:</span>
+                        <span class="text-sm font-medium">${prop.type}</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">Price:</span>
+                        <span class="text-sm font-medium">${formatCurrency(prop.price)}</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm text-gray-600">ROI:</span>
+                        <span class="text-sm font-medium">${prop.roi}%</span>
+                      </div>
+                      
+                      <div class="flex justify-between mb-3">
+                        <span class="text-sm text-gray-600">Duration:</span>
+                        <span class="text-sm font-medium">${prop.duration} years</span>
+                      </div>
+                      
+                      <div class="mb-3">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                          <div class="bg-[#553627] h-2 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1 text-xs text-gray-500">
+                          <span>Funded: ${formatCurrency(prop.investments)}</span>
+                          <span>${Math.round(progress)}%</span>
+                        </div>
+                      </div>
+                      
+                      <div class="flex gap-2 mt-4">
+                        <button class="flex-1 bg-[#553627] text-white px-3 py-1.5 rounded hover:bg-[#664332] text-sm">Edit</button>
+                        <button class="flex-1 border border-[#553627] text-[#553627] px-3 py-1.5 rounded hover:bg-[#553627] hover:text-white text-sm">Details</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Users Management Content
+    function loadUsersContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Users Management';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Users</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New User</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- Search and filter controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+              <div class="relative flex-grow">
+                <input type="text" id="user-search" placeholder="Search users..." class="w-full px-4 py-2 pl-10 pr-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="flex gap-4">
+                <select id="role-filter" class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="investor">Investor</option>
+                  <option value="developer">Developer</option>
+                </select>
+                
+                <select id="status-filter" class="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  <option value="">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Users Table -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+                  ${mockUsers.map(user => {
+                    let roleBadgeClass = 'bg-blue-100 text-blue-800';
+                    if (user.role === 'admin') roleBadgeClass = 'bg-purple-100 text-purple-800';
+                    if (user.role === 'developer') roleBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    
+                    let kycBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if (user.kycStatus === 'Verified') kycBadgeClass = 'bg-green-100 text-green-800';
+                    if (user.kycStatus === 'Rejected') kycBadgeClass = 'bg-red-100 text-red-800';
+                    
+                    return `
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">${user.name}</div>
+                              <div class="text-xs text-gray-500">@${user.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${user.email}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${roleBadgeClass}">
+                            ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${user.active ? 'Active' : 'Disabled'}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${kycBadgeClass}">
+                            ${user.kycStatus}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatCurrency(user.balance)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 rounded px-2 py-1 text-xs">Edit</button>
+                            <button class="text-${user.active ? 'red' : 'green'}-600 hover:text-${user.active ? 'red' : 'green'}-900 bg-${user.active ? 'red' : 'green'}-100 hover:bg-${user.active ? 'red' : 'green'}-200 rounded px-2 py-1 text-xs">
+                              ${user.active ? 'Disable' : 'Enable'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // ROI Tracking Content
+    function loadROIContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'ROI Tracking';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Total ROI Paid</h2>
+                <p class="text-2xl font-bold text-gray-800">${formatCurrency(mockROI.reduce((sum, roi) => sum + roi.amount, 0))}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Average ROI</h2>
+                <p class="text-2xl font-bold text-gray-800">18.5%</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-[#553627]">
+            <div class="flex items-center mb-3">
+              <div class="p-3 rounded-full bg-[#553627] bg-opacity-10 mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#553627]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-gray-500 text-sm">Next Distribution</h2>
+                <p class="text-2xl font-bold text-gray-800">15 May</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- ROI Distributions -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">ROI Distributions</h2>
+            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">New Distribution</button>
+          </div>
+          
+          <div class="p-4">
+            <!-- ROI Table -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  ${mockROI.map(roi => {
+                    const property = mockProperties.find(p => p.id === roi.propertyId);
+                    
+                    let statusBadgeClass = 'bg-yellow-100 text-yellow-800';
+                    if (roi.status === 'Completed') statusBadgeClass = 'bg-green-100 text-green-800';
+                    if (roi.status === 'Failed') statusBadgeClass = 'bg-red-100 text-red-800';
+                    
+                    return `
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm font-medium text-gray-900">${property ? property.name : 'Unknown'}</div>
+                          <div class="text-xs text-gray-500">${property ? property.location : ''}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${roi.percentage}%</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatCurrency(roi.amount)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">${formatDate(roi.date)}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusBadgeClass}">
+                            ${roi.status}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-500">${roi.notes || 'No notes'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 rounded px-2 py-1 text-xs">Edit</button>
+                            ${roi.status === 'Pending' ? `
+                              <button class="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 rounded px-2 py-1 text-xs">Process</button>
+                            ` : ''}
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Property ROI Performance -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="p-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">Property ROI Performance</h2>
+          </div>
+          
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              ${mockProperties.slice(0, 4).map(prop => {
+                return `
+                  <div class="bg-white rounded-lg border shadow-sm p-4">
+                    <div class="flex justify-between items-center mb-4">
+                      <h3 class="text-md font-semibold text-gray-800">${prop.name}</h3>
+                      <span class="text-sm font-medium text-[#553627]">${prop.roi}% Target</span>
+                    </div>
+                    
+                    <div class="space-y-2">
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q1 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q2 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 60%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q3 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-gray-400 h-1.5 rounded-full" style="width: 0%"></div>
+                      </div>
+                      
+                      <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Q4 2024</span>
+                        <span class="text-sm font-medium">${(prop.roi / 4).toFixed(2)}%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-gray-400 h-1.5 rounded-full" style="width: 0%"></div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Settings Content
+    function loadSettingsContent() {
+      // Get reference to the main content area
+      const mainContent = document.querySelector('main');
+      
+      // Update header title
+      document.querySelector('header h1').textContent = 'Settings';
+      
+      // Generate content
+      mainContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Admin Profile Settings -->
+          <div class="md:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Admin Profile</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="flex flex-col md:flex-row gap-6">
+                  <div class="md:w-1/3 flex flex-col items-center">
+                    <div class="w-32 h-32 bg-gray-300 rounded-full overflow-hidden mb-4">
+                      <img src="https://via.placeholder.com/128" alt="Admin" class="w-full h-full object-cover" />
+                    </div>
+                    <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332] w-full mb-2">Change Photo</button>
+                    <button class="border border-[#553627] text-[#553627] px-4 py-2 rounded-md hover:bg-[#553627] hover:text-white w-full">Remove Photo</button>
+                  </div>
+                  
+                  <div class="md:w-2/3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" value="Admin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" value="User" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" value="admin@ireva.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                    </div>
+                    
+                    <div class="mb-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input type="text" value="+234 801 234 5678" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                    </div>
+                    
+                    <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Save Changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Security Settings -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">Security</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="mb-6">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Change Password</h3>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                  </div>
+                  
+                  <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Update Password</button>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-200">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Two-Factor Authentication</h3>
+                  
+                  <div class="flex items-center justify-between mb-4">
+                    <div>
+                      <p class="text-sm text-gray-700">Secure your account with two-factor authentication</p>
+                      <p class="text-xs text-gray-500 mt-1">When two-factor authentication is enabled, you will be prompted for a secure, random code during authentication.</p>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <span class="mr-3 text-sm font-medium text-gray-900">Off</span>
+                      <button type="button" class="bg-gray-200 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-0 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                      <span class="ml-3 text-sm font-medium text-gray-400">On</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- System Settings -->
+          <div class="md:col-span-1">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">System Settings</h2>
+              </div>
+              
+              <div class="p-6">
+                <div class="mb-6">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">Notifications</h3>
+                  
+                  <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">Email Notifications</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">KYC Alerts</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-gray-700">Investment Alerts</span>
+                      <button type="button" class="bg-[#553627] relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#553627] focus:ring-offset-2">
+                        <span class="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-200">
+                  <h3 class="text-md font-semibold text-gray-800 mb-4">App Settings</h3>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Currency</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      <option selected>Nigerian Naira (₦)</option>
+                      <option>US Dollar ($)</option>
+                      <option>Euro (€)</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+                      <option selected>DD/MM/YYYY</option>
+                      <option>MM/DD/YYYY</option>
+                      <option>YYYY-MM-DD</option>
+                    </select>
+                  </div>
+                  
+                  <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332] w-full">Save Settings</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
+      const appEl = document.getElementById('app');
+      
+      // Add click handlers for all sidebar links
+      document.querySelector('.dashboard-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load dashboard content
+        loadDashboardContent();
+      });
+      
+      document.querySelector('.users-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load users content
+        loadUsersContent();
+      });
+      
+      document.querySelector('.properties-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load properties content
+        loadPropertiesContent();
+      });
+      
+      document.querySelector('.kyc-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load KYC content
+        loadKYCVerificationContent();
+      });
+      
+      document.querySelector('.roi-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load ROI content
+        loadROIContent();
+      });
+      
+      document.querySelector('.settings-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Update active state
+        document.querySelectorAll('nav a').forEach(link => {
+          link.classList.remove('bg-[#664332]');
+          link.classList.add('hover:bg-[#664332]');
+        });
+        this.classList.add('bg-[#664332]');
+        this.classList.remove('hover:bg-[#664332]');
+        
+        // Load settings content
+        loadSettingsContent();
+      });
+      
+      // Load dashboard content by default
+      loadDashboardContent();
+      
+      // Mock data for demonstration
+      const mockUsers = [
+        { id: 1, name: 'Admin User', username: 'admin', email: 'admin@ireva.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+        { id: 2, name: 'John Okafor', username: 'johno', email: 'john@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 2400000 },
+        { id: 3, name: 'Mary Adebayo', username: 'marya', email: 'mary@example.com', role: 'investor', active: true, kycStatus: 'Pending', balance: 850000 },
+        { id: 4, name: 'David Okeke', username: 'davido', email: 'david@example.com', role: 'admin', active: true, kycStatus: 'Verified', balance: 0 },
+        { id: 5, name: 'Sarah Nnamdi', username: 'sarahn', email: 'sarah@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 3700000 },
+        { id: 6, name: 'Peter Johnson', username: 'peterj', email: 'peter@example.com', role: 'investor', active: false, kycStatus: 'Rejected', balance: 0 },
+        { id: 7, name: 'Chioma Eze', username: 'chiomae', email: 'chioma@example.com', role: 'developer', active: true, kycStatus: 'Verified', balance: 0 },
+        { id: 8, name: 'Emeka Obi', username: 'emekao', email: 'emeka@example.com', role: 'investor', active: true, kycStatus: 'Verified', balance: 1200000 }
+      ];
+      
+      const mockProperties = [
+        { id: 1, name: 'Lekki Gardens Villa', type: 'Residential', location: 'Lekki, Lagos', price: 72600000, roi: 18, duration: 5, developer: 'Lekki Homes Ltd', status: 'Active', investments: 72600000, description: 'Luxury villa in the heart of Lekki Phase 1' },
+        { id: 2, name: 'Victoria Island Commercial', type: 'Commercial', location: 'Victoria Island, Lagos', price: 134200000, roi: 22, duration: 5, developer: 'Prime Properties', status: 'Active', investments: 134200000, description: 'Prime commercial space with high rental yield' },
+        { id: 3, name: 'Abuja Heights Apartments', type: 'Residential', location: 'Maitama, Abuja', price: 56400000, roi: 15, duration: 5, developer: 'Abuja Realty', status: 'Active', investments: 56400000, description: 'Modern apartment complex in upscale Maitama' },
+        { id: 4, name: 'Port Harcourt Residences', type: 'Mixed-Use', location: 'GRA, Port Harcourt', price: 45000000, roi: 14, duration: 5, developer: 'Rivers Estate Developers', status: 'Pending', investments: 0, description: 'Mixed-use development in Port Harcourt GRA' },
+        { id: 5, name: 'Ikeja Commercial Center', type: 'Commercial', location: 'Ikeja, Lagos', price: 95000000, roi: 20, duration: 5, developer: 'Lagos Commercial Developers', status: 'Active', investments: 67500000, description: 'Office space in the business district of Ikeja' }
+      ];
+      
+      const mockInvestments = [
+        { id: 1, userId: 2, propertyId: 1, amount: 1000000, date: '2023-10-15', status: 'Active' },
+        { id: 2, userId: 3, propertyId: 1, amount: 500000, date: '2023-10-20', status: 'Active' },
+        { id: 3, userId: 5, propertyId: 1, amount: 2000000, date: '2023-11-05', status: 'Active' },
+        { id: 4, userId: 2, propertyId: 2, amount: 1400000, date: '2023-11-10', status: 'Active' },
+        { id: 5, userId: 5, propertyId: 2, amount: 1700000, date: '2023-11-15', status: 'Active' },
+        { id: 6, userId: 8, propertyId: 3, amount: 1200000, date: '2023-12-01', status: 'Active' },
+        { id: 7, userId: 3, propertyId: 5, amount: 350000, date: '2024-01-05', status: 'Active' }
+      ];
+      
+      const mockROI = [
+        { id: 1, propertyId: 1, percentage: 4.5, amount: 3267000, date: '2024-04-15', status: 'Pending', notes: 'Q2 2024 distribution' },
+        { id: 2, propertyId: 2, percentage: 5.5, amount: 7381000, date: '2024-05-10', status: 'Pending', notes: 'Q2 2024 distribution' },
+        { id: 3, propertyId: 3, percentage: 3.75, amount: 2115000, date: '2024-06-01', status: 'Pending', notes: 'Q2 2024 distribution' }
+      ];
+      
+      const mockDevelopers = [
+        { id: 1, name: 'Lekki Homes Ltd', contact: 'info@lekkihomes.com', properties: 1 },
+        { id: 2, name: 'Prime Properties', contact: 'contact@primeproperties.ng', properties: 1 },
+        { id: 3, name: 'Abuja Realty', contact: 'info@abujarealty.com', properties: 1 },
+        { id: 4, name: 'Rivers Estate Developers', contact: 'info@red.com.ng', properties: 1 },
+        { id: 5, name: 'Lagos Commercial Developers', contact: 'info@lagoscommercial.com', properties: 1 }
+      ];
+      
+      // KYC Verification Tab
+      function loadKYCVerificationContent() {
+        // Get reference to the main content area
+        const mainContent = document.querySelector('main');
+        
+        // Update header title
+        document.querySelector('header h1').textContent = 'KYC Verification';
+        
+        // Generate KYC content
+        mainContent.innerHTML = `
+          <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-200">
+              <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">KYC Verification Management</h1>
+              </div>
+              <p class="mt-2 text-gray-600">
+                Review and verify user identity documents. All verifications must follow compliance guidelines.
+              </p>
+            </div>
+            
+            <div class="p-8">
+              <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-4">Pending Verifications</h2>
+                <div class="bg-white rounded-lg border overflow-hidden">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documents</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Mary Adebayo</div>
+                              <div class="text-sm text-gray-500">mary@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">ID Card, Proof of Address, Selfie</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 12, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="bg-[#553627] text-white px-3 py-1 rounded hover:bg-[#664332]">Review</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Joseph Okonkwo</div>
+                              <div class="text-sm text-gray-500">joseph@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">ID Card, Proof of Address, Selfie</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 14, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="bg-[#553627] text-white px-3 py-1 rounded hover:bg-[#664332]">Review</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div>
+                <h2 class="text-lg font-semibold mb-4">Recent Verifications</h2>
+                <div class="bg-white rounded-lg border overflow-hidden">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified On</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified By</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">John Okafor</div>
+                              <div class="text-sm text-gray-500">john@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Verified
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 10, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Admin User</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="text-blue-600 hover:text-blue-900">View</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Sarah Nnamdi</div>
+                              <div class="text-sm text-gray-500">sarah@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Verified
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 8, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Admin User</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="text-blue-600 hover:text-blue-900">View</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-gray-300 rounded-full"></div>
+                            <div class="ml-4">
+                              <div class="text-sm font-medium text-gray-900">Peter Johnson</div>
+                              <div class="text-sm text-gray-500">peter@example.com</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Rejected
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Apr 5, 2024</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">Admin User</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <button class="text-blue-600 hover:text-blue-900">View</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Utility functions for formatting
+      function formatCurrency(amount) {
+        if (amount >= 1000000) {
+          return `₦${(amount / 1000000).toFixed(1)}M`;
+        } else if (amount >= 1000) {
+          return `₦${(amount / 1000).toFixed(1)}K`;
+        }
+        return `₦${amount.toFixed(2)}`;
+      }
+      
+      function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return new Intl.DateTimeFormat('en-NG').format(date);
+      }
+      
+      // Check if user is logged in and is admin
+      function checkAdminAuth() {
+        const userStr = localStorage.getItem('user');
+        
+        if (!userStr) {
+          // Not logged in, show login required message
+          appEl.innerHTML = `
+            <div class="login-required">
+              <h2>Admin Access Required</h2>
+              <p>You need to log in as an administrator to view this dashboard.</p>
+              <a href="/login.html" class="login-button">Go to Login</a>
+            </div>
+          `;
+          return false;
+        }
+        
+        try {
+          const user = JSON.parse(userStr);
+          
+          // Check if user is admin
+          if (!user.isAdmin && user.role !== 'admin') {
+            appEl.innerHTML = `
+              <div class="login-required">
+                <h2>Admin Access Required</h2>
+                <p>You do not have permission to access the admin dashboard.</p>
+                <a href="/dashboard.html" class="login-button">Go to User Dashboard</a>
+              </div>
+            `;
+            return false;
+          }
+          
+          return user;
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          return false;
+        }
+      }
+      
+      // Tab Management
+      function setupTabs() {
+        const tabElements = document.querySelectorAll('.tab');
+        
+        tabElements.forEach(tab => {
+          tab.addEventListener('click', () => {
+            const targetTab = tab.getAttribute('data-tab');
+            
+            // Update active tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Show target content
+            document.querySelectorAll('.tab-content').forEach(content => {
+              content.classList.remove('active');
+            });
+            document.getElementById(targetTab).classList.add('active');
+          });
+        });
+      }
+      
+      // Modal Management
+      function setupModals() {
+        // For each modal
+        document.querySelectorAll('.modal-backdrop').forEach(modal => {
+          // Close button inside modal
+          modal.querySelectorAll('.modal-close, .modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              modal.classList.remove('active');
+            });
+          });
+          
+          // Close modal when clicking outside
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+              modal.classList.remove('active');
+            }
+          });
+        });
+        
+        // Open modal buttons
+        document.querySelectorAll('[data-modal]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const modalId = btn.getAttribute('data-modal');
+            document.getElementById(modalId).classList.add('active');
+          });
+        });
+      }
+      
+      // User Management Tab
+      function renderUserManagementTab() {
+        let filteredUsers = [...mockUsers];
+        
+        // Filter by role and status if needed
+        const renderUsers = () => {
+          const roleFilter = document.getElementById('role-filter').value;
+          const statusFilter = document.getElementById('status-filter').value;
+          const searchQuery = document.getElementById('user-search').value.toLowerCase();
+          
+          filteredUsers = mockUsers.filter(user => {
+            // Apply role filter
+            if (roleFilter && user.role !== roleFilter) return false;
+            
+            // Apply status filter
+            if (statusFilter === 'active' && !user.active) return false;
+            if (statusFilter === 'disabled' && user.active) return false;
+            
+            // Apply search query
+            if (searchQuery) {
+              return user.name.toLowerCase().includes(searchQuery) || 
+                   user.email.toLowerCase().includes(searchQuery) ||
+                   user.username.toLowerCase().includes(searchQuery);
+            }
+            
+            return true;
+          });
+          
+          // Clear and rebuild the table
+          const tableBody = document.getElementById('users-table-body');
+          tableBody.innerHTML = '';
+          
+          if (filteredUsers.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No users found</td></tr>`;
+            return;
+          }
+          
+          filteredUsers.forEach(user => {
+            const row = document.createElement('tr');
+            
+            let roleBadgeClass = 'role-investor';
+            if (user.role === 'admin') roleBadgeClass = 'role-admin';
+            if (user.role === 'developer') roleBadgeClass = 'role-developer';
+            
+            let kycBadgeClass = 'kyc-pending';
+            if (user.kycStatus === 'Verified') kycBadgeClass = 'kyc-verified';
+            if (user.kycStatus === 'Rejected') kycBadgeClass = 'kyc-rejected';
+            
+            row.innerHTML = `
+              <td>${user.name}</td>
+              <td>${user.email}</td>
+              <td><span class="badge ${roleBadgeClass}">${user.role}</span></td>
+              <td><span class="badge ${user.active ? 'status-active' : 'status-inactive'}">${user.active ? 'Active' : 'Disabled'}</span></td>
+              <td><span class="badge ${kycBadgeClass}">${user.kycStatus}</span></td>
+              <td>${formatCurrency(user.balance)}</td>
+              <td>
+                <div class="button-group">
+                  <button class="btn btn-primary edit-user-btn" data-user-id="${user.id}">Edit</button>
+                  <button class="btn ${user.active ? 'btn-danger' : 'btn-success'} toggle-user-btn" data-user-id="${user.id}" data-active="${user.active}">
+                    ${user.active ? 'Disable' : 'Enable'}
+                  </button>
+                </div>
+              </td>
+            `;
+            
+            tableBody.appendChild(row);
+          });
+          
+          // Add event listeners for edit and toggle buttons
+          document.querySelectorAll('.edit-user-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const userId = parseInt(btn.getAttribute('data-user-id'));
+              const user = mockUsers.find(u => u.id === userId);
+              
+              if (user) {
+                // Populate the edit form
+                document.getElementById('edit-user-id').value = user.id;
+                document.getElementById('edit-user-name').value = user.name;
+                document.getElementById('edit-user-email').value = user.email;
+                document.getElementById('edit-user-role').value = user.role;
+                document.getElementById('edit-user-status').value = user.active.toString();
+                document.getElementById('edit-user-kyc').value = user.kycStatus;
+                
+                // Show the modal
+                document.getElementById('userEditModal').classList.add('active');
+              }
+            });
+          });
+          
+          document.querySelectorAll('.toggle-user-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const userId = parseInt(btn.getAttribute('data-user-id'));
+              const currentActive = btn.getAttribute('data-active') === 'true';
+              
+              // Update the user's active status
+              const userIndex = mockUsers.findIndex(u => u.id === userId);
+              if (userIndex !== -1) {
+                mockUsers[userIndex].active = !currentActive;
+                
+                // Show notification
+                showNotification(
+                  `User ${mockUsers[userIndex].name} has been ${!currentActive ? 'enabled' : 'disabled'}.`,
+                  'success'
+                );
+                
+                // Refresh the table
+                renderUsers();
+              }
+            });
+          });
+        };
+        
+        // Save user edit form
+        document.getElementById('saveUserBtn').addEventListener('click', () => {
+          const userId = parseInt(document.getElementById('edit-user-id').value);
+          const userIndex = mockUsers.findIndex(u => u.id === userId);
+          
+          if (userIndex !== -1) {
+            // Update user data
+            mockUsers[userIndex].name = document.getElementById('edit-user-name').value;
+            mockUsers[userIndex].email = document.getElementById('edit-user-email').value;
+            mockUsers[userIndex].role = document.getElementById('edit-user-role').value;
+            mockUsers[userIndex].active = document.getElementById('edit-user-status').value === 'true';
+            mockUsers[userIndex].kycStatus = document.getElementById('edit-user-kyc').value;
+            
+            // Close modal and refresh table
+            document.getElementById('userEditModal').classList.remove('active');
+            renderUsers();
+            
+            // Show notification
+            showNotification(`User ${mockUsers[userIndex].name} has been updated.`, 'success');
+          }
+        });
+        
+        // Add event listeners for filters
+        document.getElementById('role-filter').addEventListener('change', renderUsers);
+        document.getElementById('status-filter').addEventListener('change', renderUsers);
+        document.getElementById('user-search').addEventListener('input', renderUsers);
+        
+        // Initial render
+        renderUsers();
+      }
+      
+      // Property Management Tab
+      function renderPropertyManagementTab() {
+        let filteredProperties = [...mockProperties];
+        
+        // Filter properties
+        const renderProperties = () => {
+          const typeFilter = document.getElementById('property-type-filter').value;
+          const statusFilter = document.getElementById('property-status-filter').value;
+          const searchQuery = document.getElementById('property-search').value.toLowerCase();
+          
+          filteredProperties = mockProperties.filter(property => {
+            // Apply type filter
+            if (typeFilter && property.type !== typeFilter) return false;
+            
+            // Apply status filter
+            if (statusFilter && property.status !== statusFilter) return false;
+            
+            // Apply search query
+            if (searchQuery) {
+              return property.name.toLowerCase().includes(searchQuery) || 
+                   property.location.toLowerCase().includes(searchQuery) ||
+                   property.developer.toLowerCase().includes(searchQuery);
+            }
+            
+            return true;
+          });
+          
+          // Clear and rebuild the table
+          const tableBody = document.getElementById('properties-table-body');
+          tableBody.innerHTML = '';
+          
+          if (filteredProperties.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No properties found</td></tr>`;
+            return;
+          }
+          
+          filteredProperties.forEach(property => {
+            const row = document.createElement('tr');
+            
+            let statusBadgeClass = 'status-active';
+            if (property.status === 'Pending') statusBadgeClass = 'status-pending';
+            if (property.status === 'Completed') statusBadgeClass = 'kyc-verified';
+            if (property.status === 'Inactive') statusBadgeClass = 'status-inactive';
+            
+            row.innerHTML = `
+              <td>${property.name}</td>
+              <td>${property.type}</td>
+              <td>${property.location}</td>
+              <td>${formatCurrency(property.price)}</td>
+              <td>${property.roi}%</td>
+              <td><span class="badge ${statusBadgeClass}">${property.status}</span></td>
+              <td>
+                <div class="button-group">
+                  <button class="btn btn-primary edit-property-btn" data-property-id="${property.id}">Edit</button>
+                  <button class="btn ${property.status === 'Active' ? 'btn-warning' : 'btn-success'} toggle-property-btn" data-property-id="${property.id}" data-status="${property.status}">
+                    ${property.status === 'Active' ? 'Deactivate' : 'Activate'}
+                  </button>
+                </div>
+              </td>
+            `;
+            
+            tableBody.appendChild(row);
+          });
+          
+          // Add event listeners
+          document.querySelectorAll('.edit-property-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const propertyId = parseInt(btn.getAttribute('data-property-id'));
+              const property = mockProperties.find(p => p.id === propertyId);
+              
+              if (property) {
+                // Populate the form
+                document.getElementById('property-name').value = property.name;
+                document.getElementById('property-type').value = property.type;
+                document.getElementById('property-location').value = property.location;
+                document.getElementById('property-price').value = property.price;
+                document.getElementById('property-roi').value = property.roi;
+                document.getElementById('property-duration').value = property.duration;
+                document.getElementById('property-description').value = property.description;
+                document.getElementById('property-status').value = property.status;
+                
+                // Change the modal title
+                document.querySelector('#propertyModal .modal-title').textContent = 'Edit Property';
+                
+                // Show the modal
+                document.getElementById('propertyModal').classList.add('active');
+              }
+            });
+          });
+          
+          document.querySelectorAll('.toggle-property-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const propertyId = parseInt(btn.getAttribute('data-property-id'));
+              const currentStatus = btn.getAttribute('data-status');
+              
+              // Update the property's status
+              const propertyIndex = mockProperties.findIndex(p => p.id === propertyId);
+              if (propertyIndex !== -1) {
+                mockProperties[propertyIndex].status = currentStatus === 'Active' ? 'Inactive' : 'Active';
+                
+                // Show notification
+                showNotification(
+                  `Property ${mockProperties[propertyIndex].name} has been ${mockProperties[propertyIndex].status === 'Active' ? 'activated' : 'deactivated'}.`,
+                  'success'
+                );
+                
+                // Refresh the table
+                renderProperties();
+              }
+            });
+          });
+        };
+        
+        // Add event listeners for property form
+        document.getElementById('add-property-btn').addEventListener('click', () => {
+          // Reset the form
+          document.getElementById('propertyForm').reset();
+          
+          // Change the modal title
+          document.querySelector('#propertyModal .modal-title').textContent = 'Add New Property';
+          
+          // Show the modal
+          document.getElementById('propertyModal').classList.add('active');
+        });
+        
+        // Save property
+        document.getElementById('savePropertyBtn').addEventListener('click', () => {
+          const propertyName = document.getElementById('property-name').value;
+          const propertyType = document.getElementById('property-type').value;
+          const propertyLocation = document.getElementById('property-location').value;
+          const propertyPrice = parseFloat(document.getElementById('property-price').value);
+          const propertyRoi = parseFloat(document.getElementById('property-roi').value);
+          const propertyDuration = parseInt(document.getElementById('property-duration').value);
+          const propertyDescription = document.getElementById('property-description').value;
+          const propertyStatus = document.getElementById('property-status').value;
+          
+          // Validate required fields
+          if (!propertyName || !propertyType || !propertyLocation || isNaN(propertyPrice) || isNaN(propertyRoi)) {
+            showNotification('Please fill in all required fields', 'error');
+            return;
+          }
+          
+          // Check if we're editing or adding a new property
+          if (document.querySelector('#propertyModal .modal-title').textContent === 'Edit Property') {
+            // Edit existing property logic would go here
+            showNotification('Property updated successfully', 'success');
+          } else {
+            // Add new property
+            const newProperty = {
+              id: mockProperties.length + 1,
+              name: propertyName,
+              type: propertyType,
+              location: propertyLocation,
+              price: propertyPrice,
+              roi: propertyRoi,
+              duration: propertyDuration,
+              description: propertyDescription,
+              status: propertyStatus,
+              developer: 'New Developer Ltd',
+              investments: 0
+            };
+            
+            mockProperties.push(newProperty);
+            showNotification('New property added successfully', 'success');
+          }
+          
+          // Close modal and refresh table
+          document.getElementById('propertyModal').classList.remove('active');
+          renderProperties();
+        });
+        
+        // Add event listeners for filters
+        document.getElementById('property-type-filter').addEventListener('change', renderProperties);
+        document.getElementById('property-status-filter').addEventListener('change', renderProperties);
+        document.getElementById('property-search').addEventListener('input', renderProperties);
+        
+        // Initial render
+        renderProperties();
+      }
+      
+      // Investment Management Tab
+      function renderInvestmentManagementTab() {
+        // Get user and property names for investments
+        const getUserName = (userId) => {
+          const user = mockUsers.find(u => u.id === userId);
+          return user ? user.name : 'Unknown User';
+        };
+        
+        const getPropertyName = (propertyId) => {
+          const property = mockProperties.find(p => p.id === propertyId);
+          return property ? property.name : 'Unknown Property';
+        };
+        
+        // Render investments table
+        const renderInvestments = () => {
+          const propertyFilter = document.getElementById('investment-property-filter').value;
+          const statusFilter = document.getElementById('investment-status-filter').value;
+          
+          // Filter investments
+          let filteredInvestments = mockInvestments.filter(investment => {
+            if (propertyFilter && investment.propertyId !== parseInt(propertyFilter)) return false;
+            if (statusFilter && investment.status !== statusFilter) return false;
+            return true;
+          });
+          
+          // Sort by date (newest first)
+          filteredInvestments.sort((a, b) => new Date(b.date) - new Date(a.date));
+          
+          // Render table
+          const tableBody = document.getElementById('investments-table-body');
+          tableBody.innerHTML = '';
+          
+          if (filteredInvestments.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">No investments found</td></tr>`;
+            return;
+          }
+          
+          filteredInvestments.forEach(investment => {
+            const row = document.createElement('tr');
+            
+            const propertyName = getPropertyName(investment.propertyId);
+            const userName = getUserName(investment.userId);
+            
+            row.innerHTML = `
+              <td>${userName}</td>
+              <td>${propertyName}</td>
+              <td>${formatCurrency(investment.amount)}</td>
+              <td>${formatDate(investment.date)}</td>
+              <td><span class="badge status-active">${investment.status}</span></td>
+            `;
+            
+            tableBody.appendChild(row);
+          });
+        };
+        
+        // Calculate and display investment statistics
+        const calculateInvestmentStats = () => {
+          // Total investments
+          const totalInvestments = mockInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+          
+          // Total investors (unique)
+          const uniqueInvestors = new Set(mockInvestments.map(inv => inv.userId)).size;
+          
+          // Average investment
+          const avgInvestment = totalInvestments / mockInvestments.length;
+          
+          // Property with most investments
+          const propertySums = {};
+          mockInvestments.forEach(inv => {
+            propertySums[inv.propertyId] = (propertySums[inv.propertyId] || 0) + inv.amount;
+          });
+          
+          let topPropertyId = null;
+          let topAmount = 0;
+          
+          for (const [propId, amount] of Object.entries(propertySums)) {
+            if (amount > topAmount) {
+              topAmount = amount;
+              topPropertyId = parseInt(propId);
+            }
+          }
+          
+          const topPropertyName = getPropertyName(topPropertyId);
+          
+          // Update stats in the UI
+          document.getElementById('total-investments').textContent = formatCurrency(totalInvestments);
+          document.getElementById('total-investors').textContent = uniqueInvestors;
+          document.getElementById('avg-investment').textContent = formatCurrency(avgInvestment);
+          document.getElementById('top-property').textContent = `${topPropertyName} (${formatCurrency(topAmount)})`;
+        };
+        
+        // Initialize property filter dropdown
+        const propertyFilter = document.getElementById('investment-property-filter');
+        propertyFilter.innerHTML = '<option value="">All Properties</option>';
+        
+        mockProperties.forEach(property => {
+          propertyFilter.innerHTML += `<option value="${property.id}">${property.name}</option>`;
+        });
+        
+        // Add event listeners for filters
+        document.getElementById('investment-property-filter').addEventListener('change', renderInvestments);
+        document.getElementById('investment-status-filter').addEventListener('change', renderInvestments);
+        
+        // Initial render
+        renderInvestments();
+        calculateInvestmentStats();
+      }
+      
+      // ROI Distribution Tab
+      function renderROIManagementTab() {
+        // Get property name for ROI item
+        const getPropertyName = (propertyId) => {
+          const property = mockProperties.find(p => p.id === propertyId);
+          return property ? property.name : 'Unknown Property';
+        };
+        
+        // Render ROI distributions table
+        const renderROIDistributions = () => {
+          const statusFilter = document.getElementById('roi-status-filter').value;
+          
+          // Filter ROI distributions
+          let filteredROI = mockROI.filter(roi => {
+            if (statusFilter && roi.status !== statusFilter) return false;
+            return true;
+          });
+          
+          // Sort by date (newest first)
+          filteredROI.sort((a, b) => new Date(b.date) - new Date(a.date));
+          
+          // Render table
+          const tableBody = document.getElementById('roi-table-body');
+          tableBody.innerHTML = '';
+          
+          if (filteredROI.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No ROI distributions found</td></tr>`;
+            return;
+          }
+          
+          filteredROI.forEach(roi => {
+            const row = document.createElement('tr');
+            
+            const propertyName = getPropertyName(roi.propertyId);
+            
+            const statusClass = roi.status === 'Completed' ? 'status-active' : 
+                              roi.status === 'Pending' ? 'status-pending' : 'status-inactive';
+            
+            row.innerHTML = `
+              <td>${propertyName}</td>
+              <td>${roi.percentage}%</td>
+              <td>${formatCurrency(roi.amount)}</td>
+              <td>${formatDate(roi.date)}</td>
+              <td><span class="badge ${statusClass}">${roi.status}</span></td>
+              <td>
+                <button class="btn btn-primary distribute-roi-btn" data-roi-id="${roi.id}" ${roi.status !== 'Pending' ? 'disabled' : ''}>
+                  ${roi.status === 'Pending' ? 'Process' : 'Processed'}
+                </button>
+              </td>
+            `;
+            
+            tableBody.appendChild(row);
+          });
+          
+          // Add event listeners for process buttons
+          document.querySelectorAll('.distribute-roi-btn').forEach(btn => {
+            if (btn.hasAttribute('disabled')) return;
+            
+            btn.addEventListener('click', () => {
+              const roiId = parseInt(btn.getAttribute('data-roi-id'));
+              const roiIndex = mockROI.findIndex(r => r.id === roiId);
+              
+              if (roiIndex !== -1) {
+                // Update ROI status
+                mockROI[roiIndex].status = 'Completed';
+                
+                // Show notification
+                showNotification(
+                  `ROI distribution for ${getPropertyName(mockROI[roiIndex].propertyId)} has been processed.`,
+                  'success'
+                );
+                
+                // Refresh the table
+                renderROIDistributions();
+              }
+            });
+          });
+        };
+        
+        // Initialize property dropdown for ROI distribution form
+        const propertyDropdown = document.getElementById('roi-property');
+        propertyDropdown.innerHTML = '<option value="">Select Property</option>';
+        
+        mockProperties.forEach(property => {
+          if (property.status === 'Active') {
+            propertyDropdown.innerHTML += `<option value="${property.id}">${property.name}</option>`;
+          }
+        });
+        
+        // Set default date for distribution form
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        document.getElementById('roi-date').value = formattedDate;
+        
+        // Add event listener for new ROI distribution
+        document.getElementById('add-roi-btn').addEventListener('click', () => {
+          document.getElementById('roiDistributionForm').reset();
+          document.getElementById('roi-date').value = formattedDate;
+          document.getElementById('roiDistributionModal').classList.add('active');
+        });
+        
+        // Save ROI distribution
+        document.getElementById('distributeRoiBtn').addEventListener('click', () => {
+          const propertyId = parseInt(document.getElementById('roi-property').value);
+          const percentage = parseFloat(document.getElementById('roi-amount').value);
+          const date = document.getElementById('roi-date').value;
+          const notes = document.getElementById('roi-notes').value;
+          
+          // Validate required fields
+          if (!propertyId || isNaN(propertyId) || isNaN(percentage) || !date) {
+            showNotification('Please fill in all required fields', 'error');
+            return;
+          }
+          
+          // Find the property
+          const property = mockProperties.find(p => p.id === propertyId);
+          if (!property) {
+            showNotification('Invalid property selected', 'error');
+            return;
+          }
+          
+          // Calculate amount based on total investments
+          const amount = (property.investments * percentage) / 100;
+          
+          // Add new ROI distribution
+          const newROI = {
+            id: mockROI.length + 1,
+            propertyId,
+            percentage,
+            amount,
+            date,
+            status: 'Pending',
+            notes
+          };
+          
+          mockROI.push(newROI);
+          
+          // Close modal and refresh table
+          document.getElementById('roiDistributionModal').classList.remove('active');
+          renderROIDistributions();
+          
+          // Show notification
+          showNotification(`New ROI distribution scheduled for ${property.name}`, 'success');
+        });
+        
+        // Add event listener for status filter
+        document.getElementById('roi-status-filter').addEventListener('change', renderROIDistributions);
+        
+        // Initial render
+        renderROIDistributions();
+      }
+      
+      // Show a notification
+      function showNotification(message, type = 'success') {
+        const notificationContainer = document.getElementById('notification-container');
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        // Add icon based on type
+        let icon = '✓';
+        if (type === 'warning') icon = '⚠';
+        if (type === 'error') icon = '✗';
+        
+        notification.innerHTML = `<span>${icon}</span><span class="notification-message">${message}</span>`;
+        
+        // Add to container
+        notificationContainer.appendChild(notification);
+        
+        // Remove after delay
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }, 3000);
+      }
+      
+      // Render the admin dashboard
+      function renderAdminDashboard(user) {
+        // Build the basic dashboard structure
+        const dashboardHTML = `
+          <div class="dashboard-container">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+              <h1 class="dashboard-title">iREVA Admin Dashboard <span class="admin-badge">Administrator</span></h1>
+              <button id="logoutButton" class="logout-button">Logout</button>
+            </div>
+            
+            <!-- Welcome Card with brief info -->
+            <div class="welcome-card">
+              <h2>Welcome, ${user.firstName || user.username}!</h2>
+              <p>You are logged in as an administrator with full platform access. Use the tabs below to manage various aspects of the iREVA platform.</p>
+            </div>
+            
+            <!-- Stats Overview -->
+            <div class="stat-grid">
+              <div class="stat-card">
+                <h3 class="stat-title">Total Users</h3>
+                <p class="stat-value">${mockUsers.length}</p>
+              </div>
+              
+              <div class="stat-card">
+                <h3 class="stat-title">Active Properties</h3>
+                <p class="stat-value">${mockProperties.filter(p => p.status === 'Active').length}</p>
+              </div>
+              
+              <div class="stat-card">
+                <h3 class="stat-title">Total Investments</h3>
+                <p class="stat-value">${formatCurrency(mockInvestments.reduce((sum, inv) => sum + inv.amount, 0))}</p>
+              </div>
+              
+              <div class="stat-card">
+                <h3 class="stat-title">Pending ROI</h3>
+                <p class="stat-value">${formatCurrency(mockROI.filter(r => r.status === 'Pending').reduce((sum, roi) => sum + roi.amount, 0))}</p>
+              </div>
+            </div>
+            
+            <!-- Notification Container -->
+            <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+            
+            <!-- Tabs Navigation -->
+            <div class="tabs">
+              <div class="tab active" data-tab="dashboard-tab">Dashboard</div>
+              <div class="tab" data-tab="users-tab">User Management</div>
+              <div class="tab" data-tab="properties-tab">Property Management</div>
+              <div class="tab" data-tab="investments-tab">Investment Oversight</div>
+              <div class="tab" data-tab="roi-tab">ROI Distribution</div>
+            </div>
+            
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+              <div class="admin-actions">
+                <h2 class="section-title">Quick Actions</h2>
+                <div class="action-grid">
+                  <div class="action-card" data-tab="users-tab">
+                    <h3 class="action-title">Manage Users</h3>
+                    <p class="action-description">Review and manage user accounts, roles, and KYC status</p>
+                  </div>
+                  
+                  <div class="action-card" data-tab="properties-tab">
+                    <h3 class="action-title">Add Property</h3>
+                    <p class="action-description">Create new property listings for investment</p>
+                  </div>
+                  
+                  <div class="action-card" data-tab="roi-tab">
+                    <h3 class="action-title">Distribute ROI</h3>
+                    <p class="action-description">Process and distribute returns to investors</p>
+                  </div>
+                  
+                  <div class="action-card" data-tab="investments-tab">
+                    <h3 class="action-title">View Investments</h3>
+                    <p class="action-description">Track and analyze investment activity</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="admin-panels">
+                <!-- Recent Users Panel -->
+                <div class="admin-panel">
+                  <h2 class="section-title">Recent Users</h2>
+                  <div class="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>User</th>
+                          <th>Role</th>
+                          <th>KYC Status</th>
+                          <th>Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${mockUsers.slice(0, 4).map(user => {
+                          let roleBadgeClass = 'role-investor';
+                          if (user.role === 'admin') roleBadgeClass = 'role-admin';
+                          if (user.role === 'developer') roleBadgeClass = 'role-developer';
+                          
+                          let kycBadgeClass = 'kyc-pending';
+                          if (user.kycStatus === 'Verified') kycBadgeClass = 'kyc-verified';
+                          if (user.kycStatus === 'Rejected') kycBadgeClass = 'kyc-rejected';
+                          
+                          return `
+                            <tr>
+                              <td>${user.name}</td>
+                              <td><span class="badge ${roleBadgeClass}">${user.role}</span></td>
+                              <td><span class="badge ${kycBadgeClass}">${user.kycStatus}</span></td>
+                              <td>${formatCurrency(user.balance)}</td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <!-- Recent Properties Panel -->
+                <div class="admin-panel">
+                  <h2 class="section-title">Property Listings</h2>
+                  <div class="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Property</th>
+                          <th>Status</th>
+                          <th>Investment</th>
+                          <th>ROI</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${mockProperties.slice(0, 4).map(property => {
+                          let statusBadgeClass = 'status-active';
+                          if (property.status === 'Pending') statusBadgeClass = 'status-pending';
+                          if (property.status === 'Inactive') statusBadgeClass = 'status-inactive';
+                          
+                          return `
+                            <tr>
+                              <td>${property.name}</td>
+                              <td><span class="badge ${statusBadgeClass}">${property.status}</span></td>
+                              <td>${formatCurrency(property.investments)}</td>
+                              <td>${property.roi}%</td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Pending ROI Distributions -->
+              <div class="admin-panel">
+                <h2 class="section-title">Pending ROI Distributions</h2>
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Property</th>
+                        <th>ROI %</th>
+                        <th>Amount</th>
+                        <th>Distribution Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${mockROI.filter(roi => roi.status === 'Pending').map(roi => {
+                        const propertyName = mockProperties.find(p => p.id === roi.propertyId)?.name || 'Unknown';
+                        
+                        return `
+                          <tr>
+                            <td>${propertyName}</td>
+                            <td>${roi.percentage}%</td>
+                            <td>${formatCurrency(roi.amount)}</td>
+                            <td>${formatDate(roi.date)}</td>
+                            <td><span class="badge status-pending">Pending</span></td>
+                            <td><button class="btn btn-primary process-roi-dash-btn" data-roi-id="${roi.id}">Process</button></td>
+                          </tr>
+                        `;
+                      }).join('')}
+                      ${mockROI.filter(roi => roi.status === 'Pending').length === 0 ? 
+                        '<tr><td colspan="6" style="text-align: center;">No pending ROI distributions</td></tr>' : ''}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <!-- User Management Tab -->
+            <div id="users-tab" class="tab-content">
+              <div class="admin-panel">
+                <h2 class="section-title">User Management</h2>
+                
+                <!-- Filter and Search -->
+                <div class="filter-bar">
+                  <div class="filter-group">
+                    <label for="role-filter">Role:</label>
+                    <select id="role-filter">
+                      <option value="">All Roles</option>
+                      <option value="admin">Admin</option>
+                      <option value="investor">Investor</option>
+                      <option value="developer">Developer</option>
+                    </select>
+                  </div>
+                  
+                  <div class="filter-group">
+                    <label for="status-filter">Status:</label>
+                    <select id="status-filter">
+                      <option value="">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="disabled">Disabled</option>
+                    </select>
+                  </div>
+                  
+                  <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="user-search" placeholder="Search by name or email...">
+                  </div>
+                </div>
+                
+                <!-- Users Table -->
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>KYC</th>
+                        <th>Balance</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                      <!-- User rows will be populated dynamically -->
+                      <tr>
+                        <td colspan="7" style="text-align: center;">Loading users...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Property Management Tab -->
+            <div id="properties-tab" class="tab-content">
+              <div class="admin-panel">
+                <h2 class="section-title">Property Management</h2>
+                
+                <!-- Add Property Button -->
+                <div style="margin-bottom: 1rem;">
+                  <button id="add-property-btn" class="btn btn-primary" data-modal="propertyModal">
+                    Add New Property
+                  </button>
+                </div>
+                
+                <!-- Filter and Search -->
+                <div class="filter-bar">
+                  <div class="filter-group">
+                    <label for="property-type-filter">Type:</label>
+                    <select id="property-type-filter">
+                      <option value="">All Types</option>
+                      <option value="Residential">Residential</option>
+                      <option value="Commercial">Commercial</option>
+                      <option value="Industrial">Industrial</option>
+                      <option value="Mixed-Use">Mixed-Use</option>
+                      <option value="Land">Land</option>
+                    </select>
+                  </div>
+                  
+                  <div class="filter-group">
+                    <label for="property-status-filter">Status:</label>
+                    <select id="property-status-filter">
+                      <option value="">All Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  
+                  <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="property-search" placeholder="Search properties...">
+                  </div>
+                </div>
+                
+                <!-- Properties Table -->
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Value</th>
+                        <th>ROI</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="properties-table-body">
+                      <!-- Property rows will be populated dynamically -->
+                      <tr>
+                        <td colspan="7" style="text-align: center;">Loading properties...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Investment Oversight Tab -->
+            <div id="investments-tab" class="tab-content">
+              <div class="admin-panel">
+                <h2 class="section-title">Investment Statistics</h2>
+                
+                <div class="stat-grid">
+                  <div class="stat-card">
+                    <h3 class="stat-title">Total Investments</h3>
+                    <p class="stat-value" id="total-investments">₦0</p>
+                  </div>
+                  
+                  <div class="stat-card">
+                    <h3 class="stat-title">Total Investors</h3>
+                    <p class="stat-value" id="total-investors">0</p>
+                  </div>
+                  
+                  <div class="stat-card">
+                    <h3 class="stat-title">Average Investment</h3>
+                    <p class="stat-value" id="avg-investment">₦0</p>
+                  </div>
+                  
+                  <div class="stat-card">
+                    <h3 class="stat-title">Top Property</h3>
+                    <p class="stat-value" id="top-property">None</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="admin-panel">
+                <h2 class="section-title">Investment Transactions</h2>
+                
+                <!-- Filter -->
+                <div class="filter-bar">
+                  <div class="filter-group">
+                    <label for="investment-property-filter">Property:</label>
+                    <select id="investment-property-filter">
+                      <option value="">All Properties</option>
+                      <!-- Will be populated dynamically -->
+                    </select>
+                  </div>
+                  
+                  <div class="filter-group">
+                    <label for="investment-status-filter">Status:</label>
+                    <select id="investment-status-filter">
+                      <option value="">All Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Investments Table -->
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Investor</th>
+                        <th>Property</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="investments-table-body">
+                      <!-- Investment rows will be populated dynamically -->
+                      <tr>
+                        <td colspan="5" style="text-align: center;">Loading investments...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <!-- ROI Distribution Tab -->
+            <div id="roi-tab" class="tab-content">
+              <div class="admin-panel">
+                <h2 class="section-title">ROI Distribution Management</h2>
+                
+                <!-- Add ROI Distribution Button -->
+                <div style="margin-bottom: 1rem;">
+                  <button id="add-roi-btn" class="btn btn-primary" data-modal="roiDistributionModal">
+                    Schedule New ROI Distribution
+                  </button>
+                </div>
+                
+                <!-- Filter -->
+                <div class="filter-bar">
+                  <div class="filter-group">
+                    <label for="roi-status-filter">Status:</label>
+                    <select id="roi-status-filter">
+                      <option value="">All Status</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- ROI Distributions Table -->
+                <div class="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Property</th>
+                        <th>ROI %</th>
+                        <th>Total Amount</th>
+                        <th>Distribution Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="roi-table-body">
+                      <!-- ROI rows will be populated dynamically -->
+                      <tr>
+                        <td colspan="6" style="text-align: center;">Loading ROI distributions...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Update the app container
+        appEl.innerHTML = dashboardHTML;
+        
+        // Setup tabs
+        setupTabs();
+        
+        // Setup modals
+        setupModals();
+        
+        // Initialize tab content
+        renderUserManagementTab();
+        renderPropertyManagementTab();
+        renderInvestmentManagementTab();
+        renderROIManagementTab();
+        
+        // Add event listener for logout button
+        document.getElementById('logoutButton').addEventListener('click', function() {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          window.location.href = '/login.html';
+        });
+        
+        // Add event listeners for ROI process buttons on dashboard
+        document.querySelectorAll('.process-roi-dash-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const roiId = parseInt(btn.getAttribute('data-roi-id'));
+            const roiIndex = mockROI.findIndex(r => r.id === roiId);
+            
+            if (roiIndex !== -1) {
+              // Update ROI status
+              mockROI[roiIndex].status = 'Completed';
+              
+              // Show notification
+              showNotification(
+                `ROI distribution for ${getPropertyName(mockROI[roiIndex].propertyId)} has been processed.`,
+                'success'
+              );
+              
+              // Replace the button with text
+              btn.textContent = 'Processed';
+              btn.disabled = true;
+              btn.classList.remove('btn-primary');
+              btn.classList.add('btn-success');
+            }
+          });
+        });
+        
+        // Add event listeners for action cards
+        document.querySelectorAll('.action-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const tabId = card.getAttribute('data-tab');
+            document.querySelector(`.tab[data-tab="${tabId}"]`).click();
+          });
+        });
+      }
+      
+      // Utility function to get property name
+      function getPropertyName(propertyId) {
+        const property = mockProperties.find(p => p.id === propertyId);
+        return property ? property.name : 'Unknown Property';
+      }
+      
+      // Initialize the admin dashboard
+      const user = checkAdminAuth();
+      if (user) {
+        renderAdminDashboard(user);
+      }
+    });
+  </script>
+</body>
+</html>
