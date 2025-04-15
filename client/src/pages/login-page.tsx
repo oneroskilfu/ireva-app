@@ -58,7 +58,9 @@ const LoginPage = () => {
           role: userData.isAdmin ? 'admin' : 'investor'
         };
         
+        // Store user data and create a dummy token since we're using session-based auth
         localStorage.setItem('user', JSON.stringify(userWithRole));
+        localStorage.setItem('token', 'session-auth-token');
         
         // Redirect based on user role
         if (userData.isAdmin) {
