@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
+import MessagePanel from '../components/MessagePanel';
+import ProjectTable from '../components/ProjectTable';
+import InvestmentChart from '../components/InvestmentChart';
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
@@ -12,6 +15,7 @@ const InvestorDashboard = () => {
       location: 'Lekki, Lagos',
       amount: 1200000,
       roi: 12,
+      status: 'Active',
       fundingProgress: 65
     },
     {
@@ -20,6 +24,7 @@ const InvestorDashboard = () => {
       location: 'Victoria Island, Lagos',
       amount: 850000,
       roi: 15,
+      status: 'Active',
       fundingProgress: 78
     },
     {
@@ -28,8 +33,15 @@ const InvestorDashboard = () => {
       location: 'Abuja',
       amount: 750000,
       roi: 13,
+      status: 'Pending',
       fundingProgress: 42
     }
+  ]);
+
+  const [messages, setMessages] = useState([
+    { sender: 'Admin', text: 'Welcome to REVA Investments' },
+    { sender: 'System', text: 'Your KYC verification is complete' },
+    { sender: 'Support', text: 'New investment opportunity available' }
   ]);
   
   useEffect(() => {
@@ -59,6 +71,13 @@ const InvestorDashboard = () => {
     : 0;
   const monthlyReturns = totalInvested * (averageROI / 100) / 12;
 
+  // Chart data
+  const chartData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    investments: [250000, 350000, 500000, 650000, 800000, totalInvested],
+    returns: [15000, 21000, 30000, 39000, 48000, Math.round(monthlyReturns * 6)]
+  };
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -87,9 +106,29 @@ const InvestorDashboard = () => {
           <p className="stat-value">{averageROI.toFixed(1)}%</p>
         </div>
       </div>
+
+      <div className="dashboard-row">
+        <div className="dashboard-column main-column">
+          <div className="chart-section">
+            <h2>Investment Performance</h2>
+            <InvestmentChart data={chartData} />
+          </div>
+          
+          <div className="projects-section">
+            <h2>Your Investments</h2>
+            <ProjectTable projects={investments} />
+          </div>
+        </div>
+        
+        <div className="dashboard-column side-column">
+          <div className="messages-section">
+            <MessagePanel messages={messages} />
+          </div>
+        </div>
+      </div>
       
       <div className="properties-container">
-        <h2>Your Investments</h2>
+        <h2>Featured Properties</h2>
         <div className="properties-grid">
           {investments.map(investment => (
             <div className="property-card" key={investment.id}>
