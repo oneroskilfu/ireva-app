@@ -5,6 +5,7 @@ import MessagePanel from '../components/MessagePanel';
 import ProjectTable from '../components/ProjectTable';
 import InvestmentChart from '../components/InvestmentChart';
 import SearchFilter from '../components/SearchFilter';
+import { showSuccessToast, showErrorToast, showInfoToast } from '../utils/toastUtil';
 
 const InvestorDashboard = () => {
   const navigate = useNavigate();
@@ -58,16 +59,21 @@ const InvestorDashboard = () => {
   useEffect(() => {
     // Set initial loading states
     setLoading(prev => ({ ...prev, user: true, investments: true }));
+    showInfoToast("Loading your investment data...");
     
     // Fetch user profile
     authService.getProfile()
       .then(response => {
         setUserData(response.data);
+        showSuccessToast(`Welcome back, ${response.data.username || 'Investor'}!`);
       })
       .catch(error => {
         console.error('Failed to fetch user profile:', error);
         if (error.response && error.response.status === 401) {
+          showErrorToast("Your session has expired. Please log in again.");
           handleLogout();
+        } else {
+          showErrorToast("Failed to load your profile. Please try again later.");
         }
       })
       .finally(() => {
@@ -84,6 +90,7 @@ const InvestorDashboard = () => {
       .catch(error => {
         console.error('Failed to fetch investments:', error);
         setError('Failed to load investments. Please try again later.');
+        showErrorToast("Could not load your investments. Using cached data for now.");
         // Keep the mock data in case of error for demo purposes
       })
       .finally(() => {
@@ -98,6 +105,7 @@ const InvestorDashboard = () => {
       })
       .catch(error => {
         console.error('Failed to fetch featured properties:', error);
+        showErrorToast("Could not load featured properties. Please try again later.");
       })
       .finally(() => {
         setLoading(prev => ({ ...prev, properties: false }));

@@ -1,6 +1,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
@@ -124,6 +126,18 @@ function App() {
             <PageLoading />
             <Router />
             <Toaster />
+            <ToastContainer 
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="light"
+            />
           </OnboardingWrapper>
         </OnboardingProvider>
       </PageTransitionProvider>
