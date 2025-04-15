@@ -11,12 +11,22 @@ export default function Footer() {
               <Building className="h-6 w-6 text-white mr-2" />
               <span className="text-xl font-bold">iREVA</span>
             </div>
-            <p className="text-gray-300 text-sm mb-2">
+            <p className="text-gray-300 text-sm mb-4">
               Access institutional-quality real estate investments with as little as ₦100,000.
             </p>
-            <p className="text-gray-300 text-sm mb-4">
-              Join thousands of investors building wealth through real estate with iREVA's easy-to-use platform. Your future self will thank you.
-            </p>
+            <div className="mb-4">
+              <p className="text-sm text-gray-300 mb-2">Subscribe to our newsletter</p>
+              <div className="flex">
+                <input 
+                  type="email" 
+                  placeholder="Your email" 
+                  className="bg-gray-700 text-sm rounded-l-md px-3 py-2 border-none focus:outline-none focus:ring-1 focus:ring-blue-500 text-white w-full max-w-[180px]" 
+                />
+                <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-2 rounded-r-md transition-colors">
+                  Subscribe
+                </button>
+              </div>
+            </div>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-300 hover:text-white">
                 <Twitter size={18} />
