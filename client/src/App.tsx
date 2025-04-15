@@ -5,6 +5,7 @@ import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
+import AnalyticsPage from "@/pages/analytics-page";
 import CommunityPage from "@/pages/community-page";
 import ForumPage from "@/pages/forum-page";
 import TopicDetailPage from "@/pages/topic-detail-page";
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/properties/:id" component={PropertyPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <ProtectedRoute path="/analytics" component={AnalyticsPage} />
       <ProtectedRoute path="/community" component={CommunityPage} />
       <ProtectedRoute path="/verification" component={VerificationPage} />
       <Route path="/forum" component={ForumPage} />
