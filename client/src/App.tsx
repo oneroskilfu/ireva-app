@@ -7,7 +7,8 @@ import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
-import AdminDashboard from "@/pages/AdminDashboard";
+// Import from JSX file directly for the updated admin dashboard
+import AdminDashboard from "@/pages/AdminDashboard.jsx";
 import Dashboard from "@/pages/Dashboard";
 import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "@/pages/login-page";
