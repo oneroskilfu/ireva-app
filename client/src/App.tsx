@@ -32,6 +32,8 @@ function Router() {
 function App() {
   return (
     <>
+      {/* Fixed border for the entire page */}
+      <div className="page-border"></div>
       <Router />
       <Toaster />
     </>
