@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -46,7 +46,12 @@ function App() {
             </PrivateRoute>
           </Route>
           
+          {/* Redirect /admin to /admin/dashboard */}
           <Route path="/admin">
+            <Redirect to="/admin/dashboard" />
+          </Route>
+          
+          <Route path="/admin/properties">
             <PrivateRoute role="admin">
               <AdminDashboard />
             </PrivateRoute>
