@@ -190,34 +190,61 @@ export default function ModernHero() {
                       <div className="text-sm text-green-400">+₦145,800 this month</div>
                     </div>
                     
-                    {/* Properties */}
+                    {/* ROI Chart */}
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-4 mb-4 rounded-lg">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm text-white font-medium">ROI Performance</span>
+                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">Last 6 months</span>
+                      </div>
+                      
+                      {/* Simple Chart */}
+                      <div className="h-32 flex items-end space-x-2 mb-2">
+                        {[15, 28, 20, 40, 30, 50].map((height, i) => (
+                          <div key={i} className="flex-1 flex flex-col items-center">
+                            <div className={`w-full rounded-t-sm ${
+                              i === 5 ? 'bg-gradient-to-t from-blue-500 to-indigo-400' : 'bg-gradient-to-t from-blue-500/50 to-indigo-400/50'
+                            }`} style={{ height: `${height}%` }}></div>
+                            <div className="w-full h-[1px] bg-gray-700"></div>
+                            <div className="text-gray-400 text-[10px] mt-1">
+                              {i === 0 ? 'Jan' : 
+                               i === 1 ? 'Feb' : 
+                               i === 2 ? 'Mar' : 
+                               i === 3 ? 'Apr' : 
+                               i === 4 ? 'May' : 'Jun'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <div>Average ROI: <span className="text-green-400">14.2%</span></div>
+                        <div>Projected: <span className="text-blue-400">16.8%</span></div>
+                      </div>
+                    </div>
+                    
+                    {/* Properties - Reduced to 2 to make space for chart */}
                     <div className="space-y-3">
-                      {Array.from({ length: 3 }).map((_, i) => (
+                      {Array.from({ length: 2 }).map((_, i) => (
                         <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 p-3 rounded-lg flex justify-between items-center">
                           <div className="flex items-center">
                             <div className={`w-10 h-10 ${
-                              i === 0 ? 'bg-blue-500/20' : 
-                              i === 1 ? 'bg-purple-500/20' : 'bg-green-500/20'
+                              i === 0 ? 'bg-blue-500/20' : 'bg-purple-500/20'
                             } rounded-full flex items-center justify-center mr-3`}>
                               <div className={`w-6 h-6 ${
-                                i === 0 ? 'bg-blue-500' : 
-                                i === 1 ? 'bg-purple-500' : 'bg-green-500'
+                                i === 0 ? 'bg-blue-500' : 'bg-purple-500'
                               } rounded-full`}></div>
                             </div>
                             <div>
                               <div className="text-white text-sm font-medium">
-                                {i === 0 ? 'Skyline Towers' : 
-                                 i === 1 ? 'Ocean View Villas' : 'Tech Hub Offices'}
+                                {i === 0 ? 'Skyline Towers' : 'Ocean View Villas'}
                               </div>
                               <div className="text-gray-400 text-xs">
-                                {i === 0 ? 'Lagos, Nigeria' : 
-                                 i === 1 ? 'Abuja, Nigeria' : 'Port Harcourt'}
+                                {i === 0 ? 'Lagos, Nigeria' : 'Abuja, Nigeria'}
                               </div>
                             </div>
                           </div>
                           <div className="text-green-400 text-sm font-medium">
-                            {i === 0 ? '+₦25,400' : 
-                             i === 1 ? '+₦32,200' : '+₦18,600'}
+                            {i === 0 ? '+₦25,400' : '+₦32,200'}
                           </div>
                         </div>
                       ))}
