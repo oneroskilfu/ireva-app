@@ -682,7 +682,7 @@
         <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
           <div class="p-4 border-b border-gray-200 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-800">Properties</h2>
-            <button class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New Property</button>
+            <button onclick="openAddPropertyModal()" class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Add New Property</button>
           </div>
           
           <div class="p-4">
@@ -1486,8 +1486,40 @@
       }
     });
   
-  // Property Edit Modal Functions
+  // Property Modal Functions
   let currentPropertyId = null;
+  
+  function openAddPropertyModal() {
+    // Reset the form fields for a new property
+    document.getElementById('property-form-title').textContent = 'Add New Property';
+    document.getElementById('edit-property-name').value = '';
+    document.getElementById('edit-property-location').value = '';
+    document.getElementById('edit-property-description').value = '';
+    document.getElementById('edit-property-price').value = '';
+    document.getElementById('edit-property-roi').value = '';
+    document.getElementById('edit-property-type').value = 'residential';
+    
+    // Hide current images/video/document sections
+    document.getElementById('current-images-section').classList.add('hidden');
+    document.getElementById('current-video-section').classList.add('hidden');
+    document.getElementById('current-document-section').classList.add('hidden');
+    
+    // Reset file inputs
+    document.getElementById('property-images').value = '';
+    document.getElementById('property-video').value = '';
+    document.getElementById('property-document').value = '';
+    
+    // Clear preview containers
+    document.getElementById('image-previews').innerHTML = '';
+    document.getElementById('video-preview').innerHTML = '';
+    document.getElementById('document-preview').innerHTML = '';
+    
+    // Set the save button to call addNewProperty instead of savePropertyEdits
+    document.getElementById('property-save-button').onclick = addNewProperty;
+    
+    // Show the modal
+    document.getElementById('property-edit-modal').classList.remove('hidden');
+  }
   
   function openPropertyEditModal(propertyId) {
     currentPropertyId = propertyId;
@@ -1497,6 +1529,15 @@
       showNotification('Property not found', 'error');
       return;
     }
+    
+    // Update modal title and save button
+    document.getElementById('property-form-title').textContent = 'Edit Property';
+    document.getElementById('property-save-button').onclick = savePropertyEdits;
+    
+    // Show media sections
+    document.getElementById('current-images-section').classList.remove('hidden');
+    document.getElementById('current-video-section').classList.remove('hidden');
+    document.getElementById('current-document-section').classList.remove('hidden');
     
     // Update modal with property details
     document.getElementById('edit-property-name').value = property.name;
@@ -1589,6 +1630,70 @@
   function closePropertyEditModal() {
     document.getElementById('property-edit-modal').classList.add('hidden');
     currentPropertyId = null;
+  }
+  
+  function addNewProperty() {
+    // Get the highest ID to create a new ID
+    const highestId = Math.max(...mockProperties.map(p => p.id), 0);
+    const newId = highestId + 1;
+    
+    // Create new property object
+    const newProperty = {
+      id: newId,
+      name: document.getElementById('edit-property-name').value,
+      location: document.getElementById('edit-property-location').value,
+      description: document.getElementById('edit-property-description').value,
+      type: document.getElementById('edit-property-type').value,
+      price: parseFloat(document.getElementById('edit-property-price').value) || 0,
+      minimumInvestment: parseFloat(document.getElementById('edit-property-price').value) || 0,
+      roi: document.getElementById('edit-property-roi').value,
+      targetReturn: document.getElementById('edit-property-roi').value,
+      duration: 5, // Default duration in years
+      status: 'Active',
+      investments: 0,
+      imageUrl: '',
+      additionalImages: '',
+      videoUrl: '',
+      documentUrl: ''
+    };
+    
+    // Handle image uploads
+    const imageInput = document.getElementById('property-images');
+    if (imageInput.files.length > 0) {
+      const mainImageFile = imageInput.files[0];
+      newProperty.imageUrl = URL.createObjectURL(mainImageFile);
+      
+      // Handle additional images
+      const additionalImages = [];
+      for (let i = 1; i < imageInput.files.length; i++) {
+        additionalImages.push(URL.createObjectURL(imageInput.files[i]));
+      }
+      if (additionalImages.length > 0) {
+        newProperty.additionalImages = additionalImages.join(',');
+      }
+    }
+    
+    // Handle video upload
+    const videoInput = document.getElementById('property-video');
+    if (videoInput.files.length > 0) {
+      const videoFile = videoInput.files[0];
+      newProperty.videoUrl = URL.createObjectURL(videoFile);
+    }
+    
+    // Handle document upload
+    const documentInput = document.getElementById('property-document');
+    if (documentInput.files.length > 0) {
+      const documentFile = documentInput.files[0];
+      newProperty.documentUrl = URL.createObjectURL(documentFile);
+    }
+    
+    // Add the new property to the array
+    mockProperties.push(newProperty);
+    
+    // Close modal and refresh content
+    closePropertyEditModal();
+    loadPropertiesContent();
+    showNotification('Property added successfully', 'success');
   }
   
   function savePropertyEdits() {
@@ -1710,7 +1815,7 @@
   <div id="property-edit-modal" class="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center hidden">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4">
       <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-gray-800">Edit Property</h2>
+        <h2 id="property-form-title" class="text-xl font-semibold text-gray-800">Edit Property</h2>
         <button onclick="closePropertyEditModal()" class="text-gray-500 hover:text-gray-700">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1766,7 +1871,7 @@
             <h4 class="text-md font-medium text-gray-800 mb-2">Images</h4>
             
             <!-- Current Images -->
-            <div class="mb-2">
+            <div id="current-images-section" class="mb-2">
               <p class="text-sm text-gray-600 mb-2">Current Images:</p>
               <div id="current-images" class="flex flex-wrap gap-2"></div>
             </div>
@@ -1793,7 +1898,7 @@
             <h4 class="text-md font-medium text-gray-800 mb-2">Property Video</h4>
             
             <!-- Current Video -->
-            <div class="mb-2">
+            <div id="current-video-section" class="mb-2">
               <p class="text-sm text-gray-600 mb-2">Current Video:</p>
               <div id="current-video"></div>
             </div>
@@ -1819,7 +1924,7 @@
             <h4 class="text-md font-medium text-gray-800 mb-2">Property Documents</h4>
             
             <!-- Current Document -->
-            <div class="mb-2">
+            <div id="current-document-section" class="mb-2">
               <p class="text-sm text-gray-600 mb-2">Current Document:</p>
               <div id="current-document"></div>
             </div>
