@@ -32,6 +32,17 @@ function App() {
           <Route path="/test-auth" component={TestAuth} />
           <Route path="/unauthorized" component={UnauthorizedPage} />
           <Route path="/properties/:id" component={PropertyPage} />
+          <Route path="/properties">
+            {() => <div className="container p-8">
+              <h1 className="text-3xl font-bold mb-6">Property Listings</h1>
+              <p className="mb-4">This is a placeholder for the PropertyListing page which requires React Router DOM. 
+              You previously worked on this page in client/src/pages/PropertyListing.jsx.</p>
+              <p className="text-red-600">Note: There's a routing inconsistency - App.tsx uses Wouter but PropertyListing.jsx uses React Router DOM.</p>
+              <div className="mt-6">
+                <a href="/" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Back to Home</a>
+              </div>
+            </div>}
+          </Route>
           
           {/* Protected routes */}
           <Route path="/dashboard">
