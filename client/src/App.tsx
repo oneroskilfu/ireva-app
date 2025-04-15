@@ -6,6 +6,8 @@ import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
 import CommunityPage from "@/pages/community-page";
+import ForumPage from "@/pages/forum-page";
+import TopicDetailPage from "@/pages/topic-detail-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -16,6 +18,8 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute path="/community" component={CommunityPage} />
+      <Route path="/forum" component={ForumPage} />
+      <Route path="/forum/topic/:id" component={TopicDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );
