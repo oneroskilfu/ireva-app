@@ -769,7 +769,7 @@
                       </div>
                       
                       <div class="flex gap-2 mt-4">
-                        <button class="flex-1 bg-[#553627] text-white px-3 py-1.5 rounded hover:bg-[#664332] text-sm">Edit</button>
+                        <button onclick="openPropertyEditModal(${prop.id})" class="flex-1 bg-[#553627] text-white px-3 py-1.5 rounded hover:bg-[#664332] text-sm">Edit</button>
                         <button class="flex-1 border border-[#553627] text-[#553627] px-3 py-1.5 rounded hover:bg-[#553627] hover:text-white text-sm">Details</button>
                       </div>
                     </div>
@@ -1485,6 +1485,369 @@
         showNotification('Welcome to iREVA Admin Dashboard');
       }
     });
+  
+  // Property Edit Modal Functions
+  let currentPropertyId = null;
+  
+  function openPropertyEditModal(propertyId) {
+    currentPropertyId = propertyId;
+    const property = mockProperties.find(p => p.id === propertyId);
+    
+    if (!property) {
+      showNotification('Property not found', 'error');
+      return;
+    }
+    
+    // Update modal with property details
+    document.getElementById('edit-property-name').value = property.name;
+    document.getElementById('edit-property-location').value = property.location;
+    document.getElementById('edit-property-description').value = property.description;
+    document.getElementById('edit-property-price').value = property.minimumInvestment;
+    document.getElementById('edit-property-roi').value = property.targetReturn;
+    document.getElementById('edit-property-type').value = property.type;
+    
+    // Show current images if available
+    const currentImagesDiv = document.getElementById('current-images');
+    currentImagesDiv.innerHTML = '';
+    
+    if (property.imageUrl) {
+      const imgContainer = document.createElement('div');
+      imgContainer.className = 'relative group';
+      imgContainer.innerHTML = `
+        <img src="${property.imageUrl}" alt="Main Property Image" class="h-24 w-24 object-cover rounded-md border border-gray-300">
+        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-md">
+          <button class="text-white bg-red-500 px-2 py-1 rounded text-sm">Remove</button>
+        </div>
+      `;
+      currentImagesDiv.appendChild(imgContainer);
+    }
+    
+    // Show current additional images if available
+    if (property.additionalImages) {
+      const additionalImages = property.additionalImages.split(',');
+      additionalImages.forEach(imgUrl => {
+        if (imgUrl.trim()) {
+          const imgContainer = document.createElement('div');
+          imgContainer.className = 'relative group';
+          imgContainer.innerHTML = `
+            <img src="${imgUrl}" alt="Additional Property Image" class="h-24 w-24 object-cover rounded-md border border-gray-300">
+            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-md">
+              <button class="text-white bg-red-500 px-2 py-1 rounded text-sm">Remove</button>
+            </div>
+          `;
+          currentImagesDiv.appendChild(imgContainer);
+        }
+      });
+    }
+    
+    // Reset file inputs
+    document.getElementById('property-images').value = '';
+    document.getElementById('property-video').value = '';
+    document.getElementById('property-document').value = '';
+    
+    // Show video if available
+    const currentVideoDiv = document.getElementById('current-video');
+    currentVideoDiv.innerHTML = '';
+    
+    if (property.videoUrl) {
+      currentVideoDiv.innerHTML = `
+        <div class="relative group">
+          <video src="${property.videoUrl}" controls class="h-24 rounded-md border border-gray-300"></video>
+          <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-md">
+            <button class="text-white bg-red-500 px-2 py-1 rounded text-sm">Remove</button>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Show PDF if available
+    const currentDocumentDiv = document.getElementById('current-document');
+    currentDocumentDiv.innerHTML = '';
+    
+    if (property.documentUrl) {
+      currentDocumentDiv.innerHTML = `
+        <div class="flex items-center justify-between p-2 border rounded-md">
+          <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span class="text-sm">Property Document.pdf</span>
+          </div>
+          <button class="text-red-500 hover:text-red-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      `;
+    }
+    
+    // Show the modal
+    document.getElementById('property-edit-modal').classList.remove('hidden');
+  }
+  
+  function closePropertyEditModal() {
+    document.getElementById('property-edit-modal').classList.add('hidden');
+    currentPropertyId = null;
+  }
+  
+  function savePropertyEdits() {
+    if (!currentPropertyId) return;
+    
+    const property = mockProperties.find(p => p.id === currentPropertyId);
+    if (!property) return;
+    
+    // Update property data
+    property.name = document.getElementById('edit-property-name').value;
+    property.location = document.getElementById('edit-property-location').value;
+    property.description = document.getElementById('edit-property-description').value;
+    property.minimumInvestment = parseFloat(document.getElementById('edit-property-price').value);
+    property.targetReturn = document.getElementById('edit-property-roi').value;
+    property.type = document.getElementById('edit-property-type').value;
+    
+    // Handle new image uploads (in a real app, these would be uploaded to a server)
+    const imageInput = document.getElementById('property-images');
+    if (imageInput.files.length > 0) {
+      // In a real application, you would upload these files to a server and get URLs back
+      // For now, we'll just simulate that we got the URLs
+      const mainImageFile = imageInput.files[0];
+      const mainImageUrl = URL.createObjectURL(mainImageFile);
+      property.imageUrl = mainImageUrl;
+      
+      // Handle additional images
+      const additionalImages = [];
+      for (let i = 1; i < imageInput.files.length; i++) {
+        additionalImages.push(URL.createObjectURL(imageInput.files[i]));
+      }
+      if (additionalImages.length > 0) {
+        property.additionalImages = additionalImages.join(',');
+      }
+    }
+    
+    // Handle video upload
+    const videoInput = document.getElementById('property-video');
+    if (videoInput.files.length > 0) {
+      const videoFile = videoInput.files[0];
+      property.videoUrl = URL.createObjectURL(videoFile);
+    }
+    
+    // Handle document upload
+    const documentInput = document.getElementById('property-document');
+    if (documentInput.files.length > 0) {
+      const documentFile = documentInput.files[0];
+      property.documentUrl = URL.createObjectURL(documentFile);
+    }
+    
+    // Close modal and refresh content
+    closePropertyEditModal();
+    loadPropertiesContent();
+    showNotification('Property updated successfully', 'success');
+  }
+  
+  // Preview images before upload
+  function previewPropertyImages() {
+    const input = document.getElementById('property-images');
+    const previewContainer = document.getElementById('image-previews');
+    previewContainer.innerHTML = '';
+    
+    if (input.files) {
+      for (let i = 0; i < input.files.length; i++) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          const previewDiv = document.createElement('div');
+          previewDiv.className = 'h-24 w-24 rounded-md overflow-hidden border border-gray-300';
+          previewDiv.innerHTML = `<img src="${e.target.result}" alt="Preview" class="h-full w-full object-cover">`;
+          previewContainer.appendChild(previewDiv);
+        }
+        
+        reader.readAsDataURL(input.files[i]);
+      }
+    }
+  }
+  
+  // Preview video before upload
+  function previewPropertyVideo() {
+    const input = document.getElementById('property-video');
+    const previewContainer = document.getElementById('video-preview');
+    previewContainer.innerHTML = '';
+    
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        previewContainer.innerHTML = `
+          <video src="${e.target.result}" controls class="h-24 rounded-md border border-gray-300"></video>
+        `;
+      }
+      
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+  
+  // Preview document before upload
+  function previewPropertyDocument() {
+    const input = document.getElementById('property-document');
+    const previewContainer = document.getElementById('document-preview');
+    previewContainer.innerHTML = '';
+    
+    if (input.files && input.files[0]) {
+      const fileName = input.files[0].name;
+      
+      previewContainer.innerHTML = `
+        <div class="flex items-center p-2 border rounded-md">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <span class="text-sm">${fileName}</span>
+        </div>
+      `;
+    }
+  }
   </script>
+  
+  <!-- Property Edit Modal -->
+  <div id="property-edit-modal" class="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4">
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">Edit Property</h2>
+        <button onclick="closePropertyEditModal()" class="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
+            <input id="edit-property-name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <input id="edit-property-location" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea id="edit-property-description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent"></textarea>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Minimum Investment (₦)</label>
+            <input id="edit-property-price" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Target ROI (%)</label>
+            <input id="edit-property-roi" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+            <select id="edit-property-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#553627] focus:border-transparent">
+              <option value="residential">Residential</option>
+              <option value="commercial">Commercial</option>
+              <option value="industrial">Industrial</option>
+              <option value="mixed-use">Mixed-Use</option>
+              <option value="land">Land</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Media Upload Sections -->
+        <div class="border-t border-gray-200 pt-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Property Media</h3>
+          
+          <!-- Images Section -->
+          <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-800 mb-2">Images</h4>
+            
+            <!-- Current Images -->
+            <div class="mb-2">
+              <p class="text-sm text-gray-600 mb-2">Current Images:</p>
+              <div id="current-images" class="flex flex-wrap gap-2"></div>
+            </div>
+            
+            <!-- Upload New Images -->
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Upload New Images</label>
+              <input id="property-images" type="file" multiple accept="image/*" onchange="previewPropertyImages()" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-[#553627] file:text-white
+                hover:file:bg-[#664332]
+              ">
+              <p class="mt-1 text-xs text-gray-500">Select multiple images. First image will be the main property image.</p>
+              
+              <!-- Image Previews -->
+              <div id="image-previews" class="flex flex-wrap gap-2 mt-2"></div>
+            </div>
+          </div>
+          
+          <!-- Video Section -->
+          <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-800 mb-2">Property Video</h4>
+            
+            <!-- Current Video -->
+            <div class="mb-2">
+              <p class="text-sm text-gray-600 mb-2">Current Video:</p>
+              <div id="current-video"></div>
+            </div>
+            
+            <!-- Upload New Video -->
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Upload New Video</label>
+              <input id="property-video" type="file" accept="video/*" onchange="previewPropertyVideo()" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-[#553627] file:text-white
+                hover:file:bg-[#664332]
+              ">
+              
+              <!-- Video Preview -->
+              <div id="video-preview" class="mt-2"></div>
+            </div>
+          </div>
+          
+          <!-- Document Section -->
+          <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-800 mb-2">Property Documents</h4>
+            
+            <!-- Current Document -->
+            <div class="mb-2">
+              <p class="text-sm text-gray-600 mb-2">Current Document:</p>
+              <div id="current-document"></div>
+            </div>
+            
+            <!-- Upload New Document -->
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Upload New Document</label>
+              <input id="property-document" type="file" accept=".pdf,.doc,.docx" onchange="previewPropertyDocument()" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-[#553627] file:text-white
+                hover:file:bg-[#664332]
+              ">
+              
+              <!-- Document Preview -->
+              <div id="document-preview" class="mt-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+        <button onclick="closePropertyEditModal()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 mr-2">Cancel</button>
+        <button onclick="savePropertyEdits()" class="bg-[#553627] text-white px-4 py-2 rounded-md hover:bg-[#664332]">Save Changes</button>
+      </div>
+    </div>
+  </div>
+  
 </body>
 </html>
