@@ -276,8 +276,8 @@ const PropertyManagement = () => {
             {showAddForm ? 'Cancel' : 'Add New Property'}
           </button>
         </div>
-      
-      {showAddForm && (
+        
+        {showAddForm && (
         <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8 p-6">
           <h3 className="text-xl font-semibold mb-4">Add New Property</h3>
           
