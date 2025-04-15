@@ -40,53 +40,53 @@ export default function Header() {
               <span className="text-xl font-bold">InvestProperty</span>
             </Link>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link href="/">
-                <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+              <Link href="/" 
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                   location === "/" 
                     ? "border-primary text-primary" 
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                }`}>
-                  Properties
-                </a>
+                }`}
+              >
+                Properties
               </Link>
-              <Link href="/#how-it-works">
-                <a className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                  How It Works
-                </a>
+              <Link href="/#how-it-works"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                How It Works
               </Link>
-              <Link href="/#about">
-                <a className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                  About
-                </a>
+              <Link href="/#about"
+                className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
+              >
+                About
               </Link>
-              <Link href="/forum">
-                <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+              <Link href="/forum"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                   location === "/forum" || location.startsWith("/forum/") 
                     ? "border-primary text-primary" 
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                }`}>
-                  Forum
-                </a>
+                }`}
+              >
+                Forum
               </Link>
               {user && (
                 <>
-                  <Link href="/community">
-                    <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  <Link href="/community"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                       location === "/community" 
                         ? "border-primary text-primary" 
                         : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    }`}>
-                      Community
-                    </a>
+                    }`}
+                  >
+                    Community
                   </Link>
-                  <Link href="/verification">
-                    <a className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  <Link href="/verification"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                       location === "/verification" 
                         ? "border-primary text-primary" 
                         : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    }`}>
-                      Verification
-                    </a>
+                    }`}
+                  >
+                    Verification
                   </Link>
                 </>
               )}
