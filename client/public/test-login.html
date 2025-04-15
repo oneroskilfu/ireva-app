@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Login Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background-color: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    pre {
+      background-color: #f8f8f8;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin-top: 20px;
+      border: 1px solid #ddd;
+    }
+    .error {
+      color: red;
+      margin-top: 15px;
+    }
+    .success {
+      color: green;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Direct Login Test</h1>
+    
+    <div class="form-group">
+      <label for="username">Username:</label>
+      <input type="text" id="username" value="admin">
+    </div>
+    
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input type="password" id="password" value="password">
+    </div>
+    
+    <button id="loginBtn">Login</button>
+    <button id="clearBtn" style="background-color: #f44336; margin-left: 10px;">Clear Storage</button>
+    
+    <div id="message"></div>
+    
+    <h3>Response:</h3>
+    <pre id="response">No response yet</pre>
+    
+    <h3>LocalStorage:</h3>
+    <pre id="storage">No user data in localStorage</pre>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Display current localStorage data on page load
+      updateStorageDisplay();
+      
+      // Login button click handler
+      document.getElementById('loginBtn').addEventListener('click', async function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const messageEl = document.getElementById('message');
+        const responseEl = document.getElementById('response');
+        
+        messageEl.textContent = 'Logging in...';
+        messageEl.className = '';
+        
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+          });
+          
+          const data = await response.json();
+          responseEl.textContent = JSON.stringify(data, null, 2);
+          
+          if (response.ok) {
+            messageEl.textContent = 'Login successful!';
+            messageEl.className = 'success';
+            
+            // Store in localStorage with role conversion
+            const userWithRole = {
+              ...data,
+              role: data.isAdmin ? 'admin' : 'investor'
+            };
+            
+            localStorage.setItem('user', JSON.stringify(userWithRole));
+            localStorage.setItem('token', 'session-auth-token');
+            
+            // Update storage display
+            updateStorageDisplay();
+          } else {
+            messageEl.textContent = `Login failed: ${data.message || 'Unknown error'}`;
+            messageEl.className = 'error';
+          }
+        } catch (error) {
+          messageEl.textContent = `Error: ${error.message}`;
+          messageEl.className = 'error';
+          responseEl.textContent = error.toString();
+        }
+      });
+      
+      // Clear storage button
+      document.getElementById('clearBtn').addEventListener('click', function() {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        updateStorageDisplay();
+        
+        const messageEl = document.getElementById('message');
+        messageEl.textContent = 'LocalStorage cleared';
+        messageEl.className = '';
+      });
+      
+      // Helper function to update storage display
+      function updateStorageDisplay() {
+        const storageEl = document.getElementById('storage');
+        const userStr = localStorage.getItem('user');
+        
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            storageEl.textContent = JSON.stringify(user, null, 2);
+          } catch (e) {
+            storageEl.textContent = `Error parsing user data: ${e.message}`;
+          }
+        } else {
+          storageEl.textContent = 'No user data in localStorage';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
