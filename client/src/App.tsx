@@ -9,7 +9,7 @@ import AuthPage from "@/pages/auth-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "@/pages/login-page";
-import AdminRoute from "@/components/AdminRoute";
+import PrivateRoute from "@/components/PrivateRoute";
 
 function App() {
   return (
@@ -20,7 +20,14 @@ function App() {
         <Route path="/login" component={LoginPage} />
         <Route path="/unauthorized" component={UnauthorizedPage} />
         <Route path="/properties/:id" component={PropertyPage} />
-        <AdminRoute path="/admin" component={AdminDashboard} />
+        
+        {/* Admin route with role-based access control */}
+        <Route path="/admin">
+          <PrivateRoute role="admin">
+            <AdminDashboard />
+          </PrivateRoute>
+        </Route>
+        
         <Route component={NotFound} />
       </Switch>
       <Toaster />

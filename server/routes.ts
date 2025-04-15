@@ -22,7 +22,7 @@ import {
 } from "./services/openai";
 
 // Import route handlers
-import authRoutes from './routes/auth.js';
+import authRouter from './routes/auth'; // Updated import for TypeScript
 import usersRoutes from './routes/users.js';
 import projectsRoutes from './routes/projects.js';
 import propertiesRoutes from './routes/properties.js';

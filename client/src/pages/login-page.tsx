@@ -48,12 +48,13 @@ const LoginPage = () => {
     try {
       const response = await axios.post('/api/auth/login', data);
       
-      // Store token in localStorage
-      if (response.data.token) {
+      // Store token and user data in localStorage
+      if (response.data.token && response.data.user) {
         localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         
         // Redirect based on user role
-        if (response.data.user && response.data.user.role === 'admin') {
+        if (response.data.user.role === 'admin') {
           toast({
             title: 'Admin Login Successful',
             description: 'Welcome back, administrator!',
@@ -66,6 +67,8 @@ const LoginPage = () => {
           });
           setLocation('/');
         }
+      } else {
+        throw new Error('Invalid response from server');
       }
     } catch (error) {
       console.error('Login error:', error);
