@@ -20,6 +20,7 @@ import {
   analyzeUserBehavior,
   UserPreferences
 } from "./services/openai";
+import { isAdmin } from "./middleware/isAdmin";
 
 // Import route handlers
 import authRouter from './routes/auth'; // Updated import for TypeScript
@@ -172,18 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
   
-  // Admin middleware to check if the user is an admin
-  const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "You must be logged in to access this resource" });
-    }
-    
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "You don't have permission to access this resource" });
-    }
-    
-    next();
-  };
+  // We now use the imported isAdmin middleware
 
   // Get all properties
   app.get("/api/properties", async (req, res) => {
