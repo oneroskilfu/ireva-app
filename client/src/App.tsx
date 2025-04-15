@@ -14,6 +14,10 @@ import LoginPage from "@/pages/login-page";
 import TestAuth from "@/pages/test-auth";
 import PrivateRoute from "@/components/PrivateRoute";
 
+// Admin Components
+import PropertyManagement from "@/pages/Admin/PropertyManagement";
+import RoiTracker from "@/pages/Admin/RoiTracker";
+
 function App() {
   return (
     <div>
@@ -34,9 +38,22 @@ function App() {
             </PrivateRoute>
           </Route>
           
+          {/* Admin routes */}
           <Route path="/admin">
             <PrivateRoute role="admin">
               <AdminDashboard />
+            </PrivateRoute>
+          </Route>
+          
+          <Route path="/admin/properties">
+            <PrivateRoute role="admin">
+              <PropertyManagement />
+            </PrivateRoute>
+          </Route>
+          
+          <Route path="/admin/roi-tracker">
+            <PrivateRoute role="admin">
+              <RoiTracker />
             </PrivateRoute>
           </Route>
           
