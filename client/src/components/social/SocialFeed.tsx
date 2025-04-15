@@ -76,7 +76,7 @@ export function SocialFeed() {
           {
             id: 2,
             type: 'milestone',
-            content: 'Just reached my first ₦1,000,000 in real estate investments! Thank you REVA for making this possible.',
+            content: 'Just reached my first ₦1,000,000 in real estate investments! Thank you iREVA for making this possible.',
             timestamp: '2023-11-19T15:45:00Z',
             user: {
               id: 2,
@@ -95,7 +95,7 @@ export function SocialFeed() {
             timestamp: '2023-11-18T09:15:00Z',
             user: {
               id: 3,
-              name: 'REVA Insights',
+              name: 'iREVA Insights',
               username: 'revainsights',
               imageUrl: '/logo.svg'
             },

@@ -17,7 +17,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Simple test route
 app.get('/', (req, res) => {
-  res.json({ message: 'REVA API is running' });
+  res.json({ message: 'iREVA API is running' });
 });
 
 // User routes
