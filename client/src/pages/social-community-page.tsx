@@ -76,7 +76,7 @@ function SocialCommunityPageContent() {
           <div className="flex flex-col md:flex-row justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold">Community</h1>
-              <p className="text-muted-foreground">Connect with fellow investors and share your REVA journey</p>
+              <p className="text-muted-foreground">Connect with fellow investors and share your iREVA journey</p>
             </div>
             <div className="mt-4 md:mt-0">
               <Dialog open={postDialogOpen} onOpenChange={setPostDialogOpen}>
@@ -259,7 +259,7 @@ function SocialCommunityPageContent() {
                     Upcoming Events
                   </CardTitle>
                   <CardDescription>
-                    Connect with the REVA community
+                    Connect with the iREVA community
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
