@@ -12,7 +12,7 @@ export default function Footer() {
               <span className="text-xl font-bold">iREVA</span>
             </div>
             <p className="text-gray-300 text-sm mb-4">
-              Access institutional-quality real estate investments with as little as $1,000.
+              Access institutional-quality real estate investments with as little as ₦100,000.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-300 hover:text-white">
