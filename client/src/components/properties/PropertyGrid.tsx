@@ -9,9 +9,10 @@ interface PropertyGridProps {
   type?: string;
   location?: string;
   search?: string;
+  limit?: number; // Added limit parameter to limit the number of properties shown
 }
 
-export default function PropertyGrid({ type, location, search }: PropertyGridProps) {
+export default function PropertyGrid({ type, location, search, limit }: PropertyGridProps) {
   const [page, setPage] = useState(1);
   const pageSize = 6;
   
@@ -53,11 +54,14 @@ export default function PropertyGrid({ type, location, search }: PropertyGridPro
     );
   }
   
+  // Apply limit if specified
+  const filteredProperties = limit ? properties.slice(0, limit) : properties;
+  
   // Pagination logic
-  const totalPages = Math.ceil(properties.length / pageSize);
+  const totalPages = Math.ceil(filteredProperties.length / pageSize);
   const start = (page - 1) * pageSize;
   const end = start + pageSize;
-  const currentPageProperties = properties.slice(start, end);
+  const currentPageProperties = filteredProperties.slice(start, end);
   
   return (
     <section className="py-8">
@@ -68,7 +72,7 @@ export default function PropertyGrid({ type, location, search }: PropertyGridPro
           ))}
         </div>
         
-        {totalPages > 1 && (
+        {!limit && totalPages > 1 && (
           <div className="mt-8 flex justify-center">
             <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
               <Button
