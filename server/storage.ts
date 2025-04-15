@@ -3,6 +3,11 @@ import {
   properties, type Property, type InsertProperty, 
   investments, type Investment, type InsertInvestment,
   notifications, type Notification, type InsertNotification,
+  directMessages, type DirectMessage, type InsertDirectMessage,
+  educationalResources, type EducationalResource, type InsertEducationalResource,
+  paymentTransactions, type PaymentTransaction, type InsertPaymentTransaction,
+  achievementBadges, type AchievementBadge, type InsertAchievementBadge,
+  userAchievements, type UserAchievement, type InsertUserAchievement,
   type KycDocument, type KycStatus
 } from "@shared/schema";
 import session from "express-session";
@@ -18,24 +23,61 @@ export interface IStorage {
   updateUserPhone(userId: number, phoneNumber: string, isVerified: boolean): Promise<User>;
   updateUserKyc(userId: number, status: KycStatus, documents: KycDocument, submittedAt: Date): Promise<User>;
   updateUserKycStatus(userId: number, status: KycStatus, rejectionReason?: string, verifiedAt?: Date | null): Promise<User>;
+  updateUserAccreditation(userId: number, level: string, documents?: any): Promise<User>;
+  updateUserPreferences(userId: number, preferences: any): Promise<User>;
+  updateUserReferralCode(userId: number, referralCode: string): Promise<User>;
+  addUserRewardsPoints(userId: number, points: number): Promise<User>;
+  updateUserProfile(userId: number, profile: Partial<User>): Promise<User>;
   
   // Property methods
   getProperty(id: number): Promise<Property | undefined>;
   getAllProperties(): Promise<Property[]>;
   getPropertiesByType(type: string): Promise<Property[]>;
   getPropertiesByLocation(location: string): Promise<Property[]>;
+  getPropertiesByTier(tier: string): Promise<Property[]>;
+  getPropertiesByAccreditationRequirement(accreditedOnly: boolean): Promise<Property[]>;
   searchProperties(search: string): Promise<Property[]>;
   createProperty(property: InsertProperty): Promise<Property>;
+  updateProperty(id: number, property: Partial<Property>): Promise<Property>;
+  addPropertyUpdateOrImage(id: number, update: any): Promise<Property>;
   
   // Investment methods
   getInvestment(id: number): Promise<Investment | undefined>;
   getUserInvestments(userId: number): Promise<Investment[]>;
+  getInvestmentsByProperty(propertyId: number): Promise<Investment[]>;
   createInvestment(investment: InsertInvestment): Promise<Investment>;
+  updateInvestmentStatus(id: number, status: string): Promise<Investment>;
+  updateInvestmentValue(id: number, currentValue: number): Promise<Investment>;
+  updateInvestmentReturns(id: number, earnings: number, monthlyReturns: any): Promise<Investment>;
   
   // Notification methods
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: number): Promise<Notification[]>;
   markNotificationAsRead(id: number): Promise<Notification>;
+  
+  // Direct message methods
+  createDirectMessage(message: InsertDirectMessage): Promise<DirectMessage>;
+  getUserDirectMessages(userId: number): Promise<DirectMessage[]>;
+  getConversation(user1Id: number, user2Id: number): Promise<DirectMessage[]>;
+  markMessageAsRead(id: number): Promise<DirectMessage>;
+  
+  // Educational resource methods
+  createEducationalResource(resource: InsertEducationalResource): Promise<EducationalResource>;
+  getAllEducationalResources(): Promise<EducationalResource[]>;
+  getEducationalResourcesByCategory(category: string): Promise<EducationalResource[]>;
+  incrementResourceViewCount(id: number): Promise<EducationalResource>;
+  likeResource(id: number): Promise<EducationalResource>;
+  
+  // Payment transaction methods
+  createPaymentTransaction(transaction: InsertPaymentTransaction): Promise<PaymentTransaction>;
+  getUserPaymentTransactions(userId: number): Promise<PaymentTransaction[]>;
+  updateTransactionStatus(id: number, status: string, gatewayReference?: string): Promise<PaymentTransaction>;
+  
+  // Achievement methods
+  createAchievementBadge(badge: InsertAchievementBadge): Promise<AchievementBadge>;
+  getAllAchievementBadges(): Promise<AchievementBadge[]>;
+  awardAchievementToUser(userId: number, badgeId: number): Promise<UserAchievement>;
+  getUserAchievements(userId: number): Promise<UserAchievement[]>;
   
   // Session store
   sessionStore: session.Store;
@@ -46,10 +88,20 @@ export class MemStorage implements IStorage {
   private properties: Map<number, Property>;
   private investments: Map<number, Investment>;
   private notifications: Map<number, Notification>;
+  private directMessages: Map<number, DirectMessage>;
+  private educationalResources: Map<number, EducationalResource>;
+  private paymentTransactions: Map<number, PaymentTransaction>;
+  private achievementBadges: Map<number, AchievementBadge>;
+  private userAchievements: Map<number, UserAchievement>;
   private userIdCounter: number;
   private propertyIdCounter: number;
   private investmentIdCounter: number;
   private notificationIdCounter: number;
+  private directMessageIdCounter: number;
+  private educationalResourceIdCounter: number;
+  private paymentTransactionIdCounter: number;
+  private achievementBadgeIdCounter: number;
+  private userAchievementIdCounter: number;
   sessionStore: session.Store;
 
   constructor() {
