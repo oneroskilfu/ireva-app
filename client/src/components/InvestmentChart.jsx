@@ -1,78 +1,27 @@
 import React from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, LineElement, CategoryScale, LinearScale, PointElement } from 'chart.js';
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
-const InvestmentChart = ({ data = null }) => {
-  // Default chart data if none provided
-  const defaultData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    investments: [250000, 350000, 500000, 650000, 800000, 950000],
-    returns: [15000, 21000, 30000, 39000, 48000, 57000]
-  };
-
-  const chartData = data || defaultData;
-
-  const options = {
-    responsive: true,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Investment Performance'
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(value) {
-            return '₦' + value.toLocaleString();
-          }
-        }
-      }
-    }
-  };
-
-  const chartDataConfig = {
-    labels: chartData.labels,
+const InvestmentChart = () => {
+  const data = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr'],
     datasets: [
       {
-        label: 'Total Investment',
-        data: chartData.investments,
-        borderColor: '#1e40af',
-        backgroundColor: 'rgba(30, 64, 175, 0.5)',
+        label: 'ROI',
+        data: [5, 10, 8, 12],
+        borderColor: 'green',
+        backgroundColor: 'lightgreen',
         tension: 0.3,
       },
-      {
-        label: 'Returns',
-        data: chartData.returns,
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.5)',
-        tension: 0.3,
-      }
     ],
   };
 
   return (
-    <div className="chart-container">
-      <Line options={options} data={chartDataConfig} />
+    <div>
+      <h4>ROI Growth</h4>
+      <Line data={data} />
     </div>
   );
 };

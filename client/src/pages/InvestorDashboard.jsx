@@ -71,13 +71,6 @@ const InvestorDashboard = () => {
     : 0;
   const monthlyReturns = totalInvested * (averageROI / 100) / 12;
 
-  // Chart data
-  const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    investments: [250000, 350000, 500000, 650000, 800000, totalInvested],
-    returns: [15000, 21000, 30000, 39000, 48000, Math.round(monthlyReturns * 6)]
-  };
-
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -110,8 +103,7 @@ const InvestorDashboard = () => {
       <div className="dashboard-row">
         <div className="dashboard-column main-column">
           <div className="chart-section">
-            <h2>Investment Performance</h2>
-            <InvestmentChart data={chartData} />
+            <InvestmentChart />
           </div>
           
           <div className="projects-section">
