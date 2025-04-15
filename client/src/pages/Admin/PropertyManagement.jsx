@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import API from '../../api/axios';
 import { toast } from 'react-toastify';
+import Navbar from '../../components/Navbar';
 
 const PropertyManagement = () => {
   const [properties, setProperties] = useState([]);
