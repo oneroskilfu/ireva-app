@@ -145,6 +145,13 @@ const AdminDashboard = () => {
             </svg>
             Settings
           </Link>
+          
+          <button onClick={handleLogout} className="w-full flex items-center px-4 py-3 text-white hover:bg-[#664332] transition-colors mt-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm9 14H5a1 1 0 01-1-1V5h8v11zm1-11.5a.5.5 0 00-.5.5v1a.5.5 0 001 0V6a.5.5 0 00-.5-.5zm0 3a.5.5 0 00-.5.5v1a.5.5 0 001 0V9a.5.5 0 00-.5-.5z" clipRule="evenodd" />
+            </svg>
+            Logout
+          </button>
         </nav>
       </div>
       

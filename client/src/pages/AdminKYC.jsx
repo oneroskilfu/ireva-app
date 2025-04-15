@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import Navbar from '../components/Navbar';
+import { useLocation, Link } from 'wouter';
 import { getCurrentUser } from '../utils/auth';
 
 const AdminKYC = () => {
