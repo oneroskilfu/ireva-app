@@ -1,177 +1,98 @@
-import { createContext, useContext, type ReactNode } from "react";
+import React, { createContext, useContext } from "react";
 import { cn } from "@/lib/utils";
-import { CheckIcon } from "lucide-react";
 
 interface StepsContextValue {
   activeStep: number;
-  orientation: "vertical" | "horizontal";
 }
 
-const StepsContext = createContext<StepsContextValue | null>(null);
+const StepsContext = createContext<StepsContextValue | undefined>(undefined);
 
-export function Steps({
-  activeStep,
-  orientation = "horizontal",
-  className,
-  children,
-}: {
+interface StepsProps extends React.HTMLAttributes<HTMLDivElement> {
   activeStep: number;
-  orientation?: "vertical" | "horizontal";
-  className?: string;
-  children: ReactNode;
-}) {
+  children: React.ReactNode;
+}
+
+export function Steps({ activeStep, children, className, ...props }: StepsProps) {
   return (
-    <StepsContext.Provider value={{ activeStep, orientation }}>
-      <div
-        className={cn(
-          "flex gap-4",
-          orientation === "vertical" ? "flex-col" : "",
-          className
-        )}
-      >
+    <StepsContext.Provider value={{ activeStep }}>
+      <div className={cn("space-y-4", className)} {...props}>
         {children}
       </div>
     </StepsContext.Provider>
   );
 }
 
-export function StepIndicator({
-  step,
-  className,
-  children,
-}: {
-  step: number;
-  className?: string;
-  children?: ReactNode;
-}) {
+function useStepsContext() {
   const context = useContext(StepsContext);
   if (!context) {
-    throw new Error("StepIndicator must be used within a Steps component");
+    throw new Error("Steps components must be used within a Steps component");
   }
-
-  const { activeStep } = context;
-  const isCompleted = activeStep > step;
-  const isActive = activeStep === step;
-
-  return (
-    <div
-      className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-full border text-sm font-medium",
-        isCompleted
-          ? "border-primary bg-primary text-primary-foreground"
-          : isActive
-          ? "border-primary text-primary"
-          : "border-muted-foreground text-muted-foreground",
-        className
-      )}
-    >
-      {isCompleted ? (
-        <CheckIcon className="h-4 w-4" />
-      ) : children ? (
-        children
-      ) : (
-        step + 1
-      )}
-    </div>
-  );
-}
-
-export function StepSeparator({
-  className,
-}: {
-  className?: string;
-}) {
-  const context = useContext(StepsContext);
-  if (!context) {
-    throw new Error("StepSeparator must be used within a Steps component");
-  }
-
-  const { orientation } = context;
-  
-  return (
-    <div
-      className={cn(
-        "flex-1 bg-border",
-        orientation === "vertical" ? "w-0.5 min-h-[1rem]" : "h-0.5 min-w-[1rem]",
-        className
-      )}
-    ></div>
-  );
-}
-
-export function StepStatus({
-  step,
-  complete,
-  incomplete,
-  active,
-}: {
-  step: number;
-  complete: ReactNode;
-  incomplete: ReactNode;
-  active: ReactNode;
-}) {
-  const context = useContext(StepsContext);
-  if (!context) {
-    throw new Error("StepStatus must be used within a Steps component");
-  }
-
-  const { activeStep } = context;
-  const isCompleted = activeStep > step;
-  const isActive = activeStep === step;
-
-  if (isCompleted) {
-    return <>{complete}</>;
-  }
-  
-  if (isActive) {
-    return <>{active}</>;
-  }
-  
-  return <>{incomplete}</>;
-}
-
-export function StepTitle({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={cn("font-semibold", className)}>
-      {children}
-    </div>
-  );
-}
-
-export function StepDescription({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={cn("text-sm text-muted-foreground", className)}>
-      {children}
-    </div>
-  );
-}
-
-export function StepNumber() {
-  const context = useContext(StepsContext);
-  if (!context) {
-    throw new Error("StepNumber must be used within a Steps component");
-  }
-  
-  return context.activeStep + 1;
-}
-
-export function useSteps() {
-  const context = useContext(StepsContext);
-  if (!context) {
-    throw new Error("useSteps must be used within a Steps component");
-  }
-  
   return context;
+}
+
+interface StepIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
+  step: number;
+  children: React.ReactNode;
+}
+
+export function StepIndicator({ step, children, className, ...props }: StepIndicatorProps) {
+  const { activeStep } = useStepsContext();
+  const isActive = step === activeStep;
+  const isCompleted = step < activeStep;
+
+  return (
+    <div
+      className={cn(
+        "flex h-10 w-10 items-center justify-center rounded-full border-2",
+        isActive 
+          ? "border-primary bg-primary/10 text-primary font-semibold" 
+          : isCompleted 
+            ? "border-primary bg-primary text-primary-foreground"
+            : "border-muted-foreground text-muted-foreground",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function StepSeparator({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("h-0.5 w-full bg-muted-foreground/30 my-3", className)}
+      {...props}
+    />
+  );
+}
+
+interface StepTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  children: React.ReactNode;
+}
+
+export function StepTitle({ children, className, ...props }: StepTitleProps) {
+  return (
+    <h3
+      className={cn("text-sm font-medium", className)}
+      {...props}
+    >
+      {children}
+    </h3>
+  );
+}
+
+interface StepDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  children: React.ReactNode;
+}
+
+export function StepDescription({ children, className, ...props }: StepDescriptionProps) {
+  return (
+    <p
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    >
+      {children}
+    </p>
+  );
 }
