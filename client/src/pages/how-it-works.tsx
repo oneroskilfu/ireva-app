@@ -109,7 +109,7 @@ export default function HowItWorksPage() {
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Three Simple Steps</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Investing in real estate has never been easier. Follow these simple steps to begin your investment journey with REVA.
+              Investing in real estate has never been easier. Follow these simple steps to begin your investment journey with iREVA.
             </p>
           </motion.div>
 
@@ -279,7 +279,7 @@ export default function HowItWorksPage() {
               <motion.h2 
                 variants={itemVariants}
                 className="text-3xl md:text-4xl font-bold mb-6">
-                Key Benefits of Investing with REVA
+                Key Benefits of Investing with iREVA
               </motion.h2>
               <motion.p 
                 variants={itemVariants}
@@ -358,7 +358,7 @@ export default function HowItWorksPage() {
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-6">Common Questions</h2>
               <p className="text-lg text-gray-600">
-                Here are answers to some frequently asked questions about investing with REVA.
+                Here are answers to some frequently asked questions about investing with iREVA.
               </p>
             </motion.div>
 
@@ -373,9 +373,9 @@ export default function HowItWorksPage() {
                 variants={itemVariants}
                 className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
               >
-                <h3 className="text-lg font-bold mb-3">How secure is my investment with REVA?</h3>
+                <h3 className="text-lg font-bold mb-3">How secure is my investment with iREVA?</h3>
                 <p className="text-gray-600">
-                  All properties on REVA are thoroughly vetted, with legal documentation verified by our team of experts. We ensure clean titles, proper permits, and insurance coverage for every investment opportunity on our platform.
+                  All properties on iREVA are thoroughly vetted, with legal documentation verified by our team of experts. We ensure clean titles, proper permits, and insurance coverage for every investment opportunity on our platform.
                 </p>
               </motion.div>
 
@@ -395,7 +395,7 @@ export default function HowItWorksPage() {
               >
                 <h3 className="text-lg font-bold mb-3">Can I sell my investment before the term ends?</h3>
                 <p className="text-gray-600">
-                  While real estate is traditionally a long-term investment, REVA is developing a secondary market to allow investors to sell their shares to other investors, subject to certain conditions and availability of buyers.
+                  While real estate is traditionally a long-term investment, iREVA is developing a secondary market to allow investors to sell their shares to other investors, subject to certain conditions and availability of buyers.
                 </p>
               </motion.div>
             </motion.div>
