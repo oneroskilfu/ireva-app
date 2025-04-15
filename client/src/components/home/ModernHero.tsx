@@ -180,14 +180,28 @@ export default function ModernHero() {
                       <p className="text-gray-400 text-xs">Your portfolio is performing well today</p>
                     </div>
                     
-                    {/* Portfolio value card */}
+                    {/* Portfolio value card with mini growth chart */}
                     <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 backdrop-blur-md rounded-xl border border-white/10 p-4 mb-4">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-xs text-gray-400">Portfolio Value</span>
                         <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full">+8.2%</span>
                       </div>
-                      <div className="text-2xl font-bold text-white mb-1">₦12,458,620</div>
-                      <div className="text-sm text-green-400">+₦145,800 this month</div>
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <div className="text-2xl font-bold text-white mb-1">₦12,458,620</div>
+                          <div className="text-sm text-green-400">+₦145,800 this month</div>
+                        </div>
+                        {/* Simplified Portfolio Growth Line */}
+                        <div className="h-10 flex items-end space-x-[2px]">
+                          {[30, 28, 35, 32, 40, 38, 45, 43, 50, 55].map((height, i) => (
+                            <div 
+                              key={i} 
+                              className="w-1 bg-green-400"
+                              style={{ height: `${height}%` }}
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     
                     {/* ROI Chart */}
@@ -261,8 +275,21 @@ export default function ModernHero() {
                 className="absolute -bottom-6 -right-6 md:-right-20 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-3 backdrop-blur-xl border border-gray-200 dark:border-gray-700"
               >
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-md p-2 mb-2">
-                  <div className="h-2 w-16 bg-blue-200 dark:bg-blue-700 rounded-full mb-1"></div>
-                  <div className="h-2 w-24 bg-blue-400 dark:bg-blue-500 rounded-full"></div>
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="text-xs font-medium text-blue-600 dark:text-blue-400">Asset Growth</div>
+                    <div className="text-xs text-green-500">+24%</div>
+                  </div>
+                  <div className="relative h-8">
+                    <div className="absolute bottom-0 left-0 right-0 flex items-end space-x-[1px]">
+                      {[20, 25, 22, 35, 30, 45, 40, 55, 50, 65, 60, 80].map((height, i) => (
+                        <div 
+                          key={i} 
+                          className={`flex-1 ${i % 2 === 0 ? 'bg-blue-400 dark:bg-blue-500' : 'bg-indigo-400 dark:bg-indigo-500'} rounded-t-sm`}
+                          style={{ height: `${height}%` }}
+                        ></div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div>
