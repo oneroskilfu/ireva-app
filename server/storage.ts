@@ -3,7 +3,7 @@ import {
   properties, type Property, type InsertProperty, 
   investments, type Investment, type InsertInvestment,
   notifications, type Notification, type InsertNotification,
-  type KycDocument 
+  type KycDocument, type KycStatus
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -16,8 +16,8 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPhone(userId: number, phoneNumber: string, isVerified: boolean): Promise<User>;
-  updateUserKyc(userId: number, status: string, documents: any, submittedAt: Date): Promise<User>;
-  updateUserKycStatus(userId: number, status: string, rejectionReason?: string, verifiedAt?: Date): Promise<User>;
+  updateUserKyc(userId: number, status: KycStatus, documents: KycDocument, submittedAt: Date): Promise<User>;
+  updateUserKycStatus(userId: number, status: KycStatus, rejectionReason?: string, verifiedAt?: Date | null): Promise<User>;
   
   // Property methods
   getProperty(id: number): Promise<Property | undefined>;
@@ -38,7 +38,7 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<Notification>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -115,7 +115,7 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
-  async updateUserKyc(userId: number, status: string, documents: KycDocument, submittedAt: Date): Promise<User> {
+  async updateUserKyc(userId: number, status: KycStatus, documents: KycDocument, submittedAt: Date): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) {
       throw new Error(`User with ID ${userId} not found`);
@@ -134,7 +134,7 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
-  async updateUserKycStatus(userId: number, status: string, rejectionReason?: string, verifiedAt?: Date): Promise<User> {
+  async updateUserKycStatus(userId: number, status: KycStatus, rejectionReason?: string, verifiedAt?: Date | null): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) {
       throw new Error(`User with ID ${userId} not found`);
