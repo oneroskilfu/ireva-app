@@ -65,7 +65,7 @@ const LoginPage = () => {
             title: 'Login Successful',
             description: 'Welcome back to iREVA!',
           });
-          setLocation('/');
+          setLocation('/dashboard');
         }
       } else {
         throw new Error('Invalid response from server');

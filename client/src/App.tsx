@@ -6,7 +6,8 @@ import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
 import AuthPage from "@/pages/auth-page";
-import AdminDashboard from "@/pages/admin-dashboard";
+import AdminDashboard from "@/pages/AdminDashboard";
+import Dashboard from "@/pages/Dashboard";
 import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "@/pages/login-page";
 import PrivateRoute from "@/components/PrivateRoute";
@@ -25,7 +26,7 @@ function App() {
         {/* Protected routes */}
         <Route path="/dashboard">
           <PrivateRoute role="investor">
-            <HomePage />
+            <Dashboard />
           </PrivateRoute>
         </Route>
         
