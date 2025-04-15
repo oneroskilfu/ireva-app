@@ -1,112 +1,74 @@
-import { Github, Mail, Send } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { Building, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Footer() {
-  const [email, setEmail] = useState("");
-  const { toast } = useToast();
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Email required",
-        description: "Please enter your email address to subscribe."
-      });
-      return;
-    }
-    
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid email",
-        description: "Please enter a valid email address."
-      });
-      return;
-    }
-    
-    // In a real implementation, this would connect to a newsletter service
-    toast({
-      title: "Subscription successful!",
-      description: "You're now subscribed to our newsletter.",
-    });
-    
-    setEmail("");
-  };
-
   return (
-    <footer className="bg-background border-t py-10 md:py-12">
-      <div className="container px-4 md:px-6">
+    <footer className="bg-gray-800 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <h4 className="font-medium text-base">iREVA</h4>
-            <p className="text-sm text-muted-foreground">
-              Invest in premium real estate opportunities with our transparent and secure platform.
-            </p>
-          </div>
-          
-          <div className="space-y-4">
-            <h4 className="font-medium text-base">Pages</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link></li>
-              <li><Link href="/how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How It Works</Link></li>
-              <li><Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link></li>
-              <li><Link href="/market-trends" className="text-muted-foreground hover:text-foreground transition-colors">Market Trends</Link></li>
-            </ul>
-          </div>
-          
-          <div className="space-y-4">
-            <h4 className="font-medium text-base">Resources</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/community" className="text-muted-foreground hover:text-foreground transition-colors">Community</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">Knowledge Base</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link></li>
-              <li><Link href="/support" className="text-muted-foreground hover:text-foreground transition-colors">Customer Support</Link></li>
-            </ul>
-          </div>
-          
-          <div className="space-y-4">
-            <h4 className="font-medium text-base">Subscribe for updates</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Stay updated on new investment opportunities and market insights.
-            </p>
-            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2">
-              <Input
-                type="email"
-                placeholder="Your email address"
-                className="focus-visible:ring-primary"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button type="submit" size="sm" className="shrink-0 gap-1">
-                Subscribe
-                <Send className="h-4 w-4 ml-1" />
-              </Button>
-            </form>
-            <div className="pt-4 flex items-center text-sm text-muted-foreground">
-              <Mail className="h-4 w-4 mr-2" />
-              <span>support@ireva.com</span>
+          <div>
+            <div className="flex items-center mb-4">
+              <Building className="h-6 w-6 text-white mr-2" />
+              <span className="text-xl font-bold">InvestProperty</span>
             </div>
+            <p className="text-gray-300 text-sm mb-4">
+              Access institutional-quality real estate investments with as little as $1,000.
+            </p>
+            <div className="flex space-x-4">
+              <a href="#" className="text-gray-300 hover:text-white">
+                <Twitter size={18} />
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white">
+                <Facebook size={18} />
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white">
+                <Instagram size={18} />
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white">
+                <Linkedin size={18} />
+              </a>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Resources</h3>
+            <ul className="space-y-2">
+              <li><Link href="/#how-it-works" className="text-gray-300 hover:text-white text-sm">How It Works</Link></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Investment Guide</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">FAQ</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Blog</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Investor Education</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Company</h3>
+            <ul className="space-y-2">
+              <li><Link href="/#about" className="text-gray-300 hover:text-white text-sm">About Us</Link></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Our Team</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Careers</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Contact</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Press</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Legal</h3>
+            <ul className="space-y-2">
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Terms of Service</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Privacy Policy</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Cookie Policy</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Disclosures</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Licenses</a></li>
+            </ul>
           </div>
         </div>
         
-        <Separator className="my-6" />
-        
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <p className="text-xs text-muted-foreground mb-4 md:mb-0">
-            &copy; 2025 iREVA. All rights reserved.
+        <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between">
+          <p className="text-sm text-gray-400">© {new Date().getFullYear()} InvestProperty. All rights reserved.</p>
+          <p className="text-sm text-gray-400 mt-2 md:mt-0">
+            Investing involves risks, including loss of principal. Past performance does not guarantee future results.
           </p>
-          <div className="flex space-x-6">
-            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
-            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookies</Link>
-          </div>
         </div>
       </div>
     </footer>

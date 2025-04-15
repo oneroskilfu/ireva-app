@@ -64,7 +64,7 @@ export default function RecommendedProperties() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Min</p>
-                  <p className="text-sm font-medium">₦{property.minimumInvestment.toLocaleString()}</p>
+                  <p className="text-sm font-medium">${property.minimumInvestment.toLocaleString()}</p>
                 </div>
               </div>
               

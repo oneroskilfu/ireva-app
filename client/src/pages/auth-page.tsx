@@ -1,392 +1,320 @@
-import * as React from 'react';
-import { useState } from 'react';
-import { useLocation } from 'wouter';
-import { 
-  Box, 
-  Container,
-  Typography,
-  TextField,
-  Button,
-  Paper,
-  Tabs,
-  Tab,
-  Grid,
-  Link,
-  Divider,
-  Alert,
-  CircularProgress
-} from '@mui/material';
-import { LockOutlined, Person, PersonAdd, Email, Phone } from '@mui/icons-material';
-import { useAuth } from '../contexts/auth-context';
+import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { insertUserSchema } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Building } from "lucide-react";
+import { useLocation } from "wouter";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
+// Extended schemas with validation
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
 
-interface RegisterData {
-  username: string;
-  email: string;
-  password: string;
-  fullName: string;
-  phone: string;
-}
+const registerSchema = insertUserSchema.extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Invalid email address"),
+});
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
+type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
+export default function AuthPage() {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const { user, loginMutation, registerMutation } = useAuth();
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  
+  // Login form
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+  
+  // Register form
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+    },
+  });
+  
+  const onLoginSubmit = (data: LoginFormValues) => {
+    loginMutation.mutate(data, {
+      onSuccess: () => {
+        navigate("/");
+      },
+    });
+  };
+  
+  const onRegisterSubmit = (data: RegisterFormValues) => {
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        navigate("/");
+      },
+    });
+  };
+  
+  // Redirect if already logged in
+  if (user) {
+    navigate("/");
+    return null;
+  }
+  
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`auth-tabpanel-${index}`}
-      aria-labelledby={`auth-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ pt: 3 }}>
-          {children}
-        </Box>
-      )}
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow flex items-center justify-center py-12">
+        <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row overflow-hidden bg-white rounded-xl shadow-lg">
+            {/* Left side - Auth forms */}
+            <div className="w-full lg:w-1/2 p-6 sm:p-10">
+              <div className="flex items-center mb-6">
+                <Building className="h-6 w-6 text-primary mr-2" />
+                <span className="text-xl font-bold">InvestProperty</span>
+              </div>
+              
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="login">Sign In</TabsTrigger>
+                  <TabsTrigger value="register">Create Account</TabsTrigger>
+                </TabsList>
+                
+                {/* Login Form */}
+                <TabsContent value="login">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Welcome back</CardTitle>
+                      <CardDescription>
+                        Sign in to your account to manage your real estate investments
+                      </CardDescription>
+                    </CardHeader>
+                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-username">Username</Label>
+                          <Input
+                            id="login-username"
+                            type="text"
+                            {...loginForm.register("username")}
+                          />
+                          {loginForm.formState.errors.username && (
+                            <p className="text-sm text-red-500">
+                              {loginForm.formState.errors.username.message}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="login-password">Password</Label>
+                            <a href="#" className="text-sm text-primary hover:underline">
+                              Forgot password?
+                            </a>
+                          </div>
+                          <Input
+                            id="login-password"
+                            type="password"
+                            {...loginForm.register("password")}
+                          />
+                          {loginForm.formState.errors.password && (
+                            <p className="text-sm text-red-500">
+                              {loginForm.formState.errors.password.message}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          type="submit" 
+                          className="w-full" 
+                          disabled={loginMutation.isPending}
+                        >
+                          {loginMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Signing in...
+                            </>
+                          ) : "Sign in"}
+                        </Button>
+                      </CardFooter>
+                    </form>
+                  </Card>
+                </TabsContent>
+                
+                {/* Register Form */}
+                <TabsContent value="register">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Create an account</CardTitle>
+                      <CardDescription>
+                        Join thousands of investors and start your real estate investing journey
+                      </CardDescription>
+                    </CardHeader>
+                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="register-firstName">First Name</Label>
+                            <Input
+                              id="register-firstName"
+                              type="text"
+                              {...registerForm.register("firstName")}
+                            />
+                            {registerForm.formState.errors.firstName && (
+                              <p className="text-sm text-red-500">
+                                {registerForm.formState.errors.firstName.message}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="register-lastName">Last Name</Label>
+                            <Input
+                              id="register-lastName"
+                              type="text"
+                              {...registerForm.register("lastName")}
+                            />
+                            {registerForm.formState.errors.lastName && (
+                              <p className="text-sm text-red-500">
+                                {registerForm.formState.errors.lastName.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="register-email">Email</Label>
+                          <Input
+                            id="register-email"
+                            type="email"
+                            {...registerForm.register("email")}
+                          />
+                          {registerForm.formState.errors.email && (
+                            <p className="text-sm text-red-500">
+                              {registerForm.formState.errors.email.message}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="register-username">Username</Label>
+                          <Input
+                            id="register-username"
+                            type="text"
+                            {...registerForm.register("username")}
+                          />
+                          {registerForm.formState.errors.username && (
+                            <p className="text-sm text-red-500">
+                              {registerForm.formState.errors.username.message}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="register-password">Password</Label>
+                          <Input
+                            id="register-password"
+                            type="password"
+                            {...registerForm.register("password")}
+                          />
+                          {registerForm.formState.errors.password && (
+                            <p className="text-sm text-red-500">
+                              {registerForm.formState.errors.password.message}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          type="submit" 
+                          className="w-full" 
+                          disabled={registerMutation.isPending}
+                        >
+                          {registerMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Creating account...
+                            </>
+                          ) : "Create account"}
+                        </Button>
+                      </CardFooter>
+                    </form>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+            
+            {/* Right side - Hero section */}
+            <div className="hidden lg:block lg:w-1/2 bg-primary-dark p-10 text-white">
+              <div className="h-full flex flex-col justify-center">
+                <h2 className="text-3xl font-bold mb-4">
+                  Real Estate Investing, Simplified
+                </h2>
+                <p className="text-lg mb-8 text-gray-200">
+                  Access institutional-quality real estate investments with as little as $1,000. Build a diversified portfolio of income-generating properties without the hassle of traditional real estate ownership.
+                </p>
+                
+                <div className="space-y-6">
+                  <div className="flex items-start">
+                    <div className="rounded-full p-2 bg-white/10 mr-4">
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl">Low Minimum Investment</h3>
+                      <p className="text-gray-300">Start investing with just $1,000</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <div className="rounded-full p-2 bg-white/10 mr-4">
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl">Passive Income</h3>
+                      <p className="text-gray-300">Earn monthly distributions from your investments</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <div className="rounded-full p-2 bg-white/10 mr-4">
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl">Fully Transparent</h3>
+                      <p className="text-gray-300">See exactly where your money is invested</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
-
-const AuthPage: React.FC = () => {
-  const [tabValue, setTabValue] = useState(0);
-  const [, setLocation] = useLocation();
-  const { login } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Login form state
-  const [loginData, setLoginData] = useState<LoginCredentials>({
-    username: '',
-    password: '',
-  });
-
-  // Register form state
-  const [registerData, setRegisterData] = useState<RegisterData>({
-    username: '',
-    email: '',
-    password: '',
-    fullName: '',
-    phone: '',
-  });
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-    setError(null);
-  };
-
-  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setLoginData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setRegisterData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Direct API call to session-based login
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData),
-        credentials: 'include' // Important for session cookies
-      });
-      
-      if (!response.ok) {
-        throw new Error('Login failed: ' + response.statusText);
-      }
-      
-      const userData = await response.json();
-      console.log('Login successful:', userData);
-      
-      // Redirect to dashboard
-      setLocation('/simple-dashboard');
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Invalid username or password');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Direct API call to session-based registration
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registerData),
-        credentials: 'include' // Important for session cookies
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Registration failed: ' + response.statusText);
-      }
-      
-      const userData = await response.json();
-      console.log('Registration successful:', userData);
-      
-      // Redirect to dashboard
-      setLocation('/simple-dashboard');
-    } catch (err: any) {
-      console.error('Registration error:', err);
-      setError(err.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Container maxWidth="lg" sx={{ mt: 8 }}>
-      <Grid container spacing={4}>
-        {/* Left side - Auth forms */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-            <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Typography component="h1" variant="h4" fontWeight="bold" color="primary">
-                iREVA
-              </Typography>
-              <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
-                Real Estate Value Assets
-              </Typography>
-            </Box>
-
-            <Tabs 
-              value={tabValue} 
-              onChange={handleTabChange} 
-              variant="fullWidth" 
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
-            >
-              <Tab label="Login" />
-              <Tab label="Register" />
-            </Tabs>
-
-            {error && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-
-            <TabPanel value={tabValue} index={0}>
-              <form onSubmit={handleLoginSubmit}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="username"
-                  label="Username"
-                  name="username"
-                  autoComplete="username"
-                  autoFocus
-                  value={loginData.username}
-                  onChange={handleLoginChange}
-                  InputProps={{
-                    startAdornment: <Person color="action" sx={{ mr: 1 }} />,
-                  }}
-                />
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="password"
-                  label="Password"
-                  type="password"
-                  id="password"
-                  autoComplete="current-password"
-                  value={loginData.password}
-                  onChange={handleLoginChange}
-                  InputProps={{
-                    startAdornment: <LockOutlined color="action" sx={{ mr: 1 }} />,
-                  }}
-                />
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  sx={{ mt: 3, mb: 2 }}
-                  disabled={loading}
-                >
-                  {loading ? <CircularProgress size={24} /> : 'Sign In'}
-                </Button>
-              </form>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={1}>
-              <form onSubmit={handleRegisterSubmit}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="register-username"
-                  label="Username"
-                  name="username"
-                  autoComplete="username"
-                  value={registerData.username}
-                  onChange={handleRegisterChange}
-                  InputProps={{
-                    startAdornment: <Person color="action" sx={{ mr: 1 }} />,
-                  }}
-                />
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="register-email"
-                  label="Email Address"
-                  name="email"
-                  autoComplete="email"
-                  type="email"
-                  value={registerData.email}
-                  onChange={handleRegisterChange}
-                  InputProps={{
-                    startAdornment: <Email color="action" sx={{ mr: 1 }} />,
-                  }}
-                />
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="register-password"
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={registerData.password}
-                  onChange={handleRegisterChange}
-                  InputProps={{
-                    startAdornment: <LockOutlined color="action" sx={{ mr: 1 }} />,
-                  }}
-                />
-                <TextField
-                  margin="normal"
-                  fullWidth
-                  id="register-fullName"
-                  label="Full Name"
-                  name="fullName"
-                  value={registerData.fullName}
-                  onChange={handleRegisterChange}
-                  InputProps={{
-                    startAdornment: <PersonAdd color="action" sx={{ mr: 1 }} />,
-                  }}
-                />
-                <TextField
-                  margin="normal"
-                  fullWidth
-                  id="register-phone"
-                  label="Phone Number"
-                  name="phone"
-                  type="tel"
-                  placeholder="+234"
-                  value={registerData.phone}
-                  onChange={handleRegisterChange}
-                  InputProps={{
-                    startAdornment: <Phone color="action" sx={{ mr: 1 }} />,
-                  }}
-                />
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  sx={{ mt: 3, mb: 2 }}
-                  disabled={loading}
-                >
-                  {loading ? <CircularProgress size={24} /> : 'Register'}
-                </Button>
-              </form>
-            </TabPanel>
-
-            <Divider sx={{ my: 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                OR
-              </Typography>
-            </Divider>
-
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Typography variant="body2">
-                <Link href="#" onClick={(e) => e.preventDefault()}>
-                  Forgot password?
-                </Link>
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Need help? <Link href="/support">Contact support</Link>
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* Right side - Hero section */}
-        <Grid item xs={12} md={6}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              height: '100%',
-              p: 4,
-            }}
-          >
-            <Typography variant="h3" component="h1" fontWeight="bold" gutterBottom>
-              Invest in Real Estate without the Hassle
-            </Typography>
-            <Typography variant="h6" sx={{ mb: 3, color: 'text.secondary' }}>
-              iREVA makes real estate investing accessible to everyone in Nigeria.
-            </Typography>
-            
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body1" paragraph>
-                ✓ Start with as little as ₦100,000
-              </Typography>
-              <Typography variant="body1" paragraph>
-                ✓ Earn up to 15% annual returns
-              </Typography>
-              <Typography variant="body1" paragraph>
-                ✓ Own shares in premium properties in Lagos, Abuja and more
-              </Typography>
-              <Typography variant="body1">
-                ✓ Track your investment performance in real-time
-              </Typography>
-            </Box>
-
-            <Button 
-              variant="outlined" 
-              size="large" 
-              onClick={() => setTabValue(1)}
-              sx={{ alignSelf: 'flex-start', mt: 2 }}
-            >
-              Get Started Now
-            </Button>
-          </Box>
-        </Grid>
-      </Grid>
-    </Container>
-  );
-};
-
-export default AuthPage;

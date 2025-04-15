@@ -1,19 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import cors from 'cors';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Configure CORS
-app.use(cors({
-  // In Replit environment, we need to be more permissive with CORS
-  // since both frontend and backend are served from the same origin
-  origin: true, // Allow requests from any origin
-  credentials: true
-}));
 
 app.use((req, res, next) => {
   const start = Date.now();

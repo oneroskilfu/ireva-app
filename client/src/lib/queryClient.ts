@@ -1,20 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-// Function to get the JWT token from local storage
-export function getAuthToken(): string | null {
-  return localStorage.getItem('authToken');
-}
-
-// Function to set the JWT token in local storage
-export function setAuthToken(token: string): void {
-  localStorage.setItem('authToken', token);
-}
-
-// Function to remove the JWT token from local storage (logout)
-export function removeAuthToken(): void {
-  localStorage.removeItem('authToken');
-}
-
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -27,20 +12,9 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  // Prepare headers with content type if data exists
-  const headers: Record<string, string> = data 
-    ? { "Content-Type": "application/json" } 
-    : {};
-  
-  // Add authorization header if token exists
-  const token = getAuthToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   const res = await fetch(url, {
     method,
-    headers,
+    headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -55,16 +29,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Prepare headers with authorization if token exists
-    const headers: Record<string, string> = {};
-    const token = getAuthToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
-      headers
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

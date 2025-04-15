@@ -1,76 +1,84 @@
 import { useParams } from "wouter";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Property } from "@shared/schema";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import PropertyDetails from "@/components/properties/PropertyDetails";
-import { InvestmentTutorialWizard } from "@/components/tutorial/InvestmentTutorialWizard";
-import { GuidedPropertyTutorial } from "@/components/tutorial/GuidedPropertyTutorial";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HelpCircle } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { AchievementsDisplay } from "@/components/gamification/AchievementsDisplay";
-import { AchievementBadge } from "@/components/gamification/AchievementBadge";
-import { useOnboarding } from "@/contexts/onboarding-context";
-import StartOnboardingButton from "@/components/onboarding/StartOnboardingButton";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 export default function PropertyPage() {
-  const [showBasicTutorial, setShowBasicTutorial] = useState(false);
-  const [hasViewedProperty, setHasViewedProperty] = useLocalStorage("reva-property-viewed", false);
-  const { user } = useAuth();
+  const { id } = useParams();
+  const { toast } = useToast();
   
-  // Mark property as viewed for returning users
-  useEffect(() => {
-    if (!hasViewedProperty) {
-      setHasViewedProperty(true);
-      // We would trigger milestone here if user is logged in
-      // This is handled by the MilestoneContext in a real implementation
-    }
-  }, [hasViewedProperty]);
-
+  const {
+    data: property,
+    isLoading,
+    error
+  } = useQuery<Property>({
+    queryKey: [`/api/properties/${id}`],
+  });
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex justify-center items-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
+  if (error || !property) {
+    const errorMessage = error ? 
+      (error as Error).message : 
+      "Unable to load property details";
+    
+    toast({
+      title: "Error",
+      description: errorMessage,
+      variant: "destructive",
+    });
+    
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex flex-col justify-center items-center p-4">
+          <h1 className="text-2xl font-bold mb-4">Property not found</h1>
+          <p className="text-gray-600 mb-6">
+            The property you're looking for doesn't exist or may have been removed.
+          </p>
+          <Link href="/">
+            <Button>Browse Available Properties</Button>
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
-        <div className="container px-4 py-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex gap-2">
-              <GuidedPropertyTutorial 
-                onComplete={() => console.log("Guided tutorial completed")} 
-                autoStart={false} // Set to false while we fix the error
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <StartOnboardingButton 
-                flow="property"
-                variant="outline"
-                className="mr-2"
-              >
-                Property Guide
-              </StartOnboardingButton>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1.5"
-                onClick={() => setShowBasicTutorial(true)}
-              >
-                <HelpCircle className="h-4 w-4" />
-                <span>Investment Help</span>
-              </Button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-between mb-6">
+            <div>
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="mb-2">
+                  &larr; Back to properties
+                </Button>
+              </Link>
+              <h1 className="text-2xl font-bold">{property.name}</h1>
+              <p className="text-gray-500">{property.location}</p>
             </div>
           </div>
           
-          <div id="property-overview">
-            <PropertyDetails />
-          </div>
-          
-          {/* Investment tutorial dialog */}
-          {showBasicTutorial && (
-            <InvestmentTutorialWizard 
-              autoOpen={true} 
-              onComplete={() => setShowBasicTutorial(false)} 
-            />
-          )}
+          <PropertyDetails property={property} />
         </div>
       </main>
       <Footer />

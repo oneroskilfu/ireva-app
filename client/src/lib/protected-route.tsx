@@ -1,37 +1,16 @@
-import React from "react";
-import { useLocation, Route, Redirect } from "wouter";
-import { useAuth } from "../contexts/auth-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { Redirect, Route } from "wouter";
 
-interface ProtectedRouteProps {
-  component: React.ComponentType;
-  path: string;
-}
-
-/**
- * A route component that protects content from unauthenticated users
- * If user is not authenticated (no token), they will be redirected to the login page
- * Works with Wouter for routing
- */
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  component: Component,
+export function ProtectedRoute({
   path,
-  ...rest
-}) => {
-  const { token, isAuthenticated } = useAuth();
-  const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = React.useState(true);
+  component: Component,
+}: {
+  path: string;
+  component: () => React.JSX.Element;
+}) {
+  const { user, isLoading } = useAuth();
 
-  React.useEffect(() => {
-    // Simulate checking authentication status
-    const checkAuth = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    
-    return () => clearTimeout(checkAuth);
-  }, []);
-
-  // Show loading indicator while checking authentication
   if (isLoading) {
     return (
       <Route path={path}>
@@ -42,16 +21,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  return (
-    <Route
-      path={path}
-      {...rest}
-    >
-      {isAuthenticated ? (
-        <Component />
-      ) : (
-        <Redirect to="/login" />
-      )}
-    </Route>
-  );
-};
+  if (!user) {
+    return (
+      <Route path={path}>
+        <Redirect to="/auth" />
+      </Route>
+    );
+  }
+
+  return <Route path={path} component={Component} />
+}
