@@ -26,14 +26,35 @@ const Sidebar = () => {
             </Link>
           </li>
           
+          <li>
+            <Link 
+              to="/properties"
+              className="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
+            >
+              Browse Properties
+            </Link>
+          </li>
+          
+          <li>
+            <Link 
+              to="/history"
+              className="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
+            >
+              My Investments
+            </Link>
+          </li>
+          
           {isAdmin && (
             <>
+              <li className="pt-4 mt-4 border-t border-gray-200">
+                <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Admin Tools</p>
+              </li>
               <li>
                 <Link 
                   to="/admin/properties"
                   className="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
                 >
-                  Properties
+                  Manage Properties
                 </Link>
               </li>
               <li>
@@ -49,7 +70,7 @@ const Sidebar = () => {
                   to="/admin/users"
                   className="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
                 >
-                  Users
+                  Manage Users
                 </Link>
               </li>
             </>
@@ -64,17 +85,12 @@ const Sidebar = () => {
             </Link>
           </li>
           
-          <li>
-            <Link 
-              to="/history"
-              className="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
-            >
-              Investment History
-            </Link>
-          </li>
-          
           {/* User settings section */}
           <li className="pt-4 mt-4 border-t border-gray-200">
+            <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Account</p>
+          </li>
+          
+          <li>
             <Link 
               to={isAdmin ? "/admin/profile" : "/profile"}
               className="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-md"
@@ -101,7 +117,7 @@ const Sidebar = () => {
             </Link>
           </li>
           
-          <li className="pt-4 mt-4">
+          <li className="pt-4 mt-4 border-t border-gray-200">
             <button 
               onClick={() => {
                 localStorage.removeItem('token');
