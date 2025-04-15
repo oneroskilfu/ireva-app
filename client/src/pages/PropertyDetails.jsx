@@ -20,8 +20,138 @@ const PropertyDetails = () => {
   const fetchPropertyDetails = async () => {
     setLoading(true);
     try {
-      const res = await propertyService.getPropertyById(id);
-      setProperty(res.data);
+      // Mock property data for demonstration
+      const mockProperties = [
+        {
+          id: 1,
+          name: "Lagos Heights Residences",
+          description: "Luxury apartment complex in the heart of Lagos, featuring modern amenities and stunning ocean views. Perfect for investors looking for high rental yields. The property is strategically located near major business districts, shopping centers, and entertainment venues, making it ideal for both residential and rental purposes. Each unit features high-end finishes, energy-efficient appliances, and smart home technology.",
+          location: "Lagos",
+          address: "15 Victoria Island Drive, Lagos",
+          type: "residential",
+          imageUrl: "https://images.unsplash.com/photo-1614846384571-1e31e9d9ec2b?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "18",
+          minimumInvestment: 500000,
+          term: 5,
+          totalFunding: 200000000,
+          currentFunding: 120000000,
+          daysLeft: 15,
+          riskRating: "Moderate",
+          liquidity: "Medium",
+          volatility: "Low",
+          developerName: "Premium Developers Ltd",
+          amenities: "Swimming Pool, Gym, 24/7 Security, Backup Power, High-speed Internet, Rooftop Garden, Children's Play Area"
+        },
+        {
+          id: 2,
+          name: "Abuja Commercial Plaza",
+          description: "Prime commercial property in the central business district of Abuja. Features office spaces, retail outlets, and ample parking. High occupancy rate expected. Located at a prime intersection with high visibility and foot traffic, this commercial plaza offers excellent opportunities for businesses. The property has been designed with modern architecture, energy-efficient systems, and flexible space layouts to accommodate various business types.",
+          location: "Abuja",
+          address: "42 Constitution Avenue, Central Business District, Abuja",
+          type: "commercial",
+          imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "22",
+          minimumInvestment: 1000000,
+          term: 7,
+          totalFunding: 350000000,
+          currentFunding: 200000000,
+          daysLeft: 30,
+          riskRating: "Low",
+          liquidity: "High",
+          volatility: "Low",
+          developerName: "Abuja Business Properties Ltd",
+          amenities: "Ample Parking, Conference Facilities, High-speed Internet, 24/7 Security, Backup Power, Central Air Conditioning"
+        },
+        {
+          id: 3,
+          name: "Port Harcourt Industrial Park",
+          description: "Strategic industrial development near Port Harcourt's shipping terminals. Ideal for logistics, manufacturing, and warehouse operations with excellent infrastructure. The industrial park provides a secure environment with state-of-the-art facilities designed for manufacturing, storage, and distribution. It offers excellent connectivity to major highways, railways, and the port, making it a logistics hub with significant growth potential.",
+          location: "Port Harcourt",
+          address: "78 Aba Road, Port Harcourt",
+          type: "industrial",
+          imageUrl: "https://images.unsplash.com/photo-1629136335402-4ad21a7fb08f?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "20",
+          minimumInvestment: 2000000,
+          term: 10,
+          totalFunding: 500000000,
+          currentFunding: 250000000,
+          daysLeft: 45,
+          riskRating: "Moderate",
+          liquidity: "Medium",
+          volatility: "Medium",
+          developerName: "PH Industrial Developers",
+          amenities: "Loading Docks, Security Fence, CCTV Surveillance, Employee Parking, Canteen, Administrative Offices"
+        },
+        {
+          id: 4,
+          name: "Ibadan Green Estates",
+          description: "Eco-friendly residential community in the outskirts of Ibadan. Features solar power, water recycling systems, and community gardens. Growing demand for sustainable housing. This innovative housing project incorporates renewable energy sources, sustainable building materials, and green spaces to create an environmentally conscious community. The estate includes both single-family homes and apartments with modern amenities and a focus on reducing carbon footprint.",
+          location: "Ibadan",
+          address: "23 Ring Road, Ibadan",
+          type: "residential",
+          imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "16",
+          minimumInvestment: 300000,
+          term: 5,
+          totalFunding: 150000000,
+          currentFunding: 90000000,
+          daysLeft: 20,
+          riskRating: "Low",
+          liquidity: "Medium",
+          volatility: "Low",
+          developerName: "Green Future Developments",
+          amenities: "Solar Panels, Rainwater Harvesting, Community Gardens, Recycling Center, Walking Trails, Playground, Fitness Center"
+        },
+        {
+          id: 5,
+          name: "Lagos Retail Hub",
+          description: "Modern shopping center in a high-traffic area of Lagos. Multiple established tenants already secured with long-term leases, ensuring steady income. This retail center caters to the growing middle-class consumer base in Lagos with a mix of local and international brands. The strategic location offers excellent visibility and accessibility, with public transportation options nearby and ample parking for shoppers.",
+          location: "Lagos",
+          address: "56 Lekki Phase 1, Lagos",
+          type: "commercial",
+          imageUrl: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "19",
+          minimumInvestment: 750000,
+          term: 6,
+          totalFunding: 250000000,
+          currentFunding: 175000000,
+          daysLeft: 25,
+          riskRating: "Low",
+          liquidity: "High",
+          volatility: "Low",
+          developerName: "Lagos Retail Developers",
+          amenities: "Food Court, Children's Play Area, Underground Parking, Security Systems, Digital Signage, ATM Gallery"
+        },
+        {
+          id: 6,
+          name: "Abuja Mixed-Use Development",
+          description: "Innovative mixed-use project combining residential apartments, office spaces, and retail outlets in one integrated complex. Located in rapidly developing area of Abuja. This development creates a live-work-play environment where residents can access all their daily needs within the same complex. The architectural design emphasizes community interaction with shared spaces and green areas, while providing privacy and comfort for residents.",
+          location: "Abuja",
+          address: "17 Maitama District, Abuja",
+          type: "mixed-use",
+          imageUrl: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "21",
+          minimumInvestment: 1500000,
+          term: 8,
+          totalFunding: 400000000,
+          currentFunding: 180000000,
+          daysLeft: 40,
+          riskRating: "Moderate",
+          liquidity: "Medium",
+          volatility: "Medium",
+          developerName: "Urban Integration Development",
+          amenities: "Secure Access, Gym, Rooftop Garden, Business Center, Retail Spaces, Restaurants, Underground Parking"
+        }
+      ];
+
+      // Find the property by ID
+      const foundProperty = mockProperties.find(prop => prop.id.toString() === id.toString());
+      
+      if (foundProperty) {
+        setProperty(foundProperty);
+      } else {
+        setError('Property not found');
+      }
     } catch (err) {
       console.error('Error fetching property details:', err);
       setError('Failed to load property details. Please try again later.');

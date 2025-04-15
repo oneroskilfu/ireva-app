@@ -25,8 +25,139 @@ const PropertyListing = () => {
   const fetchProperties = async () => {
     setLoading(true);
     try {
-      const res = await propertyService.getAllProperties(filters);
-      setProperties(res.data);
+      // Using mock data for demonstration since API is not connected
+      const mockProperties = [
+        {
+          id: 1,
+          name: "Lagos Heights Residences",
+          description: "Luxury apartment complex in the heart of Lagos, featuring modern amenities and stunning ocean views. Perfect for investors looking for high rental yields.",
+          location: "Lagos",
+          type: "residential",
+          imageUrl: "https://images.unsplash.com/photo-1614846384571-1e31e9d9ec2b?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "18",
+          minimumInvestment: 500000,
+          term: 5,
+          totalFunding: 200000000,
+          currentFunding: 120000000,
+          daysLeft: 15
+        },
+        {
+          id: 2,
+          name: "Abuja Commercial Plaza",
+          description: "Prime commercial property in the central business district of Abuja. Features office spaces, retail outlets, and ample parking. High occupancy rate expected.",
+          location: "Abuja",
+          type: "commercial",
+          imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "22",
+          minimumInvestment: 1000000,
+          term: 7,
+          totalFunding: 350000000,
+          currentFunding: 200000000,
+          daysLeft: 30
+        },
+        {
+          id: 3,
+          name: "Port Harcourt Industrial Park",
+          description: "Strategic industrial development near Port Harcourt's shipping terminals. Ideal for logistics, manufacturing, and warehouse operations with excellent infrastructure.",
+          location: "Port Harcourt",
+          type: "industrial",
+          imageUrl: "https://images.unsplash.com/photo-1629136335402-4ad21a7fb08f?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "20",
+          minimumInvestment: 2000000,
+          term: 10,
+          totalFunding: 500000000,
+          currentFunding: 250000000,
+          daysLeft: 45
+        },
+        {
+          id: 4,
+          name: "Ibadan Green Estates",
+          description: "Eco-friendly residential community in the outskirts of Ibadan. Features solar power, water recycling systems, and community gardens. Growing demand for sustainable housing.",
+          location: "Ibadan",
+          type: "residential",
+          imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "16",
+          minimumInvestment: 300000,
+          term: 5,
+          totalFunding: 150000000,
+          currentFunding: 90000000,
+          daysLeft: 20
+        },
+        {
+          id: 5,
+          name: "Lagos Retail Hub",
+          description: "Modern shopping center in a high-traffic area of Lagos. Multiple established tenants already secured with long-term leases, ensuring steady income.",
+          location: "Lagos",
+          type: "commercial",
+          imageUrl: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "19",
+          minimumInvestment: 750000,
+          term: 6,
+          totalFunding: 250000000,
+          currentFunding: 175000000,
+          daysLeft: 25
+        },
+        {
+          id: 6,
+          name: "Abuja Mixed-Use Development",
+          description: "Innovative mixed-use project combining residential apartments, office spaces, and retail outlets in one integrated complex. Located in rapidly developing area of Abuja.",
+          location: "Abuja",
+          type: "mixed-use",
+          imageUrl: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "21",
+          minimumInvestment: 1500000,
+          term: 8,
+          totalFunding: 400000000,
+          currentFunding: 180000000,
+          daysLeft: 40
+        }
+      ];
+      
+      // Apply filters to mock data
+      let filteredProperties = [...mockProperties];
+      
+      if (filters.location) {
+        filteredProperties = filteredProperties.filter(property => 
+          property.location.toLowerCase() === filters.location.toLowerCase()
+        );
+      }
+      
+      if (filters.type) {
+        filteredProperties = filteredProperties.filter(property => 
+          property.type.toLowerCase() === filters.type.toLowerCase()
+        );
+      }
+      
+      if (filters.minPrice) {
+        filteredProperties = filteredProperties.filter(property => 
+          property.minimumInvestment >= parseInt(filters.minPrice)
+        );
+      }
+      
+      if (filters.maxPrice) {
+        filteredProperties = filteredProperties.filter(property => 
+          property.minimumInvestment <= parseInt(filters.maxPrice)
+        );
+      }
+      
+      // Sort properties based on selected option
+      switch (filters.sortBy) {
+        case 'priceAsc':
+          filteredProperties.sort((a, b) => a.minimumInvestment - b.minimumInvestment);
+          break;
+        case 'priceDesc':
+          filteredProperties.sort((a, b) => b.minimumInvestment - a.minimumInvestment);
+          break;
+        case 'returnDesc':
+          filteredProperties.sort((a, b) => parseInt(b.targetReturn) - parseInt(a.targetReturn));
+          break;
+        case 'newest':
+        default:
+          // Keep original order for 'newest'
+          break;
+      }
+      
+      setProperties(filteredProperties);
     } catch (err) {
       console.error('Error fetching properties:', err);
       setError('Failed to load properties. Please try again later.');
@@ -66,9 +197,9 @@ const PropertyListing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
           Available Investment Properties
         </h1>
         

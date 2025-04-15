@@ -17,8 +17,24 @@ const InvestmentSuccess = () => {
   const fetchInvestmentDetails = async () => {
     setLoading(true);
     try {
-      const res = await investmentService.getInvestmentById(id);
-      setInvestment(res.data);
+      // Mock investment for demonstration
+      const mockInvestment = {
+        id: id || '1',
+        amount: 500000,
+        paymentMethod: 'card',
+        status: 'Completed',
+        createdAt: new Date().toISOString(),
+        property: {
+          id: 1,
+          name: "Lagos Heights Residences",
+          location: "Lagos",
+          type: "residential",
+          targetReturn: "18",
+          term: 5
+        }
+      };
+      
+      setInvestment(mockInvestment);
     } catch (err) {
       console.error('Error fetching investment details:', err);
       setError('Failed to load investment details. Please check your investment history.');

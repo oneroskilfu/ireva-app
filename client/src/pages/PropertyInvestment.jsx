@@ -39,9 +39,103 @@ const PropertyInvestment = () => {
   const fetchPropertyDetails = async () => {
     setLoading(true);
     try {
-      const res = await propertyService.getPropertyById(id);
-      setProperty(res.data);
-      setInvestmentAmount(res.data.minimumInvestment.toString());
+      // Mock property data for demonstration
+      const mockProperties = [
+        {
+          id: 1,
+          name: "Lagos Heights Residences",
+          description: "Luxury apartment complex in the heart of Lagos, featuring modern amenities and stunning ocean views. Perfect for investors looking for high rental yields.",
+          location: "Lagos",
+          type: "residential",
+          imageUrl: "https://images.unsplash.com/photo-1614846384571-1e31e9d9ec2b?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "18",
+          minimumInvestment: 500000,
+          term: 5,
+          totalFunding: 200000000,
+          currentFunding: 120000000,
+          daysLeft: 15
+        },
+        {
+          id: 2,
+          name: "Abuja Commercial Plaza",
+          description: "Prime commercial property in the central business district of Abuja. Features office spaces, retail outlets, and ample parking. High occupancy rate expected.",
+          location: "Abuja",
+          type: "commercial",
+          imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "22",
+          minimumInvestment: 1000000,
+          term: 7,
+          totalFunding: 350000000,
+          currentFunding: 200000000,
+          daysLeft: 30
+        },
+        {
+          id: 3,
+          name: "Port Harcourt Industrial Park",
+          description: "Strategic industrial development near Port Harcourt's shipping terminals. Ideal for logistics, manufacturing, and warehouse operations with excellent infrastructure.",
+          location: "Port Harcourt",
+          type: "industrial",
+          imageUrl: "https://images.unsplash.com/photo-1629136335402-4ad21a7fb08f?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "20",
+          minimumInvestment: 2000000,
+          term: 10,
+          totalFunding: 500000000,
+          currentFunding: 250000000,
+          daysLeft: 45
+        },
+        {
+          id: 4,
+          name: "Ibadan Green Estates",
+          description: "Eco-friendly residential community in the outskirts of Ibadan. Features solar power, water recycling systems, and community gardens. Growing demand for sustainable housing.",
+          location: "Ibadan",
+          type: "residential",
+          imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "16",
+          minimumInvestment: 300000,
+          term: 5,
+          totalFunding: 150000000,
+          currentFunding: 90000000,
+          daysLeft: 20
+        },
+        {
+          id: 5,
+          name: "Lagos Retail Hub",
+          description: "Modern shopping center in a high-traffic area of Lagos. Multiple established tenants already secured with long-term leases, ensuring steady income.",
+          location: "Lagos",
+          type: "commercial",
+          imageUrl: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "19",
+          minimumInvestment: 750000,
+          term: 6,
+          totalFunding: 250000000,
+          currentFunding: 175000000,
+          daysLeft: 25
+        },
+        {
+          id: 6,
+          name: "Abuja Mixed-Use Development",
+          description: "Innovative mixed-use project combining residential apartments, office spaces, and retail outlets in one integrated complex. Located in rapidly developing area of Abuja.",
+          location: "Abuja",
+          type: "mixed-use",
+          imageUrl: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?q=80&w=800&auto=format&fit=crop",
+          targetReturn: "21",
+          minimumInvestment: 1500000,
+          term: 8,
+          totalFunding: 400000000,
+          currentFunding: 180000000,
+          daysLeft: 40
+        }
+      ];
+
+      // Find the property by ID
+      const foundProperty = mockProperties.find(prop => prop.id.toString() === id.toString());
+      
+      if (foundProperty) {
+        setProperty(foundProperty);
+        setInvestmentAmount(foundProperty.minimumInvestment.toString());
+      } else {
+        setError('Property not found');
+      }
     } catch (err) {
       console.error('Error fetching property details:', err);
       setError('Failed to load property details. Please try again later.');
@@ -89,32 +183,30 @@ const PropertyInvestment = () => {
       return;
     }
     
-    if (paymentMethod === 'wallet' && user.walletBalance < amount) {
+    if (paymentMethod === 'wallet' && user?.walletBalance < amount) {
       toast.error('Insufficient wallet balance. Please add funds or choose another payment method.');
       return;
     }
     
     setProcessingPayment(true);
     
-    try {
-      // Create investment
-      const investmentData = {
-        amount,
-        paymentMethod
-      };
-      
-      const res = await investmentService.investInProperty(property.id, investmentData);
-      
-      toast.success('Investment successful!');
-      
-      // Redirect to investment confirmation page
-      navigate(`/investments/${res.data.id}/success`);
-    } catch (err) {
-      console.error('Investment error:', err);
-      toast.error(err.response?.data?.message || 'Failed to process investment. Please try again.');
-    } finally {
-      setProcessingPayment(false);
-    }
+    // Simulate processing delay
+    setTimeout(() => {
+      try {
+        toast.success('Investment successful!');
+        
+        // Mock investment ID
+        const mockInvestmentId = Math.floor(Math.random() * 1000) + 1;
+        
+        // Redirect to investment confirmation page
+        navigate(`/investments/${mockInvestmentId}/success`);
+      } catch (err) {
+        console.error('Investment error:', err);
+        toast.error('Failed to process investment. Please try again.');
+      } finally {
+        setProcessingPayment(false);
+      }
+    }, 2000); // Simulate 2-second processing time
   };
   
   const formatCurrency = (amount) => {
