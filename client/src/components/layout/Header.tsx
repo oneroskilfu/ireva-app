@@ -36,13 +36,29 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             <div className="flex">
               <Link href="/" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
-                Personal
-                <ChevronDown className="ml-1 h-4 w-4" />
+                Explore
               </Link>
-              <Link href="/" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
-                Business
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </Link>
+              <div className="relative group">
+                <button className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                  Properties
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </button>
+                {/* Dropdown menu */}
+                <div className="absolute left-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
+                  <Link href="/properties/residential" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Residential
+                  </Link>
+                  <Link href="/properties/commercial" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Commercial
+                  </Link>
+                  <Link href="/properties/industrial" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Industrial
+                  </Link>
+                  <Link href="/properties/mixed-use" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Mixed-use
+                  </Link>
+                </div>
+              </div>
               <Link href="/" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
                 Company
                 <ChevronDown className="ml-1 h-4 w-4" />
