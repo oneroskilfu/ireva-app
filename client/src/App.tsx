@@ -21,6 +21,7 @@ import HowItWorksPage from "@/pages/how-it-works";
 import JwtAuthTest from "@/pages/jwt-auth-test";
 import UnauthorizedPage from "@/pages/unauthorized-page";
 import LoginPage from "./pages/login-page";
+import MaterialUIExamplePage from "./pages/material-ui-example";
 import Projects from "./components/Projects";
 import Users from "./components/Users";
 import Properties from "./components/Properties";
@@ -111,6 +112,7 @@ function Router() {
         <Route path="/how-it-works" component={HowItWorksPage} />
         <Route path="/jwt-auth-test" component={JwtAuthTest} />
         <Route path="/unauthorized" component={UnauthorizedPage} />
+        <Route path="/material-ui-example" component={MaterialUIExamplePage} />
         <Route component={NotFound} />
       </Switch>
     </>

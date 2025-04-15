@@ -1,8 +1,20 @@
 import axios from 'axios';
 
-// Using the specified backend URL
+// Determine the appropriate base URL based on environment
+const getBaseUrl = () => {
+  // In development through Replit
+  if (window.location.hostname.includes('replit.dev') || 
+      window.location.hostname.includes('replit.co')) {
+    return '/api'; // Use relative URL when on Replit
+  }
+  
+  // When running on localhost outside Replit
+  return 'http://localhost:5000/api';
+};
+
+// Create API instance with appropriate baseURL
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api', // Explicitly set backend URL
+  baseURL: getBaseUrl(),
   timeout: 10000,   // 10 second timeout for requests
   headers: {
     'Content-Type': 'application/json',
