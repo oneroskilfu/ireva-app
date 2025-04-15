@@ -46,15 +46,22 @@ const LoginPage = () => {
     setIsLoading(true);
     
     try {
-      const response = await API.post('/auth/login', data);
+      const response = await API.post('/login', data);
       
-      // Store token and user data in localStorage
-      if (response.data.token && response.data.user) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Store user data in localStorage
+      const userData = response.data;
+      
+      if (userData) {
+        // Convert isAdmin to role for consistency
+        const userWithRole = {
+          ...userData,
+          role: userData.isAdmin ? 'admin' : 'investor'
+        };
+        
+        localStorage.setItem('user', JSON.stringify(userWithRole));
         
         // Redirect based on user role
-        if (response.data.user.role === 'admin') {
+        if (userData.isAdmin) {
           toast({
             title: 'Admin Login Successful',
             description: 'Welcome back, administrator!',
