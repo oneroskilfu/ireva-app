@@ -9,7 +9,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center mb-4">
               <Building className="h-6 w-6 text-white mr-2" />
-              <span className="text-xl font-bold">InvestProperty</span>
+              <span className="text-xl font-bold">iREVA</span>
             </div>
             <p className="text-gray-300 text-sm mb-4">
               Access institutional-quality real estate investments with as little as $1,000.
@@ -65,7 +65,7 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between">
-          <p className="text-sm text-gray-400">© {new Date().getFullYear()} InvestProperty. All rights reserved.</p>
+          <p className="text-sm text-gray-400">© {new Date().getFullYear()} iREVA. All rights reserved.</p>
           <p className="text-sm text-gray-400 mt-2 md:mt-0">
             Investing involves risks, including loss of principal. Past performance does not guarantee future results.
           </p>

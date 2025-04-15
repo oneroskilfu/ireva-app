@@ -37,7 +37,7 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
               <Building className="h-6 w-6 text-primary mr-2" />
-              <span className="text-xl font-bold">InvestProperty</span>
+              <span className="text-xl font-bold">iREVA</span>
             </Link>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link href="/" 
