@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Building, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,6 @@ export default function Header() {
           {/* Center - Logo */}
           <div className="flex items-center justify-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <Building className="h-6 w-6 mr-2 text-primary" />
               <span className="text-2xl font-bold tracking-wider text-gray-900">
                 iREVA
               </span>
