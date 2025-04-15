@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import axios from 'axios';
+import API from '@/api/axios';
 import { 
   Form, 
   FormControl, 
@@ -46,7 +46,7 @@ const LoginPage = () => {
     setIsLoading(true);
     
     try {
-      const response = await axios.post('/api/auth/login', data);
+      const response = await API.post('/auth/login', data);
       
       // Store token and user data in localStorage
       if (response.data.token && response.data.user) {
