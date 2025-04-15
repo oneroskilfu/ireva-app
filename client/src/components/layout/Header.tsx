@@ -113,7 +113,7 @@ export default function Header() {
                     size="sm"
                     className="rounded-full bg-gray-900 text-white hover:bg-gray-800"
                   >
-                    Sign up
+                    Start Investing
                   </Button>
                 </Link>
               </div>
