@@ -30,24 +30,24 @@ import { useToast } from '@/hooks/use-toast';
 import { Edit, MoreHorizontal, Trash2, Plus, RefreshCw } from 'lucide-react';
 import ProjectForm from './ProjectForm';
 
-// Define project type
-interface Project {
-  id: number;
-  name: string;
-  location: string;
-  description: string;
-  type: string;
-  imageUrl: string;
-  tier: string;
-  targetReturn: string;
-  minimumInvestment: number;
-  totalFunding: number;
-  currentFunding: number;
-  numberOfInvestors: number;
-  daysLeft: number;
+// Import Project type from ProjectForm
+import { Project } from './ProjectForm';
+
+interface ProjectTableProps {
+  projects?: Project[];
+  isLoading?: boolean;
+  isError?: boolean;
+  refetch?: () => void;
+  onEdit?: (project: Project) => void;
 }
 
-const ProjectTable = () => {
+const ProjectTable = ({
+  projects: propProjects,
+  isLoading: propIsLoading,
+  isError: propIsError,
+  refetch: propRefetch,
+  onEdit
+}: ProjectTableProps = {}) => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -55,14 +55,26 @@ const ProjectTable = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Fetch projects
-  const { data: projects, isLoading, isError, refetch } = useQuery<Project[]>({
+  // Use props for data if provided, otherwise fetch data internally
+  const { 
+    data: fetchedProjects, 
+    isLoading: isLoadingProjects, 
+    isError: isErrorFetching, 
+    refetch: refetchProjects 
+  } = useQuery<Project[]>({
     queryKey: ['/api/projects'],
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/projects');
       return await res.json();
     },
+    enabled: !propProjects, // Only fetch if projects are not provided via props
   });
+  
+  // Use props or fetched data
+  const projects = propProjects || fetchedProjects || [];
+  const isLoading = propIsLoading !== undefined ? propIsLoading : isLoadingProjects;
+  const isError = propIsError !== undefined ? propIsError : isErrorFetching;
+  const refetch = propRefetch || refetchProjects;
 
   // Delete project mutation
   const deleteProjectMutation = useMutation({
@@ -141,7 +153,7 @@ const ProjectTable = () => {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => refetch()}
+            onClick={() => refetch && refetch()}
             title="Refresh"
           >
             <RefreshCw className="h-4 w-4" />

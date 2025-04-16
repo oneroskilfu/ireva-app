@@ -1,14 +1,13 @@
 import React from 'react';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,141 +23,122 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Loader } from 'lucide-react';
 
-// Define project interface
-interface Project {
+// Define Project type and form schema
+export interface Project {
   id: number;
   name: string;
   location: string;
   description: string;
-  type: string;
+  type: 'residential' | 'commercial' | 'industrial' | 'mixed-use' | 'land';
   imageUrl: string;
-  tier: string;
+  imageGallery?: string[];
+  videoUrl?: string | null;
+  tier: 'standard' | 'premium' | 'elite';
   targetReturn: string;
   minimumInvestment: number;
+  term: number;
   totalFunding: number;
   currentFunding: number;
   numberOfInvestors: number;
   daysLeft: number;
+  accreditedOnly: boolean;
 }
 
-// Define form schema
-const projectFormSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  location: z.string().min(2, 'Location must be at least 2 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+const projectSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  location: z.string().min(2, 'Location is required'),
+  description: z.string().min(20, 'Please provide a detailed description'),
   type: z.enum(['residential', 'commercial', 'industrial', 'mixed-use', 'land']),
-  imageUrl: z.string().url('Please enter a valid image URL'),
-  tier: z.enum(['starter', 'growth', 'premium', 'elite']),
-  targetReturn: z.string().min(1, 'Target return is required'),
-  minimumInvestment: z.coerce.number().min(1000, 'Minimum investment must be at least 1,000'),
-  totalFunding: z.coerce.number().min(100000, 'Total funding must be at least 100,000'),
-  currentFunding: z.coerce.number().default(0).optional(),
-  numberOfInvestors: z.coerce.number().default(0).optional(),
-  daysLeft: z.coerce.number().min(1, 'Days left must be at least 1'),
+  imageUrl: z.string().url('Please provide a valid image URL'),
+  imageGallery: z.array(z.string().url()).optional(),
+  videoUrl: z.string().url().nullable().optional(),
+  tier: z.enum(['standard', 'premium', 'elite']),
+  targetReturn: z.string(),
+  minimumInvestment: z.coerce.number().positive('Must be a positive number'),
+  term: z.coerce.number().positive('Must be a positive number'),
+  totalFunding: z.coerce.number().positive('Must be a positive number'),
+  currentFunding: z.coerce.number().nonnegative('Must be a non-negative number'),
+  numberOfInvestors: z.coerce.number().nonnegative('Must be a non-negative number'),
+  daysLeft: z.coerce.number().nonnegative('Must be a non-negative number'),
   accreditedOnly: z.boolean().default(false),
-  term: z.coerce.number().min(1, 'Term must be at least 1 month'),
-  developer: z.string().min(2, 'Developer name must be at least 2 characters'),
-  riskLevel: z.enum(['low', 'medium', 'high']),
 });
 
-type ProjectFormValues = z.infer<typeof projectFormSchema>;
+type ProjectFormData = z.infer<typeof projectSchema>;
 
 interface ProjectFormProps {
-  project?: Project;
+  initialData?: Project;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel }) => {
+const ProjectForm: React.FC<ProjectFormProps> = ({
+  initialData,
+  onSuccess,
+  onCancel,
+}) => {
   const { toast } = useToast();
+  const isEditing = !!initialData;
 
-  // Default values for the form
-  const defaultValues: Partial<ProjectFormValues> = {
-    name: project?.name || '',
-    location: project?.location || '',
-    description: project?.description || '',
-    type: (project?.type as any) || 'residential',
-    imageUrl: project?.imageUrl || '',
-    tier: (project?.tier as any) || 'starter',
-    targetReturn: project?.targetReturn || '',
-    minimumInvestment: project?.minimumInvestment || 10000,
-    totalFunding: project?.totalFunding || 100000,
-    currentFunding: project?.currentFunding || 0,
-    numberOfInvestors: project?.numberOfInvestors || 0,
-    daysLeft: project?.daysLeft || 30,
-    accreditedOnly: false,
-    term: 12,
-    developer: '',
-    riskLevel: 'medium',
-  };
-
-  // Initialize form
-  const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(projectFormSchema),
-    defaultValues,
+  // Initialize form with default values or existing project data
+  const form = useForm<ProjectFormData>({
+    resolver: zodResolver(projectSchema),
+    defaultValues: initialData || {
+      name: '',
+      location: '',
+      description: '',
+      type: 'residential',
+      imageUrl: '',
+      imageGallery: [],
+      videoUrl: null,
+      tier: 'standard',
+      targetReturn: '',
+      minimumInvestment: 0,
+      term: 0,
+      totalFunding: 0,
+      currentFunding: 0,
+      numberOfInvestors: 0,
+      daysLeft: 0,
+      accreditedOnly: false,
+    },
   });
 
-  // Create project mutation
-  const createProjectMutation = useMutation({
-    mutationFn: async (data: ProjectFormValues) => {
-      const response = await apiRequest('POST', '/api/projects', data);
-      return await response.json();
+  // Create or update project mutation
+  const mutation = useMutation({
+    mutationFn: async (data: ProjectFormData) => {
+      if (isEditing && initialData) {
+        const res = await apiRequest('PATCH', `/api/projects/${initialData.id}`, data);
+        return res.json();
+      } else {
+        const res = await apiRequest('POST', '/api/projects', data);
+        return res.json();
+      }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       toast({
-        title: 'Project Created',
-        description: 'The project has been successfully created.',
+        title: isEditing ? 'Project Updated' : 'Project Created',
+        description: isEditing
+          ? 'The project has been successfully updated.'
+          : 'The project has been successfully created.',
       });
+      onSuccess();
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      onSuccess();
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to Create Project',
-        description: error.message || 'An error occurred while creating the project.',
+        title: 'Error',
+        description: error.message || `Failed to ${isEditing ? 'update' : 'create'} project.`,
         variant: 'destructive',
       });
     },
   });
 
-  // Update project mutation
-  const updateProjectMutation = useMutation({
-    mutationFn: async (data: ProjectFormValues & { id: number }) => {
-      const response = await apiRequest('PUT', `/api/projects/${data.id}`, data);
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Project Updated',
-        description: 'The project has been successfully updated.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      onSuccess();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to Update Project',
-        description: error.message || 'An error occurred while updating the project.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Submit handler
-  const onSubmit = (data: ProjectFormValues) => {
-    if (project?.id) {
-      updateProjectMutation.mutate({ ...data, id: project.id });
-    } else {
-      createProjectMutation.mutate(data);
-    }
+  const onSubmit = (data: ProjectFormData) => {
+    mutation.mutate(data);
   };
-
-  // Check if form is submitting
-  const isSubmitting = createProjectMutation.isPending || updateProjectMutation.isPending;
 
   return (
     <Form {...form}>
@@ -169,7 +149,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Project Name</FormLabel>
+                <FormLabel>Project Name*</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter project name" {...field} />
                 </FormControl>
@@ -183,9 +163,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="location"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Location</FormLabel>
+                <FormLabel>Location*</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter project location" {...field} />
+                  <Input placeholder="City, State" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -197,7 +177,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Property Type</FormLabel>
+                <FormLabel>Property Type*</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -222,7 +202,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="tier"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Investment Tier</FormLabel>
+                <FormLabel>Investment Tier*</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -230,30 +210,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="starter">Starter</SelectItem>
-                    <SelectItem value="growth">Growth</SelectItem>
+                    <SelectItem value="standard">Standard</SelectItem>
                     <SelectItem value="premium">Premium</SelectItem>
                     <SelectItem value="elite">Elite</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  Determines the minimum investment and target audience
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Image URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter image URL" {...field} />
-                </FormControl>
-                <FormDescription>Main image for the property listing</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -264,11 +225,10 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="targetReturn"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Target Return (%)</FormLabel>
+                <FormLabel>Target Return (%)* </FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., 12.5" {...field} />
+                  <Input placeholder="e.g. 12.5" {...field} />
                 </FormControl>
-                <FormDescription>Annual return percentage</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -279,23 +239,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="minimumInvestment"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Minimum Investment</FormLabel>
+                <FormLabel>Minimum Investment (₦)*</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Enter amount" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="totalFunding"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Total Funding Target</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Enter amount" {...field} />
+                  <Input type="number" placeholder="e.g. 100000" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -307,13 +253,52 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="term"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Investment Term (months)</FormLabel>
+                <FormLabel>Investment Term (months)*</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Enter months" {...field} />
+                  <Input type="number" placeholder="e.g. 36" {...field} />
                 </FormControl>
-                <FormDescription>
-                  How long the investment will last
-                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="totalFunding"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Total Funding Required (₦)*</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g. 5000000" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="currentFunding"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Current Funding (₦)*</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g. 2500000" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="numberOfInvestors"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Number of Investors</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="e.g. 45" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -324,9 +309,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
             name="daysLeft"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Days Left for Funding</FormLabel>
+                <FormLabel>Days Left</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Enter days" {...field} />
+                  <Input type="number" placeholder="e.g. 30" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -335,12 +320,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
 
           <FormField
             control={form.control}
-            name="developer"
+            name="imageUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Developer</FormLabel>
+                <FormLabel>Main Image URL*</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter developer name" {...field} />
+                  <Input placeholder="https://example.com/image.jpg" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -349,23 +334,38 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
 
           <FormField
             control={form.control}
-            name="riskLevel"
+            name="videoUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Risk Level</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select risk level" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormLabel>Video URL</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://example.com/video.mp4" 
+                    value={field.value || ''} 
+                    onChange={(e) => field.onChange(e.target.value || null)}
+                  />
+                </FormControl>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="accreditedOnly"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Accredited Investors Only</FormLabel>
+                  <div className="text-sm text-muted-foreground">
+                    Restrict this project to accredited investors only
+                  </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
               </FormItem>
             )}
           />
@@ -373,35 +373,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
 
         <FormField
           control={form.control}
-          name="accreditedOnly"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Accredited Investors Only</FormLabel>
-                <FormDescription>
-                  Restrict this investment to accredited investors only
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Description*</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Enter detailed project description"
-                  className="min-h-[150px]"
+                  placeholder="Provide a detailed description of the project"
+                  className="min-h-[120px]"
                   {...field}
                 />
               </FormControl>
@@ -410,13 +389,26 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
           )}
         />
 
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex justify-end space-x-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {project ? 'Update Project' : 'Create Project'}
+          <Button
+            type="submit"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                {isEditing ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              isEditing ? 'Update Project' : 'Create Project'
+            )}
           </Button>
         </div>
       </form>
