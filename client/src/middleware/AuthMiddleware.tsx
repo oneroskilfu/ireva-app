@@ -1,6 +1,6 @@
-import { ReactNode, useEffect, useState } from 'react';
-import { useLocation, useRouter } from 'wouter';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { ReactNode, useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 
 interface AuthMiddlewareProps {
@@ -14,80 +14,56 @@ interface AuthMiddlewareProps {
  * @param requiredRoles - Optional array of roles allowed to access the route
  */
 const AuthMiddleware = ({ children, requiredRoles = [] }: AuthMiddlewareProps) => {
-  const { user, isLoading, checkAuth } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(true);
 
   useEffect(() => {
-    const verifyAuth = async () => {
-      setIsChecking(true);
-      
-      if (isLoading) {
-        return; // Wait for initial auth check to complete
-      }
-      
-      try {
-        // If no user is logged in, try to authenticate
-        if (!user) {
-          await checkAuth();
-        }
-        
-        // Check if user is authenticated
-        if (!user) {
-          // Redirect to login page
-          navigate('/auth');
-          return;
-        }
-        
-        // If roles are specified, check if user has required role
-        if (requiredRoles.length > 0 && user.role) {
-          const hasRequiredRole = requiredRoles.includes(user.role as string);
-          
-          if (!hasRequiredRole) {
-            // Redirect based on role
-            switch (user.role) {
-              case 'admin':
-              case 'super_admin':
-                navigate('/admin');
-                break;
-              case 'user':
-                navigate('/investor');
-                break;
-              default:
-                navigate('/');
-                break;
-            }
-            return;
-          }
-        }
-        
-        // User is authorized
-        setIsAuthorized(true);
-      } catch (error) {
-        console.error('Authentication check failed:', error);
+    if (!isLoading) {
+      if (!user) {
+        // User is not authenticated
+        console.log('User not authenticated, redirecting to auth page');
         navigate('/auth');
-      } finally {
         setIsChecking(false);
+        return;
       }
-    };
-    
-    verifyAuth();
-  }, [user, isLoading, checkAuth, navigate, requiredRoles]);
-  
-  // Show loading state while checking authentication
+
+      // If no specific roles are required, all authenticated users are allowed
+      if (requiredRoles.length === 0) {
+        setIsAuthorized(true);
+        setIsChecking(false);
+        return;
+      }
+
+      // Check if user has one of the required roles
+      const hasRequiredRole = user.role && requiredRoles.includes(user.role);
+      
+      if (hasRequiredRole) {
+        setIsAuthorized(true);
+      } else {
+        console.log(`Access denied. Required roles: [${requiredRoles.join(', ')}], user role: ${user.role}`);
+        
+        // Redirect based on user role
+        if (user.role === 'admin' || user.role === 'super_admin') {
+          navigate('/admin');
+        } else {
+          navigate('/investor');
+        }
+      }
+      
+      setIsChecking(false);
+    }
+  }, [user, isLoading, navigate, requiredRoles]);
+
   if (isLoading || isChecking) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-muted-foreground">Verifying your access...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-  
-  // Render children if authorized
+
   return isAuthorized ? <>{children}</> : null;
 };
 
