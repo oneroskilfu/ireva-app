@@ -1,296 +1,268 @@
 const express = require('express');
-const { db } = require('../db');
-const { 
-  users, 
-  properties, 
-  investments, 
-  kycDocuments,
-  educationalResources,
-  paymentTransactions
-} = require('../../shared/schema');
-const { eq, desc, asc, and, sql } = require('drizzle-orm');
-const { ensureAdmin, ensureSuperAdmin } = require('../middleware/authMiddleware');
-
 const router = express.Router();
+const { verifyToken } = require('../middleware/authMiddleware');
 
-/**
- * @route GET /api/admin/dashboard/stats
- * @desc Get admin dashboard statistics
- * @access Admin only
- */
-router.get('/dashboard/stats', ensureAdmin, async (req, res) => {
-  try {
-    // Total users count
-    const [userCount] = await db.select({ count: sql`count(*)` }).from(users);
-    
-    // Total active investments count and value
-    const [investmentStats] = await db.select({
-      count: sql`count(*)`,
-      totalValue: sql`sum(amount)`,
-      averageValue: sql`avg(amount)`
-    }).from(investments);
-    
-    // Total properties count and funding stats
-    const [propertyStats] = await db.select({
-      count: sql`count(*)`,
-      totalFunding: sql`sum(total_funding)`,
-      currentFunding: sql`sum(current_funding)`,
-      fundingPercentage: sql`sum(current_funding) * 100.0 / nullif(sum(total_funding), 0)`
-    }).from(properties);
-    
-    // Pending KYC approvals count
-    const [kycPendingCount] = await db.select({ count: sql`count(*)` })
-      .from(kycDocuments)
-      .where(eq(kycDocuments.status, 'pending'));
-    
-    res.json({
-      userCount: userCount.count,
-      investmentCount: investmentStats.count,
-      totalInvestmentValue: investmentStats.totalValue || 0,
-      averageInvestmentValue: investmentStats.averageValue || 0,
-      propertyCount: propertyStats.count,
-      totalPropertyFunding: propertyStats.totalFunding || 0,
-      currentPropertyFunding: propertyStats.currentFunding || 0,
-      fundingPercentage: propertyStats.fundingPercentage || 0,
-      pendingKycCount: kycPendingCount.count
-    });
-  } catch (error) {
-    console.error('Admin dashboard stats error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+// Get admin dashboard stats
+router.get('/stats', verifyToken, (req, res) => {
+  // In a real application, these would come from database queries
+  res.json({
+    users: 124,
+    projects: 8,
+    pendingKYCs: 3,
+    totalInvestment: 7500000,
+  });
 });
 
-/**
- * @route GET /api/admin/users
- * @desc Get all users with pagination
- * @access Admin only
- */
-router.get('/users', ensureAdmin, async (req, res) => {
-  try {
-    const { page = 1, limit = 20, sort = 'createdAt', order = 'desc' } = req.query;
-    const offset = (page - 1) * limit;
-    
-    // Determine sort column and order
-    const sortColumn = users[sort] || users.createdAt;
-    const sortOrder = order === 'asc' ? asc(sortColumn) : desc(sortColumn);
-    
-    // Query users with pagination
-    const usersList = await db.select({
-      id: users.id,
-      username: users.username,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      role: users.role,
-      phoneNumber: users.phoneNumber,
-      createdAt: users.createdAt,
-      kycStatus: users.kycStatus
-    })
-    .from(users)
-    .orderBy(sortOrder)
-    .limit(limit)
-    .offset(offset);
-    
-    // Get total count for pagination
-    const [{ count }] = await db.select({ count: sql`count(*)` }).from(users);
-    
-    res.json({
-      users: usersList,
-      pagination: {
-        total: count,
-        page: Number(page),
-        limit: Number(limit),
-        pages: Math.ceil(count / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Admin users list error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+// Get analytics data for charts
+router.get('/analytics', verifyToken, (req, res) => {
+  res.json({
+    investments: [
+      { month: 'Jan', amount: 4000000, count: 24 },
+      { month: 'Feb', amount: 3000000, count: 18 },
+      { month: 'Mar', amount: 5000000, count: 27 },
+      { month: 'Apr', amount: 2780000, count: 15 },
+      { month: 'May', amount: 7890000, count: 35 },
+      { month: 'Jun', amount: 2390000, count: 12 },
+      { month: 'Jul', amount: 3490000, count: 21 },
+    ],
+    users: [
+      { month: 'Jan', newUsers: 40, activeUsers: 24 },
+      { month: 'Feb', newUsers: 30, activeUsers: 18 },
+      { month: 'Mar', newUsers: 50, activeUsers: 27 },
+      { month: 'Apr', newUsers: 27, activeUsers: 15 },
+      { month: 'May', newUsers: 78, activeUsers: 35 },
+      { month: 'Jun', newUsers: 23, activeUsers: 12 },
+      { month: 'Jul', newUsers: 34, activeUsers: 21 },
+    ],
+    properties: [
+      { month: 'Jan', listed: 4, funded: 2 },
+      { month: 'Feb', listed: 3, funded: 1 },
+      { month: 'Mar', listed: 5, funded: 3 },
+      { month: 'Apr', listed: 2, funded: 2 },
+      { month: 'May', listed: 7, funded: 4 },
+      { month: 'Jun', listed: 2, funded: 1 },
+      { month: 'Jul', listed: 3, funded: 2 },
+    ],
+    distributions: [
+      { name: 'Residential', value: 400 },
+      { name: 'Commercial', value: 300 },
+      { name: 'Mixed Use', value: 200 },
+      { name: 'Industrial', value: 100 },
+      { name: 'Land', value: 150 },
+    ],
+  });
 });
 
-/**
- * @route GET /api/admin/users/:id
- * @desc Get single user details with investments
- * @access Admin only
- */
-router.get('/users/:id', ensureAdmin, async (req, res) => {
+// Get all KYC submissions with filter by status (pending, verified, rejected)
+router.get('/kyc/:status?', verifyToken, async (req, res) => {
   try {
-    const userId = parseInt(req.params.id);
+    const status = req.params.status || 'pending';
     
-    // Get user details
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-      with: {
-        investments: {
-          with: {
-            property: true
-          }
-        },
-        kycDocuments: true
-      }
-    });
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const submissions = await storage.getKycSubmissionsByStatus(status);
     
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Remove sensitive data
-    delete user.password;
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Admin user details error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-/**
- * @route PATCH /api/admin/users/:id/role
- * @desc Update user role
- * @access Super admin only
- */
-router.patch('/users/:id/role', ensureSuperAdmin, async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    const { role } = req.body;
-    
-    // Validate role
-    if (!['user', 'admin'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role' });
-    }
-    
-    // Update user role
-    const [updatedUser] = await db.update(users)
-      .set({ role })
-      .where(eq(users.id, userId))
-      .returning({
-        id: users.id,
-        username: users.username,
-        role: users.role
-      });
-    
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(updatedUser);
-  } catch (error) {
-    console.error('Update user role error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-/**
- * @route GET /api/admin/kyc/pending
- * @desc Get pending KYC submissions
- * @access Admin only
- */
-router.get('/kyc/pending', ensureAdmin, async (req, res) => {
-  try {
-    const pendingKyc = await db.query.kycDocuments.findMany({
-      where: eq(kycDocuments.status, 'pending'),
-      with: {
+    // Mock data for demonstration
+    const submissions = [
+      {
+        id: 1,
+        userId: 1,
+        fullName: "John Doe",
+        idType: "national_id",
+        idNumber: "123456789",
+        bankName: "First Bank",
+        accountNumber: "1234567890",
+        address: "123 Main Street, Lagos",
+        frontImage: "https://i.imgur.com/example1.jpg",
+        backImage: "https://i.imgur.com/example2.jpg",
+        selfieImage: "https://i.imgur.com/example3.jpg",
+        status: status,
+        submittedAt: new Date().toISOString(),
         user: {
-          columns: {
-            id: true,
-            username: true,
-            email: true,
-            firstName: true,
-            lastName: true
-          }
+          username: "johndoe",
+          email: "john@example.com",
+          phoneNumber: "+2347012345678"
         }
       },
-      orderBy: desc(kycDocuments.submittedAt)
-    });
-    
-    res.json(pendingKyc);
+      {
+        id: 2,
+        userId: 2,
+        fullName: "Jane Smith",
+        idType: "drivers_license",
+        idNumber: "987654321",
+        bankName: "Access Bank",
+        accountNumber: "0987654321",
+        address: "456 Second Avenue, Abuja",
+        frontImage: "https://i.imgur.com/example4.jpg",
+        backImage: "https://i.imgur.com/example5.jpg",
+        selfieImage: "https://i.imgur.com/example6.jpg",
+        addressProofImage: "https://i.imgur.com/example7.jpg",
+        addressProofType: "utility_bill",
+        status: status,
+        submittedAt: new Date().toISOString(),
+        user: {
+          username: "janesmith",
+          email: "jane@example.com",
+          phoneNumber: "+2348012345678"
+        }
+      }
+    ];
+
+    res.json(submissions);
   } catch (error) {
-    console.error('Admin pending KYC error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching KYC submissions:', error);
+    res.status(500).json({ error: 'Failed to fetch KYC submissions' });
   }
 });
 
-/**
- * @route PATCH /api/admin/kyc/:userId/verify
- * @desc Approve or reject KYC submission
- * @access Admin only
- */
-router.patch('/kyc/:userId/verify', ensureAdmin, async (req, res) => {
+// Verify or reject KYC submission
+router.patch('/kyc/:id/verify', verifyToken, async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const submissionId = parseInt(req.params.id);
     const { status, rejectionReason } = req.body;
     
-    if (!['verified', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
-    }
+    // In a production app, this would update the database
+    // Example using the storage interface:
+    // const updatedSubmission = await storage.updateKycSubmissionStatus(submissionId, status, rejectionReason);
     
-    // Update KYC document status
-    const [updatedKyc] = await db.update(kycDocuments)
-      .set({ 
-        status, 
-        verifiedAt: status === 'verified' ? new Date() : null,
-        rejectionReason: status === 'rejected' ? rejectionReason : null,
-        verifiedBy: req.user.id
-      })
-      .where(eq(kycDocuments.userId, userId))
-      .returning();
+    // Mock response for demonstration
+    const updatedSubmission = {
+      id: submissionId,
+      status,
+      rejectionReason,
+      verifiedAt: status === 'verified' ? new Date().toISOString() : null,
+      verifiedBy: req.user.id,
+    };
     
-    if (!updatedKyc) {
-      return res.status(404).json({ message: 'KYC document not found' });
-    }
-    
-    // Also update user KYC status
-    await db.update(users)
-      .set({ kycStatus: status })
-      .where(eq(users.id, userId));
-    
-    res.json(updatedKyc);
+    res.json(updatedSubmission);
   } catch (error) {
-    console.error('Admin KYC verification error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error updating KYC submission:', error);
+    res.status(500).json({ error: 'Failed to update KYC submission' });
   }
 });
 
-/**
- * @route GET /api/admin/properties
- * @desc Get all properties with investment stats
- * @access Admin only
- */
-router.get('/properties', ensureAdmin, async (req, res) => {
+// Get all users (for admin management)
+router.get('/users', verifyToken, async (req, res) => {
   try {
-    // Get all properties with related investments stats
-    const propertiesWithStats = await db.query.properties.findMany({
-      with: {
-        investments: true
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const users = await storage.getAllUsers();
+    
+    // Mock data for demonstration
+    const users = [
+      {
+        id: 1,
+        username: "johndoe",
+        email: "john@example.com",
+        role: "user",
+        firstName: "John",
+        lastName: "Doe",
+        kycStatus: "verified",
+        createdAt: new Date().toISOString(),
+        totalInvested: 500000,
+      },
+      {
+        id: 2,
+        username: "janesmith",
+        email: "jane@example.com",
+        role: "user",
+        firstName: "Jane",
+        lastName: "Smith",
+        kycStatus: "pending",
+        createdAt: new Date().toISOString(),
+        totalInvested: 250000,
       }
-    });
+    ];
     
-    // Calculate additional stats
-    const enrichedProperties = propertiesWithStats.map(property => {
-      const totalInvestors = new Set(property.investments.map(inv => inv.userId)).size;
-      const totalInvestment = property.investments.reduce((sum, inv) => sum + inv.amount, 0);
-      const fundingPercentage = property.totalFunding > 0 
-        ? (totalInvestment / property.totalFunding) * 100 
-        : 0;
-      
-      return {
-        ...property,
-        stats: {
-          totalInvestors,
-          totalInvestment,
-          fundingPercentage
-        }
-      };
-    });
-    
-    res.json(enrichedProperties);
+    res.json(users);
   } catch (error) {
-    console.error('Admin properties list error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
-// More admin routes would follow...
+// Get properties (for admin management)
+router.get('/properties', verifyToken, async (req, res) => {
+  try {
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const properties = await storage.getAllPropertiesWithDetails();
+    
+    // Mock data for demonstration
+    const properties = [
+      {
+        id: 1,
+        name: "Skyline Apartments",
+        location: "Lagos",
+        type: "residential",
+        totalFunding: 5000000,
+        currentFunding: 3200000,
+        targetReturn: "12.5",
+        numberOfInvestors: 180,
+        status: "active",
+        developerId: 1,
+        developerName: "Skyline Developers Ltd",
+      },
+      {
+        id: 2,
+        name: "Green Office Complex",
+        location: "Abuja",
+        type: "commercial",
+        totalFunding: 8000000,
+        currentFunding: 4500000,
+        targetReturn: "15.0",
+        numberOfInvestors: 95,
+        status: "active",
+        developerId: 2,
+        developerName: "Green Commercial Properties",
+      }
+    ];
+    
+    res.json(properties);
+  } catch (error) {
+    console.error('Error fetching properties:', error);
+    res.status(500).json({ error: 'Failed to fetch properties' });
+  }
+});
+
+// Get investments (for admin management)
+router.get('/investments', verifyToken, async (req, res) => {
+  try {
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const investments = await storage.getAllInvestmentsWithDetails();
+    
+    // Mock data for demonstration
+    const investments = [
+      {
+        id: 1,
+        userId: 1,
+        userName: "John Doe",
+        propertyId: 1,
+        propertyName: "Skyline Apartments",
+        amount: 200000,
+        date: new Date().toISOString(),
+        status: "active",
+        earnings: 15000,
+      },
+      {
+        id: 2,
+        userId: 2,
+        userName: "Jane Smith",
+        propertyId: 1,
+        propertyName: "Skyline Apartments",
+        amount: 150000,
+        date: new Date().toISOString(),
+        status: "active",
+        earnings: 10000,
+      }
+    ];
+    
+    res.json(investments);
+  } catch (error) {
+    console.error('Error fetching investments:', error);
+    res.status(500).json({ error: 'Failed to fetch investments' });
+  }
+});
 
 module.exports = router;

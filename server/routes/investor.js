@@ -1,309 +1,466 @@
 const express = require('express');
-const { db } = require('../db');
-const { 
-  properties, 
-  investments, 
-  paymentTransactions,
-  users,
-  kycDocuments
-} = require('../../shared/schema');
-const { eq, desc, and, sql } = require('drizzle-orm');
+const router = express.Router();
 const { verifyToken } = require('../middleware/authMiddleware');
 
-const router = express.Router();
-
-/**
- * @route GET /api/investor/dashboard
- * @desc Get investor dashboard data
- * @access Private
- */
-router.get('/dashboard', verifyToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    
-    // Get user's investments with property details
-    const userInvestments = await db.query.investments.findMany({
-      where: eq(investments.userId, userId),
-      with: {
-        property: true
-      },
-      orderBy: desc(investments.date)
-    });
-    
-    // Calculate investment stats
-    const totalInvested = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-    const currentPortfolioValue = userInvestments.reduce((sum, inv) => sum + inv.currentValue, 0);
-    const totalEarnings = userInvestments.reduce((sum, inv) => sum + inv.earnings, 0);
-    const portfolioGrowth = totalInvested > 0 
-      ? ((currentPortfolioValue - totalInvested) / totalInvested) * 100 
-      : 0;
-    
-    // Count active, pending and completed investments
-    const activeInvestments = userInvestments.filter(inv => inv.status === 'active').length;
-    const pendingInvestments = userInvestments.filter(inv => inv.status === 'pending').length;
-    const completedInvestments = userInvestments.filter(inv => inv.status === 'completed').length;
-    
-    // Get KYC status
-    const userKyc = await db.query.kycDocuments.findFirst({
-      where: eq(kycDocuments.userId, userId)
-    });
-    
-    // Get recent payment transactions
-    const recentTransactions = await db.query.paymentTransactions.findMany({
-      where: eq(paymentTransactions.userId, userId),
-      orderBy: desc(paymentTransactions.date),
-      limit: 5
-    });
-    
-    // Recommended properties based on user's previous investments
-    const investedPropertyTypes = new Set(
-      userInvestments.map(inv => inv.property.type)
-    );
-    
-    let recommendedProperties = [];
-    if (investedPropertyTypes.size > 0) {
-      // Find properties of similar types that user hasn't invested in yet
-      const investedPropertyIds = userInvestments.map(inv => inv.propertyId);
-      
-      recommendedProperties = await db.query.properties.findMany({
-        where: and(
-          sql`${properties.type} IN (${Array.from(investedPropertyTypes)})`,
-          sql`${properties.id} NOT IN (${investedPropertyIds.length > 0 ? investedPropertyIds : [0]})`
-        ),
-        limit: 3
-      });
-    } else {
-      // If no previous investments, recommend popular properties
-      recommendedProperties = await db.query.properties.findMany({
-        orderBy: desc(properties.numberOfInvestors),
-        limit: 3
-      });
-    }
-    
-    res.json({
-      portfolioStats: {
-        totalInvested,
-        currentPortfolioValue,
-        totalEarnings,
-        portfolioGrowth,
-        activeInvestments,
-        pendingInvestments,
-        completedInvestments
-      },
-      kycStatus: userKyc?.status || 'not_started',
-      recentTransactions,
-      recommendedProperties,
-      recentInvestments: userInvestments.slice(0, 5)
-    });
-  } catch (error) {
-    console.error('Investor dashboard error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+// Get investor portfolio summary
+router.get('/portfolio', verifyToken, (req, res) => {
+  // In a real application, these would come from database queries
+  res.json({
+    totalInvestment: 200000,
+    projectsInvested: 4,
+    roiEarned: 35000,
+    walletBalance: 12000,
+  });
 });
 
-/**
- * @route GET /api/investor/investments
- * @desc Get all investments for the logged-in investor
- * @access Private
- */
+// Get investor investments
 router.get('/investments', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const investments = await storage.getUserInvestments(req.user.id);
     
-    const userInvestments = await db.query.investments.findMany({
-      where: eq(investments.userId, userId),
-      with: {
-        property: true
+    // Mock data for demonstration
+    const investments = [
+      {
+        id: 1,
+        propertyId: 1,
+        propertyName: "Skyline Apartments",
+        location: "Lagos",
+        type: "residential",
+        imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        amount: 50000,
+        date: "2023-04-10T00:00:00.000Z",
+        status: "active",
+        currentValue: 55000,
+        earnings: 5000,
+        roi: 10,
+        term: 36,
+        maturityDate: "2026-04-10T00:00:00.000Z"
       },
-      orderBy: desc(investments.date)
-    });
+      {
+        id: 2,
+        propertyId: 2,
+        propertyName: "Green Office Complex",
+        location: "Abuja",
+        type: "commercial",
+        imageUrl: "https://images.unsplash.com/photo-1577979749830-f1d742b96791?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        amount: 75000,
+        date: "2023-02-15T00:00:00.000Z",
+        status: "active",
+        currentValue: 85000,
+        earnings: 10000,
+        roi: 13.33,
+        term: 36,
+        maturityDate: "2026-02-15T00:00:00.000Z"
+      },
+      {
+        id: 3,
+        propertyId: 3,
+        propertyName: "Palm Villas",
+        location: "Lagos",
+        type: "residential",
+        imageUrl: "https://images.unsplash.com/photo-1598228723793-52759bba239c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        amount: 60000,
+        date: "2023-06-20T00:00:00.000Z",
+        status: "active",
+        currentValue: 63000,
+        earnings: 3000,
+        roi: 5,
+        term: 36,
+        maturityDate: "2026-06-20T00:00:00.000Z"
+      },
+      {
+        id: 4,
+        propertyId: 4,
+        propertyName: "Industrial Warehouse",
+        location: "Port Harcourt",
+        type: "industrial",
+        imageUrl: "https://images.unsplash.com/photo-1586528116493-a029325540ea?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        amount: 100000,
+        date: "2023-05-05T00:00:00.000Z",
+        status: "active",
+        currentValue: 110000,
+        earnings: 10000,
+        roi: 10,
+        term: 36,
+        maturityDate: "2026-05-05T00:00:00.000Z"
+      }
+    ];
     
-    res.json(userInvestments);
+    res.json(investments);
   } catch (error) {
-    console.error('Investor investments error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching investments:', error);
+    res.status(500).json({ error: 'Failed to fetch investments' });
   }
 });
 
-/**
- * @route GET /api/investor/investments/:id
- * @desc Get details of a specific investment
- * @access Private
- */
-router.get('/investments/:id', verifyToken, async (req, res) => {
+// Get investor wallet transactions
+router.get('/wallet/transactions', verifyToken, async (req, res) => {
   try {
-    const investmentId = parseInt(req.params.id);
-    const userId = req.user.id;
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const transactions = await storage.getUserWalletTransactions(req.user.id);
     
-    const investment = await db.query.investments.findFirst({
-      where: and(
-        eq(investments.id, investmentId),
-        eq(investments.userId, userId)
-      ),
-      with: {
-        property: true
+    // Mock data for demonstration
+    const transactions = [
+      {
+        id: 1,
+        amount: 50000,
+        type: "deposit",
+        description: "Initial deposit",
+        reference: "TRX123456",
+        balanceBefore: 0,
+        balanceAfter: 50000,
+        status: "completed",
+        createdAt: "2023-03-10T10:00:00.000Z"
+      },
+      {
+        id: 2,
+        amount: 25000,
+        type: "investment",
+        description: "Investment in Skyline Apartments",
+        reference: "INV123456",
+        balanceBefore: 50000,
+        balanceAfter: 25000,
+        status: "completed",
+        propertyId: 1,
+        investmentId: 1,
+        createdAt: "2023-04-10T14:30:00.000Z"
+      },
+      {
+        id: 3,
+        amount: 20000,
+        type: "deposit",
+        description: "Wallet top-up",
+        reference: "TRX234567",
+        balanceBefore: 25000,
+        balanceAfter: 45000,
+        status: "completed",
+        createdAt: "2023-05-15T09:45:00.000Z"
+      },
+      {
+        id: 4,
+        amount: 35000,
+        type: "investment",
+        description: "Investment in Green Office Complex",
+        reference: "INV234567",
+        balanceBefore: 45000,
+        balanceAfter: 10000,
+        status: "completed",
+        propertyId: 2,
+        investmentId: 2,
+        createdAt: "2023-05-20T16:15:00.000Z"
+      },
+      {
+        id: 5,
+        amount: 5000,
+        type: "return",
+        description: "Monthly return from Skyline Apartments",
+        reference: "RTN123456",
+        balanceBefore: 10000,
+        balanceAfter: 15000,
+        status: "completed",
+        propertyId: 1,
+        investmentId: 1,
+        createdAt: "2023-06-10T12:00:00.000Z"
+      },
+      {
+        id: 6,
+        amount: 3000,
+        type: "withdrawal",
+        description: "Withdrawal to bank account",
+        reference: "WTH123456",
+        balanceBefore: 15000,
+        balanceAfter: 12000,
+        status: "completed",
+        createdAt: "2023-07-05T10:30:00.000Z"
       }
-    });
+    ];
     
-    if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
-    }
-    
-    // Get related payment transactions
-    const transactions = await db.query.paymentTransactions.findMany({
-      where: eq(paymentTransactions.investmentId, investmentId),
-      orderBy: desc(paymentTransactions.date)
-    });
-    
-    res.json({
-      ...investment,
-      transactions
-    });
+    res.json(transactions);
   } catch (error) {
-    console.error('Investment details error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching wallet transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch wallet transactions' });
   }
 });
 
-/**
- * @route POST /api/investor/investments
- * @desc Create a new investment
- * @access Private
- */
-router.post('/investments', verifyToken, async (req, res) => {
+// Get user's KYC status
+router.get('/kyc/status', verifyToken, async (req, res) => {
   try {
-    const { propertyId, amount } = req.body;
-    const userId = req.user.id;
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const kycStatus = await storage.getUserKycStatus(req.user.id);
     
-    // Validate amount
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Invalid investment amount' });
-    }
-    
-    // Check if property exists and is available for investment
-    const property = await db.query.properties.findFirst({
-      where: eq(properties.id, propertyId)
-    });
-    
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-    
-    if (property.accreditedOnly) {
-      // Check if user is accredited
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-        columns: {
-          accreditationLevel: true
-        }
-      });
-      
-      if (!user || user.accreditationLevel === 'non_accredited') {
-        return res.status(403).json({ 
-          message: 'This property is only available to accredited investors' 
-        });
+    // Mock data for demonstration
+    const kycStatus = {
+      status: "pending", // not_started, pending, verified, rejected
+      submittedAt: "2023-06-20T15:30:00.000Z",
+      verifiedAt: null,
+      rejectionReason: null,
+      documents: {
+        idType: "national_id",
+        idNumber: "123456789",
+        hasFrontImage: true,
+        hasBackImage: true,
+        hasSelfie: true,
+        hasAddressProof: false
       }
-    }
+    };
     
-    // Check if minimum investment amount is met
-    if (amount < property.minimumInvestment) {
-      return res.status(400).json({ 
-        message: `Minimum investment amount is ₦${property.minimumInvestment}` 
-      });
-    }
-    
-    // Create investment
-    const [newInvestment] = await db.insert(investments)
-      .values({
-        userId,
-        propertyId,
-        amount,
-        date: new Date(),
-        status: 'pending',
-        currentValue: amount,
-        earnings: 0
-      })
-      .returning();
-    
-    res.status(201).json(newInvestment);
+    res.json(kycStatus);
   } catch (error) {
-    console.error('Create investment error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching KYC status:', error);
+    res.status(500).json({ error: 'Failed to fetch KYC status' });
   }
 });
 
-/**
- * @route GET /api/investor/roi
- * @desc Get ROI data for all investments
- * @access Private
- */
-router.get('/roi', verifyToken, async (req, res) => {
+// Submit KYC documents
+router.post('/kyc/submit', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { 
+      fullName, 
+      idType, 
+      idNumber, 
+      bankName, 
+      accountNumber, 
+      address, 
+      frontImage, 
+      backImage, 
+      selfieImage, 
+      addressProofImage, 
+      addressProofType 
+    } = req.body;
     
-    // Get all user investments
-    const userInvestments = await db.query.investments.findMany({
-      where: eq(investments.userId, userId),
-      with: {
-        property: true
-      }
-    });
+    // Validate required fields
+    if (!fullName || !idType || !idNumber || !bankName || !accountNumber || !address || !frontImage || !selfieImage) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
     
-    // Get monthly ROI data
-    // Normally this would come from a roiPayments table
-    // For now we'll generate synthetic data based on the investment amount and property targetReturn
-    const roiData = userInvestments.flatMap(investment => {
-      const monthlyROI = [];
-      const investmentDate = new Date(investment.date);
-      const startMonth = investmentDate.getMonth();
-      const startYear = investmentDate.getFullYear();
-      
-      const annualReturn = parseFloat(investment.property.targetReturn);
-      const monthlyReturnRate = annualReturn / 12 / 100;
-      
-      // Generate up to 24 months of ROI data
-      for (let i = 0; i < 24; i++) {
-        let month = (startMonth + i) % 12;
-        let year = startYear + Math.floor((startMonth + i) / 12);
-        
-        // Don't generate future payments
-        const paymentDate = new Date(year, month, 15);
-        if (paymentDate > new Date()) {
-          break;
-        }
-        
-        const monthNames = ["January", "February", "March", "April", "May", "June",
-          "July", "August", "September", "October", "November", "December"];
-        
-        // Calculate payment amount based on the investment and monthly return rate
-        const amount = Math.round(investment.amount * monthlyReturnRate);
-        
-        monthlyROI.push({
-          id: `${investment.id}-${year}-${month}`,
-          investmentId: investment.id,
-          propertyId: investment.propertyId,
-          month: monthNames[month],
-          year,
-          amount,
-          percentage: monthlyReturnRate * 100,
-          paymentDate: paymentDate.toISOString(),
-          // Set payment status based on date (past dates are paid, recent ones processing)
-          paymentStatus: paymentDate < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) 
-            ? 'paid' 
-            : 'processing',
-          paymentMethod: paymentDate < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) 
-            ? 'Bank Transfer' 
-            : undefined
-        });
-      }
-      
-      return monthlyROI;
-    });
+    // In a production app, this would save to the database
+    // Example using the storage interface:
+    // const submission = await storage.createKycSubmission({
+    //   userId: req.user.id,
+    //   fullName,
+    //   idType,
+    //   idNumber,
+    //   bankName,
+    //   accountNumber,
+    //   address,
+    //   frontImage,
+    //   backImage,
+    //   selfieImage,
+    //   addressProofImage,
+    //   addressProofType
+    // });
     
-    res.json(roiData);
+    // Mock response for demonstration
+    const submission = {
+      id: 123,
+      userId: req.user.id,
+      fullName,
+      idType,
+      idNumber,
+      bankName,
+      accountNumber,
+      address,
+      status: "pending",
+      submittedAt: new Date().toISOString()
+    };
+    
+    res.status(201).json(submission);
   } catch (error) {
-    console.error('ROI data error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error submitting KYC:', error);
+    res.status(500).json({ error: 'Failed to submit KYC documents' });
+  }
+});
+
+// Get available properties for investment
+router.get('/available-properties', verifyToken, async (req, res) => {
+  try {
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const properties = await storage.getAvailableProperties();
+    
+    // Mock data for demonstration
+    const properties = [
+      {
+        id: 1,
+        name: "Skyline Apartments",
+        location: "Lagos",
+        description: "Modern apartment complex in Ikoyi with 120 units and premium amenities.",
+        type: "residential",
+        imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        imageGallery: ["https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"],
+        tier: "premium",
+        targetReturn: "12.5",
+        minimumInvestment: 50000,
+        term: 36,
+        totalFunding: 5000000,
+        currentFunding: 3200000,
+        numberOfInvestors: 180,
+        daysLeft: 28,
+        amenities: ["Pool", "Gym", "Security", "Parking"],
+        developer: "Skyline Developers Ltd"
+      },
+      {
+        id: 2,
+        name: "Green Office Complex",
+        location: "Abuja",
+        description: "A-grade office complex in the Central Business District featuring sustainable design.",
+        type: "commercial",
+        imageUrl: "https://images.unsplash.com/photo-1577979749830-f1d742b96791?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        imageGallery: ["https://images.unsplash.com/photo-1577979749830-f1d742b96791?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"],
+        tier: "elite",
+        targetReturn: "15.0",
+        minimumInvestment: 100000,
+        term: 48,
+        totalFunding: 8000000,
+        currentFunding: 4500000,
+        numberOfInvestors: 95,
+        daysLeft: 35,
+        amenities: ["Backup Power", "Security", "Parking", "Conference Center"],
+        developer: "Green Commercial Properties"
+      },
+      {
+        id: 3,
+        name: "Palm Villas",
+        location: "Lagos",
+        description: "Luxury villa development in Lekki with private beach access.",
+        type: "residential",
+        imageUrl: "https://images.unsplash.com/photo-1598228723793-52759bba239c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        imageGallery: ["https://images.unsplash.com/photo-1598228723793-52759bba239c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"],
+        tier: "growth",
+        targetReturn: "11.0",
+        minimumInvestment: 75000,
+        term: 36,
+        totalFunding: 6000000,
+        currentFunding: 2800000,
+        numberOfInvestors: 65,
+        daysLeft: 45,
+        amenities: ["Beach Access", "Pool", "Security", "Garden"],
+        developer: "Palm Developers"
+      },
+      {
+        id: 4,
+        name: "Industrial Warehouse",
+        location: "Port Harcourt",
+        description: "Modern logistics warehouse with excellent transportation links.",
+        type: "industrial",
+        imageUrl: "https://images.unsplash.com/photo-1586528116493-a029325540ea?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+        imageGallery: ["https://images.unsplash.com/photo-1586528116493-a029325540ea?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"],
+        tier: "starter",
+        targetReturn: "13.0",
+        minimumInvestment: 25000,
+        term: 30,
+        totalFunding: 3000000,
+        currentFunding: 1500000,
+        numberOfInvestors: 110,
+        daysLeft: 20,
+        amenities: ["Loading Bays", "Security", "Office Space"],
+        developer: "Industrial Solutions Ltd"
+      }
+    ];
+    
+    res.json(properties);
+  } catch (error) {
+    console.error('Error fetching available properties:', error);
+    res.status(500).json({ error: 'Failed to fetch available properties' });
+  }
+});
+
+// Get investor notifications
+router.get('/notifications', verifyToken, async (req, res) => {
+  try {
+    // In a production app, this would come from the database
+    // Example using the storage interface:
+    // const notifications = await storage.getUserNotifications(req.user.id);
+    
+    // Mock data for demonstration
+    const notifications = [
+      {
+        id: 1,
+        type: "investment",
+        title: "Investment Confirmed",
+        message: "Your investment of ₦50,000 in Skyline Apartments has been confirmed.",
+        isRead: true,
+        createdAt: "2023-04-10T14:35:00.000Z",
+        readAt: "2023-04-10T15:20:00.000Z"
+      },
+      {
+        id: 2,
+        type: "return",
+        title: "Return Received",
+        message: "You've received a return of ₦5,000 from your investment in Skyline Apartments.",
+        isRead: true,
+        createdAt: "2023-06-10T12:05:00.000Z",
+        readAt: "2023-06-10T14:30:00.000Z"
+      },
+      {
+        id: 3,
+        type: "property",
+        title: "New Property Available",
+        message: "A new investment opportunity is now available: Palm Villas in Lagos.",
+        isRead: false,
+        createdAt: "2023-06-15T09:00:00.000Z",
+        readAt: null
+      },
+      {
+        id: 4,
+        type: "kyc",
+        title: "KYC Submission Received",
+        message: "Your KYC documents have been received and are under review.",
+        isRead: false,
+        createdAt: "2023-06-20T15:35:00.000Z",
+        readAt: null
+      }
+    ];
+    
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// Make an investment
+router.post('/invest', verifyToken, async (req, res) => {
+  try {
+    const { propertyId, amount, paymentMethod } = req.body;
+    
+    // Validate required fields
+    if (!propertyId || !amount || !paymentMethod) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // In a production app, this would verify and process the investment
+    // Example using the storage interface:
+    // const investment = await storage.createInvestment({
+    //   userId: req.user.id,
+    //   propertyId,
+    //   amount,
+    //   paymentMethod
+    // });
+    
+    // Mock response for demonstration
+    const investment = {
+      id: 999,
+      userId: req.user.id,
+      propertyId,
+      amount,
+      date: new Date().toISOString(),
+      status: "active",
+      currentValue: amount,
+      completedDate: null,
+      earnings: 0,
+      reference: `INV${Math.floor(Math.random() * 1000000)}`,
+      transactionId: `TRX${Math.floor(Math.random() * 1000000)}`
+    };
+    
+    res.status(201).json(investment);
+  } catch (error) {
+    console.error('Error processing investment:', error);
+    res.status(500).json({ error: 'Failed to process investment' });
   }
 });
 

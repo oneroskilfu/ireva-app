@@ -1,288 +1,218 @@
-import { useState, ReactNode } from 'react';
-import { Link, useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import { 
-  Home, 
-  Users, 
-  Building2, 
-  DollarSign, 
-  FileText, 
-  Settings, 
-  Bell, 
-  BarChart, 
-  CheckSquare, 
-  Menu, 
-  LogOut, 
-  ChevronDown, 
-  Activity,
-  BookOpen,
-  MessageSquare,
-  Lock
-} from 'lucide-react';
+import { ReactNode, useState } from "react";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import {
+  LayoutDashboard,
+  Users,
+  Building,
+  FileText,
+  ClipboardCheck,
+  BarChart3,
+  MessageSquare,
+  HelpCircle,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Bell,
+  User,
+  Shield,
+  Database,
+  CreditCard,
+  BookOpen,
+  Activity
+} from "lucide-react";
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Define navigation items
-  const navItems = [
-    { name: 'Dashboard', href: '/admin', icon: <Home size={20} /> },
-    { name: 'Users', href: '/admin/users', icon: <Users size={20} /> },
-    { name: 'KYC Verification', href: '/admin/kyc', icon: <CheckSquare size={20} /> },
-    { name: 'Properties', href: '/admin/properties', icon: <Building2 size={20} /> },
-    { name: 'Investments', href: '/admin/investments', icon: <DollarSign size={20} /> },
-    { name: 'ROI Tracking', href: '/admin/roi', icon: <BarChart size={20} /> },
-    { name: 'Educational Content', href: '/admin/educational-resources', icon: <BookOpen size={20} /> },
-    { name: 'Payment Transactions', href: '/admin/transactions', icon: <Activity size={20} /> },
-    { name: 'Forum Moderation', href: '/admin/forum', icon: <MessageSquare size={20} /> },
-  ];
-
-  // Super admin specific items
-  const superAdminItems = [
-    { name: 'System Settings', href: '/admin/settings', icon: <Settings size={20} /> },
-    { name: 'Activity Logs', href: '/admin/logs', icon: <FileText size={20} /> },
-    { name: 'Security', href: '/admin/security', icon: <Lock size={20} /> },
-  ];
-
-  // Check if the given route is active
-  const isActive = (path: string) => {
-    return location === path || (path !== '/admin' && location.startsWith(path));
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const navItems = [
+    { path: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { path: "/admin/users", label: "User Management", icon: <Users className="w-5 h-5" /> },
+    { path: "/admin/properties", label: "Properties", icon: <Building className="w-5 h-5" /> },
+    { path: "/admin/kyc", label: "KYC Verification", icon: <ClipboardCheck className="w-5 h-5" /> },
+    { path: "/admin/investments", label: "Investments", icon: <BarChart3 className="w-5 h-5" /> },
+    { path: "/admin/transactions", label: "Transactions", icon: <Activity className="w-5 h-5" /> },
+    { path: "/admin/payments", label: "Payments", icon: <CreditCard className="w-5 h-5" /> },
+    { path: "/admin/documents", label: "Documents", icon: <FileText className="w-5 h-5" /> },
+    { path: "/admin/messages", label: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
+    { path: "/admin/resources", label: "Resources", icon: <BookOpen className="w-5 h-5" /> },
+    { path: "/admin/system", label: "System", icon: <Database className="w-5 h-5" /> },
+    { path: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
+  ];
+
+  const initials = user?.firstName && user?.lastName 
+    ? `${user.firstName[0]}${user.lastName[0]}` 
+    : user?.username?.substring(0, 2).toUpperCase() || 'AD';
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Desktop Sidebar */}
-      <div className={`border-r bg-background/95 backdrop-blur-sm ${sidebarOpen ? 'w-64' : 'w-20'} h-screen hidden md:flex flex-col transition-all`}>
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center">
-            <img src="/logo.svg" alt="iREVA" className="h-8 w-8 text-primary" />
-            {sidebarOpen && <span className="ml-2 font-semibold text-xl">iREVA Admin</span>}
-          </div>
+    <div className="min-h-screen bg-slate-100 flex flex-col">
+      {/* Top Navigation */}
+      <header className="bg-white border-b h-16 flex items-center px-4 sticky top-0 z-10">
+        <div className="flex-1 flex items-center">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="rounded-full" 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            onClick={toggleSidebar} 
+            className="mr-4 lg:hidden"
           >
-            <Menu size={20} />
+            {isSidebarOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </Button>
+          <Link href="/admin/dashboard">
+            <div className="flex items-center space-x-2">
+              <div className="text-2xl font-bold text-primary">iREVA</div>
+              <div className="text-xl font-semibold hidden md:inline">Admin Panel</div>
+            </div>
+          </Link>
         </div>
-        
-        <ScrollArea className="flex-1">
-          <nav className="flex flex-col gap-1 p-4">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button 
-                  variant={isActive(item.href) ? "secondary" : "ghost"}
-                  size={sidebarOpen ? "default" : "icon"}
-                  className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
-                >
-                  {item.icon}
-                  {sidebarOpen && <span className="ml-2">{item.name}</span>}
-                </Button>
-              </Link>
-            ))}
-            
-            {user?.role === 'super_admin' && (
-              <>
-                {sidebarOpen && (
-                  <div className="mt-4 mb-2 px-3">
-                    <p className="text-xs font-semibold text-muted-foreground">SUPER ADMIN</p>
+        <div className="flex items-center space-x-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>System Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="max-h-[60vh] overflow-auto p-2">
+                <div className="text-center text-muted-foreground py-4">
+                  No new notifications
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative flex items-center space-x-2" size="sm">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.profileImage || ""} />
+                  <AvatarFallback>{initials}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col items-start text-sm">
+                  <span className="font-medium">{user?.firstName || user?.username}</span>
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800 text-xs">
+                    <span className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                    </span>
+                  </Badge>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/admin/profile">
+                  <div className="flex items-center w-full">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
                   </div>
-                )}
-                
-                {superAdminItems.map((item) => (
-                  <Link key={item.href} href={item.href}>
-                    <Button 
-                      variant={isActive(item.href) ? "secondary" : "ghost"}
-                      size={sidebarOpen ? "default" : "icon"}
-                      className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/settings">
+                  <div className="flex items-center w-full">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{logoutMutation.isPending ? 'Logging out...' : 'Log out'}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <aside 
+          className={`bg-white border-r w-64 transition-all duration-300 shrink-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+            lg:translate-x-0 lg:sticky fixed top-16 bottom-0 left-0 z-10 overflow-y-auto`}
+        >
+          <nav className="p-4">
+            <div className="space-y-1">
+              {navItems.map((item) => {
+                const isActive = location === item.path;
+                return (
+                  <Link key={item.path} href={item.path}>
+                    <Button
+                      variant={isActive ? "default" : "ghost"}
+                      className={`w-full justify-start ${isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                       {item.icon}
-                      {sidebarOpen && <span className="ml-2">{item.name}</span>}
+                      <span className="ml-3">{item.label}</span>
                     </Button>
                   </Link>
-                ))}
-              </>
-            )}
+                );
+              })}
+            </div>
           </nav>
-        </ScrollArea>
-        
-        <div className="border-t p-4">
-          {sidebarOpen ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user?.username || 'User'} />
-                  <AvatarFallback>
-                    {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="ml-2">
-                  <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-muted-foreground">{user?.role}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut size={18} />
-              </Button>
-            </div>
-          ) : (
-            <Button variant="ghost" size="icon" className="w-full" onClick={handleLogout}>
-              <LogOut size={18} />
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {/* Mobile Sidebar */}
-      <Sheet>
-        <div className="md:hidden flex items-center border-b h-16 px-4">
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="mr-4">
-              <Menu size={20} />
-            </Button>
-          </SheetTrigger>
-          <div className="flex items-center">
-            <img src="/logo.svg" alt="iREVA" className="h-8 w-8 text-primary" />
-            <span className="ml-2 font-semibold text-xl">iREVA Admin</span>
-          </div>
-        </div>
-        
-        <SheetContent side="left" className="p-0">
-          <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center">
-              <img src="/logo.svg" alt="iREVA" className="h-8 w-8 text-primary" />
-              <span className="ml-2 font-semibold text-xl">iREVA Admin</span>
-            </div>
-          </div>
           
-          <ScrollArea className="h-[calc(100vh-8rem)]">
-            <nav className="flex flex-col gap-1 p-4">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button 
-                    variant={isActive(item.href) ? "secondary" : "ghost"}
-                    className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
-                  >
-                    {item.icon}
-                    <span className="ml-2">{item.name}</span>
-                  </Button>
-                </Link>
-              ))}
-              
-              {user?.role === 'super_admin' && (
-                <>
-                  <div className="mt-4 mb-2 px-3">
-                    <p className="text-xs font-semibold text-muted-foreground">SUPER ADMIN</p>
-                  </div>
-                  
-                  {superAdminItems.map((item) => (
-                    <Link key={item.href} href={item.href}>
-                      <Button 
-                        variant={isActive(item.href) ? "secondary" : "ghost"}
-                        className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
-                      >
-                        {item.icon}
-                        <span className="ml-2">{item.name}</span>
-                      </Button>
-                    </Link>
-                  ))}
-                </>
-              )}
-            </nav>
-          </ScrollArea>
-          
-          <div className="border-t p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user?.username || 'User'} />
-                  <AvatarFallback>
-                    {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="ml-2">
-                  <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-muted-foreground">{user?.role}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut size={18} />
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top nav for desktop */}
-        <header className="hidden md:flex h-16 items-center justify-between border-b px-6">
-          <h1 className="text-xl font-semibold">
-            {navItems.find(item => isActive(item.href))?.name || 
-             superAdminItems.find(item => isActive(item.href))?.name || 
-             'Dashboard'}
-          </h1>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="icon" className="relative">
-              <Bell size={18} />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={user?.username || 'User'} />
-                    <AvatarFallback>
-                      {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>{user?.firstName} {user?.lastName}</span>
-                  <ChevronDown size={16} />
+          <div className="p-4 border-t mt-6">
+            <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+              <h4 className="font-medium mb-2 flex items-center text-amber-700">
+                <HelpCircle className="h-5 w-5 mr-2" /> Admin Guide
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Need help with the admin panel? Check out the detailed admin documentation.
+              </p>
+              <Link href="/admin/help">
+                <Button size="sm" variant="outline" className="w-full border-amber-200 text-amber-700 hover:text-amber-800 hover:bg-amber-100">
+                  View Admin Guide
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/profile">Profile Settings</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </Link>
+            </div>
           </div>
-        </header>
-        
-        {/* Content */}
-        <main className="flex-1 overflow-auto p-6">
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-4">
           {children}
         </main>
       </div>
     </div>
   );
-}
+};
+
+export default AdminLayout;
