@@ -62,10 +62,8 @@ export default function MobileFeaturedProperty() {
             </div>
           </div>
           
-          <Link href={`/properties/${featuredProperty.id}`}>
-            <a className="block w-full text-center bg-blue-600 text-white py-3 rounded-lg mt-4 font-medium">
-              Invest Now
-            </a>
+          <Link href={`/properties/${featuredProperty.id}`} className="block w-full text-center bg-blue-600 text-white py-3 rounded-lg mt-4 font-medium">
+            Invest Now
           </Link>
         </div>
       </div>

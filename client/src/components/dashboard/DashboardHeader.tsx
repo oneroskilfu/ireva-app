@@ -46,16 +46,12 @@ export default function DashboardHeader() {
           {/* Left: Logo and Menu */}
           <div className="flex items-center">
             {showBackButton ? (
-              <Link href="/dashboard">
-                <a className="mr-2 p-1 rounded-full hover:bg-slate-100">
-                  <ArrowLeft className="h-5 w-5" />
-                </a>
+              <Link href="/dashboard" className="mr-2 p-1 rounded-full hover:bg-slate-100">
+                <ArrowLeft className="h-5 w-5" />
               </Link>
             ) : (
-              <Link href="/">
-                <a className="mr-4">
-                  <div className="font-bold text-xl text-emerald-700">iREVA</div>
-                </a>
+              <Link href="/" className="mr-4">
+                <div className="font-bold text-xl text-emerald-700">iREVA</div>
               </Link>
             )}
             
@@ -103,13 +99,11 @@ export default function DashboardHeader() {
               <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
             </button>
             
-            <Link href="/profile">
-              <a className="flex items-center">
-                <div className="h-9 w-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-medium text-sm">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-                <span className="hidden md:inline text-sm font-medium ml-2">{displayName}</span>
-              </a>
+            <Link href="/profile" className="flex items-center">
+              <div className="h-9 w-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-medium text-sm">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <span className="hidden md:inline text-sm font-medium ml-2">{displayName}</span>
             </Link>
           </div>
         </div>
