@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { toast as reactToastify } from 'react-toastify';
 import { formatDistanceToNow } from 'date-fns';
 
 import {
@@ -100,6 +101,10 @@ const KYCManagementPage: React.FC = () => {
       setVerifyDialogOpen(false);
       setRejectDialogOpen(false);
       
+      // Show toast notification using react-toastify
+      reactToastify.success("KYC Approved!");
+      
+      // Also show shadcn toast for compatibility
       toast({
         title: 'KYC Updated',
         description: 'The KYC status has been updated successfully.',
@@ -107,6 +112,10 @@ const KYCManagementPage: React.FC = () => {
       });
     },
     onError: (error: any) => {
+      // Show error toast notification using react-toastify
+      reactToastify.error(error.message || 'Failed to update KYC status');
+      
+      // Also show shadcn toast for compatibility
       toast({
         title: 'Update Failed',
         description: error.message || 'Failed to update KYC status. Please try again.',
