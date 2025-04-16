@@ -648,19 +648,28 @@ const InvestorAnalytics = () => {
           
           <TabsContent value="overview" className="mt-6">
             <div className="grid grid-cols-1 gap-6">
-              <MockLineChart 
+              <LineChartComponent 
                 title="Portfolio Value Over Time" 
-                description="Track how your portfolio value has changed" 
+                description="Track how your portfolio value has changed"
+                data={portfolioValueData}
+                dataKey="value"
+                xAxisKey="date"
+                valuePrefix="₦"
               />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MockBarChart 
+                <BarChartComponent 
                   title="Monthly Returns" 
-                  description="Your monthly investment returns" 
+                  description="Your monthly investment returns"
+                  data={monthlyReturnsData}
+                  dataKey="returns"
+                  xAxisKey="month"
+                  valuePrefix="₦"
                 />
-                <MockPieChart 
+                <PieChartComponent 
                   title="Portfolio Composition" 
-                  description="Breakdown of your investment portfolio" 
+                  description="Breakdown of your investment portfolio"
+                  data={allocationData}
                 />
               </div>
               
@@ -684,13 +693,34 @@ const InvestorAnalytics = () => {
               <CashFlowAnalysis />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MockBarChart 
+                <BarChartComponent 
                   title="Income by Property" 
-                  description="Monthly income distribution by property" 
+                  description="Monthly income distribution by property"
+                  data={[
+                    { property: "Skyline Apartments", income: 180000 },
+                    { property: "Heritage Heights", income: 150000 },
+                    { property: "Victoria Crest", income: 120000 },
+                    { property: "Royal Palms", income: 90000 },
+                    { property: "Lekki Gardens", income: 70000 }
+                  ]}
+                  dataKey="income"
+                  xAxisKey="property"
+                  valuePrefix="₦"
                 />
-                <MockLineChart 
+                <LineChartComponent 
                   title="Cumulative Returns" 
-                  description="Your cumulative returns over time" 
+                  description="Your cumulative returns over time"
+                  data={[
+                    { month: 'Jan', cumulative: 125000 },
+                    { month: 'Feb', cumulative: 250000 },
+                    { month: 'Mar', cumulative: 380000 },
+                    { month: 'Apr', cumulative: 508000 },
+                    { month: 'May', cumulative: 640000 },
+                    { month: 'Jun', cumulative: 775000 }
+                  ]}
+                  dataKey="cumulative"
+                  xAxisKey="month"
+                  valuePrefix="₦"
                 />
               </div>
             </div>
@@ -701,9 +731,18 @@ const InvestorAnalytics = () => {
               <InvestmentComparison investments={investments} properties={properties} />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MockBarChart 
+                <BarChartComponent 
                   title="ROI Comparison" 
-                  description="ROI comparison against benchmarks" 
+                  description="ROI comparison against benchmarks"
+                  data={[
+                    { category: "Residential", roi: 12.5, benchmark: 10.2 },
+                    { category: "Commercial", roi: 14.2, benchmark: 11.3 },
+                    { category: "Mixed-use", roi: 13.8, benchmark: 10.8 },
+                    { category: "Industrial", roi: 11.5, benchmark: 9.5 }
+                  ]}
+                  dataKey="roi"
+                  xAxisKey="category"
+                  valueSuffix="%"
                 />
                 <MockLineChart 
                   title="Performance vs Market" 
