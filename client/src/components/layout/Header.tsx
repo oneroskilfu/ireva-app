@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Users, Lightbulb, Newspaper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -69,13 +69,16 @@ export default function Header() {
                 </button>
                 {/* Company Dropdown menu */}
                 <div className="absolute left-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
-                  <Link href="/company/team" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/company/team" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <Users className="h-4 w-4 mr-2 text-primary" />
                     Team
                   </Link>
-                  <Link href="/company/culture" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/company/culture" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <Lightbulb className="h-4 w-4 mr-2 text-primary" />
                     Culture
                   </Link>
-                  <Link href="/company/press" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/company/press" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <Newspaper className="h-4 w-4 mr-2 text-primary" />
                     Press
                   </Link>
                 </div>
@@ -104,48 +107,53 @@ export default function Header() {
             {/* Country selector */}
             <div className="relative group">
               <button className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
-                <span className="flex items-center">
+                <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
                   <img 
                     src="https://flagcdn.com/w20/ng.png" 
-                    width="20" 
-                    height="15" 
+                    width="24" 
+                    height="24" 
                     alt="Nigeria" 
-                    className="mr-1"
+                    className="object-cover"
                   />
-                  Nigeria
-                </span>
+                </div>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </button>
               {/* Country dropdown menu */}
               <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
                 <a href="/global" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
-                  <img 
-                    src="https://flagcdn.com/w20/un.png" 
-                    width="20" 
-                    height="15" 
-                    alt="Global" 
-                    className="mr-2"
-                  />
+                  <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50 mr-2">
+                    <img 
+                      src="https://flagcdn.com/w20/un.png" 
+                      width="20" 
+                      height="20" 
+                      alt="Global" 
+                      className="object-cover"
+                    />
+                  </div>
                   Global
                 </a>
                 <a href="/ghana" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
-                  <img 
-                    src="https://flagcdn.com/w20/gh.png" 
-                    width="20" 
-                    height="15" 
-                    alt="Ghana" 
-                    className="mr-2"
-                  />
+                  <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50 mr-2">
+                    <img 
+                      src="https://flagcdn.com/w20/gh.png" 
+                      width="20" 
+                      height="20" 
+                      alt="Ghana" 
+                      className="object-cover"
+                    />
+                  </div>
                   Ghana
                 </a>
                 <a href="/kenya" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
-                  <img 
-                    src="https://flagcdn.com/w20/ke.png" 
-                    width="20" 
-                    height="15" 
-                    alt="Kenya" 
-                    className="mr-2"
-                  />
+                  <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50 mr-2">
+                    <img 
+                      src="https://flagcdn.com/w20/ke.png" 
+                      width="20" 
+                      height="20" 
+                      alt="Kenya" 
+                      className="object-cover"
+                    />
+                  </div>
                   Kenya
                 </a>
               </div>
