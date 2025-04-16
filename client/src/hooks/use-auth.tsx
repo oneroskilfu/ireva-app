@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -9,38 +9,76 @@ import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
+// Types for JWT authentication response
+type AuthResponse = {
+  user: SelectUser;
+  token: string;
+};
+
 type AuthContextType = {
   user: SelectUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
+  token: string | null;
+  loginMutation: UseMutationResult<AuthResponse, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  registerMutation: UseMutationResult<AuthResponse, Error, InsertUser>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
+
+// Helper functions for token management
+const setAuthToken = (token: string) => {
+  localStorage.setItem('auth_token', token);
+};
+
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('auth_token');
+};
+
+const removeAuthToken = () => {
+  localStorage.removeItem('auth_token');
+};
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  
+  // Get initial token from localStorage
+  const initialToken = getAuthToken();
+  
+  // Query to fetch current user data using JWT token
   const {
     data: user,
     error,
     isLoading,
+    refetch,
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: getQueryFn({ 
+      on401: "returnNull",
+      headers: initialToken ? { Authorization: `Bearer ${initialToken}` } : undefined
+    }),
+    enabled: !!initialToken, // Only run query if token exists
   });
 
-  const loginMutation = useMutation({
+  // Login mutation
+  const loginMutation = useMutation<AuthResponse, Error, LoginData>({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const res = await apiRequest("POST", "/api/auth/login", credentials);
+      const data = await res.json();
+      if (!data.token) {
+        throw new Error("No token received from server");
+      }
+      return data;
     },
-    onSuccess: (user: SelectUser) => {
-      // Update the query cache
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (data) => {
+      // Store JWT token in localStorage
+      setAuthToken(data.token);
+      
+      // Update the query cache with user data
+      queryClient.setQueryData(["/api/user"], data.user);
       
       // Show success message
       toast({
@@ -49,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       // Redirect based on user role
-      if (user.role === 'admin' || user.role === 'super_admin') {
+      if (data.user.role === 'admin' || data.user.role === 'super_admin') {
         console.log('Admin user detected, redirecting to admin dashboard');
         navigate("/admin");
       } else {
@@ -66,14 +104,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+  // Registration mutation
+  const registerMutation = useMutation<AuthResponse, Error, InsertUser>({
+    mutationFn: async (userData: InsertUser) => {
+      const res = await apiRequest("POST", "/api/auth/register", userData);
+      const data = await res.json();
+      if (!data.token) {
+        throw new Error("No token received from server");
+      }
+      return data;
     },
-    onSuccess: (user: SelectUser) => {
-      // Update the query cache
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (data) => {
+      // Store JWT token in localStorage
+      setAuthToken(data.token);
+      
+      // Update the query cache with user data
+      queryClient.setQueryData(["/api/user"], data.user);
       
       toast({
         title: "Account created",
@@ -81,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       // Redirect based on user role
-      if (user.role === 'admin' || user.role === 'super_admin') {
+      if (data.user.role === 'admin' || data.user.role === 'super_admin') {
         console.log('Admin user registered, redirecting to admin dashboard');
         navigate("/admin");
       } else {
@@ -98,16 +144,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      // If using server-side logout
+      try {
+        await apiRequest("POST", "/api/auth/logout", {}, {
+          headers: initialToken ? { Authorization: `Bearer ${initialToken}` } : undefined
+        });
+      } catch (err) {
+        console.error("Error during server logout:", err);
+        // Continue with client-side logout even if server logout fails
+      }
+      
+      // Client-side logout
+      removeAuthToken();
     },
     onSuccess: () => {
+      // Clear user data from cache
       queryClient.setQueryData(["/api/user"], null);
+      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
+      
       // Redirect to home page after logout
       navigate("/");
     },
@@ -117,8 +178,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error.message,
         variant: "destructive",
       });
+      // Even if there's an error, we should still remove the token
+      removeAuthToken();
     },
   });
+
+  // Effect to handle token expiration or invalidation
+  useEffect(() => {
+    // If we have a token but no user data, the token might be invalid
+    if (initialToken && !isLoading && !user && !error) {
+      console.log("Token exists but no user data found. Token might be invalid.");
+      removeAuthToken();
+    }
+  }, [initialToken, isLoading, user, error]);
 
   return (
     <AuthContext.Provider
@@ -126,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: user ?? null,
         isLoading,
         error,
+        token: initialToken,
         loginMutation,
         logoutMutation,
         registerMutation,

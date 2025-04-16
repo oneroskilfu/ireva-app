@@ -11,32 +11,7 @@ import {
   investmentStatusEnum,
   paymentMethodEnum
 } from "@shared/schema";
-
-// Helper middleware to ensure admin access
-export function ensureAdmin(req: Request, res: Response, next: Function) {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-  
-  if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-  
-  next();
-}
-
-// Helper middleware to ensure super admin access
-export function ensureSuperAdmin(req: Request, res: Response, next: Function) {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-  
-  if (req.user.role !== 'super_admin') {
-    return res.status(403).json({ error: "Super Admin access required" });
-  }
-  
-  next();
-}
+import { ensureAdmin, ensureSuperAdmin } from "./auth-jwt";
 
 const adminRouter = Router();
 

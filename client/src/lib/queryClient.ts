@@ -1,5 +1,10 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Helper function to get JWT token from localStorage
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('auth_token');
+};
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -7,16 +12,35 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+interface ApiRequestOptions {
+  headers?: Record<string, string>;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  options?: ApiRequestOptions
 ): Promise<Response> {
+  // Get token from localStorage
+  const token = getAuthToken();
+  
+  // Initialize headers with content type if data is provided
+  const headers: Record<string, string> = {
+    ...(data ? { "Content-Type": "application/json" } : {}),
+    ...(options?.headers || {})
+  };
+  
+  // Add Authorization header if token exists
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    credentials: "include", // Keep this for cookies in case of hybrid auth
   });
 
   await throwIfResNotOk(res);
@@ -24,13 +48,30 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
+interface QueryFnOptions {
   on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+  headers?: Record<string, string>;
+}
+
+export const getQueryFn: <T>(options: QueryFnOptions) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior, headers = {} }) =>
   async ({ queryKey }) => {
+    // Get token from localStorage
+    const token = getAuthToken();
+    
+    // Initialize headers
+    const requestHeaders: Record<string, string> = {
+      ...headers
+    };
+    
+    // Add Authorization header if token exists
+    if (token) {
+      requestHeaders["Authorization"] = `Bearer ${token}`;
+    }
+    
     const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
+      headers: requestHeaders,
+      credentials: "include", // Keep this for cookies in case of hybrid auth
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

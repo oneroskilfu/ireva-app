@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
+import { setupJwtAuth, verifyToken } from "./auth-jwt";
 import { setupVerificationRoutes } from "./auth/verification";
 import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
@@ -8,7 +9,10 @@ import { ZodError } from "zod";
 import { adminRouter } from "./admin-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication routes
+  // Set up JWT authentication routes
+  setupJwtAuth(app);
+  
+  // Set up session-based authentication routes (legacy)
   setupAuth(app);
   
   // Set up verification routes
