@@ -155,17 +155,32 @@ export class MemStorage implements IStorage {
         phoneNumber: '08012345678'
       });
       
-      // Update the user to have admin role
-      const user = this.users.get(testUser.id);
-      if (user) {
-        user.role = 'admin';
-        this.users.set(user.id, user);
+      // Create an admin user with known credentials
+      const adminUser = await this.createUser({
+        username: 'admin',
+        password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // This is 'adminpassword' hashed using SHA-256
+        email: 'admin@ireva.com',
+        firstName: 'Admin',
+        lastName: 'User',
+        phoneNumber: '08012345678'
+      });
+      
+      // Update the users to have admin role
+      const testUserObj = this.users.get(testUser.id);
+      if (testUserObj) {
+        testUserObj.role = 'admin';
+        this.users.set(testUser.id, testUserObj);
         console.log('Created test admin user:', testUser.username);
-      } else {
-        console.log('Created test user:', testUser.username);
+      }
+      
+      const adminUserObj = this.users.get(adminUser.id);
+      if (adminUserObj) {
+        adminUserObj.role = 'super_admin';
+        this.users.set(adminUser.id, adminUserObj);
+        console.log('Created super admin user:', adminUser.username);
       }
     } catch (error) {
-      console.error('Error creating test user:', error);
+      console.error('Error creating test users:', error);
     }
   }
 
@@ -535,6 +550,7 @@ export class DatabaseStorage implements IStorage {
   private async seedTestUser() {
     try {
       const existingUser = await this.getUserByUsername('testuser');
+      const existingAdmin = await this.getUserByUsername('admin');
       
       if (!existingUser) {
         const testUser = await this.createUser({
@@ -549,8 +565,22 @@ export class DatabaseStorage implements IStorage {
         
         console.log('Created test admin user:', testUser.username);
       }
+      
+      if (!existingAdmin) {
+        const adminUser = await this.createUser({
+          username: 'admin',
+          password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // 'adminpassword' hashed
+          email: 'admin@ireva.com',
+          firstName: 'Admin',
+          lastName: 'User',
+          phoneNumber: '08012345678',
+          role: 'super_admin'
+        });
+        
+        console.log('Created super admin user:', adminUser.username);
+      }
     } catch (error) {
-      console.error('Error creating test user:', error);
+      console.error('Error creating test users:', error);
     }
   }
 
