@@ -9,6 +9,9 @@ import { ZodError } from "zod";
 import { adminRouter } from "./admin-routes";
 import kycRoutes from './routes/kyc';
 import investmentRoutes from './routes/investments';
+import walletRoutes from './routes/walletRoutes';
+import notificationRoutes from './routes/notificationRoutes';
+import settingsRoutes from './routes/settingsRoutes';
 import fs from 'fs';
 import path from 'path';
 
@@ -32,6 +35,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Investment routes
   app.use('/api/investments', investmentRoutes);
   console.log("Investment routes registered");
+  
+  // Set up Wallet routes
+  app.use('/api/wallet', walletRoutes);
+  console.log("Wallet routes registered");
+  
+  // Set up Notification routes
+  app.use('/api/notifications', notificationRoutes);
+  console.log("Notification routes registered");
+  
+  // Set up Settings routes
+  app.use('/api/settings', settingsRoutes);
+  console.log("Settings routes registered");
   
   // Test route for JWT auth
   app.get('/api/test-jwt', verifyToken, (req, res) => {
