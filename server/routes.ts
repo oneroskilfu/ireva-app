@@ -20,6 +20,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up admin routes
   app.use('/api/admin', adminRouter);
+  
+  // Test route for JWT auth
+  app.get('/api/test-jwt', verifyToken, (req, res) => {
+    res.json({
+      message: "You are authenticated with JWT!",
+      user: req.jwtPayload
+    });
+  });
 
   // Get all properties
   app.get("/api/properties", async (req, res) => {

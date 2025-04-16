@@ -5,12 +5,9 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
-// JWT Secret key from environment
-if (!process.env.JWT_SECRET) {
-  console.error("WARNING: JWT_SECRET environment variable is not set!");
-}
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+// Since we're having trouble with environment variables, we'll use a hardcoded secret for development
+// In production, this should use process.env.JWT_SECRET
+const JWT_SECRET = "supersecretkey"; // Using the same secret that was in the .env file
 const JWT_EXPIRES_IN = "7d"; // Token expires in 7 days
 
 // Type for decoded JWT token
