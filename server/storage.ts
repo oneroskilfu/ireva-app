@@ -24,6 +24,8 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  getUsersByKycStatus(status: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPhone(userId: number, phoneNumber: string, isVerified: boolean): Promise<User>;
   updateUserKyc(userId: number, status: KycStatus, documents: KycDocument, submittedAt: Date): Promise<User>;
@@ -48,6 +50,7 @@ export interface IStorage {
   
   // Investment methods
   getInvestment(id: number): Promise<Investment | undefined>;
+  getAllInvestments(): Promise<Investment[]>;
   getUserInvestments(userId: number): Promise<Investment[]>;
   getInvestmentsByProperty(propertyId: number): Promise<Investment[]>;
   createInvestment(investment: InsertInvestment): Promise<Investment>;
@@ -75,6 +78,8 @@ export interface IStorage {
   
   // Payment transaction methods
   createPaymentTransaction(transaction: InsertPaymentTransaction): Promise<PaymentTransaction>;
+  getAllPaymentTransactions(): Promise<PaymentTransaction[]>;
+  getPaymentTransaction(id: number): Promise<PaymentTransaction | undefined>;
   getUserPaymentTransactions(userId: number): Promise<PaymentTransaction[]>;
   updateTransactionStatus(id: number, status: string, gatewayReference?: string): Promise<PaymentTransaction>;
   
@@ -561,6 +566,16 @@ export class DatabaseStorage implements IStorage {
       where: eq(schema.users.username, username)
     });
   }
+  
+  async getAllUsers(): Promise<User[]> {
+    return await db.query.users.findMany();
+  }
+  
+  async getUsersByKycStatus(status: string): Promise<User[]> {
+    return await db.query.users.findMany({
+      where: eq(schema.users.kycStatus, status as any)
+    });
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(schema.users)
@@ -748,6 +763,10 @@ export class DatabaseStorage implements IStorage {
     return await db.query.investments.findFirst({
       where: eq(schema.investments.id, id) 
     });
+  }
+
+  async getAllInvestments(): Promise<Investment[]> {
+    return await db.query.investments.findMany();
   }
 
   async getUserInvestments(userId: number): Promise<Investment[]> {
@@ -969,6 +988,16 @@ export class DatabaseStorage implements IStorage {
   async getUserPaymentTransactions(userId: number): Promise<PaymentTransaction[]> {
     return await db.query.paymentTransactions.findMany({
       where: eq(schema.paymentTransactions.userId, userId)
+    });
+  }
+  
+  async getAllPaymentTransactions(): Promise<PaymentTransaction[]> {
+    return await db.query.paymentTransactions.findMany();
+  }
+  
+  async getPaymentTransaction(id: number): Promise<PaymentTransaction | undefined> {
+    return await db.query.paymentTransactions.findFirst({
+      where: eq(schema.paymentTransactions.id, id)
     });
   }
 

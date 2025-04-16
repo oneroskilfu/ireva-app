@@ -5,6 +5,7 @@ import { setupVerificationRoutes } from "./auth/verification";
 import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
 import { ZodError } from "zod";
+import { adminRouter } from "./admin-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -12,6 +13,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up verification routes
   setupVerificationRoutes(app);
+  
+  // Set up admin routes
+  app.use('/api/admin', adminRouter);
 
   // Get all properties
   app.get("/api/properties", async (req, res) => {
