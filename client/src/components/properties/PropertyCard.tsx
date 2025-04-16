@@ -68,7 +68,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Link href={`/properties/${property.id}`} className="w-full">
+        <Link href={`/property/${property.id}`} className="w-full">
           <Button variant="default" className="w-full">
             View Details
           </Button>
