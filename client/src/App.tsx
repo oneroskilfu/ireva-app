@@ -51,6 +51,7 @@ function Router() {
       <Route path="/properties/:id" component={PropertyPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/analytics" component={AnalyticsPage} />
       <ProtectedRoute path="/community" component={CommunityPage} />
       <ProtectedRoute path="/portfolio" component={PortfolioPage} />

@@ -145,7 +145,15 @@ export class MemStorage implements IStorage {
         phoneNumber: '08012345678'
       });
       
-      console.log('Created test user:', testUser.username);
+      // Update the user to have admin role
+      const user = this.users.get(testUser.id);
+      if (user) {
+        user.role = 'admin';
+        this.users.set(user.id, user);
+        console.log('Created test admin user:', testUser.username);
+      } else {
+        console.log('Created test user:', testUser.username);
+      }
     } catch (error) {
       console.error('Error creating test user:', error);
     }

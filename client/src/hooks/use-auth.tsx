@@ -46,9 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "You have successfully logged in.",
       });
       
-      // Force a page reload to refresh the app state
-      // This is a more reliable way to handle redirection after login
-      window.location.href = "/dashboard";
+      // Redirect based on user role
+      if (user.role === 'admin' || user.role === 'super_admin') {
+        console.log('Admin user detected, redirecting to admin dashboard');
+        window.location.href = "/admin";
+      } else {
+        console.log('Regular user detected, redirecting to user dashboard');
+        window.location.href = "/dashboard";
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -73,8 +78,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Your account has been successfully created.",
       });
       
-      // Direct redirect to dashboard
-      window.location.href = "/dashboard";
+      // Redirect based on user role
+      if (user.role === 'admin' || user.role === 'super_admin') {
+        console.log('Admin user registered, redirecting to admin dashboard');
+        window.location.href = "/admin";
+      } else {
+        console.log('Regular user registered, redirecting to user dashboard');
+        window.location.href = "/dashboard";
+      }
     },
     onError: (error: Error) => {
       toast({
