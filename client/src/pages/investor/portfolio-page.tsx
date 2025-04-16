@@ -1,206 +1,163 @@
-import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import Footer from "@/components/layout/Footer";
-import { Progress } from "@/components/ui/progress";
-import { useQuery } from "@tanstack/react-query";
-import { Investment, Property } from "@shared/schema";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
+import { PieChart, BarChart, LineChart, ArrowUpRight, TrendingUp, TrendingDown, History } from "lucide-react";
 
-interface InvestmentWithProperty extends Investment {
-  property: Property;
-}
-
-export default function PortfolioPage() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("active");
-  
-  const { data: investments, isLoading } = useQuery<InvestmentWithProperty[]>({
-    queryKey: ["/api/investments"],
-  });
-  
-  if (!investments || investments.length === 0) {
-    return (
-      <div className="min-h-screen flex flex-col bg-slate-100">
-        <DashboardHeader />
-        
-        <main className="flex-grow py-6">
-          <div className="max-w-3xl mx-auto px-4">
-            <h2 className="text-2xl font-bold mb-6">My Portfolio</h2>
-            
-            <div className="bg-white rounded-xl shadow-md p-6 text-center">
-              <h3 className="text-lg font-medium mb-2">No investments yet</h3>
-              <p className="text-gray-500 mb-4">
-                Start investing in properties to build your portfolio
-              </p>
-              <a 
-                href="/properties" 
-                className="inline-block bg-emerald-600 text-white px-4 py-2 rounded-lg"
-              >
-                Browse Properties
-              </a>
-            </div>
-          </div>
-        </main>
-        
-        <Footer />
-      </div>
-    );
-  }
-  
-  // Calculate portfolio stats
-  const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalReturns = investments.reduce((sum, inv) => {
-    const gain = inv.currentValue - inv.amount;
-    return sum + gain;
-  }, 0);
-  const totalValue = totalInvested + totalReturns;
-  
-  // Filter active and completed investments
-  const activeInvestments = investments.filter(inv => inv.status === "active");
-  const completedInvestments = investments.filter(inv => inv.status === "completed");
-  
-  // Calculate ROI for each investment
-  const investmentsWithROI = investments.map(inv => {
-    const roi = ((inv.currentValue - inv.amount) / inv.amount) * 100;
-    return {
-      ...inv,
-      roi
-    };
-  });
+export default function InvestorPortfolio() {
+  const [activeTab, setActiveTab] = useState('overview');
   
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
-      <DashboardHeader />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Investment Portfolio</h2>
+        <p className="text-muted-foreground">
+          Detailed overview of all your investment holdings and performance
+        </p>
+      </div>
       
-      <main className="flex-grow py-6">
-        <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">Portfolio</h2>
-          
-          {/* Portfolio Summary */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <div className="flex flex-col md:flex-row justify-between mb-4">
-              <div className="mb-4 md:mb-0">
-                <h3 className="text-sm font-medium text-gray-500">TOTAL AMOUNT</h3>
-                <div className="text-2xl font-bold">₦{totalInvested.toLocaleString()}</div>
-              </div>
-              <div className="mb-4 md:mb-0">
-                <h3 className="text-sm font-medium text-gray-500">TOTAL RETURNS</h3>
-                <div className="text-2xl font-bold text-emerald-600">
-                  ₦{totalReturns.toLocaleString()}
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="distribution">Distribution</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Assets</CardTitle>
+                <div className="rounded-full bg-green-100 p-1">
+                  <ArrowUpRight className="h-4 w-4 text-green-600" />
                 </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">TOTAL VALUE</h3>
-                <div className="text-2xl font-bold">₦{totalValue.toLocaleString()}</div>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">₦4,530,000</div>
+                <p className="text-xs text-muted-foreground">+₦320,000 (7.1%)</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Monthly Returns</CardTitle>
+                <div className="rounded-full bg-green-100 p-1">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">₦83,250</div>
+                <p className="text-xs text-muted-foreground">+₦5,480 (6.8%)</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Annual ROI</CardTitle>
+                <div className="rounded-full bg-orange-100 p-1">
+                  <TrendingDown className="h-4 w-4 text-orange-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">12.4%</div>
+                <p className="text-xs text-muted-foreground">-0.3% from last year</p>
+              </CardContent>
+            </Card>
           </div>
           
-          {/* Investments Tabs */}
-          <Tabs defaultValue="active" onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="active">Active Projects</TabsTrigger>
-              <TabsTrigger value="completed">Completed Projects</TabsTrigger>
-            </TabsList>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <Card className="col-span-1">
+              <CardHeader>
+                <CardTitle>Portfolio Growth</CardTitle>
+                <CardDescription>Performance over the last 12 months</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px] flex items-center justify-center">
+                <div className="flex flex-col items-center text-muted-foreground">
+                  <LineChart className="h-8 w-8 mb-2" />
+                  <p className="text-sm">Portfolio growth chart will be displayed here</p>
+                </div>
+              </CardContent>
+            </Card>
             
-            <TabsContent value="active" className="mt-4">
-              {activeInvestments.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-md p-6 text-center">
-                  <p className="text-gray-500">No active investments</p>
+            <Card className="col-span-1">
+              <CardHeader>
+                <CardTitle>Asset Allocation</CardTitle>
+                <CardDescription>Distribution across property types</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[300px] flex items-center justify-center">
+                <div className="flex flex-col items-center text-muted-foreground">
+                  <PieChart className="h-8 w-8 mb-2" />
+                  <p className="text-sm">Asset allocation chart will be displayed here</p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {activeInvestments.map(investment => {
-                    const roi = ((investment.currentValue - investment.amount) / investment.amount) * 100;
-                    // Use a default funding percentage if targetAmount doesn't exist
-                    const fundedPercentage = 65; // Match the mockup which shows 65%
-                    
-                    return (
-                      <div key={investment.id} className="bg-white rounded-xl shadow-md p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="font-medium">{investment.property.name}</h3>
-                          <Badge variant={roi >= 0 ? "success" : "destructive"}>
-                            {roi.toFixed(1)}%
-                          </Badge>
-                        </div>
-                        
-                        <div className="mb-2">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Invested</span>
-                            <span>₦{investment.amount.toLocaleString()}</span>
-                          </div>
-                          <Progress value={fundedPercentage} className="h-2" />
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">Current Value</p>
-                            <p className="font-medium">₦{investment.currentValue.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Location</p>
-                            <p className="font-medium">{investment.property.location}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="completed" className="mt-4">
-              {completedInvestments.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-md p-6 text-center">
-                  <p className="text-gray-500">No completed investments</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {completedInvestments.map(investment => {
-                    const roi = ((investment.currentValue - investment.amount) / investment.amount) * 100;
-                    
-                    return (
-                      <div key={investment.id} className="bg-white rounded-xl shadow-md p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="font-medium">{investment.property.name}</h3>
-                          <Badge variant={roi >= 0 ? "success" : "destructive"}>
-                            {roi.toFixed(1)}%
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
-                          <div>
-                            <p className="text-gray-500">Invested Amount</p>
-                            <p className="font-medium">₦{investment.amount.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Final Value</p>
-                            <p className="font-medium">₦{investment.currentValue.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">Location</p>
-                            <p className="font-medium">{investment.property.location}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500">ROI</p>
-                            <p className={`font-medium ${roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {roi.toFixed(1)}%
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-      
-      <Footer />
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Property Holdings</CardTitle>
+              <CardDescription>Summary of individual property investments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Table of property investments will be displayed here.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="performance" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Analysis</CardTitle>
+              <CardDescription>Detailed breakdown of investment performance</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px] flex items-center justify-center">
+              <div className="flex flex-col items-center text-muted-foreground">
+                <BarChart className="h-8 w-8 mb-2" />
+                <p className="text-sm">Performance analysis will be displayed here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="history" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Transaction History</CardTitle>
+                <CardDescription>Record of all investments and withdrawals</CardDescription>
+              </div>
+              <History className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Transaction history will be displayed here.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="distribution" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio Distribution</CardTitle>
+              <CardDescription>Allocation across locations, property types, and risk levels</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Portfolio distribution details will be displayed here.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
