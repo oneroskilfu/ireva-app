@@ -19,6 +19,12 @@ export default function PropertyPage() {
     error
   } = useQuery<Property>({
     queryKey: [`/api/properties/${id}`],
+    onSuccess: (data) => {
+      console.log("Property details loaded successfully:", data);
+    },
+    onError: (err) => {
+      console.error("Error loading property details:", err);
+    }
   });
   
   if (isLoading) {
