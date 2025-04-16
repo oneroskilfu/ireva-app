@@ -10,10 +10,12 @@ import {
   Building, 
   Factory, 
   LayoutGrid, 
-  LandPlot 
+  LandPlot,
+  ArrowRight
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export default function Header() {
   const [location] = useLocation();
@@ -40,6 +42,36 @@ export default function Header() {
   // Always use white background like in the example
   return (
     <header className="sticky top-0 z-50 transition-all duration-300 bg-white shadow-sm">
+      {/* Premium Nigerian Real Estate Banner */}
+      <div className="bg-gradient-to-r from-green-800 to-green-600 text-white py-2">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="hidden md:block">
+              {/* Mobile mockup */}
+              <div className="relative h-16 w-9">
+                <div className="absolute inset-0 bg-black rounded-lg border-2 border-gray-800 overflow-hidden">
+                  <div className="h-full w-full bg-gradient-to-b from-green-500 to-green-700">
+                    <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-3 h-1 bg-gray-900 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">
+                <span className="hidden md:inline">Unlock Premium Nigerian Real Estate</span>
+                <span className="md:hidden">Premium Real Estate</span>
+              </p>
+              <p className="text-xs text-white/80">Invest with as little as ₦50,000</p>
+            </div>
+          </div>
+          <Link href="/premium">
+            <Button size="sm" variant="outline" className="text-xs border-white/30 bg-white/10 text-white hover:bg-white/20">
+              Learn More <ArrowRight className="ml-1 h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+      
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Left side - Main navigation */}
