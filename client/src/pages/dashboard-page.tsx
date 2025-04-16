@@ -8,7 +8,8 @@ import RecommendedProperties from "@/components/dashboard/RecommendedProperties"
 import ActiveProjects from "@/components/dashboard/ActiveProjects";
 import CompletedProjects from "@/components/dashboard/CompletedProjects";
 import EarningsBreakdown from "@/components/dashboard/EarningsBreakdown";
-import { Download, Plus, ChevronDown, LayoutDashboard, PieChart, BarChart3, TrendingUp } from "lucide-react";
+import PortfolioManagement from "@/components/dashboard/PortfolioManagement";
+import { Download, Plus, ChevronDown, LayoutDashboard, PieChart, BarChart3, TrendingUp, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
@@ -43,7 +44,7 @@ export default function DashboardPage() {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-            <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:inline-flex">
+            <TabsList className="grid w-full sm:w-auto grid-cols-4 sm:inline-flex">
               <TabsTrigger value="overview" className="flex items-center">
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Overview</span>
@@ -51,6 +52,10 @@ export default function DashboardPage() {
               <TabsTrigger value="portfolio" className="flex items-center">
                 <PieChart className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Portfolio</span>
+              </TabsTrigger>
+              <TabsTrigger value="management" className="flex items-center">
+                <Briefcase className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Management</span>
               </TabsTrigger>
               <TabsTrigger value="earnings" className="flex items-center">
                 <TrendingUp className="h-4 w-4 mr-2" />
