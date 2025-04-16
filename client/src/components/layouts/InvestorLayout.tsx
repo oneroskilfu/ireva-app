@@ -21,7 +21,8 @@ import {
   BookText,
   Calculator,
   Shield,
-  BadgeCheck
+  BadgeCheck,
+  Home
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -50,7 +51,8 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
   const navItems = [
     { path: "/investor/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
     { path: "/investor/portfolio", label: "My Portfolio", icon: <TrendingUp className="w-5 h-5" /> },
-    { path: "/investor/properties", label: "Browse Properties", icon: <Building className="w-5 h-5" /> },
+    { path: "/investor/projects", label: "Investment Projects", icon: <Building className="w-5 h-5" /> },
+    { path: "/investor/properties", label: "Browse Properties", icon: <FileText className="w-5 h-5" /> },
     { path: "/investor/wallet", label: "Wallet", icon: <Wallet className="w-5 h-5" /> },
     { path: "/investor/saved", label: "Saved Properties", icon: <Bookmark className="w-5 h-5" /> },
     { path: "/investor/roi-calculator", label: "ROI Calculator", icon: <Calculator className="w-5 h-5" /> },

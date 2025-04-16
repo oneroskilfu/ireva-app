@@ -21,7 +21,8 @@ import {
   Database,
   CreditCard,
   BookOpen,
-  Activity
+  Activity,
+  Home
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -50,7 +51,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navItems = [
     { path: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
     { path: "/admin/users", label: "User Management", icon: <Users className="w-5 h-5" /> },
-    { path: "/admin/properties", label: "Properties", icon: <Building className="w-5 h-5" /> },
+    { path: "/admin/projects", label: "Projects", icon: <Building className="w-5 h-5" /> },
+    { path: "/admin/properties", label: "Properties", icon: <FileText className="w-5 h-5" /> },
     { path: "/admin/kyc", label: "KYC Verification", icon: <ClipboardCheck className="w-5 h-5" /> },
     { path: "/admin/investments", label: "Investments", icon: <BarChart3 className="w-5 h-5" /> },
     { path: "/admin/transactions", label: "Transactions", icon: <Activity className="w-5 h-5" /> },
