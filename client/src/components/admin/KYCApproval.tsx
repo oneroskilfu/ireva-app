@@ -1,26 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
-
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -28,16 +25,27 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ClipboardCheck, X, Search, RefreshCw, CheckCircle2, XCircle, Eye, Download, User } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, CheckCircle, XCircle, Eye, Ban } from "lucide-react";
 
 interface KYCSubmission {
   id: number;
@@ -65,229 +73,195 @@ interface KYCSubmission {
   };
 }
 
-const KYCApproval = () => {
-  const { toast } = useToast();
-  const [selectedTab, setSelectedTab] = useState<string>("pending");
+const KYCApproval: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('pending');
   const [selectedSubmission, setSelectedSubmission] = useState<KYCSubmission | null>(null);
-  const [rejectionReason, setRejectionReason] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+  const { toast } = useToast();
+  
+  const form = useForm({
+    defaultValues: {
+      rejectionReason: '',
+    },
+  });
 
   // Fetch KYC submissions
-  const { data: submissions, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['/api/admin/kyc', selectedTab],
+  const { data: allSubmissions, isLoading, error } = useQuery({
+    queryKey: ['/api/admin/kyc'],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/admin/kyc/${selectedTab}`);
+      const res = await apiRequest('GET', '/api/admin/kyc');
       return await res.json();
     },
   });
 
-  // Approve KYC mutation
-  const approveMutation = useMutation({
-    mutationFn: async (submissionId: number) => {
-      await apiRequest('PATCH', `/api/admin/kyc/${submissionId}/verify`, { status: 'verified' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/kyc'] });
-      toast({
-        title: "KYC Approved",
-        description: "The KYC submission has been successfully approved.",
-        variant: "default",
-      });
-      setSelectedSubmission(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while approving the KYC submission.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Filter submissions by status
+  const filteredSubmissions = allSubmissions?.filter((sub: KYCSubmission) => {
+    if (activeTab === 'all') return true;
+    return sub.status === activeTab;
+  }) || [];
 
-  // Reject KYC mutation
-  const rejectMutation = useMutation({
-    mutationFn: async (submissionId: number) => {
-      await apiRequest('PATCH', `/api/admin/kyc/${submissionId}/verify`, { 
-        status: 'rejected',
-        rejectionReason 
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/kyc'] });
-      toast({
-        title: "KYC Rejected",
-        description: "The KYC submission has been rejected.",
-        variant: "default",
-      });
-      setSelectedSubmission(null);
-      setRejectionReason("");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while rejecting the KYC submission.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Handle view submission details
+  const handleViewDetails = (submission: KYCSubmission) => {
+    setSelectedSubmission(submission);
+    setViewDialogOpen(true);
+  };
 
-  // Filter submissions based on search query
-  const filteredSubmissions = submissions?.filter((sub: KYCSubmission) => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      sub.fullName.toLowerCase().includes(query) ||
-      sub.idNumber.toLowerCase().includes(query) ||
-      sub.bankName.toLowerCase().includes(query) ||
-      sub.accountNumber.includes(query) ||
-      (sub.user?.email && sub.user.email.toLowerCase().includes(query))
-    );
-  });
-
+  // Handle approve KYC submission
   const handleApprove = (submission: KYCSubmission) => {
-    approveMutation.mutate(submission.id);
+    setSelectedSubmission(submission);
+    setActionType('approve');
+    setActionDialogOpen(true);
   };
 
+  // Handle reject KYC submission
   const handleReject = (submission: KYCSubmission) => {
-    if (!rejectionReason) {
-      toast({
-        title: "Validation Error",
-        description: "Please provide a reason for rejection.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    rejectMutation.mutate(submission.id);
+    setSelectedSubmission(submission);
+    setActionType('reject');
+    setActionDialogOpen(true);
+    form.reset({ rejectionReason: '' });
   };
 
-  // Status badge styling
-  const getStatusBadge = (status: string) => {
+  // Process approval or rejection
+  const processAction = async (submissionId: number, action: 'approve' | 'reject', data?: any) => {
+    try {
+      const res = await apiRequest('PATCH', `/api/admin/kyc/${submissionId}/verify`, {
+        status: action === 'approve' ? 'verified' : 'rejected',
+        rejectionReason: action === 'reject' ? data?.rejectionReason : undefined,
+      });
+      
+      if (res.ok) {
+        toast({
+          title: `KYC ${action === 'approve' ? 'Approved' : 'Rejected'} Successfully`,
+          description: `The KYC submission has been ${action === 'approve' ? 'approved' : 'rejected'}.`,
+          variant: action === 'approve' ? 'default' : 'destructive',
+        });
+        
+        // Invalidate the query to refetch data
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/kyc'] });
+        
+        // Close dialog
+        setActionDialogOpen(false);
+      } else {
+        throw new Error(`Failed to ${action} KYC submission`);
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: `Failed to ${action} KYC submission. Please try again.`,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Handle form submission for rejection
+  const onSubmit = (data: { rejectionReason: string }) => {
+    if (selectedSubmission && actionType === 'reject') {
+      processAction(selectedSubmission.id, 'reject', data);
+    }
+  };
+
+  // Confirm approval
+  const confirmApproval = () => {
+    if (selectedSubmission) {
+      processAction(selectedSubmission.id, 'approve');
+    }
+  };
+
+  // Get status badge styling
+  const getStatusBadge = (status: 'pending' | 'verified' | 'rejected') => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
       case 'verified':
-        return <Badge variant="outline" className="bg-green-100 text-green-800">Verified</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Verified</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-100 text-red-800">Rejected</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>KYC Verification</CardTitle>
+          <CardDescription>Review and approve KYC submissions</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>KYC Verification</CardTitle>
+          <CardDescription>Review and approve KYC submissions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> Failed to load KYC submissions. Please try again later.</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-xl flex items-center">
-            <ClipboardCheck className="mr-2 h-5 w-5" /> KYC Verification Requests
-          </CardTitle>
-          <CardDescription>
-            Review and approve customer identity verification documents
-          </CardDescription>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, ID, or bank details..."
-              className="pl-8 w-[300px]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
+      <CardHeader>
+        <CardTitle>KYC Verification</CardTitle>
+        <CardDescription>Review and approve KYC submissions</CardDescription>
       </CardHeader>
-      
       <CardContent>
-        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList>
+        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-4">
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="verified">Verified</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
           </TabsList>
           
-          <TabsContent value={selectedTab} className="mt-6">
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-[250px]" />
-                      <Skeleton className="h-4 w-[200px]" />
-                    </div>
-                    <div className="flex-1" />
-                    <Skeleton className="h-9 w-[100px]" />
-                  </div>
-                ))}
-              </div>
-            ) : isError ? (
-              <div className="text-center py-10">
-                <p className="text-red-500 mb-2">Failed to load KYC submissions</p>
-                <Button onClick={() => refetch()}>Try Again</Button>
-              </div>
-            ) : filteredSubmissions?.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">No KYC submissions found</p>
+          <TabsContent value={activeTab} className="space-y-4">
+            {filteredSubmissions.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                No {activeTab !== 'all' ? activeTab : ''} KYC submissions found.
               </div>
             ) : (
-              <div className="border rounded-md">
+              <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>User</TableHead>
-                      <TableHead>Submitted</TableHead>
                       <TableHead>ID Type</TableHead>
+                      <TableHead>Submitted</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredSubmissions?.map((submission: KYCSubmission) => (
+                    {filteredSubmissions.map((submission: KYCSubmission) => (
                       <TableRow key={submission.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarFallback>
-                                {submission.fullName.split(' ').map(name => name[0]).join('').toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{submission.fullName}</p>
-                              <p className="text-xs text-muted-foreground">{submission.user?.email || 'No email'}</p>
-                            </div>
-                          </div>
+                        <TableCell className="font-medium">
+                          <div>{submission.fullName}</div>
+                          <div className="text-sm text-muted-foreground">{submission.user?.email}</div>
                         </TableCell>
-                        <TableCell>
-                          {format(new Date(submission.submittedAt), 'MMM d, yyyy')}
-                          <div className="text-xs text-muted-foreground">
-                            {format(new Date(submission.submittedAt), 'h:mm a')}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {submission.idType.replace('_', ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(submission.status)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
+                        <TableCell>{submission.idType.replace('_', ' ').toUpperCase()}</TableCell>
+                        <TableCell>{new Date(submission.submittedAt).toLocaleDateString()}</TableCell>
+                        <TableCell>{getStatusBadge(submission.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              onClick={() => setSelectedSubmission(submission)}
+                              onClick={() => handleViewDetails(submission)}
                             >
                               <Eye className="h-4 w-4 mr-1" /> View
                             </Button>
@@ -296,20 +270,16 @@ const KYCApproval = () => {
                               <>
                                 <Button 
                                   variant="default" 
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
+                                  size="sm" 
                                   onClick={() => handleApprove(submission)}
-                                  disabled={approveMutation.isPending}
+                                  className="bg-green-600 hover:bg-green-700"
                                 >
-                                  <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
+                                  <CheckCircle className="h-4 w-4 mr-1" /> Approve
                                 </Button>
-                                
                                 <Button 
-                                  variant="default" 
-                                  size="sm"
-                                  className="bg-red-600 hover:bg-red-700"
-                                  onClick={() => setSelectedSubmission({...submission, status: 'rejecting'})}
-                                  disabled={rejectMutation.isPending}
+                                  variant="destructive" 
+                                  size="sm" 
+                                  onClick={() => handleReject(submission)}
                                 >
                                   <XCircle className="h-4 w-4 mr-1" /> Reject
                                 </Button>
@@ -326,248 +296,201 @@ const KYCApproval = () => {
           </TabsContent>
         </Tabs>
       </CardContent>
-      
-      {/* KYC Detail Dialog */}
-      {selectedSubmission && (
-        <Dialog open={!!selectedSubmission} onOpenChange={(open) => {
-          if (!open) {
-            setSelectedSubmission(null);
-            setRejectionReason("");
-          }
-        }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedSubmission.status === 'rejecting' 
-                  ? 'Reject KYC Submission' 
-                  : 'KYC Submission Details'}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedSubmission.status === 'rejecting'
-                  ? 'Provide a reason for rejecting this KYC submission'
-                  : `Submitted on ${format(new Date(selectedSubmission.submittedAt), 'PPpp')}`}
-              </DialogDescription>
-            </DialogHeader>
-            
-            {selectedSubmission.status === 'rejecting' ? (
-              <>
-                <div className="py-4">
-                  <div className="mb-4">
-                    <h3 className="text-sm font-medium mb-2">Rejection Reason:</h3>
-                    <Textarea
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      placeholder="Please provide a detailed reason for rejecting this submission..."
-                      className="min-h-[120px]"
-                    />
+
+      {/* View KYC Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>KYC Submission Details</DialogTitle>
+            <DialogDescription>
+              Submitted on {selectedSubmission && new Date(selectedSubmission.submittedAt).toLocaleString()}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSubmission && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Personal Information</h3>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Full Name</p>
+                      <p className="text-sm font-medium">{selectedSubmission.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium">{selectedSubmission.user?.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="text-sm font-medium">{selectedSubmission.user?.phoneNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Address</p>
+                      <p className="text-sm font-medium">{selectedSubmission.address}</p>
+                    </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setSelectedSubmission({...selectedSubmission, status: 'pending'});
-                      setRejectionReason("");
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    variant="destructive"
-                    onClick={() => handleReject(selectedSubmission)}
-                    disabled={rejectMutation.isPending || !rejectionReason.trim()}
-                  >
-                    {rejectMutation.isPending ? 'Rejecting...' : 'Confirm Rejection'}
-                  </Button>
-                </DialogFooter>
-              </>
-            ) : (
-              <>
-                <ScrollArea className="flex-1">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Personal Information</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Full Name</h3>
-                          <p>{selectedSubmission.fullName}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
-                          <p>{selectedSubmission.user?.email || 'Not available'}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Phone Number</h3>
-                          <p>{selectedSubmission.user?.phoneNumber || 'Not available'}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
-                          <p>{selectedSubmission.address}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">ID Information</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">ID Type</h3>
-                          <p className="capitalize">{selectedSubmission.idType.replace('_', ' ')}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">ID Number</h3>
-                          <p>{selectedSubmission.idNumber}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Bank Information</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Bank Name</h3>
-                          <p>{selectedSubmission.bankName}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Account Number</h3>
-                          <p>{selectedSubmission.accountNumber}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Verification Status</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
-                          <div className="mt-1">
-                            {getStatusBadge(selectedSubmission.status)}
-                          </div>
-                        </div>
-                        {selectedSubmission.status === 'rejected' && selectedSubmission.rejectionReason && (
-                          <div>
-                            <h3 className="text-sm font-medium text-muted-foreground">Rejection Reason</h3>
-                            <p className="text-red-600">{selectedSubmission.rejectionReason}</p>
-                          </div>
-                        )}
-                        {selectedSubmission.status === 'verified' && selectedSubmission.verifiedAt && (
-                          <div>
-                            <h3 className="text-sm font-medium text-muted-foreground">Verified On</h3>
-                            <p>{format(new Date(selectedSubmission.verifiedAt), 'PPpp')}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card className="md:col-span-2">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Uploaded Documents</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <h3 className="text-sm font-medium mb-2">ID Front</h3>
-                            <div className="border rounded-md overflow-hidden">
-                              <img 
-                                src={selectedSubmission.frontImage} 
-                                alt="ID Front" 
-                                className="w-full h-auto object-contain" 
-                              />
-                            </div>
-                            <Button className="mt-2 w-full" size="sm" variant="outline">
-                              <Download className="h-4 w-4 mr-2" /> Download
-                            </Button>
-                          </div>
-                          
-                          {selectedSubmission.backImage && (
-                            <div>
-                              <h3 className="text-sm font-medium mb-2">ID Back</h3>
-                              <div className="border rounded-md overflow-hidden">
-                                <img 
-                                  src={selectedSubmission.backImage} 
-                                  alt="ID Back" 
-                                  className="w-full h-auto object-contain" 
-                                />
-                              </div>
-                              <Button className="mt-2 w-full" size="sm" variant="outline">
-                                <Download className="h-4 w-4 mr-2" /> Download
-                              </Button>
-                            </div>
-                          )}
-                          
-                          <div>
-                            <h3 className="text-sm font-medium mb-2">Selfie</h3>
-                            <div className="border rounded-md overflow-hidden">
-                              <img 
-                                src={selectedSubmission.selfieImage} 
-                                alt="Selfie" 
-                                className="w-full h-auto object-contain" 
-                              />
-                            </div>
-                            <Button className="mt-2 w-full" size="sm" variant="outline">
-                              <Download className="h-4 w-4 mr-2" /> Download
-                            </Button>
-                          </div>
-                          
-                          {selectedSubmission.addressProofImage && (
-                            <div>
-                              <h3 className="text-sm font-medium mb-2">
-                                Address Proof {selectedSubmission.addressProofType && `(${selectedSubmission.addressProofType.replace('_', ' ')})`}
-                              </h3>
-                              <div className="border rounded-md overflow-hidden">
-                                <img 
-                                  src={selectedSubmission.addressProofImage} 
-                                  alt="Address Proof" 
-                                  className="w-full h-auto object-contain" 
-                                />
-                              </div>
-                              <Button className="mt-2 w-full" size="sm" variant="outline">
-                                <Download className="h-4 w-4 mr-2" /> Download
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </ScrollArea>
                 
-                <DialogFooter className="pt-4">
-                  {selectedSubmission.status === 'pending' && (
-                    <>
-                      <Button 
-                        variant="default"
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={() => handleApprove(selectedSubmission)}
-                        disabled={approveMutation.isPending}
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        {approveMutation.isPending ? 'Approving...' : 'Approve KYC'}
-                      </Button>
-                      <Button 
-                        variant="destructive"
-                        onClick={() => setSelectedSubmission({...selectedSubmission, status: 'rejecting'})}
-                        disabled={rejectMutation.isPending}
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Reject KYC
-                      </Button>
-                    </>
-                  )}
-                </DialogFooter>
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">ID Information</h3>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <p className="text-xs text-muted-foreground">ID Type</p>
+                      <p className="text-sm font-medium">{selectedSubmission.idType.replace('_', ' ').toUpperCase()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">ID Number</p>
+                      <p className="text-sm font-medium">{selectedSubmission.idNumber}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Bank Information</h3>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Bank Name</p>
+                      <p className="text-sm font-medium">{selectedSubmission.bankName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Account Number</p>
+                      <p className="text-sm font-medium">{selectedSubmission.accountNumber}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {selectedSubmission.status === 'rejected' && (
+                  <div>
+                    <h3 className="text-sm font-medium text-red-600">Rejection Reason</h3>
+                    <p className="text-sm mt-1 text-muted-foreground">{selectedSubmission.rejectionReason || 'No reason provided'}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">ID Front</h3>
+                  <img 
+                    src={selectedSubmission.frontImage} 
+                    alt="ID Front" 
+                    className="mt-1 rounded-md border object-cover w-full h-32"
+                  />
+                </div>
+                
+                {selectedSubmission.backImage && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">ID Back</h3>
+                    <img 
+                      src={selectedSubmission.backImage} 
+                      alt="ID Back" 
+                      className="mt-1 rounded-md border object-cover w-full h-32"
+                    />
+                  </div>
+                )}
+                
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Selfie with ID</h3>
+                  <img 
+                    src={selectedSubmission.selfieImage} 
+                    alt="Selfie with ID" 
+                    className="mt-1 rounded-md border object-cover w-full h-32"
+                  />
+                </div>
+                
+                {selectedSubmission.addressProofImage && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Address Proof</h3>
+                    <p className="text-xs text-muted-foreground">Type: {selectedSubmission.addressProofType?.replace('_', ' ').toUpperCase() || 'Not specified'}</p>
+                    <img 
+                      src={selectedSubmission.addressProofImage} 
+                      alt="Address Proof" 
+                      className="mt-1 rounded-md border object-cover w-full h-32"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>Close</Button>
+            
+            {selectedSubmission && selectedSubmission.status === 'pending' && (
+              <>
+                <Button 
+                  variant="default" 
+                  onClick={() => {
+                    setViewDialogOpen(false);
+                    handleApprove(selectedSubmission);
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    setViewDialogOpen(false);
+                    handleReject(selectedSubmission);
+                  }}
+                >
+                  <XCircle className="h-4 w-4 mr-1" /> Reject
+                </Button>
               </>
             )}
-          </DialogContent>
-        </Dialog>
-      )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve/Reject Dialog */}
+      <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {actionType === 'approve' ? 'Approve KYC Submission' : 'Reject KYC Submission'}
+            </DialogTitle>
+            <DialogDescription>
+              {actionType === 'approve' 
+                ? 'Are you sure you want to approve this KYC submission?' 
+                : 'Please provide a reason for rejecting this KYC submission.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {actionType === 'reject' ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="rejectionReason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rejection Reason</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Provide a detailed reason for rejection"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setActionDialogOpen(false)}>Cancel</Button>
+                  <Button variant="destructive" type="submit">Reject KYC</Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          ) : (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setActionDialogOpen(false)}>Cancel</Button>
+              <Button onClick={confirmApproval} className="bg-green-600 hover:bg-green-700">Approve KYC</Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

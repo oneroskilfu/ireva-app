@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { verifyToken } from '../auth-jwt.js';
+
 const router = express.Router();
-const { verifyToken } = require('../middleware/authMiddleware');
 
 // Get admin dashboard stats
 router.get('/stats', verifyToken, (req, res) => {
@@ -265,4 +266,4 @@ router.get('/investments', verifyToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

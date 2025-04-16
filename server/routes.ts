@@ -15,6 +15,9 @@ import settingsRoutes from './routes/settingsRoutes';
 import roiRoutes from './routes/roiRoutes';
 import faqRoutes from './routes/faq';
 import messageRoutes from './routes/messages';
+// Import the new routes
+import adminRoutes from './routes/admin.js';
+import investorRoutes from './routes/investor.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -30,6 +33,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up admin routes
   app.use('/api/admin', adminRouter);
+  
+  // Set up new admin routes
+  app.use('/api/admin', adminRoutes);
+  console.log("Admin routes registered");
+  
+  // Set up new investor routes
+  app.use('/api/investor', investorRoutes);
+  console.log("Investor routes registered");
   
   // Set up KYC routes
   app.use('/api/kyc', kycRoutes);

@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { verifyToken } from '../auth-jwt.js';
+
 const router = express.Router();
-const { verifyToken } = require('../middleware/authMiddleware');
 
 // Get investor portfolio summary
 router.get('/portfolio', verifyToken, (req, res) => {
@@ -464,4 +465,4 @@ router.post('/invest', verifyToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
