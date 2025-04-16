@@ -23,7 +23,7 @@ export default function TeamPage() {
       name: "Frank Ilo",
       role: "Founder & CEO",
       bio: "Frank has over 15 years of experience in real estate development and investment banking. Prior to founding iREVA, he led major development projects across Nigeria and West Africa.",
-      imageUrl: "https://xsgames.co/randomusers/assets/avatars/male/2.jpg",
+      imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Frank&skinColor=black&backgroundColor=b6e3f4",
       socials: {
         twitter: "https://twitter.com",
         linkedin: "https://linkedin.com",
@@ -35,7 +35,7 @@ export default function TeamPage() {
       name: "Kelechi Iloh",
       role: "Chief Technology Officer",
       bio: "Kelechi is a tech innovator with experience building fintech platforms. He led engineering teams at several successful startups before joining iREVA to lead our technology vision.",
-      imageUrl: "https://xsgames.co/randomusers/assets/avatars/male/5.jpg",
+      imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kelechi&skinColor=black&backgroundColor=d1d4f9",
       socials: {
         twitter: "https://twitter.com",
         linkedin: "https://linkedin.com",
@@ -68,8 +68,8 @@ export default function TeamPage() {
                 <div key={member.id} className="bg-white rounded-xl shadow-md overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-lg">
                   <div className="p-6">
                     <div className="flex flex-col items-center text-center mb-5">
-                      <Avatar className="h-32 w-32 mb-4">
-                        <AvatarImage src={member.imageUrl} />
+                      <Avatar className="h-32 w-32 mb-4 bg-transparent">
+                        <AvatarImage src={member.imageUrl} className="object-contain p-1" />
                         <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <h3 className="text-xl font-bold text-gray-900">{member.name}</h3>
