@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import PropertyPage from "@/pages/property-page";
+import PropertiesPage from "@/pages/properties-page";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
 import AnalyticsPage from "@/pages/analytics-page";
@@ -50,6 +51,8 @@ function Router() {
     <Switch>
       <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
       <Route path="/properties/:id" component={PropertyPage} />
+      <Route path="/properties" component={PropertiesPage} />
+      <Route path="/properties/:type" component={PropertiesPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/jwt-test" component={JwtTestPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} requiredRole="user" />

@@ -49,12 +49,18 @@ export default function Header() {
                 Explore
               </Link>
               <div className="relative group">
-                <button className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
-                  Properties
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </button>
+                <Link href="/properties">
+                  <button className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                    Properties
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </button>
+                </Link>
                 {/* Dropdown menu */}
                 <div className="absolute left-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
+                  <Link href="/properties" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <LayoutGrid className="h-4 w-4 mr-2 text-primary" />
+                    All Properties
+                  </Link>
                   <Link href="/properties/residential" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
                     <Home className="h-4 w-4 mr-2 text-primary" />
                     Residential
