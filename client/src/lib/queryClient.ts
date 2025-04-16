@@ -71,18 +71,17 @@ export const getQueryFn: <T>(options: QueryFnOptions) => QueryFunction<T> =
     
     // Build URL with query parameters if present
     const basePath = queryKey[0] as string;
-    const params = queryKey.slice(1).filter(Boolean);
     
     let url = basePath;
-    if (params.length > 0) {
+    
+    // Handle the params object format - queryKey[1] is an object with filter params
+    if (queryKey.length > 1 && typeof queryKey[1] === 'object') {
+      const params = queryKey[1] as Record<string, any>;
       const queryParams = new URLSearchParams();
       
-      // Assuming params alternate between key and value
-      for (let i = 0; i < params.length; i += 2) {
-        const key = params[i];
-        const value = params[i + 1];
-        if (key && value && value !== 'all') {
-          queryParams.append(String(key), String(value));
+      for (const [key, value] of Object.entries(params)) {
+        if (value && value !== 'all') {
+          queryParams.append(key, String(value));
         }
       }
       
@@ -91,6 +90,30 @@ export const getQueryFn: <T>(options: QueryFnOptions) => QueryFunction<T> =
         url = `${basePath}?${queryString}`;
       }
     }
+    // Fallback to old format where queryKey alternates between key and value
+    else if (queryKey.length > 1) {
+      const params = queryKey.slice(1).filter(Boolean);
+      
+      if (params.length > 0) {
+        const queryParams = new URLSearchParams();
+        
+        // Assuming params alternate between key and value
+        for (let i = 0; i < params.length; i += 2) {
+          const key = params[i];
+          const value = params[i + 1];
+          if (key && value && value !== 'all') {
+            queryParams.append(String(key), String(value));
+          }
+        }
+        
+        const queryString = queryParams.toString();
+        if (queryString) {
+          url = `${basePath}?${queryString}`;
+        }
+      }
+    }
+    
+    console.log("Making API request to:", url);
     
     const res = await fetch(url, {
       headers: requestHeaders,

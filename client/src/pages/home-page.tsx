@@ -21,6 +21,12 @@ export default function HomePage() {
   
   const { data: properties = [] } = useQuery<Property[]>({
     queryKey: ["/api/properties"],
+    onSuccess: (data) => {
+      console.log("Home page properties loaded:", data);
+    },
+    onError: (error) => {
+      console.error("Error loading properties on home page:", error);
+    }
   });
   
   return (

@@ -13,6 +13,7 @@ interface PropertyGridProps {
 }
 
 export default function PropertyGrid({ type, location, search, limit }: PropertyGridProps) {
+  console.log("PropertyGrid rendered with params:", { type, location, search, limit });
   const [page, setPage] = useState(1);
   const pageSize = 6;
   
@@ -21,8 +22,10 @@ export default function PropertyGrid({ type, location, search, limit }: Property
   if (location && location !== "all") queryParams.append("location", location);
   if (search) queryParams.append("search", search);
   
+  console.log("Query params:", queryParams.toString());
+  
   const { data: properties = [], isLoading, error } = useQuery<Property[]>({
-    queryKey: ['/api/properties', 'type', type, 'location', location, 'search', search],
+    queryKey: ['/api/properties', { type, location, search }],
     onSuccess: (data) => {
       console.log('Properties loaded:', data);
     },
