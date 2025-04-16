@@ -528,8 +528,12 @@ export class DatabaseStorage implements IStorage {
       createTableIfMissing: true
     });
     
-    // Ensure schema tables exist in the database
-    this.initializeDatabase();
+    // Ensure schema tables exist in the database and seed data
+    this.initializeDatabase().then(() => {
+      console.log("Database initialization completed successfully");
+    }).catch((error) => {
+      console.error("Failed to initialize database:", error);
+    });
   }
 
   private async initializeDatabase() {
@@ -857,7 +861,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllProperties(): Promise<Property[]> {
-    return await db.query.properties.findMany();
+    try {
+      console.log("getAllProperties: Fetching all properties from database");
+      const properties = await db.query.properties.findMany();
+      console.log(`getAllProperties: Found ${properties.length} properties`);
+      
+      if (properties.length === 0) {
+        // Check if the properties table exists and has records
+        const tableExists = await db.execute(sql`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'properties'
+          );
+        `);
+        console.log("Table exists check:", tableExists);
+        
+        // Let's try to trigger database seeding
+        console.log("No properties found, initializing database...");
+        await this.seedProperties();
+        
+        // Try fetching again
+        console.log("Trying to fetch properties again after seeding");
+        const newProperties = await db.query.properties.findMany();
+        console.log(`After seeding: Found ${newProperties.length} properties`);
+        return newProperties;
+      }
+      
+      return properties;
+    } catch (error) {
+      console.error("Error in getAllProperties:", error);
+      return []; // Return empty array on error
+    }
   }
 
   async getPropertiesByType(type: string): Promise<Property[]> {

@@ -40,21 +40,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let properties;
       if (type && type !== "all") {
+        console.log("Fetching properties by type:", type);
         properties = await storage.getPropertiesByType(type);
       } else if (location && location !== "all") {
+        console.log("Fetching properties by location:", location);
         properties = await storage.getPropertiesByLocation(location);
       } else if (search) {
+        console.log("Searching properties with query:", search);
         properties = await storage.searchProperties(search);
       } else {
+        console.log("Fetching all properties");
         properties = await storage.getAllProperties();
       }
 
-      console.log(`API response for GET /api/properties: Found ${properties.length} properties`);
+      console.log(`API response for GET /api/properties: Found ${properties ? properties.length : 0} properties`);
+      if (properties && properties.length > 0) {
+        console.log("Sample property:", JSON.stringify(properties[0], null, 2));
+      } else {
+        console.log("No properties found in database!");
+      }
       
-      res.json(properties);
+      // Send the response even if properties is null or undefined
+      // Let's convert to an empty array in that case
+      res.json(properties || []);
     } catch (error) {
       console.error("Error in /api/properties:", error);
-      res.status(500).json({ message: "Failed to fetch properties" });
+      res.status(500).json({ message: "Failed to fetch properties", error: String(error) });
     }
   });
 
