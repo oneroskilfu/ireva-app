@@ -536,13 +536,152 @@ export class DatabaseStorage implements IStorage {
     try {
       // Run a simple query to check if tables exist 
       const usersExist = await db.query.users.findFirst();
+      const propertiesExist = await db.query.properties.findFirst();
       
       if (!usersExist) {
-        console.log("Initializing database tables and sample data...");
+        console.log("Initializing database with test users...");
         await this.seedTestUser();
+      }
+      
+      if (!propertiesExist) {
+        console.log("Initializing database with sample properties...");
+        await this.seedProperties();
       }
     } catch (error) {
       console.error("Error initializing database:", error);
+    }
+  }
+
+  // Seed sample properties
+  private async seedProperties() {
+    try {
+      const sampleProperties = [
+        {
+          name: "Skyline Apartments",
+          location: "Lagos",
+          description: "Modern apartment complex in Ikoyi with 120 units and premium amenities.",
+          type: "residential" as const,
+          imageUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          targetReturn: "12.5",
+          minimumInvestment: 100000,
+          term: 36,
+          totalFunding: 5000000,
+          currentFunding: 3200000,
+          numberOfInvestors: 180,
+          size: "120 Units",
+          builtYear: "2020",
+          occupancy: "92%",
+          cashFlow: "₦450,000,000/year",
+          daysLeft: 28,
+          tier: "premium",
+          accreditedOnly: false,
+          amenities: ["Pool", "Gym", "Security", "Parking"],
+          developer: "Skyline Developers Ltd",
+          imageGallery: ["https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"],
+          videoUrl: null,
+          virtual3DTour: null,
+          latitude: 6.4550,
+          longitude: 3.4231,
+          propertyReports: null,
+          legalDocuments: null,
+          constructionUpdates: null,
+          expectedCompletion: new Date("2024-12-31"),
+          expectedReturns: "12-15% annually",
+          riskLevel: "medium",
+          status: "active",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          featured: true,
+          completionStatus: 85,
+          completionDate: null
+        },
+        {
+          name: "Westfield Retail Center",
+          location: "Lagos",
+          description: "Shopping center with 45 retail units in Lekki with high foot traffic.",
+          type: "commercial" as const,
+          imageUrl: "https://images.unsplash.com/photo-1577415124269-fc1140a69e91?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          targetReturn: "9.8",
+          minimumInvestment: 250000,
+          term: 60,
+          totalFunding: 900000000,
+          currentFunding: 740000000,
+          numberOfInvestors: 120,
+          size: "45 Units",
+          builtYear: "2015",
+          occupancy: "88%",
+          cashFlow: "₦780,000,000/year",
+          daysLeft: 45,
+          tier: "premium",
+          accreditedOnly: true,
+          amenities: ["Ample Parking", "24/7 Security", "Loading Bays"],
+          developer: "Commercial Property Limited",
+          imageGallery: ["https://images.unsplash.com/photo-1577415124269-fc1140a69e91?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"],
+          videoUrl: null,
+          virtual3DTour: null,
+          latitude: 6.4698,
+          longitude: 3.5852,
+          propertyReports: null,
+          legalDocuments: null,
+          constructionUpdates: null,
+          expectedCompletion: null,
+          expectedReturns: "9-11% annually",
+          riskLevel: "low",
+          status: "active",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          featured: true,
+          completionStatus: 100,
+          completionDate: new Date("2016-06-15")
+        },
+        {
+          name: "Logistics Hub",
+          location: "Abuja",
+          description: "100,000 sq ft distribution center with modern facilities and transportation access in Jabi District.",
+          type: "industrial" as const,
+          imageUrl: "https://images.unsplash.com/photo-1554435493-93422e8d1c89?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+          targetReturn: "10.2",
+          minimumInvestment: 500000,
+          term: 48,
+          totalFunding: 1200000000,
+          currentFunding: 540000000,
+          numberOfInvestors: 85,
+          size: "100,000 sq ft",
+          builtYear: "2019",
+          occupancy: "95%",
+          cashFlow: "₦600,000,000/year",
+          daysLeft: 60,
+          tier: "premium",
+          accreditedOnly: true,
+          amenities: ["Loading Docks", "24/7 Security", "Fleet Parking"],
+          developer: "LogiHubs Nigeria Ltd",
+          imageGallery: ["https://images.unsplash.com/photo-1554435493-93422e8d1c89?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"],
+          videoUrl: null,
+          virtual3DTour: null,
+          latitude: 9.0765,
+          longitude: 7.4954,
+          propertyReports: null,
+          legalDocuments: null,
+          constructionUpdates: null,
+          expectedCompletion: null,
+          expectedReturns: "10-13% annually",
+          riskLevel: "medium",
+          status: "active",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          featured: false,
+          completionStatus: 100,
+          completionDate: new Date("2020-01-10")
+        }
+      ];
+
+      for (const property of sampleProperties) {
+        await this.createProperty(property);
+      }
+      
+      console.log(`Seeded ${sampleProperties.length} properties successfully`);
+    } catch (error) {
+      console.error("Error seeding properties:", error);
     }
   }
 
