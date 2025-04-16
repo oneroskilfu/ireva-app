@@ -61,14 +61,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user investments
-  app.get("/api/investments", async (req, res) => {
+  // Get user investments (JWT Protected)
+  app.get("/api/investments", verifyToken, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
+      // Get user ID from JWT payload
+      const userId = req.jwtPayload?.id;
+      
+      if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const userId = (req.user as Express.User).id;
       const investments = await storage.getUserInvestments(userId);
       
       // Get property details for each investment
@@ -88,14 +90,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new investment
-  app.post("/api/investments", async (req, res) => {
+  // Create a new investment (JWT Protected)
+  app.post("/api/investments", verifyToken, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
+      // Get user ID from JWT payload
+      const userId = req.jwtPayload?.id;
+      
+      if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-
-      const userId = (req.user as Express.User).id;
       
       // Validate investment data
       const validatedData = insertInvestmentSchema.parse({
@@ -144,14 +147,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get user notifications
-  app.get("/api/notifications", async (req, res) => {
+  // Get user notifications (JWT Protected)
+  app.get("/api/notifications", verifyToken, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
+      // Get user ID from JWT payload
+      const userId = req.jwtPayload?.id;
+      
+      if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const userId = (req.user as Express.User).id;
       const notifications = await storage.getUserNotifications(userId);
       
       res.json(notifications);
@@ -160,14 +165,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Mark notification as read
-  app.patch("/api/notifications/:id/read", async (req, res) => {
+  // Mark notification as read (JWT Protected)
+  app.patch("/api/notifications/:id/read", verifyToken, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
+      // Get user ID from JWT payload
+      const userId = req.jwtPayload?.id;
+      
+      if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
       const notificationId = parseInt(req.params.id);
+      
+      // Get notification to check ownership
+      const notification = await storage.getUserNotifications(userId)
+        .then(notifications => notifications.find(n => n.id === notificationId));
+      
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found or does not belong to user" });
+      }
+      
       const updatedNotification = await storage.markNotificationAsRead(notificationId);
       
       res.json(updatedNotification);
@@ -176,10 +193,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get specific investment by ID
-  app.get("/api/investments/:id", async (req, res) => {
+  // Get specific investment by ID (JWT Protected)
+  app.get("/api/investments/:id", verifyToken, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
+      // Get user ID from JWT payload
+      const userId = req.jwtPayload?.id;
+      
+      if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
@@ -191,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Verify that the investment belongs to the authenticated user
-      if (investment.userId !== (req.user as Express.User).id) {
+      if (investment.userId !== userId) {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -207,10 +227,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update investment returns (for simulation purposes)
-  app.patch("/api/investments/:id/returns", async (req, res) => {
+  // Update investment returns (for simulation purposes) (JWT Protected)
+  app.patch("/api/investments/:id/returns", verifyToken, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
+      // Get user ID from JWT payload
+      const userId = req.jwtPayload?.id;
+      
+      if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
@@ -224,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Verify that the investment belongs to the authenticated user
-      if (investment.userId !== (req.user as Express.User).id) {
+      if (investment.userId !== userId) {
         return res.status(403).json({ message: "Forbidden" });
       }
       

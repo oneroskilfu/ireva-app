@@ -5,7 +5,11 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
-// JWT Secret key - in production, use environment variable
+// JWT Secret key from environment
+if (!process.env.JWT_SECRET) {
+  console.error("WARNING: JWT_SECRET environment variable is not set!");
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const JWT_EXPIRES_IN = "7d"; // Token expires in 7 days
 
