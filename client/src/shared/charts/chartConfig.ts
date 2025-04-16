@@ -163,13 +163,20 @@ export function formatChartValue(value: number, format: 'currency' | 'percentage
 }
 
 // Get a gradient definition for chart fills
-export function getGradientDef(id: string, color: string): JSX.Element {
-  return (
-    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-      <stop offset="5%" stopColor={color} stopOpacity={0.8} />
-      <stop offset="95%" stopColor={color} stopOpacity={0.1} />
-    </linearGradient>
-  );
+// Note: In a real React component, we would return JSX,
+// but since this is a TypeScript utility file, we'll return a config object instead
+export function getGradientDef(id: string, color: string): {
+  id: string;
+  color: string;
+  opacity1: number;
+  opacity2: number;
+} {
+  return {
+    id,
+    color,
+    opacity1: 0.8,
+    opacity2: 0.1
+  };
 }
 
 // Responsive chart dimensions based on container width
