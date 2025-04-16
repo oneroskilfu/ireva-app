@@ -110,6 +110,20 @@ function Router() {
           );
         }}
       </Route>
+
+      {/* Admin Projects Management Route */}
+      <Route path="/admin/projects">
+        {() => {
+          const NewProtectedRoute = require('@/middleware/AuthMiddleware').default;
+          const AdminProjectsPage = require('@/pages/admin/AdminProjectsPage').default;
+          
+          return (
+            <NewProtectedRoute requiredRoles={["admin", "super_admin"]}>
+              <AdminProjectsPage />
+            </NewProtectedRoute>
+          );
+        }}
+      </Route>
       
       {/* New Investor Routes with Nested Structure */}
       <Route path="/investor">
@@ -124,6 +138,20 @@ function Router() {
               <InvestorLayout>
                 <InvestorDashboard />
               </InvestorLayout>
+            </NewProtectedRoute>
+          );
+        }}
+      </Route>
+      
+      {/* Investor Projects Page */}
+      <Route path="/investor/projects">
+        {() => {
+          const NewProtectedRoute = require('@/middleware/AuthMiddleware').default;
+          const InvestorProjectsPage = require('@/pages/investor/InvestorProjectsPage').default;
+          
+          return (
+            <NewProtectedRoute requiredRoles={["user", "admin", "super_admin"]}>
+              <InvestorProjectsPage />
             </NewProtectedRoute>
           );
         }}

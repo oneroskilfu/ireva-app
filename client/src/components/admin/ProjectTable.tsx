@@ -113,10 +113,14 @@ const ProjectTable = ({
     setIsDeleteDialogOpen(true);
   };
 
-  // Handle edit project
+  // Handle edit project - either use the onEdit prop or handle internally
   const handleEditProject = (project: Project) => {
-    setSelectedProject(project);
-    setIsEditDialogOpen(true);
+    if (onEdit) {
+      onEdit(project);
+    } else {
+      setSelectedProject(project);
+      setIsEditDialogOpen(true);
+    }
   };
 
   // Confirm delete project
@@ -310,7 +314,7 @@ const ProjectTable = ({
           </DialogHeader>
           {selectedProject && (
             <ProjectForm
-              project={selectedProject}
+              initialData={selectedProject}
               onSuccess={() => {
                 setIsEditDialogOpen(false);
                 queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
