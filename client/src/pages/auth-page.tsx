@@ -67,9 +67,13 @@ export default function AuthPage() {
     registerMutation.mutate(data);
   };
   
-  // Redirect if already logged in
+  // Redirect if already logged in - based on role
   if (user) {
-    navigate("/dashboard");
+    if (user.role === "admin" || user.role === "super_admin") {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
     return null;
   }
   

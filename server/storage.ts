@@ -175,6 +175,8 @@ export class MemStorage implements IStorage {
     const user: User = { 
       id, 
       ...insertUser, 
+      // Set default role to "user" for regular registrations
+      role: "user", 
       createdAt: new Date(),
       isPhoneVerified: false,
       kycStatus: "not_started",
@@ -182,7 +184,14 @@ export class MemStorage implements IStorage {
       kycRejectionReason: null,
       kycSubmittedAt: null,
       kycVerifiedAt: null,
-      lastLoginAt: null
+      lastLoginAt: null,
+      accreditationLevel: null,
+      accreditationDocuments: null,
+      accreditationVerifiedAt: null,
+      referralCode: null,
+      referredBy: null,
+      rewardsPoints: 0,
+      preferences: null
     };
     this.users.set(id, user);
     return user;

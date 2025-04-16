@@ -50,14 +50,14 @@ function Router() {
       <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
       <Route path="/properties/:id" component={PropertyPage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/admin" component={AdminDashboard} />
-      <ProtectedRoute path="/analytics" component={AnalyticsPage} />
-      <ProtectedRoute path="/community" component={CommunityPage} />
-      <ProtectedRoute path="/portfolio" component={PortfolioPage} />
-      <ProtectedRoute path="/wallet" component={WalletPage} />
-      <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/verification" component={VerificationPage} />
+      <ProtectedRoute path="/dashboard" component={DashboardPage} requiredRole="user" />
+      <ProtectedRoute path="/admin" component={AdminDashboard} requiredRole="admin" />
+      <ProtectedRoute path="/analytics" component={AnalyticsPage} requiredRole="user" />
+      <ProtectedRoute path="/community" component={CommunityPage} requiredRole="user" />
+      <ProtectedRoute path="/portfolio" component={PortfolioPage} requiredRole="user" />
+      <ProtectedRoute path="/wallet" component={WalletPage} requiredRole="user" />
+      <ProtectedRoute path="/profile" component={ProfilePage} requiredRole="user" />
+      <ProtectedRoute path="/verification" component={VerificationPage} requiredRole="user" />
       <Route path="/forum" component={ForumPage} />
       <Route path="/forum/topic/:id" component={TopicDetailPage} />
       <Route path="/company/team" component={TeamPage} />
