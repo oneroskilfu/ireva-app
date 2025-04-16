@@ -89,10 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on user role
       if (data.user.role === 'admin' || data.user.role === 'super_admin') {
         console.log('Admin user detected, redirecting to admin dashboard');
-        navigate("/admin");
+        navigate("/admin-new"); // Using the new route path
       } else {
-        console.log('Regular user detected, redirecting to user dashboard');
-        navigate("/dashboard");
+        console.log('Regular user detected, redirecting to investor dashboard');
+        navigate("/investor"); // Using the new route path for investors
       }
     },
     onError: (error: Error) => {
@@ -129,10 +129,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on user role
       if (data.user.role === 'admin' || data.user.role === 'super_admin') {
         console.log('Admin user registered, redirecting to admin dashboard');
-        navigate("/admin");
+        navigate("/admin-new"); // Using the new route path
       } else {
-        console.log('Regular user registered, redirecting to user dashboard');
-        navigate("/dashboard");
+        console.log('Regular user registered, redirecting to investor dashboard');
+        navigate("/investor"); // Using the new route path for investors
       }
     },
     onError: (error: Error) => {

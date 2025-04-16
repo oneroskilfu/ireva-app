@@ -1,9 +1,9 @@
-import { Outlet } from "wouter";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { ReactNode } from "react";
 import { 
   User, 
   Home, 
@@ -17,10 +17,14 @@ import {
   Settings 
 } from "lucide-react";
 
+interface InvestorLayoutProps {
+  children: ReactNode;
+}
+
 /**
  * Layout component for investor pages with navigation sidebar
  */
-export default function InvestorLayout() {
+export default function InvestorLayout({ children }: InvestorLayoutProps) {
   const { user } = useAuth();
   const [location] = useLocation();
 
@@ -84,7 +88,7 @@ export default function InvestorLayout() {
         
         {/* Main Content */}
         <main className="flex-grow p-4 md:p-6 overflow-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
       

@@ -1,15 +1,19 @@
-import { Outlet } from "wouter";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { User, Home, BarChart3, Users, FileText, Settings, MessageSquare, Bell } from "lucide-react";
+import { ReactNode } from "react";
+
+interface AdminLayoutProps {
+  children: ReactNode;
+}
 
 /**
  * Layout component for admin pages with navigation sidebar
  */
-export default function AdminLayout() {
+export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user } = useAuth();
   const [location] = useLocation();
 
@@ -72,7 +76,7 @@ export default function AdminLayout() {
         
         {/* Main Content */}
         <main className="flex-grow p-4 md:p-6 overflow-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
       
