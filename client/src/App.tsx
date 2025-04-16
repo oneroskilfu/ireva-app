@@ -19,6 +19,7 @@ import ProfilePage from "@/pages/profile-page";
 import ExplorePage from "@/pages/explore-page";
 import MobileHomePage from "@/pages/mobile-home-page";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
+import JwtTestPage from "@/pages/jwt-test-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
       <Route path="/properties/:id" component={PropertyPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/jwt-test" component={JwtTestPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} requiredRole="user" />
       <ProtectedRoute path="/admin" component={AdminDashboard} requiredRole="admin" />
       <ProtectedRoute path="/analytics" component={AnalyticsPage} requiredRole="user" />
