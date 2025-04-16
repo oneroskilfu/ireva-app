@@ -457,3 +457,49 @@ export type InsertWallet = z.infer<typeof insertWalletSchema>;
 
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
+
+// Action type enum for admin logs
+export const adminActionEnum = pgEnum("admin_action", [
+  "login",
+  "create",
+  "update",
+  "delete",
+  "approve",
+  "reject",
+  "verify",
+  "system_update"
+]);
+
+// Target type enum for admin logs
+export const targetTypeEnum = pgEnum("target_type", [
+  "user",
+  "property",
+  "investment",
+  "kyc",
+  "payment",
+  "system",
+  "achievement",
+  "educational_resource"
+]);
+
+// Admin logs schema
+export const adminLogs = pgTable("admin_logs", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").notNull(),
+  action: adminActionEnum("action").notNull(),
+  targetType: targetTypeEnum("target_type").notNull(),
+  targetId: integer("target_id").notNull(),
+  description: text("description").notNull(),
+  details: jsonb("details"), // Additional context about the action
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const insertAdminLogSchema = createInsertSchema(adminLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type AdminLog = typeof adminLogs.$inferSelect;
+export type InsertAdminLog = z.infer<typeof insertAdminLogSchema>;

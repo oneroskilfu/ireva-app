@@ -4,6 +4,8 @@ import { kycSubmissions, users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { verifyToken } from '../auth-jwt';
 import * as emailService from '../services/emailService';
+import upload from '../middlewares/upload';
+import path from 'path';
 
 const router = express.Router();
 
