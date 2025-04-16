@@ -21,7 +21,20 @@ import {
 } from 'lucide-react';
 
 // Import mock components for the charts that would be replaced with actual chart libraries
-const MockLineChart = ({ title, description }) => (
+// Sample portfolio value data
+const portfolioValueData = [
+  { date: 'Jan', value: 9500000 },
+  { date: 'Feb', value: 9800000 },
+  { date: 'Mar', value: 10200000 },
+  { date: 'Apr', value: 10500000 },
+  { date: 'May', value: 11000000 },
+  { date: 'Jun', value: 11800000 },
+  { date: 'Jul', value: 12100000 },
+  { date: 'Aug', value: 12300000 },
+  { date: 'Sep', value: 12500000 },
+];
+
+const LineChartComponent = ({ title, description, data, dataKey, xAxisKey, valuePrefix = '', valueSuffix = '' }) => (
   <Card>
     <CardHeader>
       <div className="flex justify-between items-center">
@@ -44,17 +57,64 @@ const MockLineChart = ({ title, description }) => (
       </div>
     </CardHeader>
     <CardContent>
-      <div className="h-[300px] flex items-center justify-center bg-muted rounded-md">
-        <div className="flex flex-col items-center">
-          <LineChart className="h-12 w-12 text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">Line chart will be displayed here</p>
-        </div>
+      <div className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+            <XAxis 
+              dataKey={xAxisKey} 
+              tick={{fontSize: 12}} 
+              stroke="#718096"
+            />
+            <YAxis 
+              tick={{fontSize: 12}} 
+              stroke="#718096"
+              tickFormatter={(value) => 
+                valuePrefix + value.toLocaleString() + valueSuffix
+              }
+            />
+            <Tooltip 
+              formatter={(value) => [
+                valuePrefix + value.toLocaleString() + valueSuffix,
+                "Value"
+              ]}
+            />
+            <Line 
+              type="monotone" 
+              dataKey={dataKey} 
+              stroke="#8884d8" 
+              strokeWidth={2}
+              activeDot={{ r: 8 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="benchmark" 
+              stroke="#82ca9d" 
+              strokeWidth={2}
+              activeDot={{ r: 8 }}
+              strokeDasharray="5 5"
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </CardContent>
   </Card>
 );
 
-const MockBarChart = ({ title, description }) => (
+// Sample monthly returns data
+const monthlyReturnsData = [
+  { month: 'Jan', returns: 125000, benchmark: 120000 },
+  { month: 'Feb', returns: 125000, benchmark: 120000 },
+  { month: 'Mar', returns: 130000, benchmark: 122000 },
+  { month: 'Apr', returns: 128000, benchmark: 123000 },
+  { month: 'May', returns: 132000, benchmark: 125000 },
+  { month: 'Jun', returns: 135000, benchmark: 128000 },
+];
+
+const BarChartComponent = ({ title, description, data, dataKey, xAxisKey, valuePrefix = '', valueSuffix = '' }) => (
   <Card>
     <CardHeader>
       <div className="flex justify-between items-center">
@@ -76,28 +136,92 @@ const MockBarChart = ({ title, description }) => (
       </div>
     </CardHeader>
     <CardContent>
-      <div className="h-[300px] flex items-center justify-center bg-muted rounded-md">
-        <div className="flex flex-col items-center">
-          <BarChart3 className="h-12 w-12 text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">Bar chart will be displayed here</p>
-        </div>
+      <div className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+            <XAxis 
+              dataKey={xAxisKey} 
+              tick={{fontSize: 12}} 
+              stroke="#718096"
+            />
+            <YAxis 
+              tick={{fontSize: 12}} 
+              stroke="#718096"
+              tickFormatter={(value) => 
+                valuePrefix + value.toLocaleString() + valueSuffix
+              }
+            />
+            <Tooltip 
+              formatter={(value) => [
+                valuePrefix + value.toLocaleString() + valueSuffix,
+                "Value"
+              ]}
+            />
+            <Legend />
+            <Bar 
+              dataKey={dataKey} 
+              name="Returns" 
+              fill="#8884d8" 
+              radius={[4, 4, 0, 0]}
+            />
+            {data[0]?.benchmark && (
+              <Bar 
+                dataKey="benchmark" 
+                name="Benchmark" 
+                fill="#82ca9d" 
+                radius={[4, 4, 0, 0]}
+              />
+            )}
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </CardContent>
   </Card>
 );
 
-const MockPieChart = ({ title, description }) => (
+// Sample portfolio allocation data
+const allocationData = [
+  { name: 'Residential', value: 45 },
+  { name: 'Commercial', value: 30 },
+  { name: 'Mixed-use', value: 15 },
+  { name: 'Industrial', value: 10 },
+];
+
+// Colors for pie chart sections
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+const PieChartComponent = ({ title, description, data }) => (
   <Card>
     <CardHeader>
       <CardTitle>{title}</CardTitle>
       <CardDescription>{description}</CardDescription>
     </CardHeader>
     <CardContent>
-      <div className="h-[300px] flex items-center justify-center bg-muted rounded-md">
-        <div className="flex flex-col items-center">
-          <PieChart className="h-12 w-12 text-muted-foreground mb-2" />
-          <p className="text-muted-foreground">Pie chart will be displayed here</p>
-        </div>
+      <div className="h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={100}
+              fill="#8884d8"
+              dataKey="value"
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => `${value}%`} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
       </div>
     </CardContent>
   </Card>
