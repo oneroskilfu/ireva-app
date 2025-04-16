@@ -9,20 +9,20 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   AlertTriangle, 
   BarChart4, 
-  Building as BuildingIcon,
+  Building, 
   Building2, 
-  Car,
+  Car as CarIcon,
   CheckCircle2, 
   FileText, 
   HelpCircle,
   Info, 
   Loader2, 
   Mail, 
-  MapPin,
+  MapPin as Map,
   MessageSquare, 
   Phone, 
   Shield, 
-  Store,
+  ShoppingBag, 
   Users
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -212,7 +212,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
                 </div>
                 <span className="mx-2">•</span>
                 <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
+                  <Map className="h-4 w-4 mr-1" />
                   <span className="text-sm">{property.location}</span>
                 </div>
               </div>
@@ -671,7 +671,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
             <CardContent className="p-0">
               <div className="bg-gray-100 h-48 flex items-center justify-center">
                 <div className="text-center">
-                  <MapPin className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+                  <Map className="h-6 w-6 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm font-medium text-gray-600">Property Location</p>
                   <p className="text-xs text-gray-500">{property.location}</p>
                 </div>
@@ -680,11 +680,11 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
                 <h4 className="font-medium mb-2">Location Details</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start">
-                    <BuildingIcon className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
+                    <Building className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
                     <span>Prime location in {property.location}</span>
                   </div>
                   <div className="flex items-start">
-                    <Car className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
+                    <CarIcon className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
                     <span>5 minutes to major transportation</span>
                   </div>
                   <div className="flex items-start">
