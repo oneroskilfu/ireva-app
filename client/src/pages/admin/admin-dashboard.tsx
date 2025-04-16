@@ -12,7 +12,8 @@ import {
   Menu,
   Home,
   ChevronRight,
-  LogOut
+  LogOut,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ import UserManagement from "./components/user-management";
 import PropertyManagement from "./components/property-management";
 import InvestmentManagement from "./components/investment-management";
 import KycVerification from "./components/kyc-verification";
+import RoiTracker from "./components/roi-tracker";
 
 // Dashboard statistics component
 const DashboardStats = () => {
@@ -170,6 +172,12 @@ const AdminDashboard = () => {
                     onClick={() => setActiveTab("analytics")}
                   />
                   <SidebarItem
+                    icon={<TrendingUp />}
+                    label="ROI Tracker"
+                    active={activeTab === "roi"}
+                    onClick={() => setActiveTab("roi")}
+                  />
+                  <SidebarItem
                     icon={<ClipboardList />}
                     label="Reports"
                     active={activeTab === "reports"}
@@ -272,6 +280,12 @@ const AdminDashboard = () => {
               label="Analytics"
               active={activeTab === "analytics"}
               onClick={() => setActiveTab("analytics")}
+            />
+            <SidebarItem
+              icon={<TrendingUp />}
+              label="ROI Tracker"
+              active={activeTab === "roi"}
+              onClick={() => setActiveTab("roi")}
             />
             <SidebarItem
               icon={<ClipboardList />}
