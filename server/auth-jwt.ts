@@ -81,6 +81,46 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// Auth middleware that populates req.user
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  
+  // If no authorization header, continue without populating req.user
+  if (!authHeader) {
+    return next();
+  }
+  
+  // Get token from Bearer header
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") {
+    return next();
+  }
+  
+  const token = parts[1];
+  
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    req.jwtPayload = decoded;
+    
+    // Fetch user data and populate req.user
+    storage.getUser(decoded.id)
+      .then(user => {
+        if (user) {
+          req.user = user;
+        }
+        next();
+      })
+      .catch(err => {
+        console.error("Error fetching user in authMiddleware:", err);
+        next();
+      });
+  } catch (error) {
+    // If token is invalid, continue without populating req.user
+    next();
+  }
+}
+
 // Middleware to check admin role
 export function ensureAdmin(req: Request, res: Response, next: NextFunction) {
   // First verify the token is valid

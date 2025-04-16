@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
-import { setupJwtAuth, verifyToken } from "./auth-jwt";
+import { setupJwtAuth, verifyToken, authMiddleware } from "./auth-jwt";
 import { setupVerificationRoutes } from "./auth/verification";
 import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
@@ -21,6 +21,12 @@ import investorRoutes from './routes/investor.js';
 import fs from 'fs';
 import path from 'path';
 
+// Import our new TypeScript routes
+import adminKycRoutes from './api/admin/kyc';
+import adminPropertiesRoutes from './api/admin/properties';
+import investorKycRoutes from './api/investor/kyc';
+import messagesRoutes from './api/messages';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up JWT authentication routes
   setupJwtAuth(app);
@@ -38,9 +44,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin', adminRoutes);
   console.log("Admin routes registered");
   
+  // Set up admin KYC routes
+  app.use('/api/admin/kyc', adminKycRoutes);
+  
+  // Set up admin properties routes
+  app.use('/api/admin/properties', adminPropertiesRoutes);
+  
   // Set up new investor routes
   app.use('/api/investor', investorRoutes);
   console.log("Investor routes registered");
+  
+  // Set up investor KYC routes
+  app.use('/api/investor/kyc', investorKycRoutes);
   
   // Set up KYC routes
   app.use('/api/kyc', kycRoutes);
@@ -73,6 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Messaging routes
   app.use('/api/messages', messageRoutes);
   console.log("Message routes registered");
+  
+  // Set up new messaging routes
+  app.use('/api/messages', messagesRoutes);
   
   // Test route for JWT auth
   app.get('/api/test-jwt', verifyToken, (req, res) => {
