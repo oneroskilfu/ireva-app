@@ -24,12 +24,20 @@ export const accreditationLevelEnum = pgEnum("accreditation_level", [
   "qualified_purchaser"
 ]);
 
+// User role enum
+export const userRoleEnum = pgEnum("user_role", [
+  "user",
+  "admin",
+  "super_admin"
+]);
+
 // User schema
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull(),
+  role: userRoleEnum("role").default("user"),
   firstName: text("first_name"),
   lastName: text("last_name"),
   phoneNumber: text("phone_number"),

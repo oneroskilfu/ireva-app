@@ -18,6 +18,7 @@ import WalletPage from "@/pages/wallet-page";
 import ProfilePage from "@/pages/profile-page";
 import ExplorePage from "@/pages/explore-page";
 import MobileHomePage from "@/pages/mobile-home-page";
+import AdminDashboard from "@/pages/admin/admin-dashboard";
 import { ProtectedRoute } from "./lib/protected-route";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
