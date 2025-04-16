@@ -2,23 +2,23 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { insertUserSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Building } from "lucide-react";
+import { Loader2, User, Info, Lock } from "lucide-react";
 import { useLocation } from "wouter";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { cn } from "@/lib/utils";
+// Import the login image
+import loginIllustration from "@assets/login front.webp";
 
 // Extended schemas with validation
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional(),
 });
 
 const registerSchema = insertUserSchema.extend({
@@ -41,6 +41,7 @@ export default function AuthPage() {
     defaultValues: {
       username: "",
       password: "",
+      rememberMe: false,
     },
   });
   
@@ -79,242 +80,281 @@ export default function AuthPage() {
   }
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow flex items-center justify-center py-12">
-        <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row overflow-hidden bg-white rounded-xl shadow-lg">
-            {/* Left side - Auth forms */}
-            <div className="w-full lg:w-1/2 p-6 sm:p-10">
-              <div className="flex items-center mb-6">
-                <Building className="h-6 w-6 text-primary mr-2" />
-                <span className="text-xl font-bold">InvestProperty</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eafffd] to-[#dafbf7] p-4">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg overflow-hidden">
+        <div className="flex flex-col md:flex-row">
+          {/* Left side - Login Form */}
+          <div className="w-full md:w-1/2 p-8 md:p-12">
+            <div className="mb-8 flex items-center">
+              <div className="w-8 h-8 rounded-full bg-[#16b5a0] text-white flex items-center justify-center mr-2">
+                <Info className="h-5 w-5" />
               </div>
-              
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login">Sign In</TabsTrigger>
-                  <TabsTrigger value="register">Create Account</TabsTrigger>
-                </TabsList>
-                
-                {/* Login Form */}
-                <TabsContent value="login">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Welcome back</CardTitle>
-                      <CardDescription>
-                        Sign in to your account to manage your real estate investments
-                      </CardDescription>
-                    </CardHeader>
-                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="login-username">Username</Label>
-                          <Input
-                            id="login-username"
-                            type="text"
-                            {...loginForm.register("username")}
-                          />
-                          {loginForm.formState.errors.username && (
-                            <p className="text-sm text-red-500">
-                              {loginForm.formState.errors.username.message}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="login-password">Password</Label>
-                            <a href="#" className="text-sm text-primary hover:underline">
-                              Forgot password?
-                            </a>
-                          </div>
-                          <Input
-                            id="login-password"
-                            type="password"
-                            {...loginForm.register("password")}
-                          />
-                          {loginForm.formState.errors.password && (
-                            <p className="text-sm text-red-500">
-                              {loginForm.formState.errors.password.message}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button 
-                          type="submit" 
-                          className="w-full" 
-                          disabled={loginMutation.isPending}
-                        >
-                          {loginMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Signing in...
-                            </>
-                          ) : "Sign in"}
-                        </Button>
-                      </CardFooter>
-                    </form>
-                  </Card>
-                </TabsContent>
-                
-                {/* Register Form */}
-                <TabsContent value="register">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Create an account</CardTitle>
-                      <CardDescription>
-                        Join thousands of investors and start your real estate investing journey
-                      </CardDescription>
-                    </CardHeader>
-                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="register-firstName">First Name</Label>
-                            <Input
-                              id="register-firstName"
-                              type="text"
-                              {...registerForm.register("firstName")}
-                            />
-                            {registerForm.formState.errors.firstName && (
-                              <p className="text-sm text-red-500">
-                                {registerForm.formState.errors.firstName.message}
-                              </p>
-                            )}
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="register-lastName">Last Name</Label>
-                            <Input
-                              id="register-lastName"
-                              type="text"
-                              {...registerForm.register("lastName")}
-                            />
-                            {registerForm.formState.errors.lastName && (
-                              <p className="text-sm text-red-500">
-                                {registerForm.formState.errors.lastName.message}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="register-email">Email</Label>
-                          <Input
-                            id="register-email"
-                            type="email"
-                            {...registerForm.register("email")}
-                          />
-                          {registerForm.formState.errors.email && (
-                            <p className="text-sm text-red-500">
-                              {registerForm.formState.errors.email.message}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="register-username">Username</Label>
-                          <Input
-                            id="register-username"
-                            type="text"
-                            {...registerForm.register("username")}
-                          />
-                          {registerForm.formState.errors.username && (
-                            <p className="text-sm text-red-500">
-                              {registerForm.formState.errors.username.message}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="register-password">Password</Label>
-                          <Input
-                            id="register-password"
-                            type="password"
-                            {...registerForm.register("password")}
-                          />
-                          {registerForm.formState.errors.password && (
-                            <p className="text-sm text-red-500">
-                              {registerForm.formState.errors.password.message}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button 
-                          type="submit" 
-                          className="w-full" 
-                          disabled={registerMutation.isPending}
-                        >
-                          {registerMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Creating account...
-                            </>
-                          ) : "Create account"}
-                        </Button>
-                      </CardFooter>
-                    </form>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <span className="text-xl font-bold text-gray-800">iREVA</span>
             </div>
             
-            {/* Right side - Hero section */}
-            <div className="hidden lg:block lg:w-1/2 bg-primary-dark p-10 text-white">
-              <div className="h-full flex flex-col justify-center">
-                <h2 className="text-3xl font-bold mb-4">
-                  Real Estate Investing, Simplified
-                </h2>
-                <p className="text-lg mb-8 text-gray-200">
-                  Access institutional-quality real estate investments with as little as $1,000. Build a diversified portfolio of income-generating properties without the hassle of traditional real estate ownership.
-                </p>
-                
-                <div className="space-y-6">
-                  <div className="flex items-start">
-                    <div className="rounded-full p-2 bg-white/10 mr-4">
-                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+            {activeTab === "login" ? (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Login</h2>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <User className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        type="text"
+                        placeholder="Petter@gmail.com"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...loginForm.register("username")}
+                      />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-xl">Low Minimum Investment</h3>
-                      <p className="text-gray-300">Start investing with just $1,000</p>
+                    {loginForm.formState.errors.username && (
+                      <p className="text-sm text-red-500">
+                        {loginForm.formState.errors.username.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...loginForm.register("password")}
+                      />
+                    </div>
+                    {loginForm.formState.errors.password && (
+                      <p className="text-sm text-red-500">
+                        {loginForm.formState.errors.password.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="remember-me" 
+                        {...loginForm.register("rememberMe")}
+                      />
+                      <label htmlFor="remember-me" className="text-sm text-gray-600">
+                        Remember Password
+                      </label>
+                    </div>
+                    <a href="#" className="text-sm text-[#16b5a0] hover:underline">
+                      Forgot Password?
+                    </a>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full py-6 bg-[#0c1b46] hover:bg-[#19307a] text-white rounded-xl"
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : "Login"}
+                  </Button>
+                  
+                  <div className="text-center text-sm text-gray-600">
+                    No account yet?{" "}
+                    <button 
+                      type="button"
+                      className="text-[#16b5a0] hover:underline font-medium"
+                      onClick={() => setActiveTab("register")}
+                    >
+                      Register
+                    </button>
+                  </div>
+                  
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-gray-500">Or Login with</span>
                     </div>
                   </div>
                   
-                  <div className="flex items-start">
-                    <div className="rounded-full p-2 bg-white/10 mr-4">
-                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <div className="grid grid-cols-4 gap-3">
+                    <button
+                      type="button"
+                      className="flex justify-center items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2.917 16.083c-2.258 0-4.083-1.825-4.083-4.083s1.825-4.083 4.083-4.083c1.103 0 2.024.402 2.735 1.067l-1.107 1.068c-.304-.292-.834-.63-1.628-.63-1.394 0-2.531 1.155-2.531 2.579 0 1.424 1.138 2.579 2.531 2.579 1.616 0 2.224-1.162 2.316-1.762h-2.316v-1.4h3.855c.036.204.064.408.064.677.001 2.332-1.563 3.988-3.919 3.988zm9.917-3.5h-1.75v1.75h-1.167v-1.75h-1.75v-1.166h1.75v-1.75h1.167v1.75h1.75v1.166z"/>
                       </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex justify-center items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#1DA1F2]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex justify-center items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#4267B2]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex justify-center items-center p-3 border border-gray-200 rounded-xl hover:bg-gray-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24">
+                        <path fill="#EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/>
+                        <path fill="#34A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z"/>
+                        <path fill="#4A90E2" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/>
+                        <path fill="#FBBC05" d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Create an account</h2>
+                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Input
+                        type="text"
+                        placeholder="First Name"
+                        className="py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("firstName")}
+                      />
+                      {registerForm.formState.errors.firstName && (
+                        <p className="text-sm text-red-500">
+                          {registerForm.formState.errors.firstName.message}
+                        </p>
+                      )}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-xl">Passive Income</h3>
-                      <p className="text-gray-300">Earn monthly distributions from your investments</p>
+                    
+                    <div className="space-y-1">
+                      <Input
+                        type="text"
+                        placeholder="Last Name"
+                        className="py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("lastName")}
+                      />
+                      {registerForm.formState.errors.lastName && (
+                        <p className="text-sm text-red-500">
+                          {registerForm.formState.errors.lastName.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
-                  <div className="flex items-start">
-                    <div className="rounded-full p-2 bg-white/10 mr-4">
-                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </div>
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("email")}
+                      />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-xl">Fully Transparent</h3>
-                      <p className="text-gray-300">See exactly where your money is invested</p>
-                    </div>
+                    {registerForm.formState.errors.email && (
+                      <p className="text-sm text-red-500">
+                        {registerForm.formState.errors.email.message}
+                      </p>
+                    )}
                   </div>
-                </div>
-              </div>
+                  
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <User className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        type="text"
+                        placeholder="Username"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("username")}
+                      />
+                    </div>
+                    {registerForm.formState.errors.username && (
+                      <p className="text-sm text-red-500">
+                        {registerForm.formState.errors.username.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("password")}
+                      />
+                    </div>
+                    {registerForm.formState.errors.password && (
+                      <p className="text-sm text-red-500">
+                        {registerForm.formState.errors.password.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full py-6 bg-[#0c1b46] hover:bg-[#19307a] text-white rounded-xl"
+                    disabled={registerMutation.isPending}
+                  >
+                    {registerMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : "Register"}
+                  </Button>
+                  
+                  <div className="text-center text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <button 
+                      type="button"
+                      className="text-[#16b5a0] hover:underline font-medium"
+                      onClick={() => setActiveTab("login")}
+                    >
+                      Login
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+          
+          {/* Right side - Illustration */}
+          <div className="hidden md:block md:w-1/2 bg-white p-12">
+            <div className="h-full flex items-center justify-center">
+              <img 
+                src={loginIllustration} 
+                alt="Login illustration" 
+                className="max-w-full"
+              />
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 }
