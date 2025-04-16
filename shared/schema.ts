@@ -89,6 +89,9 @@ export const kycDocumentSchema = z.object({
   selfieImage: z.string(),
   addressProofImage: z.string().optional(),
   addressProofType: z.enum(["utility_bill", "bank_statement", "tax_document", "rental_agreement"]).optional(),
+  fullName: z.string().min(3, "Full name must be at least 3 characters"),
+  bankName: z.string().min(2, "Bank name must be at least 2 characters"),
+  accountNumber: z.string().min(10, "Account number must be at least 10 digits"),
 });
 
 // Property type enum
