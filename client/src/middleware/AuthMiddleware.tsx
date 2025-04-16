@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({ children, requiredRoles = [] }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function ProtectedRoute({ children, requiredRoles = [] }: ProtectedRouteP
       }
       
       // No specific roles required or user has required role
-      if (requiredRoles.length === 0 || requiredRoles.includes(user.role)) {
+      if (requiredRoles.length === 0 || (user && user.role && requiredRoles.includes(user.role))) {
         console.log("User authorized");
         setAuthorized(true);
         return;
@@ -38,7 +38,7 @@ export function ProtectedRoute({ children, requiredRoles = [] }: ProtectedRouteP
       console.log("User doesn't have required role, redirecting");
       setAuthorized(false);
     }
-  }, [user, isLoading, requiredRoles, setLocation]);
+  }, [user, isLoading, requiredRoles, navigate]);
 
   if (isLoading) {
     return (

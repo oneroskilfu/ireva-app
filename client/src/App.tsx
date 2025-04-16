@@ -49,6 +49,7 @@ function Router() {
   
   return (
     <Switch>
+      {/* Public Routes */}
       <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
       <Route path="/property/:id" component={PropertyPage} />
       <Route path="/properties" component={PropertiesPage} />
@@ -59,6 +60,14 @@ function Router() {
       <Route path="/properties/land" component={PropertiesPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/jwt-test" component={JwtTestPage} />
+      <Route path="/forum" component={ForumPage} />
+      <Route path="/forum/topic/:id" component={TopicDetailPage} />
+      <Route path="/company/team" component={TeamPage} />
+      <Route path="/company/culture" component={CulturePage} />
+      <Route path="/company/press" component={PressPage} />
+      <Route path="/explore" component={ExplorePage} />
+      
+      {/* Legacy Protected Routes - will be deprecated gradually */}
       <ProtectedRoute path="/dashboard" component={DashboardPage} requiredRole="user" />
       <ProtectedRoute path="/admin" component={AdminDashboard} requiredRole="admin" />
       <ProtectedRoute path="/analytics" component={AnalyticsPage} requiredRole="user" />
@@ -67,12 +76,44 @@ function Router() {
       <ProtectedRoute path="/wallet" component={WalletPage} requiredRole="user" />
       <ProtectedRoute path="/profile" component={ProfilePage} requiredRole="user" />
       <ProtectedRoute path="/verification" component={VerificationPage} requiredRole="user" />
-      <Route path="/forum" component={ForumPage} />
-      <Route path="/forum/topic/:id" component={TopicDetailPage} />
-      <Route path="/company/team" component={TeamPage} />
-      <Route path="/company/culture" component={CulturePage} />
-      <Route path="/company/press" component={PressPage} />
-      <Route path="/explore" component={ExplorePage} />
+      
+      {/* New Admin Routes with Nested Structure */}
+      <Route path="/admin-new">
+        {() => {
+          // Use dynamic import to avoid having to move the file immediately
+          const NewProtectedRoute = require('@/middleware/AuthMiddleware').default;
+          const AdminLayout = require('@/components/layouts/AdminLayout').default;
+          const AdminDashboard = require('@/pages/admin/AdminDashboard').default;
+          
+          return (
+            <NewProtectedRoute requiredRoles={["admin", "super_admin"]}>
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            </NewProtectedRoute>
+          );
+        }}
+      </Route>
+      
+      {/* New Investor Routes with Nested Structure */}
+      <Route path="/investor">
+        {() => {
+          // Use dynamic import to avoid having to move the file immediately
+          const NewProtectedRoute = require('@/middleware/AuthMiddleware').default;
+          const InvestorLayout = require('@/components/layouts/InvestorLayout').default;
+          const InvestorDashboard = require('@/pages/investor/InvestorDashboard').default;
+          
+          return (
+            <NewProtectedRoute requiredRoles={["user", "admin", "super_admin"]}>
+              <InvestorLayout>
+                <InvestorDashboard />
+              </InvestorLayout>
+            </NewProtectedRoute>
+          );
+        }}
+      </Route>
+      
+      {/* 404 Not Found */}
       <Route component={NotFound} />
     </Switch>
   );
