@@ -97,6 +97,20 @@ function Router() {
         }}
       </Route>
       
+      {/* Admin KYC Management Route */}
+      <Route path="/admin/kyc">
+        {() => {
+          const NewProtectedRoute = require('@/middleware/AuthMiddleware').default;
+          const KYCManagementPage = require('@/pages/admin/kyc-management').default;
+          
+          return (
+            <NewProtectedRoute requiredRoles={["admin", "super_admin"]}>
+              <KYCManagementPage />
+            </NewProtectedRoute>
+          );
+        }}
+      </Route>
+      
       {/* New Investor Routes with Nested Structure */}
       <Route path="/investor">
         {() => {
