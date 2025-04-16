@@ -40,10 +40,10 @@ export default function Header() {
   // Always use white background like in the example
   return (
     <header className="sticky top-0 z-50 transition-all duration-300 bg-white shadow-sm">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Left side - Main navigation */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-1 justify-end">
             <div className="flex">
               <Link href="/" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
                 Explore
@@ -102,7 +102,7 @@ export default function Header() {
           </div>
           
           {/* Center - Logo */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
             <Link href="/" className="flex-shrink-0 flex items-center">
               <span className="text-2xl font-bold tracking-wider text-gray-900">
                 iREVA
@@ -111,7 +111,7 @@ export default function Header() {
           </div>
           
           {/* Right side - Secondary links and auth */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-1 justify-start">
             <Link href="/help" className="text-sm font-medium text-gray-700 hover:text-gray-900">
               Help
             </Link>
