@@ -83,8 +83,8 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eafffd] to-[#dafbf7] p-4">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg overflow-hidden">
         <div className="flex flex-col md:flex-row">
-          {/* Login Form */}
-          <div className="w-full p-8 md:p-12">
+          {/* Left side - Login Form */}
+          <div className="w-full md:w-1/2 p-8 md:p-12">
             <div className="mb-8 flex items-center">
               <div className="w-8 h-8 rounded-full bg-[#16b5a0] text-white flex items-center justify-center mr-2">
                 <Info className="h-5 w-5" />
@@ -400,7 +400,84 @@ export default function AuthPage() {
             )}
           </div>
           
-
+          {/* Right side - Investment Opportunity Content */}
+          <div className="hidden md:block md:w-1/2 bg-white p-12">
+            <div className="h-full flex items-center justify-center">
+              <div className="flex flex-col items-center">
+                <div className="text-center mb-6">
+                  <h2 className="text-3xl font-bold text-[#0c1b46] mb-3">Invest in Premium Real Estate</h2>
+                  <p className="text-gray-600">Access diverse investment opportunities across Nigeria</p>
+                </div>
+                
+                {/* Property Investment Illustration */}
+                <div className="w-full h-60 bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl mb-8 overflow-hidden relative">
+                  <div className="absolute inset-0 grid grid-cols-3 gap-2 p-4">
+                    <div className="bg-white rounded-lg shadow-sm p-2 flex flex-col justify-between transform hover:scale-105 transition-transform">
+                      <div className="h-16 bg-blue-100 rounded-md mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded-full w-3/4 mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded-full w-1/2"></div>
+                      <div className="mt-2 bg-[#16b5a0] text-white text-xs rounded py-1 px-2 text-center">₦100,000+</div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm p-2 flex flex-col justify-between transform hover:scale-105 transition-transform">
+                      <div className="h-16 bg-teal-100 rounded-md mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded-full w-3/4 mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded-full w-1/2"></div>
+                      <div className="mt-2 bg-[#0c1b46] text-white text-xs rounded py-1 px-2 text-center">₦500,000+</div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm p-2 flex flex-col justify-between transform hover:scale-105 transition-transform">
+                      <div className="h-16 bg-indigo-100 rounded-md mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded-full w-3/4 mb-1"></div>
+                      <div className="h-3 bg-gray-200 rounded-full w-1/2"></div>
+                      <div className="mt-2 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center">₦1,000,000+</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="w-full space-y-4">
+                  <div className="p-5 rounded-xl bg-gradient-to-br from-[#f8fdfc] to-[#eafffb] border border-[#e0f5f2] shadow-sm">
+                    <h3 className="text-lg font-bold text-[#0c1b46] mb-2">Tiered Investment Opportunities</h3>
+                    <ul className="space-y-2">
+                      <li className="flex items-center">
+                        <div className="h-6 w-6 rounded-full bg-[#16b5a0] flex items-center justify-center mr-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-700">Start with as little as ₦100,000</p>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="h-6 w-6 rounded-full bg-[#16b5a0] flex items-center justify-center mr-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-700">Real-time investment tracking</p>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="h-6 w-6 rounded-full bg-[#16b5a0] flex items-center justify-center mr-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-700">Secure investment process</p>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <div className="w-1/2 p-4 bg-[#e9f6ff] rounded-xl border border-[#d4ebfa]">
+                      <h4 className="font-medium text-[#0c1b46] text-sm mb-2">Detailed Project Listings</h4>
+                      <p className="text-xs text-gray-600">Comprehensive property information with high-quality visuals and financial projections</p>
+                    </div>
+                    <div className="w-1/2 p-4 bg-[#f4f9ff] rounded-xl border border-[#e4effa]">
+                      <h4 className="font-medium text-[#0c1b46] text-sm mb-2">Portfolio Management</h4>
+                      <p className="text-xs text-gray-600">Track performance and manage all your investments in one place</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
