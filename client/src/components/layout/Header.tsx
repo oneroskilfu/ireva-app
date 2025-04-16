@@ -1,7 +1,17 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Users, Lightbulb, Newspaper } from "lucide-react";
+import { 
+  ChevronDown, 
+  Users, 
+  Lightbulb, 
+  Newspaper, 
+  Home, 
+  Building, 
+  Factory, 
+  LayoutGrid, 
+  LandPlot 
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -45,19 +55,24 @@ export default function Header() {
                 </button>
                 {/* Dropdown menu */}
                 <div className="absolute left-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
-                  <Link href="/properties/residential" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/properties/residential" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <Home className="h-4 w-4 mr-2 text-primary" />
                     Residential
                   </Link>
-                  <Link href="/properties/commercial" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/properties/commercial" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <Building className="h-4 w-4 mr-2 text-primary" />
                     Commercial
                   </Link>
-                  <Link href="/properties/industrial" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/properties/industrial" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <Factory className="h-4 w-4 mr-2 text-primary" />
                     Industrial
                   </Link>
-                  <Link href="/properties/mixed-use" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/properties/mixed-use" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <LayoutGrid className="h-4 w-4 mr-2 text-primary" />
                     Mixed-use
                   </Link>
-                  <Link href="/properties/land" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <Link href="/properties/land" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <LandPlot className="h-4 w-4 mr-2 text-primary" />
                     Land
                   </Link>
                 </div>
