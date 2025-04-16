@@ -10,7 +10,6 @@ import PropertyGrid from "@/components/properties/PropertyGrid";
 import ModernHero from "@/components/home/ModernHero";
 import AnimatedFeatures from "@/components/home/AnimatedFeatures";
 import InvestmentPlanner from "@/components/home/InvestmentPlanner";
-import TrustedBy from "@/components/home/TrustedBy";
 import { motion } from "framer-motion";
 
 export default function HomePage() {
@@ -33,9 +32,6 @@ export default function HomePage() {
         
         {/* Features Section */}
         <AnimatedFeatures />
-        
-        {/* Trusted By Section */}
-        <TrustedBy />
         
         {/* Investment Planner Section */}
         <InvestmentPlanner />
