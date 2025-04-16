@@ -32,59 +32,14 @@ export default function TeamPage() {
     },
     {
       id: 2,
-      name: "Amina Ibrahim",
-      role: "Chief Investment Officer",
-      bio: "Amina brings 12 years of expertise in finance and investment strategy. She previously managed a $500M real estate portfolio at a leading Nigerian investment firm.",
-      imageUrl: "https://randomuser.me/api/portraits/women/44.jpg",
-      socials: {
-        linkedin: "https://linkedin.com",
-        email: "amina@ireva.ng"
-      }
-    },
-    {
-      id: 3,
-      name: "Chidi Okonkwo",
+      name: "Kelechi Iloh",
       role: "Chief Technology Officer",
-      bio: "Chidi is a tech innovator with experience building fintech platforms. He led engineering teams at several successful startups before joining iREVA to lead our technology vision.",
+      bio: "Kelechi is a tech innovator with experience building fintech platforms. He led engineering teams at several successful startups before joining iREVA to lead our technology vision.",
       imageUrl: "https://randomuser.me/api/portraits/men/75.jpg",
       socials: {
         twitter: "https://twitter.com",
         linkedin: "https://linkedin.com",
-        email: "chidi@ireva.ng"
-      }
-    },
-    {
-      id: 4,
-      name: "Ngozi Eze",
-      role: "Head of Operations",
-      bio: "Ngozi oversees all operational aspects of iREVA's property management and investor relations. She has 10 years of experience in real estate operations and client management.",
-      imageUrl: "https://randomuser.me/api/portraits/women/28.jpg",
-      socials: {
-        linkedin: "https://linkedin.com",
-        email: "ngozi@ireva.ng"
-      }
-    },
-    {
-      id: 5,
-      name: "Tunde Bakare",
-      role: "Chief Marketing Officer",
-      bio: "Tunde leads our marketing and brand strategy. With a background in digital marketing and growth, he has helped scale multiple African startups in the property tech space.",
-      imageUrl: "https://randomuser.me/api/portraits/men/42.jpg",
-      socials: {
-        twitter: "https://twitter.com",
-        linkedin: "https://linkedin.com",
-        email: "tunde@ireva.ng"
-      }
-    },
-    {
-      id: 6,
-      name: "Fatima Mohammed",
-      role: "Head of Legal & Compliance",
-      bio: "Fatima ensures iREVA meets all regulatory requirements while protecting our investors. She previously worked at Nigeria's Securities and Exchange Commission.",
-      imageUrl: "https://randomuser.me/api/portraits/women/65.jpg",
-      socials: {
-        linkedin: "https://linkedin.com",
-        email: "fatima@ireva.ng"
+        email: "kelechi@ireva.ng"
       }
     }
   ];
@@ -108,7 +63,7 @@ export default function TeamPage() {
         {/* Team members grid */}
         <section className="py-16">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
               {teamMembers.map((member) => (
                 <div key={member.id} className="bg-white rounded-xl shadow-md overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-lg">
                   <div className="p-6">
