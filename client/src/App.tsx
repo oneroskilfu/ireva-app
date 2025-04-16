@@ -13,7 +13,14 @@ import VerificationPage from "@/pages/verification-page";
 import TeamPage from "@/pages/company/team-page";
 import CulturePage from "@/pages/company/culture-page";
 import PressPage from "@/pages/company/press-page";
+import PortfolioPage from "@/pages/portfolio-page";
+import WalletPage from "@/pages/wallet-page";
+import ProfilePage from "@/pages/profile-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/hooks/use-auth";
+
+const queryClient = new QueryClient();
 
 function Router() {
   return (
@@ -24,12 +31,16 @@ function Router() {
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsPage} />
       <ProtectedRoute path="/community" component={CommunityPage} />
+      <ProtectedRoute path="/portfolio" component={PortfolioPage} />
+      <ProtectedRoute path="/wallet" component={WalletPage} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/verification" component={VerificationPage} />
       <Route path="/forum" component={ForumPage} />
       <Route path="/forum/topic/:id" component={TopicDetailPage} />
       <Route path="/company/team" component={TeamPage} />
       <Route path="/company/culture" component={CulturePage} />
       <Route path="/company/press" component={PressPage} />
+      <Route path="/explore" component={HomePage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -37,10 +48,12 @@ function Router() {
 
 function App() {
   return (
-    <>
-      <Router />
-      <Toaster />
-    </>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
