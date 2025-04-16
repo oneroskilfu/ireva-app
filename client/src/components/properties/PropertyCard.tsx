@@ -43,7 +43,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
           <div>
             <p className="text-xs text-gray-500">Minimum</p>
-            <p className="text-lg font-medium">${property.minimumInvestment.toLocaleString()}</p>
+            <p className="text-lg font-medium">₦{property.minimumInvestment.toLocaleString()}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Term</p>
@@ -55,7 +55,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <div className="flex justify-between text-sm mb-1">
             <span className="font-medium">{fundingPercentage}% Funded</span>
             <span className="text-gray-500">
-              ${(property.currentFunding / 1000000).toFixed(1)}M / ${(property.totalFunding / 1000000).toFixed(1)}M
+              ₦{(property.currentFunding / 1000000).toFixed(1)}M / ₦{(property.totalFunding / 1000000).toFixed(1)}M
             </span>
           </div>
           <div className="h-2 w-full bg-gray-100 rounded">
