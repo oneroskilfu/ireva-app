@@ -45,11 +45,11 @@ export default function Header() {
           {/* Left side - Main navigation */}
           <div className="flex items-center space-x-4">
             <div className="flex">
-              <Link href="/" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
+              <Link href="/" className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900">
                 Explore
               </Link>
               <div className="relative group">
-                <button className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                <button className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
                   Properties
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </button>
@@ -78,7 +78,7 @@ export default function Header() {
                 </div>
               </div>
               <div className="relative group">
-                <button className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                <button className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
                   Company
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </button>
@@ -104,7 +104,7 @@ export default function Header() {
           {/* Center - Logo */}
           <div className="flex items-center justify-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold tracking-wider text-gray-900">
+              <span className="text-3xl font-bold tracking-wider text-gray-900">
                 iREVA
               </span>
             </Link>
@@ -112,16 +112,16 @@ export default function Header() {
           
           {/* Right side - Secondary links and auth */}
           <div className="flex items-center space-x-4">
-            <Link href="/help" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+            <Link href="/help" className="text-base font-medium text-gray-700 hover:text-gray-900">
               Help
             </Link>
-            <Link href="/blog" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+            <Link href="/blog" className="text-base font-medium text-gray-700 hover:text-gray-900">
               Blog
             </Link>
             
             {/* Country selector */}
             <div className="relative group">
-              <button className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+              <button className="flex items-center text-base font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
                 <div className="w-6 h-6 rounded-full overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50">
                   <img 
                     src="https://flagcdn.com/w20/ng.png" 
@@ -180,20 +180,20 @@ export default function Header() {
                 <button 
                   onClick={handleLogout}
                   disabled={logoutMutation.isPending}
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="text-base font-medium text-gray-700 hover:text-gray-900"
                 >
                   Log out
                 </button>
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Link href="/auth" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+                <Link href="/auth" className="text-base font-medium text-gray-700 hover:text-gray-900">
                   Log in
                 </Link>
                 <Link href="/auth">
                   <Button 
                     size="sm"
-                    className="rounded-full bg-gray-900 text-white hover:bg-gray-800"
+                    className="rounded-full bg-gray-900 text-white hover:bg-gray-800 text-base"
                   >
                     Start Investing
                   </Button>
