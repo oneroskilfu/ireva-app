@@ -426,4 +426,52 @@ adminRouter.get('/activity-logs', ensureSuperAdmin, async (req: Request, res: Re
   ]);
 });
 
+// ROI Summary endpoint for the ROI Tracker
+adminRouter.get('/roi/summary', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get all investments
+    const investments = await storage.getAllInvestments();
+    
+    // Format the data with user and property information
+    const roiSummary = await Promise.all(
+      investments.map(async (investment) => {
+        const user = await storage.getUser(investment.userId);
+        const property = await storage.getProperty(investment.propertyId);
+        
+        // Calculate ROI percentage (simplified calculation)
+        const roiPercentage = investment.earnings > 0 
+          ? ((investment.earnings / investment.amount) * 100).toFixed(2)
+          : 0;
+        
+        // Calculate payout date (simplified: 1 year from investment date)
+        const investmentDate = new Date(investment.date);
+        const payoutDate = new Date(investmentDate);
+        payoutDate.setFullYear(payoutDate.getFullYear() + 1);
+        
+        return {
+          id: investment.id,
+          userId: investment.userId,
+          propertyId: investment.propertyId,
+          amount: investment.amount,
+          date: investment.date.toISOString(),
+          roiPercentage: parseFloat(roiPercentage as string),
+          payoutDate: payoutDate.toISOString(),
+          userEmail: user?.email || '',
+          userName: user?.username || '',
+          projectTitle: property?.name || '',
+          projectLocation: property?.location || '',
+          earnings: investment.earnings || 0,
+          status: investment.status,
+          monthlyReturns: investment.monthlyReturns || []
+        };
+      })
+    );
+    
+    res.json(roiSummary);
+  } catch (error) {
+    console.error("ROI Summary Error:", error);
+    res.status(500).json({ error: "Failed to fetch ROI summary data" });
+  }
+});
+
 export { adminRouter };

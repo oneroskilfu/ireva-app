@@ -16,6 +16,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Tabs,
   TabsContent,
@@ -409,6 +410,13 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="roi" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">ROI Tracker</h2>
+              </div>
+              <RoiTracker />
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-6">
