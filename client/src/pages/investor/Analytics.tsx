@@ -8,17 +8,34 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
-  LineChart, 
+  LineChart as LineChartIcon, 
   BarChart3, 
-  PieChart, 
+  PieChart as PieChartIcon, 
   TrendingUp, 
   CreditCard, 
   Calendar, 
   DollarSign, 
-  BarChart, 
+  BarChart as BarChartIcon, 
   Map, 
   Building 
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  Legend
+} from 'recharts';
 
 // Import mock components for the charts that would be replaced with actual chart libraries
 // Sample portfolio value data
