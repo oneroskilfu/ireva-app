@@ -103,9 +103,9 @@ const KYCForm = () => {
   
   // Get KYC status
   const { data: kycStatus, isLoading: isLoadingStatus } = useQuery<KYCStatus>({
-    queryKey: ['/api/investor/kyc/status'],
+    queryKey: ['/api/kyc/status'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/investor/kyc/status');
+      const res = await apiRequest('GET', '/api/kyc/status');
       return await res.json();
     },
   });
@@ -141,7 +141,7 @@ const KYCForm = () => {
     mutationFn: async (values: KYCFormValues) => {
       // In a real implementation, this would first upload files to get URLs
       // Then submit the form with those URLs
-      const res = await apiRequest('POST', '/api/investor/kyc/submit', values);
+      const res = await apiRequest('POST', '/api/kyc', values);
       return await res.json();
     },
     onSuccess: () => {
@@ -150,7 +150,7 @@ const KYCForm = () => {
         description: "Your KYC information has been submitted for verification. We'll notify you once it's processed.",
         variant: "default",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/investor/kyc/status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/kyc/status'] });
     },
     onError: (error: Error) => {
       toast({
