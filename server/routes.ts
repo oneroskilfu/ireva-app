@@ -13,6 +13,7 @@ import walletRoutes from './routes/walletRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import roiRoutes from './routes/roiRoutes';
+import faqRoutes from './routes/faq';
 import fs from 'fs';
 import path from 'path';
 
@@ -52,6 +53,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up ROI calculation routes
   app.use('/api/roi', roiRoutes);
   console.log("ROI routes registered");
+  
+  // Set up FAQ routes
+  app.use('/api/faqs', faqRoutes);
+  console.log("FAQ routes registered");
   
   // Test route for JWT auth
   app.get('/api/test-jwt', verifyToken, (req, res) => {

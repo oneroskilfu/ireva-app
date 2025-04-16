@@ -6,6 +6,7 @@ import { verifyToken } from '../auth-jwt';
 import * as emailService from '../services/emailService';
 import upload from '../middlewares/upload';
 import path from 'path';
+import AdminLogger from '../services/adminLogger';
 
 const router = express.Router();
 
@@ -252,6 +253,15 @@ router.patch('/:id/verify', verifyToken, async (req, res) => {
         kycRejectionReason: approved ? null : rejectionReason
       })
       .where(eq(users.id, submission.userId));
+
+    // Log the admin action
+    await AdminLogger.logKycVerification(
+      userId,
+      submission.userId,
+      approved ? 'approve' : 'reject',
+      approved ? undefined : rejectionReason,
+      req
+    );
 
     // Create notification for the user
     /*
