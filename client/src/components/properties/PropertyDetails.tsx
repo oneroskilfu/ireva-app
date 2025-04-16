@@ -688,7 +688,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
                     <span>5 minutes to major transportation</span>
                   </div>
                   <div className="flex items-start">
-                    <Store className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
+                    <ShoppingBag className="h-4 w-4 mr-2 text-gray-500 mt-0.5" />
                     <span>Close to shopping and amenities</span>
                   </div>
                 </div>
