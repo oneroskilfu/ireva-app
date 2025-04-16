@@ -37,11 +37,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      // Update the query cache
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Show success message
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
+      
+      // Force a page reload to refresh the app state
+      // This is a more reliable way to handle redirection after login
+      window.location.href = "/dashboard";
     },
     onError: (error: Error) => {
       toast({
@@ -58,11 +65,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      // Update the query cache
       queryClient.setQueryData(["/api/user"], user);
+      
       toast({
         title: "Account created",
         description: "Your account has been successfully created.",
       });
+      
+      // Direct redirect to dashboard
+      window.location.href = "/dashboard";
     },
     onError: (error: Error) => {
       toast({

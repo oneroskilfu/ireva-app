@@ -58,23 +58,13 @@ export default function AuthPage() {
   });
   
   const onLoginSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data, {
-      onSuccess: () => {
-        console.log("Login successful, redirecting to dashboard");
-        // Force a redirect to dashboard on successful login
-        setTimeout(() => navigate("/dashboard"), 100);
-      },
-    });
+    // The redirect is handled in the useAuth hook 
+    loginMutation.mutate(data);
   };
   
   const onRegisterSubmit = (data: RegisterFormValues) => {
-    registerMutation.mutate(data, {
-      onSuccess: () => {
-        console.log("Registration successful, redirecting to dashboard");
-        // Force a redirect to dashboard on successful registration
-        setTimeout(() => navigate("/dashboard"), 100);
-      },
-    });
+    // The redirect is handled in the useAuth hook
+    registerMutation.mutate(data);
   };
   
   // Redirect if already logged in
