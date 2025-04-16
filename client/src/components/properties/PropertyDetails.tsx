@@ -77,10 +77,12 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
   };
   
   const setMaxAmount = () => {
-    // Set a realistic max amount (e.g., 10% of remaining funding or $100k, whichever is smaller)
+    // Maximum investment amount is ₦5,000,000 as specified
+    const maxAmount = 5000000;
+    // Ensure it doesn't exceed remaining funding
     const remainingFunding = property.totalFunding - property.currentFunding;
-    const maxAmount = Math.min(remainingFunding * 0.1, 100000);
-    setInvestmentAmount(formatAmount(Math.max(property.minimumInvestment, Math.floor(maxAmount))));
+    const availableAmount = Math.min(remainingFunding, maxAmount);
+    setInvestmentAmount(formatAmount(Math.max(property.minimumInvestment, Math.floor(availableAmount))));
   };
   
   // Calculate returns based on investment amount
@@ -137,10 +139,24 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
       return;
     }
     
-    if (parseAmount(investmentAmount) < property.minimumInvestment) {
+    const amountValue = parseAmount(investmentAmount);
+    
+    // Check minimum investment amount
+    if (amountValue < property.minimumInvestment) {
       toast({
         title: "Invalid amount",
         description: `Minimum investment is ₦${formatAmount(property.minimumInvestment)}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check maximum investment amount
+    const maxInvestmentAmount = 5000000;
+    if (amountValue > maxInvestmentAmount) {
+      toast({
+        title: "Invalid amount",
+        description: `Maximum investment is ₦${formatAmount(maxInvestmentAmount)}.`,
         variant: "destructive",
       });
       return;
@@ -415,7 +431,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
                       <span className="font-semibold text-xs">1</span>
                     </div>
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">Initial Investment:</span> Minimum investment of ₦{formatAmount(property.minimumInvestment)}. Your capital is pooled with other investors to fund the property.
+                      <span className="font-medium">Initial Investment:</span> Invest between ₦{formatAmount(property.minimumInvestment)} (minimum) and ₦5,000,000 (maximum). Your capital is pooled with other investors to fund the property.
                     </p>
                   </div>
                   
