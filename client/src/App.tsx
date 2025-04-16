@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
@@ -16,16 +16,37 @@ import PressPage from "@/pages/company/press-page";
 import PortfolioPage from "@/pages/portfolio-page";
 import WalletPage from "@/pages/wallet-page";
 import ProfilePage from "@/pages/profile-page";
+import ExplorePage from "@/pages/explore-page";
+import MobileHomePage from "@/pages/mobile-home-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
 function Router() {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Function to check if viewport is mobile
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkIsMobile();
+    
+    // Add event listener for resize
+    window.addEventListener('resize', checkIsMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+  
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
+      <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
       <Route path="/properties/:id" component={PropertyPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
@@ -40,7 +61,7 @@ function Router() {
       <Route path="/company/team" component={TeamPage} />
       <Route path="/company/culture" component={CulturePage} />
       <Route path="/company/press" component={PressPage} />
-      <Route path="/explore" component={HomePage} />
+      <Route path="/explore" component={ExplorePage} />
       <Route component={NotFound} />
     </Switch>
   );
