@@ -14,6 +14,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import roiRoutes from './routes/roiRoutes';
 import faqRoutes from './routes/faq';
+import messageRoutes from './routes/messages';
 import fs from 'fs';
 import path from 'path';
 
@@ -57,6 +58,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up FAQ routes
   app.use('/api/faqs', faqRoutes);
   console.log("FAQ routes registered");
+  
+  // Set up Messaging routes
+  app.use('/api/messages', messageRoutes);
+  console.log("Message routes registered");
   
   // Test route for JWT auth
   app.get('/api/test-jwt', verifyToken, (req, res) => {

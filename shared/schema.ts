@@ -458,6 +458,38 @@ export type InsertWallet = z.infer<typeof insertWalletSchema>;
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
 
+// Message status enum
+export const messageStatusEnum = pgEnum("message_status", [
+  "unread",
+  "read",
+  "archived",
+  "deleted"
+]);
+
+// Messages schema for investor communications
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  receiverId: integer("receiver_id").notNull().references(() => users.id),
+  subject: text("subject"),
+  content: text("content").notNull(),
+  status: messageStatusEnum("status").default("unread"),
+  parentMessageId: integer("parent_message_id"),
+  isSystemMessage: boolean("is_system_message").default(false),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  readAt: timestamp("read_at"),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+  readAt: true,
+});
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
 // Action type enum for admin logs
 export const adminActionEnum = pgEnum("admin_action", [
   "login",
