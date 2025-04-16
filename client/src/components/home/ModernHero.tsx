@@ -360,28 +360,7 @@ export default function ModernHero() {
           </motion.div>
         </motion.div>
         
-        {/* Trusted By */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.6 }}
-          className="mt-20 text-center"
-        >
-          <p className="text-sm text-gray-400 mb-6">Trusted by Industry Leaders</p>
-          <div className="flex flex-wrap justify-center gap-x-10 gap-y-6">
-            {['Prime Bank', 'FCMB', 'Flutterwave', 'Paystack', 'ZenithBank', 'GTBank'].map((name, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 + (i * 0.1) }}
-                className="h-8 px-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center"
-              >
-                <span className="text-sm font-semibold text-white">{name}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+        {/* Trusted By - Moved to separate section */}
         
         {/* Down arrow */}
         <motion.div 
