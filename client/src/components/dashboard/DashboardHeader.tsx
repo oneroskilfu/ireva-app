@@ -145,21 +145,21 @@ export default function DashboardHeader() {
             
             <div className="flex flex-col space-y-1">
               {navItems.map(item => (
-                <Link href={`/${item.id}`} key={item.id}>
-                  <a 
-                    className={`flex items-center px-4 py-3 rounded-lg ${
-                      activeNav === item.id 
-                        ? 'bg-emerald-100 text-emerald-700 font-medium' 
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                    onClick={() => {
-                      setActiveNav(item.id);
-                      setShowMobileMenu(false);
-                    }}
-                  >
-                    <div className="mr-3">{item.icon}</div>
-                    {item.label}
-                  </a>
+                <Link 
+                  href={`/${item.id}`} 
+                  key={item.id}
+                  className={`flex items-center px-4 py-3 rounded-lg ${
+                    activeNav === item.id 
+                      ? 'bg-emerald-100 text-emerald-700 font-medium' 
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    setShowMobileMenu(false);
+                  }}
+                >
+                  <div className="mr-3">{item.icon}</div>
+                  {item.label}
                 </Link>
               ))}
             </div>
@@ -171,18 +171,18 @@ export default function DashboardHeader() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40">
         <div className="grid grid-cols-5 gap-1 p-1">
           {navItems.slice(0, 5).map(item => (
-            <Link href={`/${item.id === 'overview' ? 'dashboard' : item.id}`} key={item.id}>
-              <a 
-                className={`flex flex-col items-center justify-center py-2 rounded-lg ${
-                  activeNav === item.id 
-                    ? 'text-emerald-700' 
-                    : 'text-slate-600'
-                }`}
-                onClick={() => setActiveNav(item.id)}
-              >
-                {item.icon}
-                <span className="text-xs mt-1">{item.label}</span>
-              </a>
+            <Link 
+              href={`/${item.id === 'overview' ? 'dashboard' : item.id}`} 
+              key={item.id}
+              className={`flex flex-col items-center justify-center py-2 rounded-lg ${
+                activeNav === item.id 
+                  ? 'text-emerald-700' 
+                  : 'text-slate-600'
+              }`}
+              onClick={() => setActiveNav(item.id)}
+            >
+              {item.icon}
+              <span className="text-xs mt-1">{item.label}</span>
             </Link>
           ))}
         </div>

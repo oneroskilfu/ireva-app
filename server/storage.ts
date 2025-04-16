@@ -109,16 +109,71 @@ export class MemStorage implements IStorage {
     this.properties = new Map();
     this.investments = new Map();
     this.notifications = new Map();
+    this.directMessages = new Map();
+    this.educationalResources = new Map();
+    this.paymentTransactions = new Map();
+    this.achievementBadges = new Map();
+    this.userAchievements = new Map();
     this.userIdCounter = 1;
     this.propertyIdCounter = 1;
     this.investmentIdCounter = 1;
     this.notificationIdCounter = 1;
+    this.directMessageIdCounter = 1;
+    this.educationalResourceIdCounter = 1;
+    this.paymentTransactionIdCounter = 1;
+    this.achievementBadgeIdCounter = 1;
+    this.userAchievementIdCounter = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
     
     // Seed properties
     this.seedProperties();
+    this.seedTestUser();
+  }
+  
+  private seedTestUser() {
+    const hashedPassword = 'c94d65942a75d7c35cd573f640a6d0579a553f87287b5f31e3280a3f962a22253d9fe0c90a386f85e8b24dedf4bee3cdd502e19d28c70c04c31c4f6c3ee95dde.ceb4c09c9bac3d47749823f3435e33b4';
+    
+    // Create a test user for easy login
+    const testUser: User = {
+      id: this.userIdCounter++,
+      username: 'testuser',
+      password: hashedPassword, // this is the hashed value of 'password123'
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      phoneNumber: '08012345678',
+      isPhoneVerified: true,
+      createdAt: new Date(),
+      kycStatus: 'verified',
+      kycDocuments: null,
+      kycRejectionReason: null,
+      kycSubmittedAt: new Date(),
+      kycVerifiedAt: new Date(),
+      accreditationLevel: 'advanced',
+      accreditationDocuments: null,
+      accreditationVerifiedAt: new Date(),
+      profileImage: null,
+      walletBalance: 50000,
+      referralCode: 'TEST123',
+      referredBy: null,
+      rewardsPoints: 100,
+      preferences: null,
+      notificationSettings: null,
+      role: 'investor',
+      status: 'active',
+      lastLoginAt: null,
+      deletedAt: null,
+      verifiedEmail: true,
+      investmentStyle: 'moderate',
+      riskTolerance: 'medium',
+      investmentGoals: null,
+      totalInvested: 25000,
+      totalReturns: 5000
+    };
+    
+    this.users.set(testUser.id, testUser);
   }
 
   // User methods
