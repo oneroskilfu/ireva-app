@@ -350,7 +350,7 @@ export default function AuthPage() {
                   <p className="text-gray-600">Your gateway to premium real estate investments in Nigeria</p>
                 </div>
                 
-                {/* Financial Dashboard SVG Illustration */}
+                {/* Combined Dashboard and Character Illustration */}
                 <div className="w-80 h-80 relative mb-6">
                   <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
                     {/* Dashboard Frame */}
@@ -402,17 +402,26 @@ export default function AuthPage() {
                     <text x="190" y="220" fontFamily="Arial" fontSize="12" fill="#0c1b46">Investment Growth (5 Years)</text>
                     
                     {/* Property Icons */}
-                    <rect x="130" y="320" width="240" height="100" rx="10" fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
+                    <rect x="130" y="320" width="240" height="60" rx="10" fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
                     
                     {/* Property 1 */}
-                    <rect x="150" y="340" width="80" height="60" rx="5" fill="#eafffd" />
-                    <polygon points="160,350 190,335 220,350 220,375 160,375" fill="#16b5a0" />
-                    <text x="160" y="390" fontFamily="Arial" fontSize="10" fill="#0c1b46">Skyline Apts</text>
+                    <rect x="150" y="330" width="80" height="40" rx="5" fill="#eafffd" />
+                    <polygon points="160,338 190,325 220,338 220,360 160,360" fill="#16b5a0" />
+                    <text x="160" y="375" fontFamily="Arial" fontSize="10" fill="#0c1b46">Skyline Apts</text>
                     
                     {/* Property 2 */}
-                    <rect x="250" y="340" width="80" height="60" rx="5" fill="#eafffd" />
-                    <polygon points="260,350 290,335 320,350 320,375 260,375" fill="#0c1b46" />
-                    <text x="260" y="390" fontFamily="Arial" fontSize="10" fill="#0c1b46">Lekki Gardens</text>
+                    <rect x="250" y="330" width="80" height="40" rx="5" fill="#eafffd" />
+                    <polygon points="260,338 290,325 320,338 320,360 260,360" fill="#0c1b46" />
+                    <text x="260" y="375" fontFamily="Arial" fontSize="10" fill="#0c1b46">Lekki Gardens</text>
+                    
+                    {/* Character - Person */}
+                    <circle cx="420" cy="315" r="35" fill="#774421" /> {/* Head */}
+                    <rect x="403" y="350" width="35" height="80" rx="8" fill="#5a67d8" /> {/* Body */}
+                    <rect x="390" y="360" width="12" height="50" rx="4" fill="#774421" /> {/* Left arm */}
+                    
+                    {/* Right arm pointing at dashboard */}
+                    <line x1="440" y1="365" x2="400" y2="180" stroke="#774421" strokeWidth="12" strokeLinecap="round" />
+                    <circle cx="400" cy="180" r="6" fill="#774421" /> {/* Hand */}
                   </svg>
                 </div>
                 
