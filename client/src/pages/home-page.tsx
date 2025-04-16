@@ -1,5 +1,6 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import AppDownload from "@/components/layout/AppDownload";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Property } from "@shared/schema";
@@ -207,6 +208,7 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+      <AppDownload />
       <Footer />
     </div>
   );
