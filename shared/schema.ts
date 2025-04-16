@@ -526,3 +526,41 @@ export const insertFaqSchema = createInsertSchema(faqs).omit({
 
 export type Faq = typeof faqs.$inferSelect;
 export type InsertFaq = z.infer<typeof insertFaqSchema>;
+
+// Transaction type enum
+export const transactionActionEnum = pgEnum("transaction_action", [
+  "deposit",
+  "withdrawal",
+  "investment", 
+  "divestment",
+  "return",
+  "fee",
+  "transfer",
+  "referral_bonus"
+]);
+
+// Transaction schema for financial activity logging
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: transactionActionEnum("type").notNull(),
+  amount: integer("amount").notNull(),
+  description: text("description").notNull(),
+  reference: text("reference"),
+  metadata: jsonb("metadata"),
+  status: text("status").default("completed"),
+  propertyId: integer("property_id"),
+  investmentId: integer("investment_id"),
+  walletId: integer("wallet_id"),
+  balanceBefore: integer("balance_before"),
+  balanceAfter: integer("balance_after"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
