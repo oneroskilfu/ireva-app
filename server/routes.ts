@@ -32,6 +32,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all properties
   app.get("/api/properties", async (req, res) => {
     try {
+      console.log("API request received: GET /api/properties with query:", req.query);
+      
       const type = req.query.type as string | undefined;
       const location = req.query.location as string | undefined;
       const search = req.query.search as string | undefined;
@@ -47,8 +49,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         properties = await storage.getAllProperties();
       }
 
+      console.log(`API response for GET /api/properties: Found ${properties.length} properties`);
+      
       res.json(properties);
     } catch (error) {
+      console.error("Error in /api/properties:", error);
       res.status(500).json({ message: "Failed to fetch properties" });
     }
   });
