@@ -47,12 +47,12 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-amber-50">
       {/* Admin Sidebar */}
       <div className="w-64 bg-white shadow-md">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b border-amber-200">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-[#16b5a0] text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#8B4513] text-white flex items-center justify-center">
               <Building className="h-5 w-5" />
             </div>
             <div>
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
           <div className="px-4 py-2 text-xs font-semibold text-gray-500">MAIN</div>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "overview" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "overview" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("overview")}
           >
@@ -179,7 +179,18 @@ export default function AdminDashboard() {
 
         {/* Dashboard Content */}
         <div className="p-6">
-          <TabsContent value="overview" className={activeTab === "overview" ? "block" : "hidden"}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="hidden">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="properties">Properties</TabsTrigger>
+              <TabsTrigger value="investments">Investments</TabsTrigger>
+              <TabsTrigger value="kyc">KYC</TabsTrigger>
+              <TabsTrigger value="payments">Payments</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="help">Help</TabsTrigger>
+            </TabsList>
+            <TabsContent value="overview">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <Card>
                 <CardHeader className="pb-2">
@@ -301,7 +312,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="users" className={activeTab === "users" ? "block" : "hidden"}>
+          <TabsContent value="users">
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
@@ -313,7 +324,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="properties" className={activeTab === "properties" ? "block" : "hidden"}>
+          <TabsContent value="properties">
             <Card>
               <CardHeader>
                 <CardTitle>Property Management</CardTitle>
@@ -325,7 +336,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="investments" className={activeTab === "investments" ? "block" : "hidden"}>
+          <TabsContent value="investments">
             <Card>
               <CardHeader>
                 <CardTitle>Investment Monitoring</CardTitle>
@@ -337,7 +348,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="kyc" className={activeTab === "kyc" ? "block" : "hidden"}>
+          <TabsContent value="kyc">
             <Card>
               <CardHeader>
                 <CardTitle>KYC Verification Queue</CardTitle>
@@ -349,7 +360,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="payments" className={activeTab === "payments" ? "block" : "hidden"}>
+          <TabsContent value="payments">
             <Card>
               <CardHeader>
                 <CardTitle>Payment Transactions</CardTitle>
@@ -361,7 +372,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings" className={activeTab === "settings" ? "block" : "hidden"}>
+          <TabsContent value="settings">
             <Card>
               <CardHeader>
                 <CardTitle>System Settings</CardTitle>
@@ -373,7 +384,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="help" className={activeTab === "help" ? "block" : "hidden"}>
+          <TabsContent value="help">
             <Card>
               <CardHeader>
                 <CardTitle>Help & Documentation</CardTitle>
@@ -384,6 +395,7 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
