@@ -63,7 +63,7 @@ export default function InvestorLayout({ children }: InvestorLayoutProps) {
     logoutMutation.mutate();
   };
 
-  return (
+  const Sidebar = ({ children }: { children: ReactNode }) => (
     <div className="flex h-screen">
       {/* Desktop Sidebar */}
       <div className={`border-r bg-background/95 backdrop-blur-sm ${sidebarOpen ? 'w-64' : 'w-20'} h-screen hidden md:flex flex-col transition-all`}>
@@ -186,66 +186,78 @@ export default function InvestorLayout({ children }: InvestorLayoutProps) {
         </SheetContent>
       </Sheet>
       
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top nav for desktop */}
-        <header className="hidden md:flex h-16 items-center justify-between border-b px-6">
-          <h1 className="text-xl font-semibold">
-            {navItems.find(item => isActive(item.href))?.name || 'Dashboard'}
-          </h1>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="icon" className="relative">
-              <Bell size={18} />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-            </Button>
-            
-            <Button variant="outline" size="icon">
-              <HelpCircle size={18} />
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={user?.username || 'User'} />
-                    <AvatarFallback>
-                      {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>{user?.firstName} {user?.lastName}</span>
-                  <ChevronDown size={16} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/investor/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/investor/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-        
-        {/* Content */}
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
-      </div>
+      {children}
     </div>
+  );
+
+  const Topbar = () => (
+    <header className="h-16 items-center justify-between border-b px-6 hidden md:flex">
+      <h1 className="text-xl font-semibold">
+        {navItems.find(item => isActive(item.href))?.name || 'Dashboard'}
+      </h1>
+      <div className="flex items-center space-x-4">
+        <Button variant="outline" size="icon" className="relative">
+          <Bell size={18} />
+          <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+        </Button>
+        
+        <Button variant="outline" size="icon">
+          <HelpCircle size={18} />
+        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="" alt={user?.username || 'User'} />
+                <AvatarFallback>
+                  {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span>{user?.firstName} {user?.lastName}</span>
+              <ChevronDown size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/investor/profile">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/investor/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  );
+  
+  const Content = ({ children }: { children: ReactNode }) => (
+    <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <Topbar />
+      <main className="flex-1 overflow-auto p-6">
+        {children}
+      </main>
+    </div>
+  );
+
+  return (
+    <Sidebar>
+      <Content>
+        {children}
+      </Content>
+    </Sidebar>
   );
 }

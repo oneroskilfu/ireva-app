@@ -1,67 +1,71 @@
-import { ReactNode, useEffect, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { Redirect, useLocation } from "wouter";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState, ReactNode } from 'react';
+import { Redirect, useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+import { hasRole, UserRole } from '@/shared/guards';
+import { Loader2 } from 'lucide-react';
 
-interface ProtectedRouteProps {
+interface AuthMiddlewareProps {
   children: ReactNode;
-  requiredRoles?: string[];
+  requiredRoles: UserRole | UserRole[];
+  redirectTo?: string;
 }
 
 /**
- * Component to protect routes based on authentication and role
+ * Component to protect routes based on user roles
+ * If the user is not logged in or doesn't have the required role, they are redirected
  */
-export function ProtectedRoute({ children, requiredRoles = [] }: ProtectedRouteProps) {
+const AuthMiddleware = ({
+  children,
+  requiredRoles,
+  redirectTo = '/auth',
+}: AuthMiddlewareProps) => {
   const { user, isLoading } = useAuth();
-  const [, navigate] = useLocation();
-  const [authorized, setAuthorized] = useState<boolean | null>(null);
-
+  const [, setLocation] = useLocation();
+  const [checking, setChecking] = useState(true);
+  
   useEffect(() => {
-    console.log("Protected route check - User:", user, "Required roles:", requiredRoles);
-    
+    // Wait for auth to initialize
     if (!isLoading) {
-      // Not authenticated
       if (!user) {
-        console.log("User not authenticated, redirecting to login");
-        setAuthorized(false);
-        return;
+        console.log('No authenticated user found. Redirecting to login...');
+        setLocation(redirectTo);
+      } else {
+        const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+        
+        if (!hasRole(user, roles)) {
+          console.log('User does not have required role. Current role:', user.role);
+          console.log('Required roles:', roles);
+          // Redirect to dashboard or another appropriate page based on their actual role
+          if (user.role === 'admin' || user.role === 'super_admin') {
+            setLocation('/admin');
+          } else {
+            setLocation('/dashboard');
+          }
+        }
       }
-      
-      // No specific roles required or user has required role
-      if (requiredRoles.length === 0 || (user && user.role && requiredRoles.includes(user.role))) {
-        console.log("User authorized");
-        setAuthorized(true);
-        return;
-      }
-      
-      // User doesn't have required role
-      console.log("User doesn't have required role, redirecting");
-      setAuthorized(false);
+      setChecking(false);
     }
-  }, [user, isLoading, requiredRoles, navigate]);
+  }, [user, isLoading, requiredRoles, redirectTo, setLocation]);
 
-  if (isLoading) {
+  // Show loading state
+  if (isLoading || checking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Verifying access...</p>
+        </div>
       </div>
     );
   }
 
-  if (authorized === false) {
-    return <Redirect to={user ? "/" : "/auth"} />;
-  }
-
-  if (authorized === true) {
+  // If we're still here and user has the required role, render children
+  if (user && hasRole(user, requiredRoles)) {
     return <>{children}</>;
   }
 
-  // Still determining authorization state
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
-}
+  // Default fallback - shouldn't reach here due to redirects in useEffect
+  return <Redirect to={redirectTo} />;
+};
 
-export default ProtectedRoute;
+export default AuthMiddleware;
