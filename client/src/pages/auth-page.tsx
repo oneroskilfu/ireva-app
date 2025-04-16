@@ -345,10 +345,38 @@ export default function AuthPage() {
           <div className="hidden md:block md:w-1/2 bg-white p-12">
             <div className="h-full flex items-center justify-center">
               <div className="flex flex-col items-center">
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                   <h2 className="text-3xl font-bold text-[#0c1b46] mb-3">Welcome to iREVA</h2>
                   <p className="text-gray-600">Your gateway to premium real estate investments in Nigeria</p>
                 </div>
+                
+                {/* Simple SVG illustration of a person using iREVA */}
+                <div className="w-64 h-64 relative mb-6">
+                  <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+                    {/* Device/Screen */}
+                    <rect x="150" y="100" width="200" height="140" rx="10" fill="#0c1b46" />
+                    <rect x="160" y="110" width="180" height="120" rx="5" fill="#ffffff" />
+                    
+                    {/* App UI on screen */}
+                    <rect x="170" y="120" width="160" height="25" rx="4" fill="#16b5a0" />
+                    <rect x="175" y="130" width="70" height="5" rx="2" fill="#ffffff" />
+                    
+                    {/* Property cards */}
+                    <rect x="175" y="155" width="65" height="65" rx="5" fill="#eafffd" />
+                    <rect x="250" y="155" width="65" height="65" rx="5" fill="#eafffd" />
+                    
+                    {/* Person */}
+                    <circle cx="300" cy="300" r="50" fill="#774421" /> {/* Head */}
+                    <rect x="275" y="350" width="50" height="100" rx="10" fill="#5a67d8" /> {/* Body */}
+                    <rect x="260" y="350" width="15" height="70" rx="5" fill="#774421" /> {/* Left arm */}
+                    <rect x="325" y="350" width="15" height="85" rx="5" fill="#774421" /> {/* Right arm pointing at screen */}
+                    
+                    {/* House icon */}
+                    <polygon points="250,50 200,90 200,150 300,150 300,90" fill="#16b5a0" />
+                    <rect x="230" y="120" width="40" height="30" fill="#0c1b46" />
+                  </svg>
+                </div>
+                
                 <div className="bg-blue-100 rounded-xl w-full max-w-md p-6 shadow-inner">
                   <div className="space-y-4">
                     <div className="flex items-start">
