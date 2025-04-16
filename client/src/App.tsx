@@ -50,9 +50,13 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
-      <Route path="/properties/:id" component={PropertyPage} />
       <Route path="/properties" component={PropertiesPage} />
-      <Route path="/properties/:type" component={PropertiesPage} />
+      <Route path="/properties/residential" component={PropertiesPage} />
+      <Route path="/properties/commercial" component={PropertiesPage} />
+      <Route path="/properties/industrial" component={PropertiesPage} />
+      <Route path="/properties/mixed-use" component={PropertiesPage} />
+      <Route path="/properties/land" component={PropertiesPage} />
+      <Route path="/properties/:id(\d+)" component={PropertyPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/jwt-test" component={JwtTestPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} requiredRole="user" />
