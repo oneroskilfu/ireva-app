@@ -83,8 +83,8 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eafffd] to-[#dafbf7] p-4">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-lg overflow-hidden">
         <div className="flex flex-col md:flex-row">
-          {/* Left side - Login Form */}
-          <div className="w-full md:w-1/2 p-8 md:p-12">
+          {/* Login Form */}
+          <div className="w-full p-8 md:p-12">
             <div className="mb-8 flex items-center">
               <div className="w-8 h-8 rounded-full bg-[#16b5a0] text-white flex items-center justify-center mr-2">
                 <Info className="h-5 w-5" />
@@ -400,122 +400,7 @@ export default function AuthPage() {
             )}
           </div>
           
-          {/* Right side - Illustration */}
-          <div className="hidden md:block md:w-1/2 bg-white p-12">
-            <div className="h-full flex items-center justify-center">
-              <div className="flex flex-col items-center">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold text-[#0c1b46] mb-3">Welcome to iREVA</h2>
-                  <p className="text-gray-600">Your gateway to premium real estate investments in Nigeria</p>
-                </div>
-                
-                {/* Character Illustration Similar to attached_assets/login front.webp */}
-                <div className="w-80 h-80 relative mb-6">
-                  <svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
-                    {/* Room Background */}
-                    <rect x="50" y="50" width="400" height="300" rx="5" fill="#ffffff" />
-                    
-                    {/* Window */}
-                    <rect x="350" y="80" width="80" height="120" rx="2" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
-                    <line x1="390" y1="80" x2="390" y2="200" stroke="#e2e8f0" strokeWidth="2" />
-                    <line x1="350" y1="140" x2="430" y2="140" stroke="#e2e8f0" strokeWidth="2" />
-                    
-                    {/* Floor */}
-                    <rect x="50" y="250" width="400" height="100" fill="#f8fafc" />
-                    <line x1="50" y1="250" x2="450" y2="250" stroke="#e2e8f0" strokeWidth="1" />
-                    
-                    {/* Lamp */}
-                    <rect x="300" y="90" width="10" height="80" fill="#0c1b46" />
-                    <path d="M280,90 L330,90 L315,60 L295,60 Z" fill="#0c1b46" />
-                    
-                    {/* Plant */}
-                    <rect x="430" y="220" width="15" height="30" fill="#16b5a0" />
-                    <path d="M430,220 C420,210 425,190 440,200 C455,190 460,210 445,220" fill="#16b5a0" />
-                    <path d="M425,210 C415,200 420,180 435,190" fill="#16b5a0" />
-                    <path d="M450,210 C460,200 455,180 440,190" fill="#16b5a0" />
-                    
-                    {/* Bean Bag Chair */}
-                    <ellipse cx="200" cy="280" rx="70" ry="30" fill="#16b5a0" opacity="0.7" />
-                    <ellipse cx="200" cy="260" rx="60" ry="40" fill="#16b5a0" />
-                    
-                    {/* Person */}
-                    {/* Head with glasses */}
-                    <circle cx="220" cy="170" r="25" fill="#64748b" />
-                    <rect x="205" y="165" width="30" height="10" rx="2" fill="#0c1b46" />
-                    <line x1="205" y1="170" x2="195" y2="175" stroke="#0c1b46" strokeWidth="1" />
-                    <line x1="235" y1="170" x2="245" y2="175" stroke="#0c1b46" strokeWidth="1" />
-                    
-                    {/* Body - Business suit */}
-                    <path d="M210,195 L230,195 L235,260 L205,260 Z" fill="#1e293b" />
-                    <rect x="215" y="195" width="10" height="30" fill="#f8fafc" /> {/* Shirt */}
-                    
-                    {/* Arms */}
-                    <path d="M210,200 L185,230 L190,235 L215,215 Z" fill="#64748b" /> {/* Left arm */}
-                    <path d="M230,200 L260,230 L255,235 L225,215 Z" fill="#64748b" /> {/* Right arm */}
-                    
-                    {/* Legs */}
-                    <path d="M210,260 L200,310 L215,310 L220,260 Z" fill="#1e293b" /> {/* Left leg */}
-                    <path d="M220,260 L225,310 L240,310 L230,260 Z" fill="#1e293b" /> {/* Right leg */}
-                    
-                    {/* Laptop */}
-                    <rect x="190" y="230" width="60" height="40" rx="2" fill="#0c1b46" /> {/* Base */}
-                    <rect x="195" y="235" width="50" height="30" rx="1" fill="#ffffff" /> {/* Screen */}
-                    <rect x="190" y="270" width="60" height="5" rx="1" fill="#1e293b" /> {/* Base bottom */}
-                    
-                    {/* Screen content - iREVA Dashboard */}
-                    <rect x="200" y="240" width="40" height="5" rx="1" fill="#16b5a0" />
-                    <rect x="200" y="250" width="20" height="3" rx="1" fill="#0c1b46" />
-                    <rect x="225" y="250" width="10" height="3" rx="1" fill="#0c1b46" />
-                    <rect x="200" y="255" width="40" height="3" rx="1" fill="#0c1b46" />
-                    
-                    {/* Coffee Cup */}
-                    <rect x="145" y="250" width="10" height="15" rx="1" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
-                    <path d="M145,255 C140,255 140,260 145,260" fill="none" stroke="#e2e8f0" strokeWidth="1" />
-                    <path d="M150,250 C155,245 155,240 150,240 L145,240 L145,250 Z" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
-                    <path d="M146,245 C146,244 149,244 149,245" fill="none" stroke="#e2e8f0" strokeWidth="1" /> {/* Steam */}
-                  </svg>
-                </div>
-                
-                <div className="bg-blue-100 rounded-xl w-full max-w-md p-6 shadow-inner">
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <div className="rounded-full p-2 bg-blue-200 mr-4 text-blue-700">
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-blue-900">Diverse Investment Options</h3>
-                        <p className="text-sm text-blue-800">Start investing with as little as ₦100,000</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="rounded-full p-2 bg-blue-200 mr-4 text-blue-700">
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-blue-900">Transparent Returns</h3>
-                        <p className="text-sm text-blue-800">Track your investments with detailed analytics</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="rounded-full p-2 bg-blue-200 mr-4 text-blue-700">
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-blue-900">Professional Management</h3>
-                        <p className="text-sm text-blue-800">Properties managed by industry experts</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
