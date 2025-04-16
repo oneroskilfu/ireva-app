@@ -1,131 +1,24 @@
 import { get, post, patch } from './api';
 import { User } from '@shared/schema';
 
-export interface KycSubmission {
-  idType: string;
-  idNumber: string;
-  addressProofType: string;
-  bvn: string;
-  nationality: string;
-  dateOfBirth: Date;
-  documents: any; // File uploads would need a FormData implementation
-}
-
-export interface ProfileUpdate {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phoneNumber?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  occupation?: string;
-  bio?: string;
-}
-
 /**
- * Service for managing user-related operations
+ * Service for managing users
  */
 const userService = {
-  /**
-   * Get the user's profile
-   */
-  getUserProfile: async (): Promise<User> => {
-    const response = await get<User>('/auth/user');
-    return response.data;
-  },
-
-  /**
-   * Update user profile information
-   * @param profileData - Profile data to update
-   */
-  updateProfile: async (profileData: ProfileUpdate): Promise<User> => {
-    const response = await patch<User>('/user/profile', profileData);
-    return response.data;
-  },
-
-  /**
-   * Submit KYC verification documents
-   * @param kycData - KYC submission data
-   */
-  submitKyc: async (kycData: KycSubmission): Promise<User> => {
-    // For file uploads, we would need to use FormData
-    const formData = new FormData();
-    
-    // Append JSON data as a string
-    formData.append('data', JSON.stringify({
-      idType: kycData.idType,
-      idNumber: kycData.idNumber,
-      addressProofType: kycData.addressProofType,
-      bvn: kycData.bvn,
-      nationality: kycData.nationality,
-      dateOfBirth: kycData.dateOfBirth,
-    }));
-    
-    // Append files if they exist
-    if (kycData.documents) {
-      Object.keys(kycData.documents).forEach(key => {
-        formData.append(key, kycData.documents[key]);
-      });
-    }
-    
-    const response = await post<User>('/user/kyc', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    return response.data;
-  },
-
-  /**
-   * Update user phone number
-   * @param phoneNumber - New phone number
-   */
-  updatePhoneNumber: async (phoneNumber: string): Promise<User> => {
-    const response = await patch<User>('/user/phone', { phoneNumber });
-    return response.data;
-  },
-
-  /**
-   * Verify phone number with OTP
-   * @param otp - OTP code
-   */
-  verifyPhone: async (otp: string): Promise<{ success: boolean }> => {
-    const response = await post<{ success: boolean }>('/user/verify-phone', { otp });
-    return response.data;
-  },
-
-  /**
-   * Update user accreditation level
-   * @param level - Accreditation level
-   * @param documents - Supporting documents
-   */
-  updateAccreditation: async (level: string, documents?: any): Promise<User> => {
-    const formData = new FormData();
-    formData.append('level', level);
-    
-    if (documents) {
-      Object.keys(documents).forEach(key => {
-        formData.append(key, documents[key]);
-      });
-    }
-    
-    const response = await post<User>('/user/accreditation', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    return response.data;
-  },
-
   /**
    * Get all users (admin only)
    */
   getAllUsers: async (): Promise<User[]> => {
     const response = await get<User[]>('/admin/users');
+    return response.data;
+  },
+
+  /**
+   * Get user by ID (admin only)
+   * @param id - User ID
+   */
+  getUserById: async (id: number): Promise<User> => {
+    const response = await get<User>(`/admin/users/${id}`);
     return response.data;
   },
 
@@ -139,30 +32,164 @@ const userService = {
   },
 
   /**
-   * Update user KYC status (admin only)
-   * @param userId - User ID
-   * @param status - KYC status
-   * @param rejectionReason - Reason for rejection (if applicable)
+   * Update user role (admin only)
+   * @param id - User ID
+   * @param role - New role
    */
-  updateUserKycStatus: async (
-    userId: number, 
-    status: string, 
-    rejectionReason?: string
-  ): Promise<User> => {
-    const response = await patch<User>(`/admin/kyc/${userId}/verify`, { 
-      status, 
-      rejectionReason 
-    });
+  updateUserRole: async (id: number, role: string): Promise<User> => {
+    const response = await patch<User>(`/admin/users/${id}/role`, { role });
     return response.data;
   },
 
   /**
-   * Update user role (admin only)
+   * Verify user KYC (admin only)
    * @param userId - User ID
-   * @param role - New role
+   * @param verified - Verification status
+   * @param rejectionReason - Optional reason for rejection
    */
-  updateUserRole: async (userId: number, role: string): Promise<User> => {
-    const response = await patch<User>(`/admin/users/${userId}/role`, { role });
+  verifyUserKyc: async (
+    userId: number,
+    verified: boolean,
+    rejectionReason?: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await patch<{ success: boolean; message: string }>(
+      `/admin/kyc/${userId}/verify`,
+      {
+        verified,
+        rejectionReason,
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Update user profile
+   * @param profileData - Profile data
+   */
+  updateProfile: async (profileData: Partial<User>): Promise<User> => {
+    const response = await patch<User>('/user/profile', profileData);
+    return response.data;
+  },
+
+  /**
+   * Update user phone number
+   * @param phoneNumber - New phone number
+   */
+  updatePhoneNumber: async (phoneNumber: string): Promise<{ success: boolean; message: string }> => {
+    const response = await patch<{ success: boolean; message: string }>(
+      '/user/phone',
+      { phoneNumber }
+    );
+    return response.data;
+  },
+
+  /**
+   * Verify phone number with OTP
+   * @param otp - One-time password
+   */
+  verifyPhoneOtp: async (otp: string): Promise<{ success: boolean; message: string }> => {
+    const response = await post<{ success: boolean; message: string }>(
+      '/user/phone/verify',
+      { otp }
+    );
+    return response.data;
+  },
+
+  /**
+   * Update user accreditation level
+   * @param level - Accreditation level
+   * @param documents - Supporting documents
+   */
+  updateAccreditation: async (
+    level: string,
+    documents?: any
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await patch<{ success: boolean; message: string }>(
+      '/user/accreditation',
+      { level, documents }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get user achievements
+   */
+  getUserAchievements: async (): Promise<any[]> => {
+    const response = await get<any[]>('/user/achievements');
+    return response.data;
+  },
+
+  /**
+   * Get user referral info
+   */
+  getReferralInfo: async (): Promise<{
+    referralCode: string;
+    referrals: any[];
+    totalRewards: number;
+  }> => {
+    const response = await get<{
+      referralCode: string;
+      referrals: any[];
+      totalRewards: number;
+    }>('/user/referrals');
+    return response.data;
+  },
+
+  /**
+   * Submit a referral code
+   * @param referralCode - Referral code
+   */
+  submitReferralCode: async (
+    referralCode: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await post<{ success: boolean; message: string }>(
+      '/user/referrals/submit',
+      { referralCode }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get user dashboard statistics
+   */
+  getDashboardStats: async (): Promise<{
+    totalInvested: number;
+    portfolioValue: number;
+    totalEarnings: number;
+    activeInvestments: number;
+    propertyCount: number;
+    recentActivities: any[];
+  }> => {
+    const response = await get<{
+      totalInvested: number;
+      portfolioValue: number;
+      totalEarnings: number;
+      activeInvestments: number;
+      propertyCount: number;
+      recentActivities: any[];
+    }>('/user/dashboard/stats');
+    return response.data;
+  },
+
+  /**
+   * Get admin dashboard statistics (admin only)
+   */
+  getAdminDashboardStats: async (): Promise<{
+    totalUsers: number;
+    totalInvestments: number;
+    totalProperties: number;
+    pendingKyc: number;
+    totalInvestmentValue: number;
+    recentActivities: any[];
+  }> => {
+    const response = await get<{
+      totalUsers: number;
+      totalInvestments: number;
+      totalProperties: number;
+      pendingKyc: number;
+      totalInvestmentValue: number;
+      recentActivities: any[];
+    }>('/admin/dashboard/stats');
     return response.data;
   },
 };

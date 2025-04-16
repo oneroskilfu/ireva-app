@@ -1,300 +1,290 @@
-import { useState, ReactNode } from 'react';
-import { Link, useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
-import { 
-  Home, 
-  Users, 
-  Building2, 
-  DollarSign, 
-  FileText, 
-  Settings, 
-  Bell, 
-  BarChart, 
-  CheckSquare, 
-  Menu, 
-  LogOut, 
-  ChevronDown, 
-  Activity,
-  BookOpen,
-  MessageSquare,
-  Lock
-} from 'lucide-react';
+import { ReactNode, useState } from "react";
+import { Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import {
+  LayoutDashboard,
+  Users,
+  Building,
+  FileText,
+  ClipboardCheck,
+  BarChart3,
+  MessageSquare,
+  HelpCircle,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Bell,
+  User
+} from "lucide-react";
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user, logout } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Define navigation items
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   const navItems = [
-    { name: 'Dashboard', href: '/admin', icon: <Home size={20} /> },
-    { name: 'Users', href: '/admin/users', icon: <Users size={20} /> },
-    { name: 'KYC Verification', href: '/admin/kyc', icon: <CheckSquare size={20} /> },
-    { name: 'Properties', href: '/admin/properties', icon: <Building2 size={20} /> },
-    { name: 'Investments', href: '/admin/investments', icon: <DollarSign size={20} /> },
-    { name: 'ROI Tracking', href: '/admin/roi', icon: <BarChart size={20} /> },
-    { name: 'Educational Content', href: '/admin/educational-resources', icon: <BookOpen size={20} /> },
-    { name: 'Payment Transactions', href: '/admin/transactions', icon: <Activity size={20} /> },
-    { name: 'Forum Moderation', href: '/admin/forum', icon: <MessageSquare size={20} /> },
+    { path: "/admin", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { path: "/admin/users", label: "Users", icon: <Users className="w-5 h-5" /> },
+    { path: "/admin/properties", label: "Properties", icon: <Building className="w-5 h-5" /> },
+    { path: "/admin/kyc", label: "KYC Verification", icon: <ClipboardCheck className="w-5 h-5" /> },
+    { path: "/admin/investments", label: "Investments", icon: <BarChart3 className="w-5 h-5" /> },
+    { path: "/admin/documents", label: "Documents", icon: <FileText className="w-5 h-5" /> },
+    { path: "/admin/messages", label: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
+    { path: "/admin/support", label: "Support", icon: <HelpCircle className="w-5 h-5" /> },
+    { path: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
   ];
 
-  // Super admin specific items
-  const superAdminItems = [
-    { name: 'System Settings', href: '/admin/settings', icon: <Settings size={20} /> },
-    { name: 'Activity Logs', href: '/admin/logs', icon: <FileText size={20} /> },
-    { name: 'Security', href: '/admin/security', icon: <Lock size={20} /> },
-  ];
+  const initials = user?.firstName && user?.lastName 
+    ? `${user.firstName[0]}${user.lastName[0]}` 
+    : user?.username?.substring(0, 2).toUpperCase() || 'AD';
 
-  // Check if the given route is active
-  const isActive = (path: string) => {
-    return location === path || (path !== '/admin' && location.startsWith(path));
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
-
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
-
-  const Sidebar = ({ children }: { children: ReactNode }) => (
-    <div className="flex h-screen">
-      {/* Desktop Sidebar */}
-      <div className={`border-r bg-background/95 backdrop-blur-sm ${sidebarOpen ? 'w-64' : 'w-20'} h-screen hidden md:flex flex-col transition-all`}>
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center">
-            <img src="/logo.svg" alt="iREVA" className="h-8 w-8 text-primary" />
-            {sidebarOpen && <span className="ml-2 font-semibold text-xl">iREVA Admin</span>}
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full" 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu size={20} />
-          </Button>
-        </div>
-        
-        <ScrollArea className="flex-1">
-          <nav className="flex flex-col gap-1 p-4">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button 
-                  variant={isActive(item.href) ? "secondary" : "ghost"}
-                  size={sidebarOpen ? "default" : "icon"}
-                  className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
-                >
-                  {item.icon}
-                  {sidebarOpen && <span className="ml-2">{item.name}</span>}
-                </Button>
-              </Link>
-            ))}
-            
-            {user?.role === 'super_admin' && (
-              <>
-                {sidebarOpen && (
-                  <div className="mt-4 mb-2 px-3">
-                    <p className="text-xs font-semibold text-muted-foreground">SUPER ADMIN</p>
-                  </div>
-                )}
-                
-                {superAdminItems.map((item) => (
-                  <Link key={item.href} href={item.href}>
-                    <Button 
-                      variant={isActive(item.href) ? "secondary" : "ghost"}
-                      size={sidebarOpen ? "default" : "icon"}
-                      className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
-                    >
-                      {item.icon}
-                      {sidebarOpen && <span className="ml-2">{item.name}</span>}
-                    </Button>
-                  </Link>
-                ))}
-              </>
-            )}
-          </nav>
-        </ScrollArea>
-        
-        <div className="border-t p-4">
-          {sidebarOpen ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user?.username || 'User'} />
-                  <AvatarFallback>
-                    {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="ml-2">
-                  <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-muted-foreground">{user?.role}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut size={18} />
-              </Button>
-            </div>
-          ) : (
-            <Button variant="ghost" size="icon" className="w-full" onClick={handleLogout}>
-              <LogOut size={18} />
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {/* Mobile Sidebar */}
-      <Sheet>
-        <div className="md:hidden flex items-center border-b h-16 px-4">
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="mr-4">
-              <Menu size={20} />
-            </Button>
-          </SheetTrigger>
-          <div className="flex items-center">
-            <img src="/logo.svg" alt="iREVA" className="h-8 w-8 text-primary" />
-            <span className="ml-2 font-semibold text-xl">iREVA Admin</span>
-          </div>
-        </div>
-        
-        <SheetContent side="left" className="p-0">
-          <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center">
-              <img src="/logo.svg" alt="iREVA" className="h-8 w-8 text-primary" />
-              <span className="ml-2 font-semibold text-xl">iREVA Admin</span>
-            </div>
-          </div>
-          
-          <ScrollArea className="h-[calc(100vh-8rem)]">
-            <nav className="flex flex-col gap-1 p-4">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button 
-                    variant={isActive(item.href) ? "secondary" : "ghost"}
-                    className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
-                  >
-                    {item.icon}
-                    <span className="ml-2">{item.name}</span>
-                  </Button>
-                </Link>
-              ))}
-              
-              {user?.role === 'super_admin' && (
-                <>
-                  <div className="mt-4 mb-2 px-3">
-                    <p className="text-xs font-semibold text-muted-foreground">SUPER ADMIN</p>
-                  </div>
-                  
-                  {superAdminItems.map((item) => (
-                    <Link key={item.href} href={item.href}>
-                      <Button 
-                        variant={isActive(item.href) ? "secondary" : "ghost"}
-                        className={`w-full justify-start ${isActive(item.href) ? 'font-medium' : ''}`}
-                      >
-                        {item.icon}
-                        <span className="ml-2">{item.name}</span>
-                      </Button>
-                    </Link>
-                  ))}
-                </>
-              )}
-            </nav>
-          </ScrollArea>
-          
-          <div className="border-t p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="" alt={user?.username || 'User'} />
-                  <AvatarFallback>
-                    {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="ml-2">
-                  <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-muted-foreground">{user?.role}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut size={18} />
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-      
-      {children}
-    </div>
-  );
-
-  const Topbar = () => (
-    <header className="h-16 items-center justify-between border-b px-6 hidden md:flex">
-      <h1 className="text-xl font-semibold">
-        {navItems.find(item => isActive(item.href))?.name || 
-          superAdminItems.find(item => isActive(item.href))?.name || 
-          'Dashboard'}
-      </h1>
-      <div className="flex items-center space-x-4">
-        <Button variant="outline" size="icon" className="relative">
-          <Bell size={18} />
-          <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-        </Button>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt={user?.username || 'User'} />
-                <AvatarFallback>
-                  {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <span>{user?.firstName} {user?.lastName}</span>
-              <ChevronDown size={16} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin/profile">Profile Settings</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleLogout}>
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
-  );
-  
-  const Content = ({ children }: { children: ReactNode }) => (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden">
-      <Topbar />
-      <main className="flex-1 overflow-auto p-6">
-        {children}
-      </main>
-    </div>
-  );
 
   return (
-    <Sidebar>
-      <Content>
-        {children}
-      </Content>
-    </Sidebar>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar for desktop */}
+      <div 
+        className={`fixed inset-y-0 left-0 z-20 flex-col bg-card border-r border-border transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? "w-64" : "w-20"
+        } hidden md:flex`}
+      >
+        <div className="flex items-center justify-between h-16 px-4 border-b border-border">
+          <div className={`flex items-center ${!isSidebarOpen && "justify-center w-full"}`}>
+            {isSidebarOpen ? (
+              <span className="text-lg font-bold">iREVA Admin</span>
+            ) : (
+              <span className="text-lg font-bold">iR</span>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className={!isSidebarOpen ? "hidden" : ""}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          <nav className="flex-1 px-2 py-4 space-y-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                href={item.path}
+                onClick={(e) => {
+                  // Prevent default for the current path
+                  if (location === item.path) {
+                    e.preventDefault();
+                  }
+                }}
+              >
+                <div
+                  className={`flex items-center px-3 py-2 text-sm rounded-md cursor-pointer group transition-colors
+                    ${
+                      location === item.path
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }
+                    ${!isSidebarOpen && "justify-center p-3"}
+                  `}
+                >
+                  {item.icon}
+                  {isSidebarOpen && <span className="ml-3">{item.label}</span>}
+                </div>
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="p-4 border-t border-border">
+          <Button
+            variant="ghost"
+            className={`w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted
+              ${!isSidebarOpen && "justify-center p-3"}
+            `}
+            onClick={handleLogout}
+          >
+            <LogOut className="w-5 h-5" />
+            {isSidebarOpen && <span className="ml-2">Logout</span>}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile sidebar backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-10 bg-background/80 backdrop-blur-sm md:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
+      {/* Mobile sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-20 w-64 flex-col bg-card border-r border-border transition-transform duration-300 ease-in-out transform md:hidden ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between h-16 px-4 border-b border-border">
+          <span className="text-lg font-bold">iREVA Admin</span>
+          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          <nav className="flex-1 px-2 py-4 space-y-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                href={item.path}
+                onClick={(e) => {
+                  // Prevent default for the current path
+                  if (location === item.path) {
+                    e.preventDefault();
+                  }
+                  setIsSidebarOpen(false);
+                }}
+              >
+                <div
+                  className={`flex items-center px-3 py-2 text-sm rounded-md cursor-pointer group transition-colors
+                    ${
+                      location === item.path
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }
+                  `}
+                >
+                  {item.icon}
+                  <span className="ml-3">{item.label}</span>
+                </div>
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="p-4 border-t border-border">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="ml-2">Logout</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div
+        className={`flex-1 transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? "md:ml-64" : "md:ml-20"
+        }`}
+      >
+        {/* Header */}
+        <header className="h-16 border-b border-border bg-card sticky top-0 z-10">
+          <div className="flex items-center justify-between h-full px-4">
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={toggleSidebar}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="flex items-center space-x-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                    <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-primary"></span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <div className="max-h-80 overflow-y-auto">
+                    <div className="py-2 px-3 hover:bg-muted rounded-sm cursor-pointer">
+                      <p className="font-medium">New user registration</p>
+                      <p className="text-sm text-muted-foreground">John Doe just registered</p>
+                      <p className="text-xs text-muted-foreground mt-1">10 min ago</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <div className="py-2 px-3 hover:bg-muted rounded-sm cursor-pointer">
+                      <p className="font-medium">Property funded</p>
+                      <p className="text-sm text-muted-foreground">Skyline Apartments reached 100%</p>
+                      <p className="text-xs text-muted-foreground mt-1">1 hour ago</p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer justify-center font-medium">
+                    View all notifications
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative flex items-center space-x-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.profilePicture || ''} alt={user?.username || 'Admin'} />
+                      <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                    <span className="hidden md:inline-block">{user?.firstName || user?.username}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </header>
+
+        {/* Main */}
+        <main className="p-6">
+          {children}
+        </main>
+      </div>
+    </div>
   );
-}
+};
+
+export default AdminLayout;

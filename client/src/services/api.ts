@@ -1,7 +1,7 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
-// Create Axios instance with default config
-const api: AxiosInstance = axios.create({
+// Create axios instance with default config
+const api = axios.create({
   baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
@@ -13,7 +13,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth_token');
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -30,13 +30,16 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // Handle 401 responses (unauthorized)
+    // If 401 Unauthorized and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // You could implement token refresh here if needed
+      // Logout by removing token
+      localStorage.removeItem('auth_token');
       
-      // For now, just redirect to login if user is unauthorized
-      // Note: we're checking if not on login page to avoid infinite redirect
-      if (!window.location.pathname.includes('/auth')) {
+      // If we're not trying to login or register, redirect to login
+      if (
+        !originalRequest.url.includes('/login') &&
+        !originalRequest.url.includes('/register')
+      ) {
         window.location.href = '/auth';
       }
     }
@@ -45,33 +48,25 @@ api.interceptors.response.use(
   }
 );
 
-// Generic request function with type parameters
-export const request = async <T = any, R = AxiosResponse<T>>(
-  config: AxiosRequestConfig
-): Promise<R> => {
-  try {
-    const response = await api(config);
-    return response as R;
-  } catch (error) {
-    console.error('API request error:', error);
-    throw error;
-  }
-};
+// Wrapper functions for API calls
+export function get<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  return api.get<T>(url, config);
+}
 
-// Simplified request methods
-export const get = <T = any>(url: string, config?: AxiosRequestConfig) => 
-  request<T>({ ...config, method: 'GET', url });
+export function post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  return api.post<T>(url, data, config);
+}
 
-export const post = <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
-  request<T>({ ...config, method: 'POST', url, data });
+export function put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  return api.put<T>(url, data, config);
+}
 
-export const put = <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
-  request<T>({ ...config, method: 'PUT', url, data });
+export function patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  return api.patch<T>(url, data, config);
+}
 
-export const patch = <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => 
-  request<T>({ ...config, method: 'PATCH', url, data });
-
-export const del = <T = any>(url: string, config?: AxiosRequestConfig) => 
-  request<T>({ ...config, method: 'DELETE', url });
+export function del<T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  return api.delete<T>(url, config);
+}
 
 export default api;

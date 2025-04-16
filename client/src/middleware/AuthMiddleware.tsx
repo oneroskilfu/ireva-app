@@ -1,71 +1,94 @@
-import { useEffect, useState, ReactNode } from 'react';
-import { Redirect, useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import { hasRole, UserRole } from '@/shared/guards';
+import { ReactNode, useEffect, useState } from 'react';
+import { useLocation, useRouter } from 'wouter';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface AuthMiddlewareProps {
   children: ReactNode;
-  requiredRoles: UserRole | UserRole[];
-  redirectTo?: string;
+  requiredRoles?: string[];
 }
 
 /**
- * Component to protect routes based on user roles
- * If the user is not logged in or doesn't have the required role, they are redirected
+ * Authentication middleware component for protecting routes
+ * @param children - Components to render if authentication passes
+ * @param requiredRoles - Optional array of roles allowed to access the route
  */
-const AuthMiddleware = ({
-  children,
-  requiredRoles,
-  redirectTo = '/auth',
-}: AuthMiddlewareProps) => {
-  const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
-  const [checking, setChecking] = useState(true);
-  
+const AuthMiddleware = ({ children, requiredRoles = [] }: AuthMiddlewareProps) => {
+  const { user, isLoading, checkAuth } = useAuth();
+  const [, navigate] = useLocation();
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+  const [isChecking, setIsChecking] = useState<boolean>(true);
+
   useEffect(() => {
-    // Wait for auth to initialize
-    if (!isLoading) {
-      if (!user) {
-        console.log('No authenticated user found. Redirecting to login...');
-        setLocation(redirectTo);
-      } else {
-        const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+    const verifyAuth = async () => {
+      setIsChecking(true);
+      
+      if (isLoading) {
+        return; // Wait for initial auth check to complete
+      }
+      
+      try {
+        // If no user is logged in, try to authenticate
+        if (!user) {
+          await checkAuth();
+        }
         
-        if (!hasRole(user, roles)) {
-          console.log('User does not have required role. Current role:', user.role);
-          console.log('Required roles:', roles);
-          // Redirect to dashboard or another appropriate page based on their actual role
-          if (user.role === 'admin' || user.role === 'super_admin') {
-            setLocation('/admin');
-          } else {
-            setLocation('/dashboard');
+        // Check if user is authenticated
+        if (!user) {
+          // Redirect to login page
+          navigate('/auth');
+          return;
+        }
+        
+        // If roles are specified, check if user has required role
+        if (requiredRoles.length > 0) {
+          const hasRequiredRole = requiredRoles.includes(user.role);
+          
+          if (!hasRequiredRole) {
+            // Redirect based on role
+            switch (user.role) {
+              case 'admin':
+              case 'super_admin':
+                navigate('/admin');
+                break;
+              case 'user':
+                navigate('/investor');
+                break;
+              default:
+                navigate('/');
+                break;
+            }
+            return;
           }
         }
+        
+        // User is authorized
+        setIsAuthorized(true);
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+        navigate('/auth');
+      } finally {
+        setIsChecking(false);
       }
-      setChecking(false);
-    }
-  }, [user, isLoading, requiredRoles, redirectTo, setLocation]);
-
-  // Show loading state
-  if (isLoading || checking) {
+    };
+    
+    verifyAuth();
+  }, [user, isLoading, checkAuth, navigate, requiredRoles]);
+  
+  // Show loading state while checking authentication
+  if (isLoading || isChecking) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Verifying access...</p>
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-muted-foreground">Verifying your access...</p>
         </div>
       </div>
     );
   }
-
-  // If we're still here and user has the required role, render children
-  if (user && hasRole(user, requiredRoles)) {
-    return <>{children}</>;
-  }
-
-  // Default fallback - shouldn't reach here due to redirects in useEffect
-  return <Redirect to={redirectTo} />;
+  
+  // Render children if authorized
+  return isAuthorized ? <>{children}</> : null;
 };
 
 export default AuthMiddleware;
