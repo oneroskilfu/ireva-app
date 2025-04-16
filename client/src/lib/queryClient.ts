@@ -69,7 +69,30 @@ export const getQueryFn: <T>(options: QueryFnOptions) => QueryFunction<T> =
       requestHeaders["Authorization"] = `Bearer ${token}`;
     }
     
-    const res = await fetch(queryKey[0] as string, {
+    // Build URL with query parameters if present
+    const basePath = queryKey[0] as string;
+    const params = queryKey.slice(1).filter(Boolean);
+    
+    let url = basePath;
+    if (params.length > 0) {
+      const queryParams = new URLSearchParams();
+      
+      // Assuming params alternate between key and value
+      for (let i = 0; i < params.length; i += 2) {
+        const key = params[i];
+        const value = params[i + 1];
+        if (key && value && value !== 'all') {
+          queryParams.append(String(key), String(value));
+        }
+      }
+      
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url = `${basePath}?${queryString}`;
+      }
+    }
+    
+    const res = await fetch(url, {
       headers: requestHeaders,
       credentials: "include", // Keep this for cookies in case of hybrid auth
     });

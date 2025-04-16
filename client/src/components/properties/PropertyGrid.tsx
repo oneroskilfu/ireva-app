@@ -21,11 +21,8 @@ export default function PropertyGrid({ type, location, search, limit }: Property
   if (location && location !== "all") queryParams.append("location", location);
   if (search) queryParams.append("search", search);
   
-  const queryString = queryParams.toString();
-  const endpoint = `/api/properties${queryString ? `?${queryString}` : ''}`;
-  
-  const { data: properties, isLoading, error } = useQuery<Property[]>({
-    queryKey: [endpoint],
+  const { data: properties = [], isLoading, error } = useQuery<Property[]>({
+    queryKey: ['/api/properties', 'type', type, 'location', location, 'search', search],
   });
   
   if (isLoading) {
