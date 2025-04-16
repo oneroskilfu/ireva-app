@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import messageService, { Message, User } from '@/services/messageService';
+import messageService from '@/services/messageService';
 import {
   Card,
   CardContent,
@@ -33,7 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Send, 
   Inbox, 
-  SendX, // Using SendX instead of PaperPlaneOff 
+  Mail as PaperPlaneOff, // Using Mail as alternative
   Users, 
   Search, 
   MailOpen, 
@@ -83,8 +83,7 @@ const MessageCenter: React.FC = () => {
   } = useQuery<Message[]>({
     queryKey: ['/api/messages/inbox'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/messages/inbox');
-      return await res.json();
+      return await messageService.getInboxMessages();
     },
   });
 
@@ -96,8 +95,7 @@ const MessageCenter: React.FC = () => {
   } = useQuery<Message[]>({
     queryKey: ['/api/messages/sent'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/messages/sent');
-      return await res.json();
+      return await messageService.getSentMessages();
     },
   });
 
@@ -105,8 +103,7 @@ const MessageCenter: React.FC = () => {
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/users');
-      return await res.json();
+      return await messageService.getAllUsers();
     },
   });
 
@@ -115,8 +112,7 @@ const MessageCenter: React.FC = () => {
     queryKey: ['/api/messages', selectedMessage?.id, 'conversation'],
     queryFn: async () => {
       if (!selectedMessage) return [];
-      const res = await apiRequest('GET', `/api/messages/${selectedMessage.id}/conversation`);
-      return await res.json();
+      return await messageService.getConversation(selectedMessage.id);
     },
     enabled: !!selectedMessage,
   });
@@ -124,8 +120,7 @@ const MessageCenter: React.FC = () => {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { recipientId: number; message: string }) => {
-      const res = await apiRequest('POST', '/api/messages', data);
-      return await res.json();
+      return await messageService.sendMessage(data);
     },
     onSuccess: () => {
       toast({
@@ -307,7 +302,7 @@ const MessageCenter: React.FC = () => {
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="sent" className="flex items-center">
-                    <SendX className="mr-2 h-4 w-4" /> Sent
+                    <PaperPlaneOff className="mr-2 h-4 w-4" /> Sent
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
