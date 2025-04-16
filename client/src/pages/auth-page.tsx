@@ -350,30 +350,69 @@ export default function AuthPage() {
                   <p className="text-gray-600">Your gateway to premium real estate investments in Nigeria</p>
                 </div>
                 
-                {/* Simple SVG illustration of a person using iREVA */}
-                <div className="w-64 h-64 relative mb-6">
+                {/* Financial Dashboard SVG Illustration */}
+                <div className="w-80 h-80 relative mb-6">
                   <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-                    {/* Device/Screen */}
-                    <rect x="150" y="100" width="200" height="140" rx="10" fill="#0c1b46" />
-                    <rect x="160" y="110" width="180" height="120" rx="5" fill="#ffffff" />
+                    {/* Dashboard Frame */}
+                    <rect x="100" y="80" width="300" height="220" rx="10" fill="#f8fafc" stroke="#0c1b46" strokeWidth="2" />
                     
-                    {/* App UI on screen */}
-                    <rect x="170" y="120" width="160" height="25" rx="4" fill="#16b5a0" />
-                    <rect x="175" y="130" width="70" height="5" rx="2" fill="#ffffff" />
+                    {/* Header */}
+                    <rect x="100" y="80" width="300" height="40" rx="10" fill="#0c1b46" />
+                    <text x="120" y="105" fontFamily="Arial" fontSize="16" fill="#ffffff">iREVA Financial Dashboard</text>
                     
-                    {/* Property cards */}
-                    <rect x="175" y="155" width="65" height="65" rx="5" fill="#eafffd" />
-                    <rect x="250" y="155" width="65" height="65" rx="5" fill="#eafffd" />
+                    {/* Left sidebar */}
+                    <rect x="100" y="120" width="70" height="180" fill="#eafffd" />
+                    <circle cx="135" cy="145" r="15" fill="#16b5a0" />
+                    <rect x="115" y="170" width="40" height="6" rx="2" fill="#0c1b46" />
+                    <rect x="115" y="185" width="40" height="6" rx="2" fill="#0c1b46" />
+                    <rect x="115" y="200" width="40" height="6" rx="2" fill="#0c1b46" />
+                    <rect x="115" y="215" width="40" height="6" rx="2" fill="#0c1b46" />
+                    <rect x="115" y="230" width="40" height="6" rx="2" fill="#0c1b46" />
                     
-                    {/* Person */}
-                    <circle cx="300" cy="300" r="50" fill="#774421" /> {/* Head */}
-                    <rect x="275" y="350" width="50" height="100" rx="10" fill="#5a67d8" /> {/* Body */}
-                    <rect x="260" y="350" width="15" height="70" rx="5" fill="#774421" /> {/* Left arm */}
-                    <rect x="325" y="350" width="15" height="85" rx="5" fill="#774421" /> {/* Right arm pointing at screen */}
+                    {/* Main Content Area - Top Cards */}
+                    <rect x="180" y="130" width="100" height="60" rx="5" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
+                    <rect x="190" y="140" width="60" height="10" rx="2" fill="#0c1b46" />
+                    <text x="190" y="165" fontFamily="Arial" fontSize="18" fill="#16b5a0">₦2.4M</text>
+                    <text x="190" y="180" fontFamily="Arial" fontSize="10" fill="#64748b">Total Invested</text>
                     
-                    {/* House icon */}
-                    <polygon points="250,50 200,90 200,150 300,150 300,90" fill="#16b5a0" />
-                    <rect x="230" y="120" width="40" height="30" fill="#0c1b46" />
+                    <rect x="290" y="130" width="100" height="60" rx="5" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
+                    <rect x="300" y="140" width="60" height="10" rx="2" fill="#0c1b46" />
+                    <text x="300" y="165" fontFamily="Arial" fontSize="18" fill="#16b5a0">18.5%</text>
+                    <text x="300" y="180" fontFamily="Arial" fontSize="10" fill="#64748b">Annual Return</text>
+                    
+                    {/* Chart Area */}
+                    <rect x="180" y="200" width="210" height="90" rx="5" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
+                    
+                    {/* Bar Chart */}
+                    <rect x="200" y="260" width="15" height="20" fill="#16b5a0" />
+                    <rect x="225" y="240" width="15" height="40" fill="#16b5a0" />
+                    <rect x="250" y="230" width="15" height="50" fill="#16b5a0" />
+                    <rect x="275" y="220" width="15" height="60" fill="#16b5a0" />
+                    <rect x="300" y="210" width="15" height="70" fill="#16b5a0" />
+                    <rect x="325" y="245" width="15" height="35" fill="#16b5a0" />
+                    <rect x="350" y="235" width="15" height="45" fill="#16b5a0" />
+                    
+                    {/* X-axis */}
+                    <line x1="190" y1="280" x2="370" y2="280" stroke="#64748b" strokeWidth="1" />
+                    
+                    {/* Y-axis */}
+                    <line x1="190" y1="210" x2="190" y2="280" stroke="#64748b" strokeWidth="1" />
+                    
+                    {/* Title */}
+                    <text x="190" y="220" fontFamily="Arial" fontSize="12" fill="#0c1b46">Investment Growth (5 Years)</text>
+                    
+                    {/* Property Icons */}
+                    <rect x="130" y="320" width="240" height="100" rx="10" fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
+                    
+                    {/* Property 1 */}
+                    <rect x="150" y="340" width="80" height="60" rx="5" fill="#eafffd" />
+                    <polygon points="160,350 190,335 220,350 220,375 160,375" fill="#16b5a0" />
+                    <text x="160" y="390" fontFamily="Arial" fontSize="10" fill="#0c1b46">Skyline Apts</text>
+                    
+                    {/* Property 2 */}
+                    <rect x="250" y="340" width="80" height="60" rx="5" fill="#eafffd" />
+                    <polygon points="260,350 290,335 320,350 320,375 260,375" fill="#0c1b46" />
+                    <text x="260" y="390" fontFamily="Arial" fontSize="10" fill="#0c1b46">Lekki Gardens</text>
                   </svg>
                 </div>
                 
