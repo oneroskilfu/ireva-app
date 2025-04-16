@@ -132,48 +132,23 @@ export class MemStorage implements IStorage {
     this.seedTestUser();
   }
   
-  private seedTestUser() {
-    const hashedPassword = 'c94d65942a75d7c35cd573f640a6d0579a553f87287b5f31e3280a3f962a22253d9fe0c90a386f85e8b24dedf4bee3cdd502e19d28c70c04c31c4f6c3ee95dde.ceb4c09c9bac3d47749823f3435e33b4';
-    
-    // Create a test user for easy login
-    const testUser: User = {
-      id: this.userIdCounter++,
-      username: 'testuser',
-      password: hashedPassword, // this is the hashed value of 'password123'
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-      phoneNumber: '08012345678',
-      isPhoneVerified: true,
-      createdAt: new Date(),
-      kycStatus: 'verified',
-      kycDocuments: null,
-      kycRejectionReason: null,
-      kycSubmittedAt: new Date(),
-      kycVerifiedAt: new Date(),
-      accreditationLevel: 'advanced',
-      accreditationDocuments: null,
-      accreditationVerifiedAt: new Date(),
-      profileImage: null,
-      walletBalance: 50000,
-      referralCode: 'TEST123',
-      referredBy: null,
-      rewardsPoints: 100,
-      preferences: null,
-      notificationSettings: null,
-      role: 'investor',
-      status: 'active',
-      lastLoginAt: null,
-      deletedAt: null,
-      verifiedEmail: true,
-      investmentStyle: 'moderate',
-      riskTolerance: 'medium',
-      investmentGoals: null,
-      totalInvested: 25000,
-      totalReturns: 5000
-    };
-    
-    this.users.set(testUser.id, testUser);
+  // Create a test user with a known password for testing
+  private async seedTestUser() {
+    // Create a simple test user for login testing
+    try {
+      const testUser = await this.createUser({
+        username: 'testuser',
+        password: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', // This is 'password' hashed using SHA-256
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        phoneNumber: '08012345678'
+      });
+      
+      console.log('Created test user:', testUser.username);
+    } catch (error) {
+      console.error('Error creating test user:', error);
+    }
   }
 
   // User methods
