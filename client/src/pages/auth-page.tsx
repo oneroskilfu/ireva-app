@@ -58,7 +58,7 @@ export default function AuthPage() {
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data, {
       onSuccess: () => {
-        navigate("/");
+        navigate("/dashboard");
       },
     });
   };
@@ -66,14 +66,14 @@ export default function AuthPage() {
   const onRegisterSubmit = (data: RegisterFormValues) => {
     registerMutation.mutate(data, {
       onSuccess: () => {
-        navigate("/");
+        navigate("/dashboard");
       },
     });
   };
   
   // Redirect if already logged in
   if (user) {
-    navigate("/");
+    navigate("/dashboard");
     return null;
   }
   
