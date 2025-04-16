@@ -193,7 +193,9 @@ export default function HomePage() {
                   size="lg"
                   className="bg-black text-white hover:bg-black/90 border-0 h-12 flex items-center justify-center gap-2"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5.5"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/><path d="M17.5 21 22 16.5"/><path d="M17.5 16.5 22 21"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.71,19.5C17.88,20.74 17,21.95 15.66,21.97C14.32,22 13.89,21.18 12.37,21.18C10.84,21.18 10.37,21.95 9.1,22C7.79,22.05 6.8,20.68 5.96,19.47C4.25,17 2.94,12.45 4.7,9.39C5.57,7.87 7.13,6.91 8.82,6.88C10.1,6.86 11.32,7.75 12.11,7.75C12.89,7.75 14.37,6.68 15.92,6.84C16.57,6.87 18.39,7.1 19.56,8.82C19.47,8.88 17.39,10.1 17.41,12.63C17.44,15.65 20.06,16.66 20.09,16.67C20.06,16.74 19.67,18.11 18.71,19.5M13,3.5C13.73,2.67 14.94,2.04 15.94,2C16.07,3.17 15.6,4.35 14.9,5.19C14.21,6.04 13.07,6.7 11.95,6.61C11.8,5.46 12.36,4.26 13,3.5Z" />
+                  </svg>
                   <div className="flex flex-col items-start">
                     <span className="text-xs">Download on the</span>
                     <span className="text-sm font-semibold">App Store</span>
@@ -204,7 +206,9 @@ export default function HomePage() {
                   size="lg"
                   className="bg-black text-white hover:bg-black/90 border-0 h-12 flex items-center justify-center gap-2"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 18H7a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/><path d="M7 9h10"/><path d="M7 13h5"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16.61 15.15C16.15 15.15 15.77 14.78 15.77 14.32V10.22C15.77 9.76 16.15 9.39 16.61 9.39C17.07 9.39 17.45 9.76 17.45 10.22V14.32C17.45 14.78 17.07 15.15 16.61 15.15M7.41 15.15C6.95 15.15 6.57 14.78 6.57 14.32V10.22C6.57 9.76 6.95 9.39 7.41 9.39C7.87 9.39 8.24 9.76 8.24 10.22V14.32C8.24 14.78 7.87 15.15 7.41 15.15M12 17.67C9.3 17.67 7.06 17.16 7.06 16.5V18.67H16.94V16.5C16.94 17.16 14.7 17.67 12 17.67M12 6.67C8.45 6.67 5.54 9.58 5.54 13.13C5.54 13.91 5.71 14.66 6 15.33V16.5C6 16.28 6.22 16.04 6.57 15.84C7.46 15.31 9.6 14.93 12 14.93C14.4 14.93 16.54 15.31 17.43 15.84C17.78 16.04 18 16.28 18 16.5V15.33C18.3 14.66 18.46 13.91 18.46 13.13C18.46 9.58 15.55 6.67 12 6.67M12 8.14C14.67 8.14 16.8 10.27 16.8 12.94C16.8 15.61 14.67 17.74 12 17.74C9.33 17.74 7.2 15.61 7.2 12.94C7.2 10.27 9.33 8.14 12 8.14Z" />
+                  </svg>
                   <div className="flex flex-col items-start">
                     <span className="text-xs">GET IT ON</span>
                     <span className="text-sm font-semibold">Google Play</span>
