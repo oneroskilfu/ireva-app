@@ -167,6 +167,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update notification" });
     }
   });
+  
+  // Get specific investment by ID
+  app.get("/api/investments/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const investmentId = parseInt(req.params.id);
+      const investment = await storage.getInvestment(investmentId);
+      
+      if (!investment) {
+        return res.status(404).json({ message: "Investment not found" });
+      }
+      
+      // Verify that the investment belongs to the authenticated user
+      if (investment.userId !== (req.user as Express.User).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Get property details
+      const property = await storage.getProperty(investment.propertyId);
+      
+      res.json({
+        ...investment,
+        property
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch investment" });
+    }
+  });
+  
+  // Update investment returns (for simulation purposes)
+  app.patch("/api/investments/:id/returns", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const investmentId = parseInt(req.params.id);
+      const { earnings, monthlyReturns } = req.body;
+      
+      const investment = await storage.getInvestment(investmentId);
+      
+      if (!investment) {
+        return res.status(404).json({ message: "Investment not found" });
+      }
+      
+      // Verify that the investment belongs to the authenticated user
+      if (investment.userId !== (req.user as Express.User).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Update the investment returns
+      const updatedInvestment = await storage.updateInvestmentReturns(
+        investmentId, 
+        earnings, 
+        monthlyReturns
+      );
+      
+      res.json(updatedInvestment);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update investment returns" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

@@ -106,6 +106,11 @@ export default function DashboardPage() {
               </div>
             </TabsContent>
             
+            {/* Management Tab Content */}
+            <TabsContent value="management">
+              <PortfolioManagement />
+            </TabsContent>
+            
             {/* Earnings Tab Content */}
             <TabsContent value="earnings">
               <div className="mb-6">

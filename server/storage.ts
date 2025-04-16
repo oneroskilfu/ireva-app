@@ -292,6 +292,23 @@ export class MemStorage implements IStorage {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort by newest first
   }
   
+  async updateInvestmentReturns(id: number, earnings: number, monthlyReturns: any): Promise<Investment> {
+    const investment = this.investments.get(id);
+    if (!investment) {
+      throw new Error(`Investment with ID ${id} not found`);
+    }
+    
+    const updatedInvestment = {
+      ...investment,
+      earnings,
+      monthlyReturns,
+      lastUpdated: new Date()
+    };
+    
+    this.investments.set(id, updatedInvestment);
+    return updatedInvestment;
+  }
+  
   async markNotificationAsRead(id: number): Promise<Notification> {
     const notification = this.notifications.get(id);
     if (!notification) {
