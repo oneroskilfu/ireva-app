@@ -10,6 +10,9 @@ import CommunityPage from "@/pages/community-page";
 import ForumPage from "@/pages/forum-page";
 import TopicDetailPage from "@/pages/topic-detail-page";
 import VerificationPage from "@/pages/verification-page";
+import TeamPage from "@/pages/company/team-page";
+import CulturePage from "@/pages/company/culture-page";
+import PressPage from "@/pages/company/press-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -24,6 +27,9 @@ function Router() {
       <ProtectedRoute path="/verification" component={VerificationPage} />
       <Route path="/forum" component={ForumPage} />
       <Route path="/forum/topic/:id" component={TopicDetailPage} />
+      <Route path="/company/team" component={TeamPage} />
+      <Route path="/company/culture" component={CulturePage} />
+      <Route path="/company/press" component={PressPage} />
       <Route component={NotFound} />
     </Switch>
   );

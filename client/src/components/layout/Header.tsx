@@ -62,10 +62,24 @@ export default function Header() {
                   </Link>
                 </div>
               </div>
-              <Link href="/" className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
-                Company
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </Link>
+              <div className="relative group">
+                <button className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                  Company
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </button>
+                {/* Company Dropdown menu */}
+                <div className="absolute left-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
+                  <Link href="/company/team" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Team
+                  </Link>
+                  <Link href="/company/culture" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Culture
+                  </Link>
+                  <Link href="/company/press" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    Press
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -87,12 +101,54 @@ export default function Header() {
               Blog
             </Link>
             
-            {/* Language selector */}
-            <div className="relative">
-              <button className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900">
-                EN
+            {/* Country selector */}
+            <div className="relative group">
+              <button className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                <span className="flex items-center">
+                  <img 
+                    src="https://flagcdn.com/w20/ng.png" 
+                    width="20" 
+                    height="15" 
+                    alt="Nigeria" 
+                    className="mr-1"
+                  />
+                  Nigeria
+                </span>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </button>
+              {/* Country dropdown menu */}
+              <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
+                <a href="/global" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <img 
+                    src="https://flagcdn.com/w20/un.png" 
+                    width="20" 
+                    height="15" 
+                    alt="Global" 
+                    className="mr-2"
+                  />
+                  Global
+                </a>
+                <a href="/ghana" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <img 
+                    src="https://flagcdn.com/w20/gh.png" 
+                    width="20" 
+                    height="15" 
+                    alt="Ghana" 
+                    className="mr-2"
+                  />
+                  Ghana
+                </a>
+                <a href="/kenya" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                  <img 
+                    src="https://flagcdn.com/w20/ke.png" 
+                    width="20" 
+                    height="15" 
+                    alt="Kenya" 
+                    className="mr-2"
+                  />
+                  Kenya
+                </a>
+              </div>
             </div>
             
             {/* Auth buttons */}
