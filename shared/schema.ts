@@ -111,6 +111,37 @@ export const investmentTierEnum = pgEnum("investment_tier", [
   "elite",   // Accredited investors only, highest returns
 ]);
 
+// KYC schema
+export const kycSubmissions = pgTable("kyc_submissions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  fullName: text("full_name").notNull(),
+  idType: text("id_type").notNull(),
+  idNumber: text("id_number").notNull(),
+  bankName: text("bank_name").notNull(),
+  accountNumber: text("account_number").notNull(),
+  address: text("address").notNull(),
+  frontImage: text("front_image").notNull(),
+  backImage: text("back_image"),
+  selfieImage: text("selfie_image").notNull(),
+  addressProofImage: text("address_proof_image"),
+  addressProofType: text("address_proof_type"),
+  status: kycStatusEnum("status").default("pending"),
+  rejectionReason: text("rejection_reason"),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  verifiedAt: timestamp("verified_at"),
+  verifiedBy: integer("verified_by"),
+});
+
+export const insertKycSubmissionSchema = createInsertSchema(kycSubmissions).omit({
+  id: true,
+  status: true,
+  submittedAt: true,
+  verifiedAt: true,
+  verifiedBy: true,
+  rejectionReason: true,
+});
+
 // Property schema
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),

@@ -2,7 +2,7 @@ const express = require('express');
 const { db } = require('../db');
 const { users } = require('../../shared/schema');
 const { eq } = require('drizzle-orm');
-const { verifyToken } = require('../middleware/authMiddleware');
+const { verifyToken } = require('../auth-jwt');
 
 const router = express.Router();
 
@@ -13,7 +13,11 @@ const router = express.Router();
  */
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.jwtPayload?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const { fullName, address, idNumber, idType, bankName, accountNumber } = req.body;
 
     // Validate input
@@ -85,7 +89,11 @@ router.post('/', verifyToken, async (req, res) => {
  */
 router.get('/status', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.jwtPayload?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
@@ -120,7 +128,11 @@ router.get('/status', verifyToken, async (req, res) => {
  */
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.jwtPayload?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
