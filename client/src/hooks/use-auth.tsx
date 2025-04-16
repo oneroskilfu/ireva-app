@@ -7,6 +7,7 @@ import {
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -22,6 +23,7 @@ type LoginData = Pick<InsertUser, "username" | "password">;
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const {
     data: user,
     error,
@@ -49,10 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on user role
       if (user.role === 'admin' || user.role === 'super_admin') {
         console.log('Admin user detected, redirecting to admin dashboard');
-        window.location.href = "/admin";
+        navigate("/admin");
       } else {
         console.log('Regular user detected, redirecting to user dashboard');
-        window.location.href = "/dashboard";
+        navigate("/dashboard");
       }
     },
     onError: (error: Error) => {
@@ -81,10 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect based on user role
       if (user.role === 'admin' || user.role === 'super_admin') {
         console.log('Admin user registered, redirecting to admin dashboard');
-        window.location.href = "/admin";
+        navigate("/admin");
       } else {
         console.log('Regular user registered, redirecting to user dashboard');
-        window.location.href = "/dashboard";
+        navigate("/dashboard");
       }
     },
     onError: (error: Error) => {
@@ -106,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
+      // Redirect to home page after logout
+      navigate("/");
     },
     onError: (error: Error) => {
       toast({
