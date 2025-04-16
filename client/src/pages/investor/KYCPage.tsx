@@ -30,8 +30,17 @@ const KYCPage: React.FC = () => {
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
+  // Define KYC status type
+  interface KYCStatusResponse {
+    status: 'not_started' | 'pending' | 'verified' | 'rejected';
+    submittedAt?: string;
+    verifiedAt?: string;
+    rejectionReason?: string;
+    submission?: any;
+  }
+  
   // Get KYC status
-  const { data: kycStatus, isLoading: statusLoading, error: statusError } = useQuery({
+  const { data: kycStatus, isLoading: statusLoading, error: statusError } = useQuery<KYCStatusResponse>({
     queryKey: ['/api/kyc/status'],
     enabled: !!user,
   });

@@ -257,4 +257,103 @@ router.patch('/:id/verify', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @route PATCH /api/kyc/:id
+ * @desc Update KYC submission status (admin only)
+ * @access Admin
+ */
+router.patch('/:id', verifyToken, async (req, res) => {
+  try {
+    // Check if user is admin
+    const userId = req.jwtPayload?.id;
+    const userRole = req.jwtPayload?.role;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    if (userRole !== 'admin' && userRole !== 'super_admin') {
+      return res.status(403).json({ message: "Forbidden. Admin access required." });
+    }
+
+    const submissionId = parseInt(req.params.id);
+    const { status, rejectionReason } = req.body;
+
+    // Validate input
+    if (!status || !['pending', 'verified', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Valid status is required (pending, verified, or rejected)' });
+    }
+
+    if (status === 'rejected' && !rejectionReason) {
+      return res.status(400).json({ message: 'Rejection reason is required when status is rejected' });
+    }
+
+    // Get the submission
+    const [submission] = await db.select()
+      .from(kycSubmissions)
+      .where(eq(kycSubmissions.id, submissionId));
+
+    if (!submission) {
+      return res.status(404).json({ message: 'KYC submission not found' });
+    }
+
+    // Update submission status
+    const updateData: any = { status };
+    
+    if (status === 'verified') {
+      updateData.verifiedAt = new Date();
+      updateData.verifiedBy = userId;
+      updateData.rejectionReason = null;
+    } else if (status === 'rejected') {
+      updateData.rejectionReason = rejectionReason;
+      updateData.verifiedAt = null;
+      updateData.verifiedBy = null;
+    }
+
+    const [updatedSubmission] = await db.update(kycSubmissions)
+      .set(updateData)
+      .where(eq(kycSubmissions.id, submissionId))
+      .returning();
+
+    // Update user's KYC status
+    const userUpdateData: any = {
+      kycStatus: status
+    };
+    
+    if (status === 'verified') {
+      userUpdateData.kycVerifiedAt = new Date();
+      userUpdateData.kycRejectionReason = null;
+    } else if (status === 'rejected') {
+      userUpdateData.kycRejectionReason = rejectionReason;
+      userUpdateData.kycVerifiedAt = null;
+    }
+
+    await db.update(users)
+      .set(userUpdateData)
+      .where(eq(users.id, submission.userId));
+
+    // Send success toast notification to the user
+    const toastMessage = status === 'verified' 
+      ? 'KYC has been approved! You can now access all investment opportunities.' 
+      : status === 'rejected' 
+        ? `KYC has been rejected. Reason: ${rejectionReason}` 
+        : 'KYC status has been updated to pending review.';
+
+    // Here you would integrate with a notification system
+    // For now we'll just return the toast message in the response
+    
+    res.json({
+      message: `KYC status updated to ${status}`,
+      submission: updatedSubmission,
+      toast: {
+        title: `KYC ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        message: toastMessage
+      }
+    });
+  } catch (error) {
+    console.error('KYC status update error:', error);
+    res.status(500).json({ message: 'Server error during KYC status update' });
+  }
+});
+
 export default router;

@@ -1,5 +1,7 @@
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -33,6 +35,7 @@ import InvestorDashboard from "@/pages/investor/InvestorDashboard";
 import InvestorPortfolio from "@/pages/investor/portfolio-page";
 import InvestorProperties from "@/pages/investor/properties-page";
 import InvestorWallet from "@/pages/investor/wallet-page";
+import InvestorKYC from "@/pages/investor/KYCPage";
 
 // Middleware & Utilities
 import AuthMiddleware from "@/middleware/AuthMiddleware";
@@ -115,6 +118,7 @@ function Router() {
                 <Route path="/investor/portfolio" component={InvestorPortfolio} />
                 <Route path="/investor/properties" component={InvestorProperties} />
                 <Route path="/investor/wallet" component={InvestorWallet} />
+                <Route path="/investor/kyc" component={InvestorKYC} />
                 {/* Add more investor routes as needed */}
                 <Route component={NotFound} />
               </Switch>
