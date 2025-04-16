@@ -250,7 +250,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative flex items-center space-x-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.profilePicture || ''} alt={user?.username || 'Admin'} />
+                      <AvatarImage src={user?.profileImage || ''} alt={user?.username || 'Admin'} />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <span className="hidden md:inline-block">{user?.firstName || user?.username}</span>

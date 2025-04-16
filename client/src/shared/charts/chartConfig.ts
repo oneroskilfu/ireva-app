@@ -1,191 +1,362 @@
 /**
- * Shared chart configuration and utilities
- * Used for consistent styling and behavior across all charts in the application
+ * Chart configuration for consistent chart appearance across the application
  */
 
-// Color palette for charts
-export const CHART_COLORS = {
-  primary: '#16b5a0',
-  secondary: '#0c1b46',
-  accent: '#6148cb',
-  success: '#10b981',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  neutral: '#64748b',
-  // Lighter variants for backgrounds
-  primaryLight: 'rgba(22, 181, 160, 0.2)',
-  secondaryLight: 'rgba(12, 27, 70, 0.1)',
-  accentLight: 'rgba(97, 72, 203, 0.15)',
-  successLight: 'rgba(16, 185, 129, 0.2)',
-  warningLight: 'rgba(245, 158, 11, 0.2)',
-  errorLight: 'rgba(239, 68, 68, 0.2)',
-  // Chart series colors
-  series: [
-    '#16b5a0', // primary teal
-    '#0c1b46', // dark blue
-    '#6148cb', // purple
-    '#10b981', // green
-    '#f59e0b', // amber
-    '#64748b', // slate
-    '#ef4444', // red
-    '#3b82f6', // blue
-    '#ec4899', // pink
-    '#8b5cf6', // violet
+// Common colors used in charts
+export const chartColors = {
+  // Primary colors
+  primary: 'hsl(var(--primary))',
+  primaryLight: 'hsl(var(--primary) / 0.2)',
+  primaryMuted: 'hsl(var(--primary) / 0.5)',
+  
+  // Secondary colors
+  secondary: 'hsl(var(--secondary))',
+  secondaryLight: 'hsl(var(--secondary) / 0.2)',
+  secondaryMuted: 'hsl(var(--secondary) / 0.5)',
+  
+  // Performance indicators
+  positive: '#16a34a', // green-600
+  positiveLight: 'rgba(22, 163, 74, 0.2)',
+  positiveMuted: 'rgba(22, 163, 74, 0.5)',
+  
+  negative: '#dc2626', // red-600
+  negativeLight: 'rgba(220, 38, 38, 0.2)',
+  negativeMuted: 'rgba(220, 38, 38, 0.5)',
+  
+  neutral: '#f59e0b', // amber-500
+  neutralLight: 'rgba(245, 158, 11, 0.2)',
+  neutralMuted: 'rgba(245, 158, 11, 0.5)',
+  
+  // Gray scale for backgrounds and borders
+  border: 'hsl(var(--border))',
+  background: 'hsl(var(--background))',
+  foreground: 'hsl(var(--foreground))',
+  muted: 'hsl(var(--muted))',
+  mutedForeground: 'hsl(var(--muted-foreground))',
+  
+  // Additional color palette for multiple data series
+  palette: [
+    '#2563eb', // blue-600
+    '#9333ea', // purple-600
+    '#16a34a', // green-600
+    '#dc2626', // red-600
+    '#f59e0b', // amber-500
+    '#0891b2', // cyan-600
+    '#4f46e5', // indigo-600
+    '#db2777', // pink-600
+    '#65a30d', // lime-600
+    '#7c3aed'  // violet-600
   ],
+  
+  // Gradient for area charts
+  gradientFrom: 'hsl(var(--primary) / 0.2)',
+  gradientTo: 'hsl(var(--primary) / 0.0)'
 };
 
-// Common axis styling
-export const axisStyle = {
-  axisLine: {
-    stroke: '#e2e8f0', // Subtle gray for axis lines
-    strokeWidth: 1,
-  },
-  tickLine: {
-    stroke: '#e2e8f0',
-    strokeWidth: 1,
-  },
-  tick: {
-    fill: '#64748b', // Neutral text color for ticks
-    fontSize: 12,
-  },
-  label: {
-    fill: '#334155', // Darker text for axis labels
-    fontSize: 14,
-    fontWeight: 500,
-  },
-};
-
-// Common grid styling
-export const gridStyle = {
-  vertical: {
-    stroke: '#e2e8f0',
-    strokeDasharray: '3 3',
-    strokeOpacity: 0.7,
-  },
-  horizontal: {
-    stroke: '#e2e8f0',
-    strokeDasharray: '3 3', 
-    strokeOpacity: 0.7,
-  },
-};
-
-// Legend styling
-export const legendStyle = {
+// Common font configuration
+export const chartFonts = {
+  fontFamily: 'inherit',
   fontSize: 12,
-  fontWeight: 500,
-  padding: 10,
-  fill: '#334155', // Darker text for legend
+  fontWeight: 400,
+  titleFontSize: 14,
+  titleFontWeight: 500,
+  labelFontSize: 12,
+  tooltipFontSize: 12
 };
 
-// Tooltip styling
-export const tooltipStyle = {
-  contentStyle: {
-    backgroundColor: 'white',
-    border: 'none',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    borderRadius: '6px',
-    padding: '10px 14px',
-  },
-  labelStyle: {
-    fontWeight: 600,
-    color: '#0f172a',
-    marginBottom: '4px',
-  },
-  itemStyle: {
-    color: '#334155',
-    padding: '4px 0',
-  },
-};
-
-// Chart responsiveness configurations
-export const chartResponsiveConfig = {
-  small: {
-    margin: { top: 10, right: 10, bottom: 30, left: 30 },
-    fontSize: {
-      axis: 10,
-      label: 12,
-      legend: 11,
+// Base chart configuration
+export const baseChartConfig = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom' as const,
+      labels: {
+        font: {
+          ...chartFonts,
+          family: chartFonts.fontFamily,
+          size: chartFonts.labelFontSize
+        },
+        padding: 20,
+        usePointStyle: true,
+        boxWidth: 8,
+        boxHeight: 8
+      }
     },
-    padding: {
-      top: 5,
-      right: 5,
-      bottom: 5,
-      left: 5,
+    tooltip: {
+      enabled: true,
+      backgroundColor: 'hsl(var(--background))',
+      titleColor: 'hsl(var(--foreground))',
+      bodyColor: 'hsl(var(--foreground))',
+      borderColor: 'hsl(var(--border))',
+      borderWidth: 1,
+      padding: 12,
+      cornerRadius: 4,
+      titleFont: {
+        ...chartFonts,
+        family: chartFonts.fontFamily,
+        size: chartFonts.titleFontSize,
+        weight: chartFonts.titleFontWeight
+      },
+      bodyFont: {
+        ...chartFonts,
+        family: chartFonts.fontFamily,
+        size: chartFonts.tooltipFontSize
+      },
+      displayColors: true,
+      boxWidth: 8,
+      boxHeight: 8,
+      usePointStyle: true,
+      callbacks: {
+        // Currency formatter for Naira
+        label: function(context: any) {
+          let label = context.dataset.label || '';
+          if (label) {
+            label += ': ';
+          }
+          
+          if (context.parsed.y !== null) {
+            if (context.dataset.isCurrency) {
+              label += new Intl.NumberFormat('en-NG', {
+                style: 'currency',
+                currency: 'NGN',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              }).format(context.parsed.y);
+            } else if (context.dataset.isPercentage) {
+              label += context.parsed.y.toFixed(1) + '%';
+            } else {
+              label += context.parsed.y.toLocaleString();
+            }
+          }
+          return label;
+        }
+      }
     },
+    title: {
+      display: false,
+      font: {
+        ...chartFonts,
+        family: chartFonts.fontFamily,
+        size: chartFonts.titleFontSize,
+        weight: chartFonts.titleFontWeight
+      }
+    }
   },
-  medium: {
-    margin: { top: 20, right: 20, bottom: 40, left: 40 },
-    fontSize: {
-      axis: 12,
-      label: 14,
-      legend: 12,
-    },
-    padding: {
-      top: 10,
-      right: 10,
-      bottom: 10,
-      left: 10,
-    },
-  },
-  large: {
-    margin: { top: 30, right: 30, bottom: 50, left: 50 },
-    fontSize: {
-      axis: 14,
-      label: 16,
-      legend: 14,
-    },
-    padding: {
-      top: 15,
-      right: 15,
-      bottom: 15,
-      left: 15,
-    },
-  },
-};
-
-// Calculate opacity for stacked charts based on index
-export function getStackedOpacity(index: number, total: number): number {
-  const baseOpacity = 0.8;
-  const opacityStep = 0.6 / (total - 1);
-  return baseOpacity - (index * opacityStep);
-}
-
-// Format number values with nigerian naira (₦) or percentage (%)
-export function formatChartValue(value: number, format: 'currency' | 'percentage' | 'number' = 'number'): string {
-  switch (format) {
-    case 'currency':
-      return `₦${value.toLocaleString('en-NG')}`;
-    case 'percentage':
-      return `${value}%`;
-    default:
-      return value.toLocaleString('en-NG');
+  interaction: {
+    mode: 'index' as const,
+    intersect: false
   }
-}
+};
 
-// Get a gradient definition for chart fills
-// Note: In a real React component, we would return JSX,
-// but since this is a TypeScript utility file, we'll return a config object instead
-export function getGradientDef(id: string, color: string): {
-  id: string;
-  color: string;
-  opacity1: number;
-  opacity2: number;
-} {
-  return {
-    id,
-    color,
-    opacity1: 0.8,
-    opacity2: 0.1
-  };
-}
-
-// Responsive chart dimensions based on container width
-export function getChartDimensions(containerWidth: number): { height: number; fontSize: number } {
-  if (containerWidth < 400) {
-    return { height: 200, fontSize: 10 };
-  } else if (containerWidth < 700) {
-    return { height: 300, fontSize: 12 };
-  } else {
-    return { height: 400, fontSize: 14 };
+// Line chart configuration (for portfolio growth, ROI tracking)
+export const lineChartConfig = {
+  ...baseChartConfig,
+  elements: {
+    line: {
+      tension: 0.2,
+      borderWidth: 2,
+      fill: 'start',
+      borderColor: chartColors.primary
+    },
+    point: {
+      radius: 0,
+      hoverRadius: 6,
+      hitRadius: 6,
+      backgroundColor: chartColors.primary,
+      borderColor: 'white',
+      borderWidth: 2
+    }
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false,
+        drawBorder: false
+      },
+      ticks: {
+        font: {
+          ...chartFonts,
+          family: chartFonts.fontFamily,
+          size: chartFonts.fontSize
+        },
+        color: chartColors.mutedForeground
+      }
+    },
+    y: {
+      beginAtZero: true,
+      grid: {
+        borderDash: [5, 5],
+        color: chartColors.border,
+        drawBorder: false
+      },
+      ticks: {
+        font: {
+          ...chartFonts,
+          family: chartFonts.fontFamily,
+          size: chartFonts.fontSize
+        },
+        color: chartColors.mutedForeground,
+        padding: 10
+      }
+    }
   }
-}
+};
+
+// Bar chart configuration (for monthly returns, comparative analytics)
+export const barChartConfig = {
+  ...baseChartConfig,
+  elements: {
+    bar: {
+      backgroundColor: chartColors.primary,
+      hoverBackgroundColor: chartColors.primaryMuted,
+      borderRadius: 6,
+      borderWidth: 0
+    }
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false,
+        drawBorder: false
+      },
+      ticks: {
+        font: {
+          ...chartFonts,
+          family: chartFonts.fontFamily,
+          size: chartFonts.fontSize
+        },
+        color: chartColors.mutedForeground
+      }
+    },
+    y: {
+      beginAtZero: true,
+      grid: {
+        borderDash: [5, 5],
+        color: chartColors.border,
+        drawBorder: false
+      },
+      ticks: {
+        font: {
+          ...chartFonts,
+          family: chartFonts.fontFamily,
+          size: chartFonts.fontSize
+        },
+        color: chartColors.mutedForeground,
+        padding: 10
+      }
+    }
+  }
+};
+
+// Pie chart configuration (for asset allocation)
+export const pieChartConfig = {
+  ...baseChartConfig,
+  elements: {
+    arc: {
+      borderWidth: 2,
+      borderColor: 'white'
+    }
+  },
+  cutout: '0%'
+};
+
+// Doughnut chart configuration (for portfolio distribution)
+export const doughnutChartConfig = {
+  ...pieChartConfig,
+  cutout: '60%'
+};
+
+// Area chart configuration (for projected returns)
+export const areaChartConfig = {
+  ...lineChartConfig,
+  elements: {
+    ...lineChartConfig.elements,
+    line: {
+      ...lineChartConfig.elements.line,
+      fill: true
+    }
+  },
+  plugins: {
+    ...lineChartConfig.plugins,
+    gradient: {
+      enabled: true,
+      fromColor: chartColors.gradientFrom,
+      toColor: chartColors.gradientTo
+    }
+  }
+};
+
+// Stacked bar chart configuration (for comparing multiple properties)
+export const stackedBarChartConfig = {
+  ...barChartConfig,
+  scales: {
+    ...barChartConfig.scales,
+    x: {
+      ...barChartConfig.scales.x,
+      stacked: true
+    },
+    y: {
+      ...barChartConfig.scales.y,
+      stacked: true
+    }
+  }
+};
+
+// Radar chart configuration (for property comparison)
+export const radarChartConfig = {
+  ...baseChartConfig,
+  elements: {
+    line: {
+      borderWidth: 2
+    },
+    point: {
+      radius: 3,
+      hoverRadius: 6,
+      hitRadius: 6,
+      backgroundColor: chartColors.primary,
+      borderColor: 'white',
+      borderWidth: 1
+    }
+  },
+  scales: {
+    r: {
+      angleLines: {
+        display: true,
+        color: chartColors.border
+      },
+      grid: {
+        color: chartColors.border
+      },
+      pointLabels: {
+        font: {
+          ...chartFonts,
+          family: chartFonts.fontFamily,
+          size: chartFonts.fontSize
+        },
+        color: chartColors.foreground
+      },
+      ticks: {
+        backdropColor: 'transparent',
+        font: {
+          ...chartFonts,
+          family: chartFonts.fontFamily,
+          size: 10
+        },
+        color: chartColors.mutedForeground
+      }
+    }
+  }
+};
+
+// Helper function for creating a gradient background
+export const createGradientBackground = (
+  ctx: CanvasRenderingContext2D,
+  fromColor: string = chartColors.gradientFrom,
+  toColor: string = chartColors.gradientTo
+) => {
+  const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+  gradient.addColorStop(0, fromColor);
+  gradient.addColorStop(1, toColor);
+  return gradient;
+};

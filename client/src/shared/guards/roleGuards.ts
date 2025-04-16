@@ -1,159 +1,139 @@
-import { User } from "@shared/schema";
+import { User } from '@shared/schema';
 
 /**
- * Role-based permission utility functions
+ * Role-based guard functions for consistent access control
  */
 
-export type UserRole = "user" | "admin" | "super_admin";
-
-export interface RolePermission {
-  role: UserRole;
-  permissions: string[];
-}
-
-// Define permissions for each role
-const rolePermissions: Record<UserRole, string[]> = {
-  user: [
-    "view_properties",
-    "make_investments",
-    "view_own_investments",
-    "view_own_profile",
-    "edit_own_profile",
-    "view_educational_resources",
-    "participate_in_forum",
-    "post_forum_comments",
-    "rate_properties",
-    "refer_users",
-  ],
-  admin: [
-    // Admin has all user permissions plus these
-    "view_properties",
-    "make_investments",
-    "view_own_investments",
-    "view_own_profile",
-    "edit_own_profile",
-    "view_educational_resources",
-    "participate_in_forum",
-    "post_forum_comments",
-    "rate_properties",
-    "refer_users",
-    // Admin-specific permissions
-    "view_all_users",
-    "view_user_details",
-    "approve_kyc",
-    "reject_kyc",
-    "add_properties",
-    "edit_properties",
-    "delete_properties",
-    "view_all_investments",
-    "view_investment_details",
-    "moderate_forum",
-    "add_educational_resources",
-    "edit_educational_resources",
-    "delete_educational_resources",
-  ],
-  super_admin: [
-    // Super Admin has all permissions
-    "view_properties",
-    "make_investments",
-    "view_own_investments",
-    "view_own_profile",
-    "edit_own_profile",
-    "view_educational_resources",
-    "participate_in_forum",
-    "post_forum_comments",
-    "rate_properties",
-    "refer_users",
-    // Admin permissions
-    "view_all_users",
-    "view_user_details",
-    "approve_kyc",
-    "reject_kyc",
-    "add_properties",
-    "edit_properties",
-    "delete_properties",
-    "view_all_investments",
-    "view_investment_details",
-    "moderate_forum",
-    "add_educational_resources",
-    "edit_educational_resources",
-    "delete_educational_resources",
-    // Super Admin specific permissions
-    "manage_admins",
-    "assign_roles",
-    "view_system_settings",
-    "edit_system_settings",
-    "view_audit_logs",
-    "manage_platform_fees",
-    "access_analytics_dashboard",
-  ],
+/**
+ * Check if user is authenticated
+ * @param user - The user object or null
+ * @returns Boolean indicating if the user is authenticated
+ */
+export const isAuthenticated = (user: User | null): boolean => {
+  return !!user;
 };
 
 /**
- * Check if a user has the specific permission
+ * Check if user has admin role
+ * @param user - The user object or null
+ * @returns Boolean indicating if the user has admin role
  */
-export function hasPermission(user: User | null, permission: string): boolean {
-  if (!user || !user.role) {
-    return false;
-  }
+export const isAdmin = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.role === 'admin' || user.role === 'super_admin';
+};
 
-  // Get permissions for the user's role
-  const permissions = rolePermissions[user.role as UserRole] || [];
+/**
+ * Check if user is super admin
+ * @param user - The user object or null
+ * @returns Boolean indicating if the user is a super admin
+ */
+export const isSuperAdmin = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.role === 'super_admin';
+};
+
+/**
+ * Check if user has regular user role
+ * @param user - The user object or null
+ * @returns Boolean indicating if the user has regular user role
+ */
+export const isRegularUser = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.role === 'user';
+};
+
+/**
+ * Check if user has any of the given roles
+ * @param user - The user object or null
+ * @param roles - Array of roles to check
+ * @returns Boolean indicating if the user has any of the specified roles
+ */
+export const hasRole = (user: User | null, roles: string[]): boolean => {
+  if (!user || !user.role) return false;
+  return roles.includes(user.role);
+};
+
+/**
+ * Check if user has completed KYC verification
+ * @param user - The user object or null
+ * @returns Boolean indicating if the user has completed KYC
+ */
+export const hasCompletedKyc = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.kycStatus === 'verified';
+};
+
+/**
+ * Check if user is KYC verified and has an active account
+ * @param user - The user object or null
+ * @returns Boolean indicating if the user is fully verified
+ */
+export const isVerifiedActiveUser = (user: User | null): boolean => {
+  if (!user) return false;
+  return user.kycStatus === 'verified';
+};
+
+/**
+ * Check if user can access investor features
+ * @param user - The user object or null
+ * @returns Boolean indicating if the user can access investor features
+ */
+export const canAccessInvestorFeatures = (user: User | null): boolean => {
+  if (!user) return false;
+  // Admins can also access investor features for testing/support
+  return (user.role === 'user' || isAdmin(user));
+};
+
+/**
+ * Check if user has the required accreditation level
+ * @param user - The user object or null
+ * @param requiredLevel - Required accreditation level
+ * @returns Boolean indicating if the user has the required accreditation
+ */
+export const hasAccreditationLevel = (
+  user: User | null, 
+  requiredLevel: string
+): boolean => {
+  if (!user) return false;
   
-  return permissions.includes(permission);
-}
-
-/**
- * Check if a user has all of the specified permissions
- */
-export function hasAllPermissions(user: User | null, permissions: string[]): boolean {
-  if (!user || !user.role) {
-    return false;
-  }
-
-  // Get permissions for the user's role
-  const userPermissions = rolePermissions[user.role as UserRole] || [];
+  // Admins bypass accreditation checks
+  if (isAdmin(user)) return true;
   
-  return permissions.every(permission => userPermissions.includes(permission));
-}
-
-/**
- * Check if a user has any of the specified permissions
- */
-export function hasAnyPermission(user: User | null, permissions: string[]): boolean {
-  if (!user || !user.role) {
-    return false;
-  }
-
-  // Get permissions for the user's role
-  const userPermissions = rolePermissions[user.role as UserRole] || [];
+  // Check user's accreditation level
+  if (!user.accreditationLevel) return false;
   
-  return permissions.some(permission => userPermissions.includes(permission));
-}
+  // Map accreditation levels to numerical values for comparison
+  const levelValues: Record<string, number> = {
+    'none': 0,
+    'basic': 1,
+    'intermediate': 2,
+    'advanced': 3
+  };
+  
+  const userLevel = levelValues[user.accreditationLevel] || 0;
+  const required = levelValues[requiredLevel] || 0;
+  
+  return userLevel >= required;
+};
 
 /**
- * Check if a user has a specific role
+ * Check if a property is accessible to the user based on accreditation
+ * @param user - The user object or null
+ * @param property - The property object
+ * @returns Boolean indicating if the property is accessible to the user
  */
-export function hasRole(user: User | null, role: UserRole | UserRole[]): boolean {
-  if (!user || !user.role) {
-    return false;
+export const canAccessProperty = (user: User | null, property: any): boolean => {
+  if (!user) return false;
+  
+  // Admins can access all properties
+  if (isAdmin(user)) return true;
+  
+  // If property requires accreditation
+  if (property.accreditedOnly) {
+    return hasAccreditationLevel(user, property.requiredAccreditation || 'basic');
   }
-
-  const roles = Array.isArray(role) ? role : [role];
-  return roles.includes(user.role as UserRole);
-}
-
-/**
- * Get all permissions for a given role
- */
-export function getPermissionsForRole(role: UserRole): string[] {
-  return rolePermissions[role] || [];
-}
-
-/**
- * Check if a role includes a given permission
- */
-export function roleHasPermission(role: UserRole, permission: string): boolean {
-  const permissions = rolePermissions[role] || [];
-  return permissions.includes(permission);
-}
+  
+  // Regular properties accessible to all users
+  return true;
+};

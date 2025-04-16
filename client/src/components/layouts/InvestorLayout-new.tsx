@@ -254,7 +254,7 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative flex items-center space-x-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.profilePicture || ''} alt={user?.username || 'Investor'} />
+                      <AvatarImage src={user?.profileImage || ''} alt={user?.username || 'Investor'} />
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <span className="hidden md:inline-block">
