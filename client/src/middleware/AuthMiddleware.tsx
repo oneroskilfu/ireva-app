@@ -41,8 +41,8 @@ const AuthMiddleware = ({ children, requiredRoles = [] }: AuthMiddlewareProps) =
         }
         
         // If roles are specified, check if user has required role
-        if (requiredRoles.length > 0) {
-          const hasRequiredRole = requiredRoles.includes(user.role);
+        if (requiredRoles.length > 0 && user.role) {
+          const hasRequiredRole = requiredRoles.includes(user.role as string);
           
           if (!hasRequiredRole) {
             // Redirect based on role

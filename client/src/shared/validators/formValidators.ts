@@ -1,164 +1,253 @@
+/**
+ * Form validation utilities for consistent validation across the application
+ */
 import { z } from 'zod';
 
-/**
- * Collection of form validators for consistent validation across the application
- */
-
-// Basic user information validators
-export const usernameValidator = z
+// Email validation
+export const emailSchema = z
   .string()
-  .min(3, 'Username must be at least 3 characters')
-  .max(30, 'Username must be less than 30 characters');
+  .email('Please enter a valid email address')
+  .min(5, 'Email must be at least 5 characters')
+  .max(255, 'Email cannot exceed 255 characters');
 
-export const emailValidator = z
-  .string()
-  .email('Please enter a valid email address');
-
-export const passwordValidator = z
+// Password validation - require at least 8 chars, 1 uppercase, 1 lowercase, 1 number
+export const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
+  .max(100, 'Password cannot exceed 100 characters')
   .regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
     'Password must contain at least one uppercase letter, one lowercase letter, and one number'
   );
 
-export const confirmPasswordValidator = (passwordField: string) =>
-  z
-    .string()
-    .min(1, 'Please confirm your password')
-    .refine((val) => val === passwordField, {
-      message: 'Passwords do not match',
-    });
-
-// Nigerian phone number validator
-export const phoneNumberValidator = z
+// Username validation - alphanumeric with underscore and dash
+export const usernameSchema = z
   .string()
-  .regex(/^(\+234|0)[0-9]{10}$/, 'Please enter a valid Nigerian phone number');
+  .min(3, 'Username must be at least 3 characters')
+  .max(50, 'Username cannot exceed 50 characters')
+  .regex(
+    /^[a-zA-Z0-9_-]+$/,
+    'Username can only contain letters, numbers, underscores, and dashes'
+  );
 
-// OTP validator
-export const otpValidator = z
-  .string()
-  .length(6, 'OTP must be 6 digits')
-  .regex(/^\d+$/, 'OTP must contain only numbers');
-
-// User profile validators
-export const nameValidator = z
+// Name validation
+export const nameSchema = z
   .string()
   .min(2, 'Name must be at least 2 characters')
-  .max(50, 'Name must be less than 50 characters');
+  .max(100, 'Name cannot exceed 100 characters')
+  .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes');
 
-export const addressValidator = z
+// Nigerian phone number validation (e.g., +234 or 0 prefix)
+export const phoneNumberSchema = z
   .string()
-  .min(5, 'Address must be at least 5 characters')
-  .max(200, 'Address must be less than 200 characters');
+  .refine(
+    (value) => {
+      // Remove spaces, dashes, parentheses
+      const cleanedValue = value.replace(/[\s\-()]/g, '');
+      
+      // Match Nigerian format: +234XXXXXXXXXX, 234XXXXXXXXXX, or 0XXXXXXXXXX
+      const nigerianPhoneRegex = /^(?:\+?234|0)[789]\d{9}$/;
+      return nigerianPhoneRegex.test(cleanedValue);
+    },
+    {
+      message: 'Please enter a valid Nigerian phone number (e.g., +234 XXX XXX XXXX or 080 XXX XXX XX)',
+    }
+  );
 
-// Investment validators
-export const investmentAmountValidator = (minAmount: number) =>
-  z
-    .number()
-    .min(minAmount, `Investment must be at least ₦${minAmount.toLocaleString()}`)
-    .or(z.string().regex(/^\d+$/).transform(Number));
-
-// Property validators
-export const propertyNameValidator = z
-  .string()
-  .min(3, 'Property name must be at least 3 characters')
-  .max(100, 'Property name must be less than 100 characters');
-
-export const propertyDescriptionValidator = z
-  .string()
-  .min(20, 'Description must be at least 20 characters')
-  .max(2000, 'Description must be less than 2000 characters');
-
-export const propertyLocationValidator = z
-  .string()
-  .min(3, 'Location must be at least 3 characters')
-  .max(100, 'Location must be less than 100 characters');
-
-export const propertyPriceValidator = z
+// Amount validation (for investments)
+export const amountSchema = z
   .number()
-  .positive('Price must be a positive number')
-  .or(z.string().regex(/^\d+$/).transform(Number));
+  .or(z.string().regex(/^\d+$/).transform(Number))
+  .refine((val) => val > 0, 'Amount must be greater than 0')
+  .refine((val) => val <= 1000000000, 'Amount cannot exceed 1,000,000,000');
 
-export const propertyReturnValidator = z
-  .number()
-  .min(0, 'Return percentage cannot be negative')
-  .max(100, 'Return percentage cannot exceed 100%')
-  .or(z.string().regex(/^\d+(\.\d+)?$/).transform(Number));
+// Currency schema (limited to supported currencies)
+export const currencySchema = z.enum(['NGN', 'USD', 'GHS', 'KES']);
 
-export const propertyImageValidator = z
+// Date validation (must be a valid date, not in the past for future dates)
+export const futureDateSchema = z
+  .date()
+  .refine((date) => date > new Date(), 'Date must be in the future');
+
+// OTP validation (6 digits)
+export const otpSchema = z
   .string()
-  .url('Image URL must be a valid URL')
-  .or(z.instanceof(File));
+  .length(6, 'OTP must be exactly 6 digits')
+  .regex(/^\d+$/, 'OTP must contain only digits');
 
-// KYC validators
-export const idTypeValidator = z.enum(['nationalId', 'passport', 'driversLicense'], {
-  errorMap: () => ({ message: 'Please select a valid ID type' }),
-});
-
-export const idNumberValidator = z
-  .string()
-  .min(5, 'ID number must be at least 5 characters')
-  .max(20, 'ID number must be less than 20 characters');
-
-// Message validators
-export const messageValidator = z
-  .string()
-  .min(1, 'Message cannot be empty')
-  .max(1000, 'Message must be less than 1000 characters');
-
-// Common form schemas
-export const loginFormSchema = z.object({
-  username: usernameValidator,
-  password: z.string().min(1, 'Password is required'),
-});
-
-export const registerFormSchema = z.object({
-  username: usernameValidator,
-  email: emailValidator,
-  password: passwordValidator,
-  confirmPassword: z.string(),
-  phoneNumber: phoneNumberValidator,
-  agreeToTerms: z.boolean().refine((val) => val === true, {
-    message: 'You must agree to the terms and conditions',
+// KYC Document schema
+export const kycDocumentSchema = z.object({
+  idType: z.enum(['national_id', 'drivers_license', 'passport', 'voters_card'], {
+    invalid_type_error: 'Please select a valid ID type',
   }),
+  idNumber: z.string().min(3, 'ID number must be at least 3 characters'),
+  expiryDate: z.date().optional(),
+  frontImage: z.string().min(1, 'Front image is required'),
+  backImage: z.string().optional(),
+  selfieImage: z.string().min(1, 'Selfie image is required'),
+});
+
+// Property search filters schema
+export const propertyFilterSchema = z.object({
+  location: z.string().optional(),
+  type: z
+    .enum(['residential', 'commercial', 'industrial', 'mixed-use', 'land'])
+    .optional(),
+  minInvestment: z
+    .number()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .optional(),
+  maxInvestment: z
+    .number()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .optional(),
+  targetReturn: z
+    .number()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .optional(),
+  term: z
+    .number()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .optional(),
+});
+
+// Login form schema
+export const loginFormSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+  rememberMe: z.boolean().optional(),
+});
+
+// Registration form schema
+export const registrationFormSchema = z.object({
+  username: usernameSchema,
+  email: emailSchema,
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+  firstName: nameSchema.optional(),
+  lastName: nameSchema.optional(),
+  phoneNumber: phoneNumberSchema.optional(),
+  agreeToTerms: z.boolean().refine((val) => val === true, 'You must agree to the terms and conditions'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
 });
 
-export const profileUpdateFormSchema = z.object({
-  firstName: nameValidator.optional(),
-  lastName: nameValidator.optional(),
-  phoneNumber: phoneNumberValidator.optional(),
-  email: emailValidator.optional(),
-  address: addressValidator.optional(),
+// Investment form schema
+export const investmentFormSchema = z.object({
+  propertyId: z.number().positive('Please select a valid property'),
+  amount: amountSchema,
+  reinvestmentOption: z.boolean().optional(),
+  paymentMethod: z.enum(['bank_transfer', 'credit_card', 'debit_card', 'paystack', 'flutterwave', 'wallet']),
+  acceptTerms: z.boolean().refine((val) => val === true, 'You must accept the investment terms'),
 });
 
+// KYC submission form schema
+export const kycSubmissionFormSchema = z.object({
+  firstName: nameSchema,
+  lastName: nameSchema,
+  dateOfBirth: z.date({
+    required_error: 'Date of birth is required',
+    invalid_type_error: 'Please enter a valid date',
+  }),
+  address: z.string().min(5, 'Address must be at least 5 characters'),
+  city: z.string().min(2, 'City must be at least 2 characters'),
+  state: z.string().min(2, 'State must be at least 2 characters'),
+  country: z.string().min(2, 'Country must be at least 2 characters'),
+  postalCode: z.string().optional(),
+  idDocument: kycDocumentSchema,
+});
+
+// Profile update form schema
+export const profileUpdateFormSchema = z.object({
+  firstName: nameSchema.optional(),
+  lastName: nameSchema.optional(),
+  email: emailSchema.optional(),
+  phoneNumber: phoneNumberSchema.optional(),
+  bio: z.string().max(500, 'Bio cannot exceed 500 characters').optional(),
+  notificationPreferences: z.object({
+    email: z.boolean().optional(),
+    sms: z.boolean().optional(),
+    push: z.boolean().optional(),
+  }).optional(),
+  directMessageEnabled: z.boolean().optional(),
+});
+
+// Password change form schema
 export const passwordChangeFormSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: passwordValidator,
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
+  newPassword: passwordSchema,
+  confirmNewPassword: z.string().min(1, 'Please confirm your new password'),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  message: 'New passwords do not match',
+  path: ['confirmNewPassword'],
 });
 
-export const kycSubmissionFormSchema = z.object({
-  idType: idTypeValidator,
-  idNumber: idNumberValidator,
-  frontImage: propertyImageValidator,
-  backImage: propertyImageValidator.optional(),
-  selfieImage: propertyImageValidator,
+// Property search form schema
+export const propertySearchFormSchema = z.object({
+  query: z.string().optional(),
+  location: z.string().optional(),
+  type: z.enum(['residential', 'commercial', 'industrial', 'mixed-use', 'land']).optional(),
+  minInvestment: z
+    .number()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .optional(),
+  maxInvestment: z
+    .number()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .optional(),
+  targetReturn: z
+    .number()
+    .or(z.string().regex(/^\d+$/).transform(Number))
+    .optional(),
 });
 
-export const investmentFormSchema = (minAmount: number) => z.object({
-  propertyId: z.number().positive('Please select a property'),
-  amount: investmentAmountValidator(minAmount),
-  paymentMethod: z.enum(['wallet', 'card', 'bank'], {
-    errorMap: () => ({ message: 'Please select a valid payment method' }),
-  }),
-  agreeToTerms: z.boolean().refine((val) => val === true, {
-    message: 'You must agree to the investment terms',
-  }),
+// Contact form schema
+export const contactFormSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  phoneNumber: phoneNumberSchema.optional(),
+  subject: z.string().min(5, 'Subject must be at least 5 characters').max(100, 'Subject cannot exceed 100 characters'),
+  message: z.string().min(20, 'Message must be at least 20 characters').max(1000, 'Message cannot exceed 1000 characters'),
 });
+
+// Direct message form schema
+export const directMessageFormSchema = z.object({
+  recipientId: z.number().positive('Please select a valid recipient'),
+  message: z.string().min(1, 'Message is required').max(1000, 'Message cannot exceed 1000 characters'),
+  attachments: z.array(z.string()).optional(),
+});
+
+// Form error helpers
+export const getFormFieldError = (errors: any, field: string): string | undefined => {
+  return errors[field]?.message;
+};
+
+// Utility to check if an object has any errors
+export const hasErrors = (errors: any): boolean => {
+  return Object.keys(errors).length > 0;
+};
+
+// Format a value as Nigerian Naira
+export const formatNaira = (amount: number): string => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+// Format a value as US Dollar
+export const formatUSD = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
+// Format a value as percentage
+export const formatPercentage = (value: number): string => {
+  return `${value.toFixed(1)}%`;
+};
