@@ -3,6 +3,7 @@ import { db } from '../db';
 import { kycSubmissions, users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { verifyToken } from '../auth-jwt';
+import emailService from '../services/emailService';
 
 const router = express.Router();
 
@@ -64,6 +65,22 @@ router.post('/', verifyToken, async (req, res) => {
       link: `/admin/kyc/${userId}`
     });
     */
+    
+    // Get user details for email notification
+    const [userDetails] = await db.select()
+      .from(users)
+      .where(eq(users.id, userId));
+      
+    // Send email notification
+    if (userDetails && userDetails.email) {
+      try {
+        await emailService.sendKYCPendingEmail(userDetails);
+        console.log(`KYC submission email sent to ${userDetails.email}`);
+      } catch (emailError) {
+        console.error('Failed to send KYC submission email:', emailError);
+        // Continue processing even if email fails
+      }
+    }
 
     res.status(201).json({
       message: 'KYC submission successful',
@@ -246,6 +263,26 @@ router.patch('/:id/verify', verifyToken, async (req, res) => {
       link: "/dashboard"
     });
     */
+    
+    // Get user details for email notification
+    const [userDetails] = await db.select()
+      .from(users)
+      .where(eq(users.id, submission.userId));
+      
+    // Send email notification based on approval status
+    if (userDetails && userDetails.email) {
+      try {
+        if (approved) {
+          await emailService.sendKYCApprovedEmail(userDetails);
+        } else {
+          await emailService.sendKYCRejectedEmail(userDetails, rejectionReason);
+        }
+        console.log(`KYC ${approved ? 'approval' : 'rejection'} email sent to ${userDetails.email}`);
+      } catch (emailError) {
+        console.error(`Failed to send KYC ${approved ? 'approval' : 'rejection'} email:`, emailError);
+        // Continue processing even if email fails
+      }
+    }
 
     res.json({
       message: approved ? 'KYC verified successfully' : 'KYC rejected',
@@ -341,6 +378,28 @@ router.patch('/:id', verifyToken, async (req, res) => {
 
     // Here you would integrate with a notification system
     // For now we'll just return the toast message in the response
+    
+    // Get user details for email notification
+    const [userDetails] = await db.select()
+      .from(users)
+      .where(eq(users.id, submission.userId));
+      
+    // Send email notification based on status
+    if (userDetails && userDetails.email) {
+      try {
+        if (status === 'verified') {
+          await emailService.sendKYCApprovedEmail(userDetails);
+        } else if (status === 'rejected') {
+          await emailService.sendKYCRejectedEmail(userDetails, rejectionReason);
+        } else if (status === 'pending') {
+          await emailService.sendKYCPendingEmail(userDetails);
+        }
+        console.log(`KYC ${status} email sent to ${userDetails.email}`);
+      } catch (emailError) {
+        console.error(`Failed to send KYC ${status} email:`, emailError);
+        // Continue processing even if email fails
+      }
+    }
     
     res.json({
       message: `KYC status updated to ${status}`,
