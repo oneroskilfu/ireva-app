@@ -463,17 +463,6 @@ export default function AuthPage() {
                       </li>
                     </ul>
                   </div>
-                  
-                  <div className="flex space-x-2">
-                    <div className="w-1/2 p-4 bg-[#e9f6ff] rounded-xl border border-[#d4ebfa]">
-                      <h4 className="font-medium text-[#0c1b46] text-sm mb-2">Detailed Project Listings</h4>
-                      <p className="text-xs text-gray-600">Comprehensive property information with high-quality visuals and financial projections</p>
-                    </div>
-                    <div className="w-1/2 p-4 bg-[#f4f9ff] rounded-xl border border-[#e4effa]">
-                      <h4 className="font-medium text-[#0c1b46] text-sm mb-2">Portfolio Management</h4>
-                      <p className="text-xs text-gray-600">Track performance and manage all your investments in one place</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
