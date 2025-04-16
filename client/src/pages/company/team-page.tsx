@@ -20,14 +20,14 @@ export default function TeamPage() {
   const teamMembers: TeamMember[] = [
     {
       id: 1,
-      name: "Oluwaseun Adeyemi",
+      name: "Frank Ilo",
       role: "Founder & CEO",
-      bio: "Oluwaseun has over 15 years of experience in real estate development and investment banking. Prior to founding iREVA, he led major development projects across Nigeria and West Africa.",
+      bio: "Frank has over 15 years of experience in real estate development and investment banking. Prior to founding iREVA, he led major development projects across Nigeria and West Africa.",
       imageUrl: "https://randomuser.me/api/portraits/men/32.jpg",
       socials: {
         twitter: "https://twitter.com",
         linkedin: "https://linkedin.com",
-        email: "oluwaseun@ireva.ng"
+        email: "frank@ireva.ng"
       }
     },
     {
