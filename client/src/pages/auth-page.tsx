@@ -60,7 +60,9 @@ export default function AuthPage() {
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data, {
       onSuccess: () => {
-        navigate("/dashboard");
+        console.log("Login successful, redirecting to dashboard");
+        // Force a redirect to dashboard on successful login
+        setTimeout(() => navigate("/dashboard"), 100);
       },
     });
   };
@@ -68,7 +70,9 @@ export default function AuthPage() {
   const onRegisterSubmit = (data: RegisterFormValues) => {
     registerMutation.mutate(data, {
       onSuccess: () => {
-        navigate("/dashboard");
+        console.log("Registration successful, redirecting to dashboard");
+        // Force a redirect to dashboard on successful registration
+        setTimeout(() => navigate("/dashboard"), 100);
       },
     });
   };
