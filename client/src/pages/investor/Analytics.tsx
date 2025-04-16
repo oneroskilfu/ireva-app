@@ -429,10 +429,39 @@ const CashFlowAnalysis = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] flex items-center justify-center bg-muted rounded-md mb-4">
-          <div className="flex flex-col items-center">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mb-2" />
-          </div>
+        <div className="h-[300px] mb-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={monthlyReturns}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis 
+                dataKey="month" 
+                tick={{fontSize: 12}} 
+                stroke="#718096"
+              />
+              <YAxis 
+                tick={{fontSize: 12}} 
+                stroke="#718096"
+                tickFormatter={(value) => 
+                  "₦" + value.toLocaleString()
+                }
+              />
+              <Tooltip 
+                formatter={(value) => [
+                  "₦" + value.toLocaleString(),
+                  "Returns"
+                ]}
+              />
+              <Bar 
+                dataKey="returns" 
+                name="Monthly Returns" 
+                fill="#8884d8" 
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
         
         <div className="overflow-x-auto">
@@ -491,10 +520,46 @@ const InvestmentComparison = ({ investments, properties }) => {
         <CardDescription>Compare the performance of your investments</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] flex items-center justify-center bg-muted rounded-md mb-4">
-          <div className="flex flex-col items-center">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mb-2" />
-          </div>
+        <div className="h-[300px] mb-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={propertyPerformance}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              layout="vertical"
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={false} />
+              <XAxis 
+                type="number"
+                tick={{fontSize: 12}} 
+                stroke="#718096"
+                domain={[0, 20]}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <YAxis 
+                dataKey="name"
+                type="category"
+                tick={{fontSize: 12}} 
+                stroke="#718096"
+                width={120}
+              />
+              <Tooltip 
+                formatter={(value) => [`${value}%`, ""]}
+              />
+              <Legend />
+              <Bar 
+                dataKey="return" 
+                name="Actual Return" 
+                fill="#8884d8" 
+                radius={[0, 4, 4, 0]}
+              />
+              <Bar 
+                dataKey="benchmark" 
+                name="Target Return" 
+                fill="#82ca9d" 
+                radius={[0, 4, 4, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
         
         <div className="space-y-4">
@@ -544,10 +609,56 @@ const ProjectedFutureValue = () => {
         <CardDescription>Estimated future value of your portfolio</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] flex items-center justify-center bg-muted rounded-md mb-4">
-          <div className="flex flex-col items-center">
-            <LineChart className="h-12 w-12 text-muted-foreground mb-2" />
-          </div>
+        <div className="h-[300px] mb-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={[
+                { year: 2025, value: 12500000 },
+                { year: 2026, value: 14125000 },
+                { year: 2027, value: 16243750 },
+                { year: 2028, value: 18562500 },
+                { year: 2029, value: 21346875 },
+                { year: 2030, value: 25000000 }
+              ]}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis 
+                dataKey="year" 
+                tick={{fontSize: 12}} 
+                stroke="#718096"
+              />
+              <YAxis 
+                tick={{fontSize: 12}} 
+                stroke="#718096"
+                tickFormatter={(value) => 
+                  `₦${(value / 1000000).toFixed(1)}M`
+                }
+              />
+              <Tooltip 
+                formatter={(value) => [
+                  `₦${value.toLocaleString()}`,
+                  "Projected Value"
+                ]}
+                labelFormatter={(label) => `Year: ${label}`}
+              />
+              <ReferenceLine 
+                y={12500000} 
+                stroke="#ff0000" 
+                strokeDasharray="3 3" 
+                label={{ value: "Current Value", position: "insideTopLeft", fill: "#ff0000", fontSize: 12 }} 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                name="Projected Value" 
+                stroke="#8884d8" 
+                activeDot={{ r: 8 }} 
+                strokeWidth={2}
+              />
+              <Brush dataKey="year" height={30} stroke="#8884d8" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -744,9 +855,20 @@ const InvestorAnalytics = () => {
                   xAxisKey="category"
                   valueSuffix="%"
                 />
-                <MockLineChart 
+                <LineChartComponent 
                   title="Performance vs Market" 
-                  description="Your portfolio performance vs market indices" 
+                  description="Your portfolio performance vs market indices"
+                  data={[
+                    { month: 'Jan', portfolio: 12.5, market: 10.2 },
+                    { month: 'Feb', portfolio: 12.8, market: 10.5 },
+                    { month: 'Mar', portfolio: 13.2, market: 10.8 },
+                    { month: 'Apr', portfolio: 13.5, market: 11.0 },
+                    { month: 'May', portfolio: 14.1, market: 11.3 },
+                    { month: 'Jun', portfolio: 14.5, market: 11.5 }
+                  ]}
+                  dataKey="portfolio"
+                  xAxisKey="month"
+                  valueSuffix="%"
                 />
               </div>
             </div>
