@@ -350,78 +350,70 @@ export default function AuthPage() {
                   <p className="text-gray-600">Your gateway to premium real estate investments in Nigeria</p>
                 </div>
                 
-                {/* Combined Dashboard and Character Illustration */}
+                {/* Character Illustration Similar to attached_assets/login front.webp */}
                 <div className="w-80 h-80 relative mb-6">
-                  <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-                    {/* Dashboard Frame */}
-                    <rect x="100" y="80" width="300" height="220" rx="10" fill="#f8fafc" stroke="#0c1b46" strokeWidth="2" />
+                  <svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+                    {/* Room Background */}
+                    <rect x="50" y="50" width="400" height="300" rx="5" fill="#ffffff" />
                     
-                    {/* Header */}
-                    <rect x="100" y="80" width="300" height="40" rx="10" fill="#0c1b46" />
-                    <text x="120" y="105" fontFamily="Arial" fontSize="16" fill="#ffffff">iREVA Financial Dashboard</text>
+                    {/* Window */}
+                    <rect x="350" y="80" width="80" height="120" rx="2" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
+                    <line x1="390" y1="80" x2="390" y2="200" stroke="#e2e8f0" strokeWidth="2" />
+                    <line x1="350" y1="140" x2="430" y2="140" stroke="#e2e8f0" strokeWidth="2" />
                     
-                    {/* Left sidebar */}
-                    <rect x="100" y="120" width="70" height="180" fill="#eafffd" />
-                    <circle cx="135" cy="145" r="15" fill="#16b5a0" />
-                    <rect x="115" y="170" width="40" height="6" rx="2" fill="#0c1b46" />
-                    <rect x="115" y="185" width="40" height="6" rx="2" fill="#0c1b46" />
-                    <rect x="115" y="200" width="40" height="6" rx="2" fill="#0c1b46" />
-                    <rect x="115" y="215" width="40" height="6" rx="2" fill="#0c1b46" />
-                    <rect x="115" y="230" width="40" height="6" rx="2" fill="#0c1b46" />
+                    {/* Floor */}
+                    <rect x="50" y="250" width="400" height="100" fill="#f8fafc" />
+                    <line x1="50" y1="250" x2="450" y2="250" stroke="#e2e8f0" strokeWidth="1" />
                     
-                    {/* Main Content Area - Top Cards */}
-                    <rect x="180" y="130" width="100" height="60" rx="5" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
-                    <rect x="190" y="140" width="60" height="10" rx="2" fill="#0c1b46" />
-                    <text x="190" y="165" fontFamily="Arial" fontSize="18" fill="#16b5a0">₦2.4M</text>
-                    <text x="190" y="180" fontFamily="Arial" fontSize="10" fill="#64748b">Total Invested</text>
+                    {/* Lamp */}
+                    <rect x="300" y="90" width="10" height="80" fill="#0c1b46" />
+                    <path d="M280,90 L330,90 L315,60 L295,60 Z" fill="#0c1b46" />
                     
-                    <rect x="290" y="130" width="100" height="60" rx="5" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
-                    <rect x="300" y="140" width="60" height="10" rx="2" fill="#0c1b46" />
-                    <text x="300" y="165" fontFamily="Arial" fontSize="18" fill="#16b5a0">18.5%</text>
-                    <text x="300" y="180" fontFamily="Arial" fontSize="10" fill="#64748b">Annual Return</text>
+                    {/* Plant */}
+                    <rect x="430" y="220" width="15" height="30" fill="#16b5a0" />
+                    <path d="M430,220 C420,210 425,190 440,200 C455,190 460,210 445,220" fill="#16b5a0" />
+                    <path d="M425,210 C415,200 420,180 435,190" fill="#16b5a0" />
+                    <path d="M450,210 C460,200 455,180 440,190" fill="#16b5a0" />
                     
-                    {/* Chart Area */}
-                    <rect x="180" y="200" width="210" height="90" rx="5" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
+                    {/* Bean Bag Chair */}
+                    <ellipse cx="200" cy="280" rx="70" ry="30" fill="#16b5a0" opacity="0.7" />
+                    <ellipse cx="200" cy="260" rx="60" ry="40" fill="#16b5a0" />
                     
-                    {/* Bar Chart */}
-                    <rect x="200" y="260" width="15" height="20" fill="#16b5a0" />
-                    <rect x="225" y="240" width="15" height="40" fill="#16b5a0" />
-                    <rect x="250" y="230" width="15" height="50" fill="#16b5a0" />
-                    <rect x="275" y="220" width="15" height="60" fill="#16b5a0" />
-                    <rect x="300" y="210" width="15" height="70" fill="#16b5a0" />
-                    <rect x="325" y="245" width="15" height="35" fill="#16b5a0" />
-                    <rect x="350" y="235" width="15" height="45" fill="#16b5a0" />
+                    {/* Person */}
+                    {/* Head with glasses */}
+                    <circle cx="220" cy="170" r="25" fill="#64748b" />
+                    <rect x="205" y="165" width="30" height="10" rx="2" fill="#0c1b46" />
+                    <line x1="205" y1="170" x2="195" y2="175" stroke="#0c1b46" strokeWidth="1" />
+                    <line x1="235" y1="170" x2="245" y2="175" stroke="#0c1b46" strokeWidth="1" />
                     
-                    {/* X-axis */}
-                    <line x1="190" y1="280" x2="370" y2="280" stroke="#64748b" strokeWidth="1" />
+                    {/* Body - Business suit */}
+                    <path d="M210,195 L230,195 L235,260 L205,260 Z" fill="#1e293b" />
+                    <rect x="215" y="195" width="10" height="30" fill="#f8fafc" /> {/* Shirt */}
                     
-                    {/* Y-axis */}
-                    <line x1="190" y1="210" x2="190" y2="280" stroke="#64748b" strokeWidth="1" />
+                    {/* Arms */}
+                    <path d="M210,200 L185,230 L190,235 L215,215 Z" fill="#64748b" /> {/* Left arm */}
+                    <path d="M230,200 L260,230 L255,235 L225,215 Z" fill="#64748b" /> {/* Right arm */}
                     
-                    {/* Title */}
-                    <text x="190" y="220" fontFamily="Arial" fontSize="12" fill="#0c1b46">Investment Growth (5 Years)</text>
+                    {/* Legs */}
+                    <path d="M210,260 L200,310 L215,310 L220,260 Z" fill="#1e293b" /> {/* Left leg */}
+                    <path d="M220,260 L225,310 L240,310 L230,260 Z" fill="#1e293b" /> {/* Right leg */}
                     
-                    {/* Property Icons */}
-                    <rect x="130" y="320" width="240" height="60" rx="10" fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
+                    {/* Laptop */}
+                    <rect x="190" y="230" width="60" height="40" rx="2" fill="#0c1b46" /> {/* Base */}
+                    <rect x="195" y="235" width="50" height="30" rx="1" fill="#ffffff" /> {/* Screen */}
+                    <rect x="190" y="270" width="60" height="5" rx="1" fill="#1e293b" /> {/* Base bottom */}
                     
-                    {/* Property 1 */}
-                    <rect x="150" y="330" width="80" height="40" rx="5" fill="#eafffd" />
-                    <polygon points="160,338 190,325 220,338 220,360 160,360" fill="#16b5a0" />
-                    <text x="160" y="375" fontFamily="Arial" fontSize="10" fill="#0c1b46">Skyline Apts</text>
+                    {/* Screen content - iREVA Dashboard */}
+                    <rect x="200" y="240" width="40" height="5" rx="1" fill="#16b5a0" />
+                    <rect x="200" y="250" width="20" height="3" rx="1" fill="#0c1b46" />
+                    <rect x="225" y="250" width="10" height="3" rx="1" fill="#0c1b46" />
+                    <rect x="200" y="255" width="40" height="3" rx="1" fill="#0c1b46" />
                     
-                    {/* Property 2 */}
-                    <rect x="250" y="330" width="80" height="40" rx="5" fill="#eafffd" />
-                    <polygon points="260,338 290,325 320,338 320,360 260,360" fill="#0c1b46" />
-                    <text x="260" y="375" fontFamily="Arial" fontSize="10" fill="#0c1b46">Lekki Gardens</text>
-                    
-                    {/* Character - Person */}
-                    <circle cx="420" cy="315" r="35" fill="#774421" /> {/* Head */}
-                    <rect x="403" y="350" width="35" height="80" rx="8" fill="#5a67d8" /> {/* Body */}
-                    <rect x="390" y="360" width="12" height="50" rx="4" fill="#774421" /> {/* Left arm */}
-                    
-                    {/* Right arm pointing at dashboard */}
-                    <line x1="440" y1="365" x2="400" y2="180" stroke="#774421" strokeWidth="12" strokeLinecap="round" />
-                    <circle cx="400" cy="180" r="6" fill="#774421" /> {/* Hand */}
+                    {/* Coffee Cup */}
+                    <rect x="145" y="250" width="10" height="15" rx="1" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
+                    <path d="M145,255 C140,255 140,260 145,260" fill="none" stroke="#e2e8f0" strokeWidth="1" />
+                    <path d="M150,250 C155,245 155,240 150,240 L145,240 L145,250 Z" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" />
+                    <path d="M146,245 C146,244 149,244 149,245" fill="none" stroke="#e2e8f0" strokeWidth="1" /> {/* Steam */}
                   </svg>
                 </div>
                 
