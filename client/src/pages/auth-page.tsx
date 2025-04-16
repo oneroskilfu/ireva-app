@@ -11,8 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Info, Lock } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-// Import the login image
-import loginIllustration from "@assets/login front.webp";
 
 // Extended schemas with validation
 const loginSchema = z.object({
@@ -346,11 +344,49 @@ export default function AuthPage() {
           {/* Right side - Illustration */}
           <div className="hidden md:block md:w-1/2 bg-white p-12">
             <div className="h-full flex items-center justify-center">
-              <img 
-                src={loginIllustration} 
-                alt="Login illustration" 
-                className="max-w-full"
-              />
+              <div className="flex flex-col items-center">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-[#0c1b46] mb-3">Welcome to iREVA</h2>
+                  <p className="text-gray-600">Your gateway to premium real estate investments in Nigeria</p>
+                </div>
+                <div className="bg-blue-100 rounded-xl w-full max-w-md p-6 shadow-inner">
+                  <div className="space-y-4">
+                    <div className="flex items-start">
+                      <div className="rounded-full p-2 bg-blue-200 mr-4 text-blue-700">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-blue-900">Diverse Investment Options</h3>
+                        <p className="text-sm text-blue-800">Start investing with as little as ₦100,000</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="rounded-full p-2 bg-blue-200 mr-4 text-blue-700">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-blue-900">Transparent Returns</h3>
+                        <p className="text-sm text-blue-800">Track your investments with detailed analytics</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="rounded-full p-2 bg-blue-200 mr-4 text-blue-700">
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-blue-900">Professional Management</h3>
+                        <p className="text-sm text-blue-800">Properties managed by industry experts</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
