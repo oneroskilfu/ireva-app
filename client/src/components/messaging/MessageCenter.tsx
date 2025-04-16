@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 import {
   Card,
   CardContent,
@@ -8,156 +10,164 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
+} from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Loader2, 
   Send, 
-  Search, 
   Inbox, 
-  MailPlus, 
-  MessageSquare, 
+  PaperPlaneOff, 
   Users, 
-  Clock, 
-  ChevronDown,
-  MoreHorizontal,
-  Trash,
-  ArchiveIcon,
-  Flag
+  Search, 
+  MailOpen, 
+  Mail, 
+  Reply,
+  ArrowLeft
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
+// Type definitions
 interface Message {
   id: number;
-  sender: {
-    id: number;
-    name: string;
-    avatar?: string;
-    role?: string;
-  };
-  recipient: {
-    id: number;
-    name: string;
-    avatar?: string;
-    role?: string;
-  };
-  subject: string;
-  body: string;
-  isRead: boolean;
-  createdAt: string;
-  parentMessageId?: number;
+  senderId: number;
+  recipientId: number;
+  message: string;
+  isRead: boolean | null;
+  readAt: Date | null;
+  createdAt: Date | null;
+  sender?: User;
+  recipient?: User;
 }
 
 interface User {
   id: number;
-  name: string;
-  avatar?: string;
-  role?: string;
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: string | null;
+  profileImage?: string;
 }
 
 const MessageCenter: React.FC = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { user } = useAuth() || { user: null };
   const [activeTab, setActiveTab] = useState('inbox');
-  const [selectedConversation, setSelectedConversation] = useState<Message | null>(null);
-  const [replyMessage, setReplyMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [newMessageMode, setNewMessageMode] = useState(false);
-  const [newMessageData, setNewMessageData] = useState({
-    recipientId: '',
-    subject: '',
-    body: '',
-  });
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [newMessageText, setNewMessageText] = useState('');
+  const [recipientId, setRecipientId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const messageEndRef = useRef<HTMLDivElement>(null);
 
-  // Get messages
-  const { data: messages, isLoading: isLoadingMessages } = useQuery<Message[]>({
-    queryKey: ['/api/messages'],
+  // Fetch inbox messages
+  const { 
+    data: inboxMessages = [], 
+    isLoading: isLoadingInbox,
+    refetch: refetchInbox
+  } = useQuery<Message[]>({
+    queryKey: ['/api/messages/inbox'],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/messages/${activeTab}`);
+      const res = await apiRequest('GET', '/api/messages/inbox');
       return await res.json();
     },
-    enabled: !!user,
   });
 
-  // Get available users for new message
-  const { data: users, isLoading: isLoadingUsers } = useQuery<User[]>({
+  // Fetch sent messages
+  const { 
+    data: sentMessages = [], 
+    isLoading: isLoadingSent,
+    refetch: refetchSent
+  } = useQuery<Message[]>({
+    queryKey: ['/api/messages/sent'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/messages/sent');
+      return await res.json();
+    },
+  });
+
+  // Fetch all users for recipient selection
+  const { data: users = [] } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/users');
       return await res.json();
     },
-    enabled: !!user && newMessageMode,
   });
 
-  // Get conversation messages
-  const { data: conversation, isLoading: isLoadingConversation } = useQuery<Message[]>({
-    queryKey: ['/api/messages/conversation', selectedConversation?.id],
+  // Fetch conversation if a message is selected
+  const { data: conversation = [] } = useQuery<Message[]>({
+    queryKey: ['/api/messages', selectedMessage?.id, 'conversation'],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/messages/${selectedConversation?.id}/conversation`);
+      if (!selectedMessage) return [];
+      const res = await apiRequest('GET', `/api/messages/${selectedMessage.id}/conversation`);
       return await res.json();
     },
-    enabled: !!selectedConversation,
+    enabled: !!selectedMessage,
   });
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: { recipientId?: string; body: string; subject?: string; parentMessageId?: number }) => {
-      const res = await apiRequest('POST', '/api/messages', messageData);
+    mutationFn: async (data: { recipientId: number; message: string }) => {
+      const res = await apiRequest('POST', '/api/messages', data);
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Message Sent",
-        description: "Your message has been sent successfully.",
+        title: 'Message Sent',
+        description: 'Your message has been sent successfully.',
       });
-      // Reset form and refresh messages
-      setReplyMessage('');
-      setNewMessageData({
-        recipientId: '',
-        subject: '',
-        body: '',
-      });
-      setNewMessageMode(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
-      if (selectedConversation) {
-        queryClient.invalidateQueries({ queryKey: ['/api/messages/conversation', selectedConversation.id] });
-      }
+      setNewMessageText('');
+      setRecipientId('');
+      queryClient.invalidateQueries({ queryKey: ['/api/messages/sent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages/inbox'] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to send message: ${error.message}`,
-        variant: "destructive",
+        title: 'Failed to Send Message',
+        description: error.message || 'An error occurred while sending your message.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Reply to message mutation
+  const replyMessageMutation = useMutation({
+    mutationFn: async (data: { messageId: number; message: string }) => {
+      const res = await apiRequest('POST', `/api/messages/${data.messageId}/reply`, { message: data.message });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Reply Sent',
+        description: 'Your reply has been sent successfully.',
+      });
+      setReplyText('');
+      if (selectedMessage) {
+        queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedMessage.id, 'conversation'] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/messages/sent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages/inbox'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to Send Reply',
+        description: error.message || 'An error occurred while sending your reply.',
+        variant: 'destructive',
       });
     },
   });
@@ -169,452 +179,412 @@ const MessageCenter: React.FC = () => {
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages/inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages/unread/count'] });
     },
   });
 
-  // Select a conversation and mark it as read if unread
-  const handleSelectConversation = (message: Message) => {
-    setSelectedConversation(message);
-    if (!message.isRead) {
+  // Handle message selection
+  const handleSelectMessage = (message: Message) => {
+    setSelectedMessage(message);
+    
+    // If the message is unread, mark it as read
+    if (message.isRead === false && message.recipientId === user?.id) {
       markAsReadMutation.mutate(message.id);
     }
-    setNewMessageMode(false);
   };
 
-  // Send a reply to the current conversation
-  const handleSendReply = () => {
-    if (!replyMessage.trim() || !selectedConversation) return;
-    
-    sendMessageMutation.mutate({
-      body: replyMessage,
-      parentMessageId: selectedConversation.id,
-    });
-  };
-
-  // Send a new message
-  const handleSendNewMessage = () => {
-    if (!newMessageData.recipientId || !newMessageData.subject || !newMessageData.body.trim()) {
+  // Handle sending a new message
+  const handleSendMessage = () => {
+    if (!recipientId || !newMessageText.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Please complete all required fields.",
-        variant: "destructive",
+        title: 'Missing Information',
+        description: 'Please select a recipient and enter a message.',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     sendMessageMutation.mutate({
-      recipientId: newMessageData.recipientId,
-      subject: newMessageData.subject,
-      body: newMessageData.body,
+      recipientId: parseInt(recipientId),
+      message: newMessageText.trim(),
     });
   };
 
-  // Scroll to bottom of conversation when new messages arrive
+  // Handle replying to a message
+  const handleReplyMessage = () => {
+    if (!selectedMessage || !replyText.trim()) {
+      toast({
+        title: 'Empty Reply',
+        description: 'Please enter a reply message.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    replyMessageMutation.mutate({
+      messageId: selectedMessage.id,
+      message: replyText.trim(),
+    });
+  };
+
+  // Clear selected message
+  const handleBackToList = () => {
+    setSelectedMessage(null);
+    setReplyText('');
+  };
+
+  // Format date
+  const formatDate = (dateString: string | null | Date) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Get user display name
+  const getUserDisplayName = (user: User | undefined) => {
+    if (!user) return 'Unknown User';
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user.username;
+  };
+
+  // Get avatar initials
+  const getAvatarInitials = (user: User | undefined) => {
+    if (!user) return 'NU';
+    if (user.firstName && user.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    return user.username.substring(0, 2).toUpperCase();
+  };
+
+  // Filter messages based on search term
+  const filteredInboxMessages = inboxMessages.filter(message => 
+    message.sender?.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    message.message.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredSentMessages = sentMessages.filter(message => 
+    message.recipient?.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    message.message.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Auto scroll to bottom of conversation
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [conversation]);
 
-  // Filter messages by search query
-  const filteredMessages = messages?.filter(msg =>
-    msg.sender.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.body.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
-  // Format date for display
-  const formatMessageDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else if (date.getFullYear() === today.getFullYear()) {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    } else {
-      return date.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
-    }
-  };
-
   return (
-    <Card className="h-[calc(100vh-8rem)]">
-      <CardHeader className="px-6 pt-6 pb-4">
+    <Card className="w-full h-[calc(100vh-200px)] flex flex-col">
+      <CardHeader className="pb-3">
         <CardTitle>Message Center</CardTitle>
-        <CardDescription>Communicate with investors, admins, and support</CardDescription>
+        <CardDescription>
+          Communicate with investors, property managers, and administrators
+        </CardDescription>
       </CardHeader>
-      <CardContent className="p-0 h-[calc(100%-8rem)]">
-        <div className="flex h-full border-t">
-          {/* Message sidebar */}
-          <div className="w-1/3 border-r h-full flex flex-col">
-            <div className="p-4 flex justify-between items-center border-b">
+      <CardContent className="flex-1 overflow-hidden">
+        {!selectedMessage ? (
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="inbox" className="flex items-center">
-                    <Inbox className="h-4 w-4 mr-2" />
-                    Inbox
+                    <Inbox className="mr-2 h-4 w-4" /> Inbox
+                    {inboxMessages.some(m => !m.isRead && m.recipientId === user?.id) && (
+                      <Badge variant="default" className="ml-2 bg-primary">
+                        New
+                      </Badge>
+                    )}
                   </TabsTrigger>
                   <TabsTrigger value="sent" className="flex items-center">
-                    <Send className="h-4 w-4 mr-2" />
-                    Sent
+                    <PaperPlaneOff className="mr-2 h-4 w-4" /> Sent
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => {
-                  setNewMessageMode(true);
-                  setSelectedConversation(null);
-                }}
-                title="New Message"
-              >
-                <MailPlus className="h-4 w-4" />
-              </Button>
             </div>
-            
-            <div className="p-3 border-b">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+
+            <div className="flex items-center gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  type="search"
                   placeholder="Search messages..."
                   className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              
+              {activeTab === 'inbox' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchInbox()}
+                  className="shrink-0"
+                >
+                  Refresh
+                </Button>
+              )}
+              
+              {activeTab === 'sent' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchSent()}
+                  className="shrink-0"
+                >
+                  Refresh
+                </Button>
+              )}
             </div>
-            
-            <ScrollArea className="flex-1">
-              {isLoadingMessages ? (
-                <div className="p-4 flex justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+
+            <TabsContent value="inbox" className="mt-0 flex-1 overflow-y-auto">
+              {isLoadingInbox ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
                 </div>
-              ) : filteredMessages.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  No messages found.
+              ) : filteredInboxMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-center">
+                  <Inbox className="h-10 w-10 text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">
+                    {searchTerm ? 'No messages match your search' : 'Your inbox is empty'}
+                  </p>
                 </div>
               ) : (
-                <div className="divide-y">
-                  {filteredMessages.map((message) => (
-                    <div 
-                      key={message.id} 
-                      className={cn(
-                        "p-4 cursor-pointer hover:bg-accent/50",
-                        selectedConversation?.id === message.id && "bg-accent",
-                        !message.isRead && activeTab === 'inbox' && "bg-accent/20"
-                      )}
-                      onClick={() => handleSelectConversation(message)}
+                <div className="grid gap-2">
+                  {filteredInboxMessages.map(message => (
+                    <div
+                      key={message.id}
+                      className={`p-3 border rounded-lg hover:bg-accent cursor-pointer ${!message.isRead ? 'bg-accent/20' : ''}`}
+                      onClick={() => handleSelectMessage(message)}
                     >
                       <div className="flex items-start gap-3">
                         <Avatar className="h-10 w-10">
-                          {message.sender.avatar ? (
-                            <AvatarImage src={message.sender.avatar} alt={message.sender.name} />
+                          {message.sender?.profileImage ? (
+                            <AvatarImage src={message.sender.profileImage} alt={getUserDisplayName(message.sender)} />
                           ) : (
-                            <AvatarFallback>
-                              {message.sender.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
+                            <AvatarFallback>{getAvatarInitials(message.sender)}</AvatarFallback>
                           )}
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                            <h3 className={cn(
-                              "text-sm font-medium truncate",
-                              !message.isRead && activeTab === 'inbox' && "font-semibold"
-                            )}>
-                              {activeTab === 'inbox' ? message.sender.name : message.recipient.name}
-                            </h3>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                              {formatMessageDate(message.createdAt)}
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium truncate">{getUserDisplayName(message.sender)}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(message.createdAt)}
                             </span>
                           </div>
-                          <p className="text-sm font-medium truncate">{message.subject}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{message.body}</p>
+                          <div className="flex items-center gap-1">
+                            {!message.isRead ? (
+                              <Mail className="h-3 w-3 text-primary" />
+                            ) : (
+                              <MailOpen className="h-3 w-3 text-muted-foreground" />
+                            )}
+                            <p className="text-sm text-muted-foreground truncate">{message.message}</p>
+                          </div>
                         </div>
                       </div>
-                      {!message.isRead && activeTab === 'inbox' && (
-                        <div className="mt-1 flex justify-end">
-                          <Badge variant="secondary" className="text-xs">New</Badge>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
               )}
-            </ScrollArea>
-          </div>
-          
-          {/* Message content area */}
-          <div className="w-2/3 flex flex-col h-full">
-            {newMessageMode ? (
-              // New message form
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b">
-                  <h2 className="text-lg font-semibold mb-4">New Message</h2>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">To:</label>
-                      <Select 
-                        value={newMessageData.recipientId} 
-                        onValueChange={(value) => setNewMessageData({...newMessageData, recipientId: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select recipient" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {isLoadingUsers ? (
-                            <div className="p-2 flex justify-center">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            </div>
-                          ) : (
-                            <>
-                              <SelectGroup>
-                                <SelectLabel>Admin</SelectLabel>
-                                {users?.filter(u => u.role === 'admin').map((user) => (
-                                  <SelectItem key={user.id} value={user.id.toString()}>
-                                    {user.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                              <SelectGroup>
-                                <SelectLabel>Investors</SelectLabel>
-                                {users?.filter(u => u.role === 'investor').map((user) => (
-                                  <SelectItem key={user.id} value={user.id.toString()}>
-                                    {user.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                              <SelectGroup>
-                                <SelectLabel>Support</SelectLabel>
-                                <SelectItem value="support">Support Team</SelectItem>
-                              </SelectGroup>
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Subject:</label>
-                      <Input
-                        value={newMessageData.subject}
-                        onChange={(e) => setNewMessageData({...newMessageData, subject: e.target.value})}
-                        placeholder="Enter message subject"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Message:</label>
-                      <Textarea 
-                        value={newMessageData.body}
-                        onChange={(e) => setNewMessageData({...newMessageData, body: e.target.value})}
-                        placeholder="Type your message here..."
-                        className="min-h-[200px]"
-                      />
-                    </div>
-                  </div>
+            </TabsContent>
+
+            <TabsContent value="sent" className="mt-0 flex-1 overflow-y-auto">
+              {isLoadingSent ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
                 </div>
-                
-                <div className="p-4 mt-auto border-t flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setNewMessageMode(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleSendNewMessage}
-                    disabled={sendMessageMutation.isPending}
-                  >
-                    {sendMessageMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="mr-2 h-4 w-4" />
-                        Send Message
-                      </>
-                    )}
-                  </Button>
+              ) : filteredSentMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-center">
+                  <PaperPlaneOff className="h-10 w-10 text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">
+                    {searchTerm ? 'No messages match your search' : 'You haven\'t sent any messages yet'}
+                  </p>
                 </div>
-              </div>
-            ) : selectedConversation ? (
-              // Conversation view
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      {selectedConversation.sender.avatar ? (
-                        <AvatarImage 
-                          src={selectedConversation.sender.avatar} 
-                          alt={selectedConversation.sender.name} 
-                        />
-                      ) : (
-                        <AvatarFallback>
-                          {selectedConversation.sender.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div>
-                      <h2 className="text-lg font-semibold">
-                        {activeTab === 'inbox' ? selectedConversation.sender.name : selectedConversation.recipient.name}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedConversation.subject}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <ArchiveIcon className="h-4 w-4 mr-2" />
-                        Archive
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Flag className="h-4 w-4 mr-2" />
-                        Report
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                <ScrollArea className="flex-1 p-4">
-                  {isLoadingConversation ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {conversation?.map((message, index) => {
-                        const isCurrentUser = message.sender.id === user?.id;
-                        return (
-                          <div 
-                            key={message.id} 
-                            className={cn(
-                              "flex gap-4",
-                              isCurrentUser && "justify-end"
-                            )}
-                          >
-                            {!isCurrentUser && (
-                              <Avatar className="h-10 w-10">
-                                {message.sender.avatar ? (
-                                  <AvatarImage 
-                                    src={message.sender.avatar} 
-                                    alt={message.sender.name} 
-                                  />
-                                ) : (
-                                  <AvatarFallback>
-                                    {message.sender.name.charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                )}
-                              </Avatar>
-                            )}
-                            
-                            <div className={cn(
-                              "max-w-[70%]",
-                              isCurrentUser ? "text-right" : "text-left"
-                            )}>
-                              <div className="flex items-center justify-between gap-2 mb-1">
-                                <span className="text-sm font-medium">
-                                  {isCurrentUser ? 'You' : message.sender.name}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatMessageDate(message.createdAt)}
-                                </span>
-                              </div>
-                              
-                              <div className={cn(
-                                "p-3 rounded-lg",
-                                isCurrentUser 
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "bg-accent"
-                              )}>
-                                <p className="text-sm whitespace-pre-wrap">{message.body}</p>
-                              </div>
-                            </div>
-                            
-                            {isCurrentUser && (
-                              <Avatar className="h-10 w-10">
-                                {user.avatar ? (
-                                  <AvatarImage 
-                                    src={user.avatar} 
-                                    alt={user.username || 'You'} 
-                                  />
-                                ) : (
-                                  <AvatarFallback>
-                                    {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                                  </AvatarFallback>
-                                )}
-                              </Avatar>
-                            )}
-                          </div>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  )}
-                </ScrollArea>
-                
-                <div className="p-4 border-t">
-                  <div className="flex gap-3">
-                    <Textarea 
-                      placeholder="Type your reply here..."
-                      value={replyMessage}
-                      onChange={(e) => setReplyMessage(e.target.value)}
-                      className="min-h-[80px]"
-                    />
-                    <Button 
-                      className="self-end"
-                      onClick={handleSendReply}
-                      disabled={sendMessageMutation.isPending || !replyMessage.trim()}
+              ) : (
+                <div className="grid gap-2">
+                  {filteredSentMessages.map(message => (
+                    <div
+                      key={message.id}
+                      className="p-3 border rounded-lg hover:bg-accent cursor-pointer"
+                      onClick={() => handleSelectMessage(message)}
                     >
-                      {sendMessageMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-10 w-10">
+                          {message.recipient?.profileImage ? (
+                            <AvatarImage src={message.recipient.profileImage} alt={getUserDisplayName(message.recipient)} />
+                          ) : (
+                            <AvatarFallback>{getAvatarInitials(message.recipient)}</AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium truncate">To: {getUserDisplayName(message.recipient)}</p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(message.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{message.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="new" className="mt-0 space-y-4">
+              <div className="space-y-2">
+                <Select value={recipientId} onValueChange={setRecipientId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a recipient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users
+                      .filter(u => u.id !== user?.id) // Don't show current user
+                      .map(u => (
+                        <SelectItem key={u.id} value={u.id.toString()}>
+                          {getUserDisplayName(u)}
+                          {u.role && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              ({u.role})
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Textarea
+                placeholder="Write your message here..."
+                className="min-h-[150px]"
+                value={newMessageText}
+                onChange={(e) => setNewMessageText(e.target.value)}
+              />
+            </TabsContent>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col">
+            <div className="mb-4">
+              <Button variant="ghost" size="sm" onClick={handleBackToList} className="mb-2">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to messages
+              </Button>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <Avatar className="h-10 w-10">
+                  {activeTab === 'inbox' && selectedMessage.sender?.profileImage ? (
+                    <AvatarImage src={selectedMessage.sender.profileImage} alt={getUserDisplayName(selectedMessage.sender)} />
+                  ) : activeTab === 'sent' && selectedMessage.recipient?.profileImage ? (
+                    <AvatarImage src={selectedMessage.recipient.profileImage} alt={getUserDisplayName(selectedMessage.recipient)} />
+                  ) : (
+                    <AvatarFallback>
+                      {activeTab === 'inbox' 
+                        ? getAvatarInitials(selectedMessage.sender) 
+                        : getAvatarInitials(selectedMessage.recipient)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div>
+                  <p className="font-medium">
+                    {activeTab === 'inbox' 
+                      ? getUserDisplayName(selectedMessage.sender) 
+                      : `To: ${getUserDisplayName(selectedMessage.recipient)}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(selectedMessage.createdAt)}
+                  </p>
                 </div>
               </div>
-            ) : (
-              // Empty state
-              <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No message selected</h3>
-                <p className="text-muted-foreground max-w-md">
-                  Select a message from the list to view its contents or start a new conversation.
-                </p>
-                <Button 
-                  className="mt-6"
-                  onClick={() => setNewMessageMode(true)}
-                >
-                  <MailPlus className="h-4 w-4 mr-2" />
-                  Compose New Message
-                </Button>
-              </div>
-            )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto mb-4 border rounded-lg p-3">
+              {conversation.length > 0 ? (
+                <div className="space-y-4">
+                  {conversation.map((msg) => (
+                    <div 
+                      key={msg.id} 
+                      className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div 
+                        className={`max-w-[75%] p-3 rounded-lg ${
+                          msg.senderId === user?.id 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <p>{msg.message}</p>
+                        <p className="text-xs mt-1 opacity-70">
+                          {formatDate(msg.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messageEndRef} />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  {selectedMessage.message}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Type your reply..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="min-h-[80px]"
+              />
+              <Button 
+                className="self-end" 
+                onClick={handleReplyMessage}
+                disabled={!replyText.trim() || replyMessageMutation.isPending}
+              >
+                <Reply className="mr-2 h-4 w-4" />
+                Reply
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
+      
+      {!selectedMessage && (
+        <CardFooter className="border-t pt-4">
+          {activeTab !== 'new' ? (
+            <Button 
+              className="w-full" 
+              onClick={() => setActiveTab('new')}
+            >
+              <Send className="mr-2 h-4 w-4" /> Compose New Message
+            </Button>
+          ) : (
+            <div className="flex gap-2 w-full">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setActiveTab('inbox')}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1" 
+                onClick={handleSendMessage} 
+                disabled={!recipientId || !newMessageText.trim() || sendMessageMutation.isPending}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                {sendMessageMutation.isPending ? 'Sending...' : 'Send Message'}
+              </Button>
+            </div>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 };

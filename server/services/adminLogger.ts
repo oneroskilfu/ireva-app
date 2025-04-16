@@ -1,225 +1,112 @@
 import { db } from '../db';
-import { adminLogs, insertAdminLogSchema, InsertAdminLog } from '../../shared/schema';
+import { adminLogs } from '../../shared/schema';
 import { Request } from 'express';
 
-/**
- * Admin Logger Service
- * 
- * This service provides methods to log admin actions in the system.
- * It helps track who did what and when, which is essential for audit trails,
- * troubleshooting, and ensuring accountability for administrative actions.
- */
-export class AdminLogger {
+class AdminLogger {
   /**
-   * Log an admin action
+   * Log an administrative action
    * 
-   * @param adminId The ID of the admin performing the action
-   * @param action The type of action being performed (create, update, delete, etc.)
-   * @param targetType The type of entity being acted upon (user, property, etc.)
-   * @param targetId The ID of the specific entity being acted upon
-   * @param description A human-readable description of the action
-   * @param details Additional details about the action (optional)
-   * @param req Express request object (optional, for capturing IP and user agent)
+   * @param adminId - The ID of the admin performing the action
+   * @param action - The type of action (e.g., 'create_project', 'update_user', etc.)
+   * @param description - A human-readable description of the action
+   * @param metadata - Any additional metadata related to the action (optional)
+   * @param req - The Express request object for capturing IP and user agent (optional)
    */
-  static async log(
+  static async logAction(
     adminId: number,
-    action: InsertAdminLog['action'],
-    targetType: InsertAdminLog['targetType'],
-    targetId: number,
+    action: string,
     description: string,
-    details?: any,
+    metadata?: Record<string, any>,
     req?: Request
-  ): Promise<void> {
+  ) {
     try {
-      // Create the log entry
-      const logData = insertAdminLogSchema.parse({
+      // Get IP and user agent from request if available
+      const ip = req?.ip || null;
+      const userAgent = req?.headers['user-agent'] || null;
+      
+      // Insert the log entry
+      const [logEntry] = await db.insert(adminLogs).values({
         adminId,
         action,
-        targetType,
-        targetId,
         description,
-        details: details || null,
-        ipAddress: req?.ip || null,
-        userAgent: req?.headers['user-agent'] || null
-      });
-
-      // Insert the log into the database
-      await db.insert(adminLogs).values(logData);
+        metadata: metadata ? JSON.stringify(metadata) : null,
+        ipAddress: ip,
+        userAgent,
+      }).returning();
       
-      console.log(`Admin action logged: ${description}`);
+      return logEntry;
     } catch (error) {
-      // Log errors but don't throw - logging should never interrupt main functionality
       console.error('Error logging admin action:', error);
+      // Don't throw, we don't want admin logging to break the main functionality
+      return null;
     }
   }
-
+  
   /**
-   * Log a login action
+   * Get logs for a specific admin
+   * 
+   * @param adminId - The ID of the admin
+   * @param limit - Maximum number of logs to return (default: 100)
+   * @param offset - Number of logs to skip (default: 0)
    */
-  static async logLogin(adminId: number, req?: Request): Promise<void> {
-    await this.log(
-      adminId,
-      'login',
-      'user',
-      adminId,
-      `Admin user ${adminId} logged in`,
-      null,
-      req
-    );
+  static async getLogsByAdmin(adminId: number, limit = 100, offset = 0) {
+    try {
+      const logs = await db.select()
+        .from(adminLogs)
+        .where(({ eq }) => eq(adminLogs.adminId, adminId))
+        .orderBy(({ desc }) => [desc(adminLogs.createdAt)])
+        .limit(limit)
+        .offset(offset);
+      
+      return logs;
+    } catch (error) {
+      console.error('Error fetching admin logs:', error);
+      throw error;
+    }
   }
   
   /**
-   * Log a KYC verification action
+   * Get all admin logs
+   * 
+   * @param limit - Maximum number of logs to return (default: 100)
+   * @param offset - Number of logs to skip (default: 0)
    */
-  static async logKycVerification(
-    adminId: number, 
-    userId: number, 
-    status: 'approve' | 'reject', 
-    reason?: string,
-    req?: Request
-  ): Promise<void> {
-    const action = status === 'approve' ? 'approve' : 'reject';
-    const description = status === 'approve' 
-      ? `Admin ${adminId} approved KYC for user ${userId}` 
-      : `Admin ${adminId} rejected KYC for user ${userId}`;
-    
-    await this.log(
-      adminId,
-      action,
-      'kyc',
-      userId,
-      description,
-      { reason },
-      req
-    );
+  static async getAllLogs(limit = 100, offset = 0) {
+    try {
+      const logs = await db.select()
+        .from(adminLogs)
+        .orderBy(({ desc }) => [desc(adminLogs.createdAt)])
+        .limit(limit)
+        .offset(offset);
+      
+      return logs;
+    } catch (error) {
+      console.error('Error fetching all admin logs:', error);
+      throw error;
+    }
   }
   
   /**
-   * Log a property creation action
+   * Get logs for a specific action type
+   * 
+   * @param action - The action type to filter by
+   * @param limit - Maximum number of logs to return (default: 100)
+   * @param offset - Number of logs to skip (default: 0)
    */
-  static async logPropertyCreation(
-    adminId: number,
-    propertyId: number,
-    propertyName: string,
-    req?: Request
-  ): Promise<void> {
-    await this.log(
-      adminId,
-      'create',
-      'property',
-      propertyId,
-      `Admin ${adminId} created property: ${propertyName}`,
-      null,
-      req
-    );
-  }
-  
-  /**
-   * Log a property update action
-   */
-  static async logPropertyUpdate(
-    adminId: number,
-    propertyId: number,
-    propertyName: string,
-    changedFields: string[],
-    req?: Request
-  ): Promise<void> {
-    await this.log(
-      adminId,
-      'update',
-      'property',
-      propertyId,
-      `Admin ${adminId} updated property: ${propertyName}`,
-      { changedFields },
-      req
-    );
-  }
-  
-  /**
-   * Log an investment status update
-   */
-  static async logInvestmentStatusUpdate(
-    adminId: number,
-    investmentId: number,
-    newStatus: string,
-    previousStatus: string,
-    req?: Request
-  ): Promise<void> {
-    await this.log(
-      adminId,
-      'update',
-      'investment',
-      investmentId,
-      `Admin ${adminId} changed investment ${investmentId} status from ${previousStatus} to ${newStatus}`,
-      { previousStatus, newStatus },
-      req
-    );
-  }
-  
-  /**
-   * Log a user role change
-   */
-  static async logUserRoleChange(
-    adminId: number,
-    userId: number,
-    newRole: string,
-    previousRole: string,
-    req?: Request
-  ): Promise<void> {
-    await this.log(
-      adminId,
-      'update',
-      'user',
-      userId,
-      `Admin ${adminId} changed user ${userId} role from ${previousRole} to ${newRole}`,
-      { previousRole, newRole },
-      req
-    );
-  }
-  
-  /**
-   * Log a system setting change
-   */
-  static async logSystemSettingChange(
-    adminId: number,
-    settingName: string,
-    newValue: any,
-    previousValue: any,
-    req?: Request
-  ): Promise<void> {
-    await this.log(
-      adminId,
-      'system_update',
-      'system',
-      0, // No specific ID for system settings
-      `Admin ${adminId} updated system setting: ${settingName}`,
-      { 
-        setting: settingName, 
-        previousValue, 
-        newValue 
-      },
-      req
-    );
-  }
-  
-  /**
-   * Log educational resource creation
-   */
-  static async logResourceCreation(
-    adminId: number,
-    resourceId: number,
-    resourceTitle: string,
-    req?: Request
-  ): Promise<void> {
-    await this.log(
-      adminId,
-      'create',
-      'educational_resource',
-      resourceId,
-      `Admin ${adminId} created educational resource: ${resourceTitle}`,
-      null,
-      req
-    );
+  static async getLogsByAction(action: string, limit = 100, offset = 0) {
+    try {
+      const logs = await db.select()
+        .from(adminLogs)
+        .where(({ eq }) => eq(adminLogs.action, action))
+        .orderBy(({ desc }) => [desc(adminLogs.createdAt)])
+        .limit(limit)
+        .offset(offset);
+      
+      return logs;
+    } catch (error) {
+      console.error('Error fetching logs by action:', error);
+      throw error;
+    }
   }
 }
 
