@@ -39,8 +39,15 @@ export default function PropertyGrid({ type, location, search, limit }: Property
   if (error || !properties) {
     return (
       <div className="text-center py-20">
-        <h3 className="text-lg font-semibold text-gray-900">Error loading properties</h3>
-        <p className="mt-2 text-gray-500">Please try again later</p>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Error loading properties</h3>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">Please try again later or refresh the page</p>
+        <Button 
+          variant="outline" 
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Refresh
+        </Button>
       </div>
     );
   }
@@ -48,8 +55,8 @@ export default function PropertyGrid({ type, location, search, limit }: Property
   if (properties.length === 0) {
     return (
       <div className="text-center py-20">
-        <h3 className="text-lg font-semibold text-gray-900">No properties found</h3>
-        <p className="mt-2 text-gray-500">Try adjusting your filters</p>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No properties found</h3>
+        <p className="mt-2 text-gray-600 dark:text-gray-300">Try adjusting your filters or check back later</p>
       </div>
     );
   }
