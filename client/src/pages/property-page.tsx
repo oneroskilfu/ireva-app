@@ -14,13 +14,20 @@ export default function PropertyPage() {
   const { id } = useParams();
   const { toast } = useToast();
   
+  console.log("PropertyPage rendering with ID:", id);
+  
   const {
     data: property,
     isLoading,
     error
   } = useQuery<Property>({
-    queryKey: [`/api/properties/${id}`]
+    queryKey: [`/api/properties/${id}`],
+    // Enable these logs to debug the API call
+    onSuccess: (data) => console.log("Property data loaded:", data),
+    onError: (err) => console.error("Error loading property:", err)
   });
+  
+  console.log("Property query state:", { isLoading, error, property });
   
   // Handle error toast with useEffect to avoid toast during render
   useEffect(() => {
