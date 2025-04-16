@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import messageService, { Message, User } from '@/services/messageService';
 import {
   Card,
   CardContent,
@@ -32,7 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Send, 
   Inbox, 
-  PaperPlaneOff, 
+  SendX, // Using SendX instead of PaperPlaneOff 
   Users, 
   Search, 
   MailOpen, 
@@ -306,7 +307,7 @@ const MessageCenter: React.FC = () => {
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="sent" className="flex items-center">
-                    <PaperPlaneOff className="mr-2 h-4 w-4" /> Sent
+                    <SendX className="mr-2 h-4 w-4" /> Sent
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
