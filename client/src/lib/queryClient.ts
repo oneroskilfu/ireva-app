@@ -125,7 +125,9 @@ export const getQueryFn: <T>(options: QueryFnOptions) => QueryFunction<T> =
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    const responseData = await res.json();
+    console.log("API response data from:", url, responseData);
+    return responseData;
   };
 
 export const queryClient = new QueryClient({

@@ -27,7 +27,7 @@ export default function PropertyGrid({ type, location, search, limit }: Property
   const { data: properties = [], isLoading, error } = useQuery<Property[]>({
     queryKey: ['/api/properties'],
     onSuccess: (data) => {
-      console.log('Properties loaded:', data);
+      console.log('Properties loaded. Count:', data.length, 'Data:', data);
     },
     onError: (err) => {
       console.error('Error loading properties:', err);
