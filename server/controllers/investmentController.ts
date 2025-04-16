@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import { z } from 'zod';
 import { insertInvestmentSchema } from '../../shared/schema';
 import * as emailService from '../services/emailService';
+import * as roiController from './roiController';
 
 // Get all investments for a user
 export async function getUserInvestments(req: Request, res: Response) {
@@ -170,14 +171,30 @@ export async function createInvestment(req: Request, res: Response) {
       return res.status(400).json({ message: 'Bank transfer not implemented yet' });
     }
 
-    // Create investment
+    // Parse target return from property
+    const targetReturn = parseFloat(property.targetReturn.replace('%', ''));
+    
+    // Use ROI calculator to generate projected returns for 5 years
+    const defaultTerm = property.term || 60; // Default to 5 years (60 months) if not specified
+    const termInYears = defaultTerm / 12;
+    
+    // Calculate monthly returns
+    const monthlyReturns = roiController.generateMonthlyReturns(amount, targetReturn, termInYears);
+    
+    // Calculate projected earnings
+    const projectedEarnings = roiController.calculateCompoundROI(amount, targetReturn, termInYears);
+    
+    // Create investment with projected returns
     const investmentData = insertInvestmentSchema.parse({
       userId: req.user.id,
       propertyId,
       amount,
       currentValue: amount,
       status: 'active',
-      earnings: 0
+      earnings: 0,
+      projectedEarnings,
+      projectedROI: (projectedEarnings / amount) * 100,
+      monthlyReturns: JSON.stringify(monthlyReturns)
     });
 
     const investment = await storage.createInvestment(investmentData);
