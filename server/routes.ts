@@ -8,6 +8,7 @@ import { insertInvestmentSchema } from "@shared/schema";
 import { ZodError } from "zod";
 import { adminRouter } from "./admin-routes";
 import kycRoutes from './routes/kyc';
+import investmentRoutes from './routes/investments';
 import fs from 'fs';
 import path from 'path';
 
@@ -27,6 +28,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up KYC routes
   app.use('/api/kyc', kycRoutes);
   console.log("KYC routes registered");
+  
+  // Set up Investment routes
+  app.use('/api/investments', investmentRoutes);
+  console.log("Investment routes registered");
   
   // Test route for JWT auth
   app.get('/api/test-jwt', verifyToken, (req, res) => {

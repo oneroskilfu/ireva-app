@@ -1,0 +1,580 @@
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import InvestorLayout from '@/components/layouts/InvestorLayout-new';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { 
+  LineChart, 
+  BarChart3, 
+  PieChart, 
+  TrendingUp, 
+  CreditCard, 
+  Calendar, 
+  DollarSign, 
+  BarChart, 
+  Map, 
+  Building 
+} from 'lucide-react';
+
+// Import mock components for the charts that would be replaced with actual chart libraries
+const MockLineChart = ({ title, description }) => (
+  <Card>
+    <CardHeader>
+      <div className="flex justify-between items-center">
+        <div>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        <Select defaultValue="6months">
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Time Period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30days">Last 30 Days</SelectItem>
+            <SelectItem value="3months">Last 3 Months</SelectItem>
+            <SelectItem value="6months">Last 6 Months</SelectItem>
+            <SelectItem value="1year">Last Year</SelectItem>
+            <SelectItem value="all">All Time</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="h-[300px] flex items-center justify-center bg-muted rounded-md">
+        <div className="flex flex-col items-center">
+          <LineChart className="h-12 w-12 text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">Line chart will be displayed here</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const MockBarChart = ({ title, description }) => (
+  <Card>
+    <CardHeader>
+      <div className="flex justify-between items-center">
+        <div>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        <Select defaultValue="monthly">
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Frequency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="weekly">Weekly</SelectItem>
+            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="quarterly">Quarterly</SelectItem>
+            <SelectItem value="yearly">Yearly</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="h-[300px] flex items-center justify-center bg-muted rounded-md">
+        <div className="flex flex-col items-center">
+          <BarChart3 className="h-12 w-12 text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">Bar chart will be displayed here</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const MockPieChart = ({ title, description }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="h-[300px] flex items-center justify-center bg-muted rounded-md">
+        <div className="flex flex-col items-center">
+          <PieChart className="h-12 w-12 text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">Pie chart will be displayed here</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const MockMapView = ({ title, description }) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>{title}</CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="h-[300px] flex items-center justify-center bg-muted rounded-md">
+        <div className="flex flex-col items-center">
+          <Map className="h-12 w-12 text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">Map view will be displayed here</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Performance metrics component
+const PerformanceMetrics = ({ portfolioData }) => {
+  const metrics = [
+    {
+      title: "Total Portfolio Value",
+      value: "₦12,500,000",
+      change: "+12.5%",
+      isPositive: true,
+      icon: <DollarSign className="h-5 w-5" />
+    },
+    {
+      title: "Total Earnings YTD",
+      value: "₦1,250,000",
+      change: "+8.3%",
+      isPositive: true,
+      icon: <TrendingUp className="h-5 w-5" />
+    },
+    {
+      title: "Average Annual Return",
+      value: "14.2%",
+      change: "+2.1%",
+      isPositive: true,
+      icon: <BarChart className="h-5 w-5" />
+    },
+    {
+      title: "Number of Properties",
+      value: "5",
+      change: "+1",
+      isPositive: true,
+      icon: <Building className="h-5 w-5" />
+    }
+  ];
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {metrics.map((metric, index) => (
+        <Card key={index}>
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">{metric.title}</p>
+                <p className="text-2xl font-bold">{metric.value}</p>
+                <div className={`flex items-center mt-1 ${metric.isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {metric.isPositive ? 
+                    <TrendingUp className="h-4 w-4 mr-1" /> : 
+                    <TrendingUp className="h-4 w-4 mr-1 transform rotate-180" />
+                  }
+                  <span className="text-sm">{metric.change}</span>
+                </div>
+              </div>
+              <div className="bg-primary/10 p-3 rounded-full text-primary">
+                {metric.icon}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+// Portfolio allocation component
+const PortfolioAllocation = ({ investments, properties }) => {
+  // Sample data - would be calculated from actual investments
+  const allocations = [
+    { category: "Residential", percentage: 45, value: "₦5,625,000" },
+    { category: "Commercial", percentage: 30, value: "₦3,750,000" },
+    { category: "Mixed-use", percentage: 15, value: "₦1,875,000" },
+    { category: "Industrial", percentage: 10, value: "₦1,250,000" }
+  ];
+  
+  const locations = [
+    { location: "Lagos", percentage: 60, value: "₦7,500,000" },
+    { location: "Abuja", percentage: 25, value: "₦3,125,000" },
+    { location: "Port Harcourt", percentage: 10, value: "₦1,250,000" },
+    { location: "Other", percentage: 5, value: "₦625,000" }
+  ];
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Allocation by Property Type</CardTitle>
+          <CardDescription>Distribution of your investments across property types</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px] flex items-center justify-center bg-muted rounded-md mb-4">
+            <div className="flex flex-col items-center">
+              <PieChart className="h-12 w-12 text-muted-foreground mb-2" />
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            {allocations.map((item, index) => (
+              <div key={index}>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm">{item.category}</span>
+                  <span className="text-sm font-medium">{item.value} ({item.percentage}%)</span>
+                </div>
+                <Progress value={item.percentage} className="h-2" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Allocation by Location</CardTitle>
+          <CardDescription>Distribution of your investments across locations</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px] flex items-center justify-center bg-muted rounded-md mb-4">
+            <div className="flex flex-col items-center">
+              <Map className="h-12 w-12 text-muted-foreground mb-2" />
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            {locations.map((item, index) => (
+              <div key={index}>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm">{item.location}</span>
+                  <span className="text-sm font-medium">{item.value} ({item.percentage}%)</span>
+                </div>
+                <Progress value={item.percentage} className="h-2" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Cash flow analysis component
+const CashFlowAnalysis = () => {
+  // Sample cash flow data
+  const monthlyReturns = [
+    { month: "Jan", returns: 125000 },
+    { month: "Feb", returns: 125000 },
+    { month: "Mar", returns: 130000 },
+    { month: "Apr", returns: 128000 },
+    { month: "May", returns: 132000 },
+    { month: "Jun", returns: 135000 }
+  ];
+  
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Monthly Cash Flow</CardTitle>
+            <CardDescription>Monthly returns from your investment portfolio</CardDescription>
+          </div>
+          <Select defaultValue="6months">
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Time Period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3months">Last 3 Months</SelectItem>
+              <SelectItem value="6months">Last 6 Months</SelectItem>
+              <SelectItem value="1year">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px] flex items-center justify-center bg-muted rounded-md mb-4">
+          <div className="flex flex-col items-center">
+            <BarChart3 className="h-12 w-12 text-muted-foreground mb-2" />
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-3 px-4 font-medium">Month</th>
+                <th className="text-right py-3 px-4 font-medium">Returns</th>
+                <th className="text-right py-3 px-4 font-medium">Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthlyReturns.map((item, index) => (
+                <tr key={index} className="border-b">
+                  <td className="py-3 px-4">{item.month}</td>
+                  <td className="py-3 px-4 text-right">₦{item.returns.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-right">
+                    {index > 0 ? (
+                      <span className={
+                        item.returns > monthlyReturns[index - 1].returns 
+                          ? "text-emerald-500" 
+                          : item.returns < monthlyReturns[index - 1].returns 
+                            ? "text-red-500" 
+                            : ""
+                      }>
+                        {item.returns > monthlyReturns[index - 1].returns ? "+" : ""}
+                        {(((item.returns - monthlyReturns[index - 1].returns) / monthlyReturns[index - 1].returns) * 100).toFixed(1)}%
+                      </span>
+                    ) : "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Investment comparison component
+const InvestmentComparison = ({ investments, properties }) => {
+  // Sample comparison data
+  const propertyPerformance = [
+    { name: "Skyline Apartments", return: 15.2, benchmark: 12.5 },
+    { name: "Heritage Heights", return: 13.8, benchmark: 12.5 },
+    { name: "Lekki Gardens", return: 11.9, benchmark: 12.5 },
+    { name: "Victoria Crest", return: 14.5, benchmark: 12.5 },
+    { name: "Royal Palms", return: 10.8, benchmark: 12.5 }
+  ];
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Property Performance Comparison</CardTitle>
+        <CardDescription>Compare the performance of your investments</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px] flex items-center justify-center bg-muted rounded-md mb-4">
+          <div className="flex flex-col items-center">
+            <BarChart3 className="h-12 w-12 text-muted-foreground mb-2" />
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          {propertyPerformance.map((item, index) => (
+            <div key={index}>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm">{item.name}</span>
+                <span className="text-sm font-medium">
+                  {item.return}% 
+                  <span className={
+                    item.return > item.benchmark 
+                      ? "text-emerald-500 ml-2" 
+                      : "text-red-500 ml-2"
+                  }>
+                    ({item.return > item.benchmark ? "+" : ""}
+                    {(item.return - item.benchmark).toFixed(1)}%)
+                  </span>
+                </span>
+              </div>
+              <div className="flex">
+                <div className="flex-1">
+                  <Progress value={item.return * 5} className="h-2 bg-gray-100" />
+                </div>
+                <div className="w-px bg-gray-200 mx-2"></div>
+                <div className="flex-1">
+                  <Progress value={item.benchmark * 5} className="h-2 bg-gray-100" />
+                </div>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>Actual Return</span>
+                <span>Target Return</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Projected future value component
+const ProjectedFutureValue = () => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Projected Future Value</CardTitle>
+        <CardDescription>Estimated future value of your portfolio</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px] flex items-center justify-center bg-muted rounded-md mb-4">
+          <div className="flex flex-col items-center">
+            <LineChart className="h-12 w-12 text-muted-foreground mb-2" />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground mb-1">1 Year Projection</div>
+              <div className="text-lg font-semibold">₦14,125,000</div>
+              <div className="text-xs text-emerald-500">+13% growth</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground mb-1">3 Year Projection</div>
+              <div className="text-lg font-semibold">₦18,562,500</div>
+              <div className="text-xs text-emerald-500">+48.5% growth</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground mb-1">5 Year Projection</div>
+              <div className="text-lg font-semibold">₦25,000,000</div>
+              <div className="text-xs text-emerald-500">+100% growth</div>
+            </CardContent>
+          </Card>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Main analytics component
+const InvestorAnalytics = () => {
+  // Fetch user's investments
+  const { data: investments } = useQuery({
+    queryKey: ['/api/investments'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/investments');
+      return await res.json();
+    }
+  });
+  
+  // Fetch properties
+  const { data: properties } = useQuery({
+    queryKey: ['/api/properties'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/properties');
+      return await res.json();
+    }
+  });
+  
+  return (
+    <InvestorLayout>
+      <div className="container py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Investment Analytics</h1>
+            <p className="text-muted-foreground">Comprehensive analysis of your investment portfolio</p>
+          </div>
+          <div className="mt-4 md:mt-0 flex space-x-2">
+            <Button variant="outline">
+              <Calendar className="h-4 w-4 mr-2" />
+              Custom Range
+            </Button>
+            <Button variant="outline">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          </div>
+        </div>
+        
+        {/* Performance metrics cards */}
+        <div className="mb-6">
+          <PerformanceMetrics portfolioData={{}} />
+        </div>
+        
+        {/* Analytics tabs */}
+        <Tabs defaultValue="overview" className="mb-6">
+          <TabsList className="grid grid-cols-1 md:grid-cols-4 w-full">
+            <TabsTrigger value="overview">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="allocation">
+              <PieChart className="h-4 w-4 mr-2" />
+              Portfolio Allocation
+            </TabsTrigger>
+            <TabsTrigger value="cashflow">
+              <LineChart className="h-4 w-4 mr-2" />
+              Cash Flow
+            </TabsTrigger>
+            <TabsTrigger value="comparison">
+              <BarChart className="h-4 w-4 mr-2" />
+              Performance Comparison
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="mt-6">
+            <div className="grid grid-cols-1 gap-6">
+              <MockLineChart 
+                title="Portfolio Value Over Time" 
+                description="Track how your portfolio value has changed" 
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <MockBarChart 
+                  title="Monthly Returns" 
+                  description="Your monthly investment returns" 
+                />
+                <MockPieChart 
+                  title="Portfolio Composition" 
+                  description="Breakdown of your investment portfolio" 
+                />
+              </div>
+              
+              <ProjectedFutureValue />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="allocation" className="mt-6">
+            <div className="space-y-6">
+              <PortfolioAllocation investments={investments} properties={properties} />
+              
+              <MockMapView 
+                title="Geographic Distribution" 
+                description="Where your properties are located" 
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="cashflow" className="mt-6">
+            <div className="space-y-6">
+              <CashFlowAnalysis />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <MockBarChart 
+                  title="Income by Property" 
+                  description="Monthly income distribution by property" 
+                />
+                <MockLineChart 
+                  title="Cumulative Returns" 
+                  description="Your cumulative returns over time" 
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="comparison" className="mt-6">
+            <div className="space-y-6">
+              <InvestmentComparison investments={investments} properties={properties} />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <MockBarChart 
+                  title="ROI Comparison" 
+                  description="ROI comparison against benchmarks" 
+                />
+                <MockLineChart 
+                  title="Performance vs Market" 
+                  description="Your portfolio performance vs market indices" 
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </InvestorLayout>
+  );
+};
+
+export default InvestorAnalytics;
