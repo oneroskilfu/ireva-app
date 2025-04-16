@@ -191,16 +191,24 @@ export default function HomePage() {
               <div className="flex flex-wrap justify-center gap-4">
                 <Button 
                   size="lg"
-                  className="bg-white text-gray-900 hover:bg-gray-100 font-medium"
+                  className="bg-black text-white hover:bg-black/90 border-0 h-12 flex items-center justify-center gap-2"
                 >
-                  Create Your Account
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5.5"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/><path d="M17.5 21 22 16.5"/><path d="M17.5 16.5 22 21"/></svg>
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs">Download on the</span>
+                    <span className="text-sm font-semibold">App Store</span>
+                  </div>
                 </Button>
                 <Button 
                   variant="outline" 
                   size="lg"
-                  className="border-white text-white hover:bg-white/10"
+                  className="bg-black text-white hover:bg-black/90 border-0 h-12 flex items-center justify-center gap-2"
                 >
-                  Download Our App
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 18H7a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/><path d="M7 9h10"/><path d="M7 13h5"/></svg>
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs">GET IT ON</span>
+                    <span className="text-sm font-semibold">Google Play</span>
+                  </div>
                 </Button>
               </div>
             </motion.div>

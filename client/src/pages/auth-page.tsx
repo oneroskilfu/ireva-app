@@ -340,7 +340,7 @@ export default function AuthPage() {
                   {/* Mobile App Download Section */}
                   <div className="mt-8 space-y-4">
                     <div className="text-center">
-                      <h3 className="text-sm font-medium">Create your account and download our app</h3>
+                      <h3 className="text-sm font-medium">Download iOS and Android apps</h3>
                       <p className="text-xs text-gray-500 mt-1">Track investments and manage your portfolio on the go</p>
                     </div>
                     
