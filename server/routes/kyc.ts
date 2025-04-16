@@ -3,7 +3,7 @@ import { db } from '../db';
 import { kycSubmissions, users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { verifyToken } from '../auth-jwt';
-import emailService from '../services/emailService';
+import * as emailService from '../services/emailService';
 
 const router = express.Router();
 

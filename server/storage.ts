@@ -83,6 +83,17 @@ export interface IStorage {
   getUserPaymentTransactions(userId: number): Promise<PaymentTransaction[]>;
   updateTransactionStatus(id: number, status: string, gatewayReference?: string): Promise<PaymentTransaction>;
   
+  // Wallet methods
+  getWallet(id: number): Promise<Wallet | undefined>;
+  getUserWallet(userId: number): Promise<Wallet | undefined>;
+  createWallet(wallet: InsertWallet): Promise<Wallet>;
+  updateWalletBalance(walletId: number, amount: number): Promise<Wallet>;
+  
+  // Wallet transaction methods
+  createWalletTransaction(transaction: InsertWalletTransaction, wallet: Wallet): Promise<WalletTransaction>;
+  getWalletTransactions(walletId: number): Promise<WalletTransaction[]>;
+  getUserWalletTransactions(userId: number): Promise<WalletTransaction[]>;
+  
   // Achievement methods
   createAchievementBadge(badge: InsertAchievementBadge): Promise<AchievementBadge>;
   getAllAchievementBadges(): Promise<AchievementBadge[]>;

@@ -1,176 +1,49 @@
 import { MailService } from '@sendgrid/mail';
-import { User } from '../../shared/schema';
+import { User, Notification, Property, Investment } from '../../shared/schema';
 
-// Initialize SendGrid
+// Initialize the SendGrid mail service
 const mailService = new MailService();
 
-// Setting the API key (will be set when available)
-if (process.env.SENDGRID_API_KEY) {
+// Check if SendGrid API key is set
+if (!process.env.SENDGRID_API_KEY) {
+  console.warn('SENDGRID_API_KEY is not set. Email notifications will not be sent.');
+} else {
   mailService.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-// Email templates for different KYC statuses
-const EMAIL_TEMPLATES = {
-  KYC_APPROVED: {
-    subject: 'iREVA - Your KYC Has Been Approved!',
-    html: (name: string) => `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
-          .content { padding: 20px; background-color: #f9f9f9; }
-          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #777; }
-          .button { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>KYC Verification Approved</h1>
-          </div>
-          <div class="content">
-            <p>Dear ${name},</p>
-            <p>Congratulations! Your Know Your Customer (KYC) verification has been approved.</p>
-            <p>You now have full access to all investment opportunities on the iREVA platform. You can start investing in any available property that matches your investment goals.</p>
-            <p>Visit your dashboard to explore the available investment opportunities:</p>
-            <p style="text-align: center;">
-              <a href="https://ireva.com/investor" class="button">Go to My Dashboard</a>
-            </p>
-            <p>If you have any questions about the investment process or need assistance, please don't hesitate to contact our support team.</p>
-            <p>Thank you for choosing iREVA for your real estate investments!</p>
-            <p>Best regards,<br>The iREVA Team</p>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} iREVA. All rights reserved.</p>
-            <p>This is an automated message, please do not reply to this email.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-  },
-  KYC_REJECTED: {
-    subject: 'iREVA - Action Required: Your KYC Submission Needs Attention',
-    html: (name: string, reason: string) => `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #f44336; color: white; padding: 20px; text-align: center; }
-          .content { padding: 20px; background-color: #f9f9f9; }
-          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #777; }
-          .reason { background-color: #fff3f3; border-left: 4px solid #f44336; padding: 15px; margin: 15px 0; }
-          .button { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>KYC Verification Needs Attention</h1>
-          </div>
-          <div class="content">
-            <p>Dear ${name},</p>
-            <p>We've reviewed your KYC submission and unfortunately, we were unable to verify your information at this time.</p>
-            <div class="reason">
-              <strong>Reason for rejection:</strong>
-              <p>${reason}</p>
-            </div>
-            <p>Please update your KYC information with the correct details and submit again. Here are some tips:</p>
-            <ul>
-              <li>Ensure all personal information matches your identification documents</li>
-              <li>Provide clear, legible images of your ID</li>
-              <li>Double-check all bank account details</li>
-            </ul>
-            <p>You can update your KYC submission by visiting your account settings:</p>
-            <p style="text-align: center;">
-              <a href="https://ireva.com/investor/kyc" class="button">Update KYC Information</a>
-            </p>
-            <p>If you have any questions or need assistance with the verification process, our support team is ready to help.</p>
-            <p>Thank you for your understanding and cooperation.</p>
-            <p>Best regards,<br>The iREVA Team</p>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} iREVA. All rights reserved.</p>
-            <p>This is an automated message, please do not reply to this email.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-  },
-  KYC_PENDING: {
-    subject: 'iREVA - KYC Submission Received',
-    html: (name: string) => `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #2196F3; color: white; padding: 20px; text-align: center; }
-          .content { padding: 20px; background-color: #f9f9f9; }
-          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #777; }
-          .info-box { background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin: 15px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>KYC Submission Received</h1>
-          </div>
-          <div class="content">
-            <p>Dear ${name},</p>
-            <p>Thank you for submitting your KYC (Know Your Customer) information on iREVA.</p>
-            <div class="info-box">
-              <strong>Your submission is currently under review.</strong>
-              <p>This process typically takes 1-2 business days to complete.</p>
-            </div>
-            <p>During this time, our compliance team will verify the information you've provided. You'll receive another email once the verification process is complete.</p>
-            <p>You can check the status of your KYC verification anytime by logging into your account and visiting the KYC section.</p>
-            <p>If you have any questions about the verification process, please don't hesitate to contact our support team.</p>
-            <p>Thank you for your patience and for choosing iREVA for your real estate investments!</p>
-            <p>Best regards,<br>The iREVA Team</p>
-          </div>
-          <div class="footer">
-            <p>© ${new Date().getFullYear()} iREVA. All rights reserved.</p>
-            <p>This is an automated message, please do not reply to this email.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-  }
-};
-
-/**
- * Interface for email parameters
- */
+// Base email parameters
 interface EmailParams {
   to: string;
   from: string;
   subject: string;
   text?: string;
-  html: string;
+  html?: string;
+  templateId?: string;
+  dynamicTemplateData?: Record<string, any>;
+  attachments?: any[];
+  category?: string;
 }
 
-/**
- * Sends an email using SendGrid
- * @param params Email parameters
- * @returns Promise<boolean> Success status
- */
+// Send email wrapper function
 export async function sendEmail(params: EmailParams): Promise<boolean> {
-  try {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.error('SendGrid API key is not set');
-      return false;
-    }
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('Cannot send email: SENDGRID_API_KEY is not set');
+    return false;
+  }
 
-    await mailService.send(params);
+  try {
+    // Convert to SendGrid's required format
+    await mailService.send({
+      to: params.to,
+      from: params.from,
+      subject: params.subject,
+      text: params.text,
+      html: params.html,
+      templateId: params.templateId,
+      dynamicTemplateData: params.dynamicTemplateData,
+      attachments: params.attachments,
+      category: params.category
+    });
     return true;
   } catch (error) {
     console.error('SendGrid email error:', error);
@@ -178,76 +51,398 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   }
 }
 
-/**
- * Sends a KYC approved notification email
- * @param user User object
- * @returns Promise<boolean> Success status
- */
-export async function sendKYCApprovedEmail(user: User): Promise<boolean> {
-  if (!user.email) {
-    console.error('User email is not available');
-    return false;
-  }
-
-  const fromEmail = process.env.FROM_EMAIL || 'support@ireva.com';
-  const params: EmailParams = {
+// Send welcome email
+export async function sendWelcomeEmail(user: User): Promise<boolean> {
+  return sendEmail({
     to: user.email,
-    from: fromEmail,
-    subject: EMAIL_TEMPLATES.KYC_APPROVED.subject,
-    html: EMAIL_TEMPLATES.KYC_APPROVED.html(user.username || 'Investor')
-  };
-
-  return sendEmail(params);
+    from: 'noreply@ireva.com',
+    subject: 'Welcome to iREVA - Your Real Estate Investment Platform',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">Welcome to iREVA</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>Welcome to iREVA, your trusted platform for real estate investments in Africa.</p>
+          <p>To get started:</p>
+          <ol>
+            <li>Complete your profile</li>
+            <li>Verify your identity (KYC)</li>
+            <li>Explore investment opportunities</li>
+          </ol>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/dashboard" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Go to Dashboard</a>
+          </div>
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
 }
 
-/**
- * Sends a KYC rejected notification email
- * @param user User object
- * @param rejectionReason Reason for rejection
- * @returns Promise<boolean> Success status
- */
-export async function sendKYCRejectedEmail(user: User, rejectionReason: string): Promise<boolean> {
-  if (!user.email) {
-    console.error('User email is not available');
-    return false;
-  }
-
-  const fromEmail = process.env.FROM_EMAIL || 'support@ireva.com';
-  const params: EmailParams = {
+// Send KYC submission confirmation email
+export async function sendKycSubmissionEmail(user: User): Promise<boolean> {
+  return sendEmail({
     to: user.email,
-    from: fromEmail,
-    subject: EMAIL_TEMPLATES.KYC_REJECTED.subject,
-    html: EMAIL_TEMPLATES.KYC_REJECTED.html(user.username || 'Investor', rejectionReason)
-  };
-
-  return sendEmail(params);
+    from: 'noreply@ireva.com',
+    subject: 'KYC Verification Submitted - iREVA',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">KYC Verification</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>We have received your KYC verification documents. Our team will review them shortly.</p>
+          <p>This process typically takes 1-2 business days. We'll notify you once the verification is complete.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/dashboard" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Check Status</a>
+          </div>
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
 }
 
-/**
- * Sends a KYC pending notification email
- * @param user User object
- * @returns Promise<boolean> Success status
- */
+// Send KYC verification status email
+export async function sendKycVerificationStatusEmail(user: User, status: 'verified' | 'rejected', rejectionReason?: string): Promise<boolean> {
+  const subject = status === 'verified' 
+    ? 'KYC Verification Approved - iREVA' 
+    : 'KYC Verification Requires Attention - iREVA';
+  
+  const content = status === 'verified'
+    ? `
+      <p>Hello ${user.firstName || user.username},</p>
+      <p>Congratulations! Your KYC verification has been approved.</p>
+      <p>You now have full access to all investment opportunities on the iREVA platform.</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://ireva.com/properties" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Explore Properties</a>
+      </div>
+    `
+    : `
+      <p>Hello ${user.firstName || user.username},</p>
+      <p>We've reviewed your KYC submission and need additional information or corrections.</p>
+      <p><strong>Reason:</strong> ${rejectionReason || 'Please check your KYC submission for details.'}</p>
+      <p>Please update your submission with the correct information.</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="https://ireva.com/kyc" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Update KYC</a>
+      </div>
+    `;
+
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">KYC Verification Update</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          ${content}
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+// Send investment confirmation email
+export async function sendInvestmentConfirmationEmail(user: User, property: Property, investment: Investment): Promise<boolean> {
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject: `Investment Confirmation - ${property.name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">Investment Confirmation</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>Congratulations on your investment in <strong>${property.name}</strong>!</p>
+          <p>Here's a summary of your investment:</p>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <p><strong>Property:</strong> ${property.name}</p>
+            <p><strong>Location:</strong> ${property.location}</p>
+            <p><strong>Investment Amount:</strong> ₦${investment.amount.toLocaleString()}</p>
+            <p><strong>Expected Return:</strong> ${property.targetReturn}%</p>
+            <p><strong>Term:</strong> ${property.term} months</p>
+            <p><strong>Investment Date:</strong> ${investment.date.toLocaleDateString()}</p>
+          </div>
+          <p>You can track your investment performance in your dashboard:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/investments/${investment.id}" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Track Investment</a>
+          </div>
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+// Send monthly returns update email
+export async function sendMonthlyReturnsEmail(user: User, investment: Investment, property: Property, monthlyReturn: number): Promise<boolean> {
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject: `Monthly Returns Update - ${property.name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">Monthly Returns Update</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>We're pleased to provide an update on your investment in <strong>${property.name}</strong>.</p>
+          <p>Your monthly return has been processed:</p>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <p><strong>Property:</strong> ${property.name}</p>
+            <p><strong>Monthly Return:</strong> ₦${monthlyReturn.toLocaleString()}</p>
+            <p><strong>Return Rate:</strong> ${property.targetReturn}%</p>
+            <p><strong>Total Returns to Date:</strong> ₦${investment.earnings.toLocaleString()}</p>
+          </div>
+          <p>View your complete investment performance in your dashboard:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/investments/${investment.id}" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">View Performance</a>
+          </div>
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+// Send new property notification email
+export async function sendNewPropertyEmail(user: User, property: Property): Promise<boolean> {
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject: `New Investment Opportunity - ${property.name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">New Investment Opportunity</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>We're excited to introduce a new investment opportunity that matches your preferences.</p>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <h2 style="margin-top: 0;">${property.name}</h2>
+            <p><strong>Location:</strong> ${property.location}</p>
+            <p><strong>Type:</strong> ${property.type}</p>
+            <p><strong>Target Return:</strong> ${property.targetReturn}%</p>
+            <p><strong>Minimum Investment:</strong> ₦${property.minimumInvestment.toLocaleString()}</p>
+            <p><strong>Term:</strong> ${property.term} months</p>
+            <p>${property.description.substring(0, 200)}${property.description.length > 200 ? '...' : ''}</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/properties/${property.id}" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">View Property</a>
+          </div>
+          <p>Don't miss this opportunity!</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+          <p><small>If you would like to unsubscribe from these notifications, please update your <a href="https://ireva.com/settings">notification preferences</a>.</small></p>
+        </div>
+      </div>
+    `
+  });
+}
+
+// Send investment performance alert email
+export async function sendPerformanceAlertEmail(user: User, property: Property, message: string): Promise<boolean> {
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject: `Performance Alert - ${property.name}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">Investment Performance Alert</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>We have an important update regarding your investment in <strong>${property.name}</strong>.</p>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Performance Update</h3>
+            <p>${message}</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/properties/${property.id}" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">View Details</a>
+          </div>
+          <p>If you have any questions or concerns, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+// KYC-related email notifications
+
+// KYC Pending Email
 export async function sendKYCPendingEmail(user: User): Promise<boolean> {
-  if (!user.email) {
-    console.error('User email is not available');
-    return false;
-  }
-
-  const fromEmail = process.env.FROM_EMAIL || 'support@ireva.com';
-  const params: EmailParams = {
+  return sendEmail({
     to: user.email,
-    from: fromEmail,
-    subject: EMAIL_TEMPLATES.KYC_PENDING.subject,
-    html: EMAIL_TEMPLATES.KYC_PENDING.html(user.username || 'Investor')
-  };
-
-  return sendEmail(params);
+    from: 'noreply@ireva.com',
+    subject: 'KYC Verification Submitted - iREVA',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">KYC Verification</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>We have received your KYC verification documents. Our team will review them shortly.</p>
+          <p>This process typically takes 1-2 business days. We'll notify you once the verification is complete.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/dashboard" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Check Status</a>
+          </div>
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
 }
 
-export default {
-  sendEmail,
-  sendKYCApprovedEmail,
-  sendKYCRejectedEmail,
-  sendKYCPendingEmail
-};
+// KYC Approved Email
+export async function sendKYCApprovedEmail(user: User): Promise<boolean> {
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject: 'KYC Verification Approved - iREVA',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">KYC Verification Approved</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>Congratulations! Your KYC verification has been approved.</p>
+          <p>You now have full access to all investment opportunities on the iREVA platform.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/properties" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Explore Properties</a>
+          </div>
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+// KYC Rejected Email
+export async function sendKYCRejectedEmail(user: User, rejectionReason: string): Promise<boolean> {
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject: 'KYC Verification Requires Attention - iREVA',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">KYC Verification Update</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>We've reviewed your KYC submission and need additional information or corrections.</p>
+          <p><strong>Reason:</strong> ${rejectionReason || 'Please check your KYC submission for details.'}</p>
+          <p>Please update your submission with the correct information.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ireva.com/kyc" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">Update KYC</a>
+          </div>
+          <p>If you have any questions, please contact our support team at support@ireva.com</p>
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+// Send notification as email
+export async function sendNotificationEmail(user: User, notification: Notification): Promise<boolean> {
+  return sendEmail({
+    to: user.email,
+    from: 'noreply@ireva.com',
+    subject: notification.title,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #4F46E5; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0;">${notification.title}</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e9e9e9; background-color: #ffffff;">
+          <p>Hello ${user.firstName || user.username},</p>
+          <p>${notification.message}</p>
+          ${notification.link ? `
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${notification.link}" style="background-color: #4F46E5; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold;">View Details</a>
+          </div>
+          ` : ''}
+          <p>Best regards,</p>
+          <p>The iREVA Team</p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666666;">
+          <p>&copy; ${new Date().getFullYear()} iREVA. All rights reserved.</p>
+          <p>Victoria Island, Lagos, Nigeria</p>
+          <p><small>If you would like to unsubscribe from these notifications, please update your <a href="https://ireva.com/settings">notification preferences</a>.</small></p>
+        </div>
+      </div>
+    `
+  });
+}
