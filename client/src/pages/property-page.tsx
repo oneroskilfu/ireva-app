@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { useEffect } from "react";
 
 export default function PropertyPage() {
   const { id } = useParams();
@@ -21,6 +22,17 @@ export default function PropertyPage() {
     queryKey: [`/api/properties/${id}`]
   });
   
+  // Handle error toast with useEffect to avoid toast during render
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Unable to load property details",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -33,17 +45,7 @@ export default function PropertyPage() {
     );
   }
   
-  if (error || !property) {
-    const errorMessage = error ? 
-      (error as Error).message : 
-      "Unable to load property details";
-    
-    toast({
-      title: "Error",
-      description: errorMessage,
-      variant: "destructive",
-    });
-    
+  if (!property) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
