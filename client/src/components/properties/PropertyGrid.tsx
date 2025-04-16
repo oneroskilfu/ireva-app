@@ -27,7 +27,15 @@ export default function PropertyGrid({ type, location, search, limit }: Property
   console.log('Before query execution');
   
   const { data: properties = [], isLoading, error } = useQuery<Property[]>({
-    queryKey: ['/api/properties'],
+    queryKey: ['/api/properties', queryParams.toString()],
+    queryFn: async () => {
+      const endpoint = `/api/properties${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error('Failed to fetch properties');
+      }
+      return response.json();
+    },
     onSuccess: (data) => {
       console.log('Properties loaded. Count:', data.length, 'Data:', data);
     },
