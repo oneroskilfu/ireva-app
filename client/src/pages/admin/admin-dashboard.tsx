@@ -65,7 +65,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="py-4">
-          <div className="px-4 py-2 text-xs font-semibold text-gray-500">MAIN</div>
+          <div className="px-4 py-2 text-xs font-semibold text-amber-800">MAIN</div>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
               activeTab === "overview" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
           </button>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "users" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "users" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("users")}
           >
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
           </button>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "properties" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "properties" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("properties")}
           >
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
           </button>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "investments" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "investments" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("investments")}
           >
@@ -104,7 +104,7 @@ export default function AdminDashboard() {
           </button>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "kyc" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "kyc" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("kyc")}
           >
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
           </button>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "payments" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "payments" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("payments")}
           >
@@ -121,10 +121,10 @@ export default function AdminDashboard() {
             Payments
           </button>
           
-          <div className="px-4 py-2 mt-4 text-xs font-semibold text-gray-500">SYSTEM</div>
+          <div className="px-4 py-2 mt-4 text-xs font-semibold text-amber-800">SYSTEM</div>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "settings" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "settings" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("settings")}
           >
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
           </button>
           <button
             className={`flex items-center w-full px-4 py-2 text-left ${
-              activeTab === "help" ? "bg-gray-100 text-[#16b5a0]" : "text-gray-700 hover:bg-gray-50"
+              activeTab === "help" ? "bg-amber-50 text-[#8B4513]" : "text-gray-700 hover:bg-amber-50"
             }`}
             onClick={() => setActiveTab("help")}
           >
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
           </button>
           
           <div className="px-4 pt-6 pb-2">
-            <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
+            <Button variant="outline" className="w-full justify-start text-[#8B4513] border-amber-200 hover:bg-amber-50 hover:text-[#8B4513]" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Log out
             </Button>
@@ -153,9 +153,9 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {/* Admin Header */}
-        <div className="bg-white shadow-sm">
+        <div className="bg-amber-50 shadow-sm border-b border-amber-200">
           <div className="px-6 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-800">
+            <h1 className="text-xl font-bold text-[#8B4513]">
               {activeTab === "overview" && "Dashboard Overview"}
               {activeTab === "users" && "User Management"}
               {activeTab === "properties" && "Property Management"}
@@ -168,9 +168,9 @@ export default function AdminDashboard() {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <div className="text-sm font-medium">{user?.firstName} {user?.lastName}</div>
-                <div className="text-xs text-gray-500">{user?.email}</div>
+                <div className="text-xs text-amber-700">{user?.email}</div>
               </div>
-              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700">
+              <div className="h-8 w-8 rounded-full bg-[#8B4513] flex items-center justify-center text-white">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </div>
             </div>
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full">View All Users</Button>
+                  <Button variant="outline" size="sm" className="w-full border-amber-200 hover:bg-amber-50 text-[#8B4513] hover:text-[#8B4513]">View All Users</Button>
                 </CardFooter>
               </Card>
 
@@ -276,13 +276,13 @@ export default function AdminDashboard() {
                             <div className="text-xs text-gray-500">Submitted 2 days ago</div>
                           </div>
                         </div>
-                        <Button size="sm" variant="outline">Review</Button>
+                        <Button size="sm" variant="outline" className="border-amber-200 hover:bg-amber-50 text-[#8B4513] hover:text-[#8B4513]">Review</Button>
                       </div>
                     ))}
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full">View All Requests</Button>
+                  <Button variant="outline" size="sm" className="w-full border-amber-200 hover:bg-amber-50 text-[#8B4513] hover:text-[#8B4513]">View All Requests</Button>
                 </CardFooter>
               </Card>
             </div>
