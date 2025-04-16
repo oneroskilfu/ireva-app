@@ -22,6 +22,7 @@ const loginSchema = z.object({
 const registerSchema = insertUserSchema.extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(11, "Phone number must be at least 11 digits"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -52,6 +53,7 @@ export default function AuthPage() {
       email: "",
       firstName: "",
       lastName: "",
+      phoneNumber: "",
     },
   });
   
@@ -271,6 +273,27 @@ export default function AuthPage() {
                     {registerForm.formState.errors.email && (
                       <p className="text-sm text-red-500">
                         {registerForm.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                      </div>
+                      <Input
+                        type="tel"
+                        placeholder="Phone Number (e.g., 08012345678)"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("phoneNumber")}
+                      />
+                    </div>
+                    {registerForm.formState.errors.phoneNumber && (
+                      <p className="text-sm text-red-500">
+                        {registerForm.formState.errors.phoneNumber.message}
                       </p>
                     )}
                   </div>
