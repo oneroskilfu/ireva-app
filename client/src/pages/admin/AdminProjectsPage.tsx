@@ -17,7 +17,7 @@ const AdminProjectsPage = () => {
   const [isAddingProject, setIsAddingProject] = useState(false);
 
   return (
-    <AdminLayout>
+    <>
       <Helmet>
         <title>Project Management | iREVA Admin</title>
       </Helmet>
@@ -55,7 +55,7 @@ const AdminProjectsPage = () => {
           </SheetContent>
         </Sheet>
       </div>
-    </AdminLayout>
+    </>
   );
 };
 

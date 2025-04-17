@@ -52,6 +52,8 @@ function Router() {
   const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
   const KYCManagementPage = lazy(() => import('@/pages/admin/kyc-management'));
   const AdminProjectsPage = lazy(() => import('@/pages/admin/AdminProjectsPage'));
+  const AdminUsersPage = lazy(() => import('@/pages/admin/users-page'));
+  const AdminPropertiesPage = lazy(() => import('@/pages/admin/properties-page'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ROICalculatorPage = lazy(() => import('@/pages/investor/ROICalculatorPage'));
@@ -163,7 +165,48 @@ function Router() {
         {() => (
           <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
             <Suspense fallback={<div>Loading...</div>}>
-              <AdminProjectsPage />
+              <AdminLayout>
+                <AdminProjectsPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Dashboard Route */}
+      <Route path="/admin/dashboard">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Users Management Route */}
+      <Route path="/admin/users">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminUsersPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Properties Management Route */}
+      <Route path="/admin/properties">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminPropertiesPage />
+              </AdminLayout>
             </Suspense>
           </AuthMiddleware>
         )}
