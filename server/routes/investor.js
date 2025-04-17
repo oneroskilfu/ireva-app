@@ -3,6 +3,18 @@ import { verifyToken } from '../auth-jwt.js';
 
 const router = express.Router();
 
+// Get investor dashboard stats
+router.get('/dashboard', verifyToken, (req, res) => {
+  // In a real application, these would come from database queries
+  res.json({
+    totalInvested: 285000,
+    totalEarnings: 28000,
+    activeInvestments: 4,
+    nextPayout: 8500,
+    portfolioGrowth: 9.8
+  });
+});
+
 // Get investor portfolio summary
 router.get('/portfolio', verifyToken, (req, res) => {
   // In a real application, these would come from database queries
