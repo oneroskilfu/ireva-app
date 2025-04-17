@@ -19,6 +19,7 @@ import projectsRoutes from './routes/projects';
 // Import the new routes
 import adminRoutes from './routes/admin.js';
 import investorRoutes from './routes/investor.js';
+import debugLoginRouter from './routes/debugLogin';
 import fs from 'fs';
 import path from 'path';
 
@@ -96,6 +97,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Projects routes
   app.use('/api/projects', projectsRoutes);
   console.log("Projects routes registered");
+  
+  // Set up Debug Login routes
+  app.use('/api/auth', debugLoginRouter);
+  console.log("Debug login routes registered");
   
   // Test route for JWT auth
   app.get('/api/test-jwt', verifyToken, (req, res) => {
