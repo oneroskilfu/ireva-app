@@ -2,7 +2,6 @@ import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   LayoutDashboard,
   Wallet,
@@ -149,8 +148,6 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
           </Link>
         </div>
         <div className="flex items-center space-x-2">
-          {/* Theme Toggle */}
-          <ThemeToggle />
           
           {/* Notifications */}
           <TooltipProvider>
