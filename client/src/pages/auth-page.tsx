@@ -23,7 +23,7 @@ export default function AuthPage() {
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginFormSchema),
     defaultValues: {
       username: "",
       password: "",
@@ -322,6 +322,40 @@ export default function AuthPage() {
                       </p>
                     )}
                   </div>
+                  
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        type="password"
+                        placeholder="Confirm Password"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("confirmPassword")}
+                      />
+                    </div>
+                    {registerForm.formState.errors.confirmPassword && (
+                      <p className="text-sm text-red-500">
+                        {registerForm.formState.errors.confirmPassword.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="agree-terms" 
+                      {...registerForm.register("agreeToTerms")}
+                    />
+                    <label htmlFor="agree-terms" className="text-sm text-gray-600">
+                      I agree to the <a href="#" className="text-[#16b5a0] hover:underline">Terms and Conditions</a>
+                    </label>
+                  </div>
+                  {registerForm.formState.errors.agreeToTerms && (
+                    <p className="text-sm text-red-500">
+                      {registerForm.formState.errors.agreeToTerms.message}
+                    </p>
+                  )}
                   
                   <Button 
                     type="submit" 
