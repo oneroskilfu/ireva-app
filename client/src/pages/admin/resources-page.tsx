@@ -42,8 +42,13 @@ export default function AdminResourcesPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [isCreatingResource, setIsCreatingResource] = useState(false);
 
-  const { data: resources, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: resources, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/admin/educational-resources'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return [];
+    }
   });
 
   const handleRefresh = () => {
