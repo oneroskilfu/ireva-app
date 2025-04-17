@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from '@/components/ui/badge';
 
 export default function AdminSettings() {
   const { toast } = useToast();

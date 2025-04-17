@@ -54,6 +54,13 @@ function Router() {
   const AdminProjectsPage = lazy(() => import('@/pages/admin/AdminProjectsPage'));
   const AdminUsersPage = lazy(() => import('@/pages/admin/users-page'));
   const AdminPropertiesPage = lazy(() => import('@/pages/admin/properties-page'));
+  const AdminInvestmentsPage = lazy(() => import('@/pages/admin/investments-page'));
+  const AdminTransactionsPage = lazy(() => import('@/pages/admin/transactions-page'));
+  const AdminPaymentsPage = lazy(() => import('@/pages/admin/payments-page'));
+  const AdminDocumentsPage = lazy(() => import('@/pages/admin/documents-page'));
+  const AdminMessagesPage = lazy(() => import('@/pages/admin/messages-page'));
+  const AdminSystemPage = lazy(() => import('@/pages/admin/system-page'));
+  const AdminSettingsPage = lazy(() => import('@/pages/admin/settings-page'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ROICalculatorPage = lazy(() => import('@/pages/investor/ROICalculatorPage'));
@@ -206,6 +213,97 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <AdminPropertiesPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Investments Management Route */}
+      <Route path="/admin/investments">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminInvestmentsPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Transactions Management Route */}
+      <Route path="/admin/transactions">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminTransactionsPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Payments Management Route */}
+      <Route path="/admin/payments">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminPaymentsPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Documents Management Route */}
+      <Route path="/admin/documents">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminDocumentsPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Messages Management Route */}
+      <Route path="/admin/messages">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminMessagesPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin System Management Route */}
+      <Route path="/admin/system">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminSystemPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Settings Management Route */}
+      <Route path="/admin/settings">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminSettingsPage />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>
