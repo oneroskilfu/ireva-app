@@ -16,6 +16,19 @@ import {
   CheckSquare, 
   Loader2 
 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import AdminLayout from '@/components/layouts/AdminLayout';
+
+interface DashboardStats {
+  userCount: number;
+  propertyCount: number;
+  investmentCount: number;
+  totalInvestmentAmount: number;
+  activeInvestmentCount: number;
+  pendingKycCount: number;
+  propertyFundingProgress: number;
+  totalReturns?: number;
+}
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -23,34 +36,46 @@ export default function AdminDashboard() {
   // Fetch dashboard stats
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/admin/dashboard/stats'],
-    // The path will be registered in server routes
+    retry: 1, // Only retry once to prevent excessive API calls
+    refetchOnWindowFocus: false, // Prevent refetching on window focus
   });
   
   // Count notifications for the admin
   const { data: notifications } = useQuery({
     queryKey: ['/api/notifications/unread'],
-    // The path will be registered in server routes
+    retry: 1, // Only retry once
+    refetchOnWindowFocus: false, // Prevent refetching on window focus
   });
   
   // Show loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading dashboard data...</p>
+      <AdminLayout>
+        <Helmet>
+          <title>Admin Dashboard | iREVA</title>
+        </Helmet>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading dashboard data...</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
   
   // Show error state
   if (error) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-red-500 mb-2">Error loading dashboard data.</p>
-        <p className="text-muted-foreground">Please try again later or contact support.</p>
-      </div>
+      <AdminLayout>
+        <Helmet>
+          <title>Error | Admin Dashboard | iREVA</title>
+        </Helmet>
+        <div className="p-6 text-center">
+          <p className="text-red-500 mb-2">Error loading dashboard data.</p>
+          <p className="text-muted-foreground">Please try again later or contact support.</p>
+        </div>
+      </AdminLayout>
     );
   }
   
