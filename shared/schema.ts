@@ -312,9 +312,14 @@ export const transactionTypeEnum = pgEnum("transaction_type", [
   "deposit",
   "withdrawal",
   "investment",
-  "earnings",
-  "referral",
-  "fee"
+  "return"
+]);
+
+// Transaction status enum
+export const transactionStatusEnum = pgEnum("transaction_status", [
+  "pending",
+  "completed",
+  "failed"
 ]);
 
 // Wallet schema
@@ -335,25 +340,23 @@ export const insertWalletSchema = createInsertSchema(wallets).omit({
 });
 
 // Wallet transaction schema
-export const walletTransactions = pgTable("wallet_transactions", {
+export const walletTransaction = pgTable("wallet_transactions", {
   id: serial("id").primaryKey(),
-  walletId: integer("wallet_id").notNull(),
+  userId: integer("user_id").notNull(),
   amount: integer("amount").notNull(),
   type: transactionTypeEnum("type").notNull(),
+  status: transactionStatusEnum("status").default("completed"),
   description: text("description"),
-  reference: text("reference"),
-  balanceBefore: integer("balance_before").notNull(),
-  balanceAfter: integer("balance_after").notNull(),
-  status: text("status").default("successful"),
+  reference: text("reference").unique(),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
 });
 
-export const insertWalletTransactionSchema = createInsertSchema(walletTransactions).omit({
+export const insertWalletTransactionSchema = createInsertSchema(walletTransaction).omit({
   id: true,
-  balanceBefore: true,
-  balanceAfter: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 // Payment methods schema
@@ -455,7 +458,7 @@ export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
 export type Wallet = typeof wallets.$inferSelect;
 export type InsertWallet = z.infer<typeof insertWalletSchema>;
 
-export type WalletTransaction = typeof walletTransactions.$inferSelect;
+export type WalletTransaction = typeof walletTransaction.$inferSelect;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
 
 // Message status enum

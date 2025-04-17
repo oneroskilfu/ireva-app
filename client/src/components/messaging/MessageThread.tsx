@@ -1,99 +1,110 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/use-auth';
-import { format } from 'date-fns';
-import { Send, AlertCircle, ChevronRight, User, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useParams } from 'wouter';
+import { format, parseISO, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Send,
+  MoreVertical,
+  ChevronLeft,
+  User,
+  Clock,
+  Loader2,
+  AlertCircle,
+  Paperclip,
+  Image,
+  Smile,
+  MessageSquare,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface Message {
   id: number;
-  recipientId: number;
+  content: string;
+  subject?: string;
   senderId: number;
-  body: string;
+  receiverId: number;
   createdAt: string;
-  isRead: boolean;
-  sender: {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    profileImage: string;
-    role: string;
-  };
+  status: 'read' | 'unread' | 'archived' | 'deleted';
+  readAt?: string;
+  isFromMe: boolean;
 }
 
-interface MessageThreadProps {
-  recipientId: number;
-  onSendSuccess?: () => void;
+interface User {
+  id: number;
+  username: string;
+  fullName: string;
+  profileImage: string | null;
 }
 
-const MessageThread = ({ recipientId, onSendSuccess }: MessageThreadProps) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+interface ThreadData {
+  messages: Message[];
+  user: User | null;
+}
+
+const MessageThread = () => {
+  const { userId } = useParams();
   const queryClient = useQueryClient();
-  const [newMessage, setNewMessage] = useState('');
-  const messageEndRef = useRef<HTMLDivElement>(null);
-  
-  // Fetch message thread
+  const { toast } = useToast();
+  const [message, setMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch thread data
   const {
-    data: messages,
+    data: threadData,
     isLoading,
     isError,
     refetch,
-  } = useQuery({
-    queryKey: ['/api/messages/thread', recipientId],
+  } = useQuery<ThreadData>({
+    queryKey: [`/api/messages/thread/${userId}`],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/messages/thread/${userId}`);
+      const data = await response.json();
+      return data;
+    },
   });
-
-  // Auto-scroll to bottom of messages
-  useEffect(() => {
-    if (messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
-
-  // Mark messages as read when thread is opened
-  useEffect(() => {
-    const markAsRead = async () => {
-      try {
-        await apiRequest('POST', `/api/messages/read/${recipientId}`);
-        queryClient.invalidateQueries({ queryKey: ['/api/messages/inbox'] });
-      } catch (error) {
-        console.error('Error marking messages as read:', error);
-      }
-    };
-    
-    if (recipientId) {
-      markAsRead();
-    }
-  }, [recipientId, queryClient]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageBody: string) => {
+    mutationFn: async (content: string) => {
       const response = await apiRequest('POST', '/api/messages/send', {
-        recipientId,
-        body: messageBody,
+        receiverId: Number(userId),
+        content,
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send message');
-      }
-      
-      return await response.json();
+      return response.json();
     },
     onSuccess: () => {
-      setNewMessage('');
-      refetch();
-      if (onSendSuccess) {
-        onSendSuccess();
-      }
+      setMessage('');
+      queryClient.invalidateQueries({ queryKey: [`/api/messages/thread/${userId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/messages/inbox'] });
+      
+      toast({
+        title: 'Message sent',
+        description: 'Your message has been sent successfully',
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -104,181 +115,297 @@ const MessageThread = ({ recipientId, onSendSuccess }: MessageThreadProps) => {
     },
   });
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    sendMessageMutation.mutate(newMessage);
-  };
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [threadData?.messages]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+  // Handle sending a message
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (message.trim()) {
+      sendMessageMutation.mutate(message);
     }
   };
 
+  // Format date for display
   const formatMessageDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const date = parseISO(dateString);
     
-    if (date.toDateString() === today.toDateString()) {
-      return `Today at ${format(date, 'h:mm a')}`;
-    } else if (date.toDateString() === yesterday.toDateString()) {
+    if (isToday(date)) {
+      return format(date, 'h:mm a');
+    } else if (isYesterday(date)) {
       return `Yesterday at ${format(date, 'h:mm a')}`;
     } else {
       return format(date, 'MMM d, yyyy h:mm a');
     }
   };
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  // Group messages by date
+  const groupMessagesByDate = (messages: Message[]) => {
+    const groups: { [key: string]: Message[] } = {};
+    
+    messages.forEach((message) => {
+      const date = new Date(message.createdAt);
+      const dateKey = format(date, 'yyyy-MM-dd');
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      
+      groups[dateKey].push(message);
+    });
+    
+    return groups;
   };
 
-  // Group messages by date
-  const groupedMessages = messages
-    ? messages.reduce((groups: { [key: string]: Message[] }, message: Message) => {
-        const date = new Date(message.createdAt).toDateString();
-        if (!groups[date]) {
-          groups[date] = [];
-        }
-        groups[date].push(message);
-        return groups;
-      }, {})
-    : {};
+  // Format date header
+  const formatDateHeader = (dateKey: string) => {
+    const date = parseISO(dateKey);
+    
+    if (isToday(date)) {
+      return 'Today';
+    } else if (isYesterday(date)) {
+      return 'Yesterday';
+    } else {
+      return format(date, 'EEEE, MMMM d, yyyy');
+    }
+  };
 
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    if (!name) return '??';
+    
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
-        <p className="text-muted-foreground">Loading messages...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading conversation...</p>
       </div>
     );
   }
 
-  if (isError) {
+  // Error state
+  if (isError || !threadData) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-center p-4">
+      <div className="flex flex-col items-center justify-center h-64 text-center">
         <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-        <h3 className="text-lg font-medium mb-2">Failed to load messages</h3>
-        <p className="text-muted-foreground mb-4">
-          There was an error loading this conversation. Please try again.
+        <h3 className="text-lg font-medium mb-2">Failed to load conversation</h3>
+        <p className="text-muted-foreground mb-4 max-w-md">
+          There was an error loading this conversation. Please try again later.
         </p>
         <Button onClick={() => refetch()}>Retry</Button>
       </div>
     );
   }
 
-  if (!messages || messages.length === 0) {
+  // If the user doesn't exist
+  if (!threadData.user) {
     return (
-      <div className="flex flex-col h-full">
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-          <User className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No messages yet</h3>
-          <p className="text-muted-foreground mb-4">
-            Start a conversation by sending a message below.
-          </p>
-        </div>
-        
-        <div className="p-4 border-t">
-          <div className="flex items-start space-x-2">
-            <Textarea
-              placeholder="Type your message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="flex-1 min-h-[80px] resize-none"
-            />
-            <Button
-              onClick={handleSendMessage}
-              size="icon"
-              disabled={!newMessage.trim() || sendMessageMutation.isPending}
-            >
-              {sendMessageMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center h-64 text-center">
+        <User className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium mb-2">User not found</h3>
+        <p className="text-muted-foreground mb-4 max-w-md">
+          This user doesn't exist or has been removed from the platform.
+        </p>
+        <Button variant="outline" onClick={() => window.history.back()}>
+          Return to Inbox
+        </Button>
       </div>
     );
   }
 
+  const messageGroups = groupMessagesByDate(threadData.messages);
+
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)]">
-      <div className="flex-1 overflow-y-auto px-4 py-2">
-        {Object.entries(groupedMessages).map(([date, messagesForDate]) => (
-          <div key={date} className="mb-6">
-            <div className="flex justify-center mb-4">
-              <Badge variant="outline" className="text-xs text-muted-foreground">
-                {format(new Date(date), 'MMMM d, yyyy')}
-              </Badge>
+    <div className="flex flex-col h-full">
+      <Card className="flex flex-col h-full">
+        {/* Header */}
+        <CardHeader className="py-3 border-b flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mr-2 md:hidden"
+                onClick={() => window.history.back()}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Avatar className="h-10 w-10 mr-3">
+                <AvatarImage
+                  src={threadData.user.profileImage || ''}
+                  alt={threadData.user.username}
+                />
+                <AvatarFallback>
+                  {getInitials(threadData.user.fullName || threadData.user.username)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-base">
+                  {threadData.user.fullName || threadData.user.username}
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  @{threadData.user.username}
+                </CardDescription>
+              </div>
             </div>
-            
-            {messagesForDate.map((message) => {
-              const isCurrentUser = message.senderId === user?.id;
-              return (
-                <div
-                  key={message.id}
-                  className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`flex max-w-[80%] ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
-                    <Avatar className={`h-8 w-8 ${isCurrentUser ? 'ml-2' : 'mr-2'}`}>
-                      <AvatarImage src={message.sender.profileImage} />
-                      <AvatarFallback>
-                        {getInitials(message.sender.firstName, message.sender.lastName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div>
-                      <div className={`flex items-center mb-1 ${isCurrentUser ? 'justify-end' : ''}`}>
-                        <span className="text-xs text-muted-foreground">
-                          {formatMessageDate(message.createdAt)}
-                        </span>
-                      </div>
-                      <div
-                        className={`px-4 py-2 rounded-lg ${
-                          isCurrentUser
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <div className="whitespace-pre-wrap break-words">{message.body}</div>
-                      </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>View Profile</DropdownMenuItem>
+                <DropdownMenuItem>Mark All as Read</DropdownMenuItem>
+                <DropdownMenuItem>Block User</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive">Delete Conversation</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+
+        {/* Messages */}
+        <CardContent className="flex-1 overflow-y-auto py-6 px-4 md:px-6">
+          {threadData.messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-10">
+              <div className="rounded-full bg-muted p-3 mb-4">
+                <MessageSquare className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-xs">
+                Start a conversation with {threadData.user.fullName || threadData.user.username}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(messageGroups).map(([dateKey, messagesForDate]) => (
+                <div key={dateKey} className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="bg-muted text-xs px-2 py-1 rounded-md text-muted-foreground">
+                      {formatDateHeader(dateKey)}
                     </div>
                   </div>
+                  {messagesForDate.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.isFromMe ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className="flex items-end gap-2 max-w-[85%]">
+                        {!message.isFromMe && (
+                          <Avatar className="h-8 w-8 flex-shrink-0">
+                            <AvatarImage
+                              src={threadData.user?.profileImage || ''}
+                              alt={threadData.user?.username}
+                            />
+                            <AvatarFallback>
+                              {getInitials(
+                                threadData.user?.fullName || threadData.user?.username || ''
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div
+                          className={`rounded-lg px-4 py-2 max-w-full break-words ${
+                            message.isFromMe
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-foreground'
+                          }`}
+                        >
+                          {message.subject && (
+                            <div className="font-medium mb-1">{message.subject}</div>
+                          )}
+                          <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                          <div
+                            className={`text-[10px] mt-1 flex items-center ${
+                              message.isFromMe
+                                ? 'text-primary-foreground/70'
+                                : 'text-muted-foreground'
+                            }`}
+                          >
+                            <Clock className="h-2.5 w-2.5 inline mr-1" />
+                            {formatMessageDate(message.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        ))}
-        <div ref={messageEndRef} />
-      </div>
-      
-      <div className="p-4 border-t mt-auto">
-        <div className="flex items-start space-x-2">
-          <Textarea
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 min-h-[80px] resize-none"
-          />
-          <Button
-            onClick={handleSendMessage}
-            size="icon"
-            disabled={!newMessage.trim() || sendMessageMutation.isPending}
-          >
-            {sendMessageMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </CardContent>
+
+        {/* Message Input */}
+        <div className="p-4 border-t">
+          <form onSubmit={handleSendMessage} className="flex flex-col gap-2">
+            <Textarea
+              placeholder="Type your message here..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="min-h-[80px] resize-none"
+            />
+            <div className="flex justify-between">
+              <div className="flex gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground">
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Attach a file</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground">
+                        <Image className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Attach an image</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground">
+                        <Smile className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Add emoji</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Button
+                type="submit"
+                disabled={!message.trim() || sendMessageMutation.isPending}
+              >
+                {sendMessageMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                Send
+              </Button>
+            </div>
+          </form>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
