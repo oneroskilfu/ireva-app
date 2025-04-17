@@ -61,6 +61,7 @@ function Router() {
   const AdminMessagesPage = lazy(() => import('@/pages/admin/messages-page'));
   const AdminSystemPage = lazy(() => import('@/pages/admin/system-page'));
   const AdminSettingsPage = lazy(() => import('@/pages/admin/settings-page'));
+  const AdminResourcesPage = lazy(() => import('@/pages/admin/resources-page'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ROICalculatorPage = lazy(() => import('@/pages/investor/ROICalculatorPage'));
@@ -304,6 +305,19 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <AdminSettingsPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Educational Resources Management Route */}
+      <Route path="/admin/resources">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminResourcesPage />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>
