@@ -2,7 +2,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, StrictMode } from "react";
 import { DebugHelper } from "@/components/DebugHelper";
 import AuthMiddleware from "@/middleware/AuthMiddleware";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -34,7 +34,15 @@ const JwtTestPage = lazy(() => import("@/pages/jwt-test-page"));
 const TestLogin = lazy(() => import("./test-login"));
 const DebugLoginPage = lazy(() => import("@/pages/DebugLoginPage"));
 
-const queryClient = new QueryClient();
+// Configure React Query with proper suspense handling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function Router() {
   const [isMobile, setIsMobile] = useState(false);
@@ -184,16 +192,27 @@ function App() {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <Router />
-          <Toaster />
-          {/* Only show debug helper in development mode */}
-          {isDevelopment && <DebugHelper />}
-        </AuthProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+    <StrictMode>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
+                <p className="text-muted-foreground">Loading application...</p>
+              </div>
+            </div>
+          }>
+            <AuthProvider>
+              <Router />
+              <Toaster />
+              {/* Only show debug helper in development mode */}
+              {isDevelopment && <DebugHelper />}
+            </AuthProvider>
+          </Suspense>
+        </QueryClientProvider>
+      </HelmetProvider>
+    </StrictMode>
   );
 }
 
