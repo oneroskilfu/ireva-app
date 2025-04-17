@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 
 const DebugLoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,9 +27,11 @@ const DebugLoginPage = () => {
 
       const data = await response.json();
       
-      // Store token in localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Store token in localStorage as auth_token to match the useAuth hook expectations
+      localStorage.setItem('auth_token', data.token);
+      
+      // Set user data in React Query cache
+      queryClient.setQueryData(["/api/user"], data.user);
       
       toast({
         title: 'Login successful',
@@ -37,14 +40,13 @@ const DebugLoginPage = () => {
       
       // Redirect based on role
       if (data.user.role === 'admin') {
-        // Try the legacy admin route since we know it exists
-        navigate('/admin');
+        // Navigate to admin-new first as it should work with our React Query setup
+        console.log('Redirecting admin user to admin-new:', data.user);
+        navigate('/admin-new');
         
-        // Alternative admin routes to try if the above doesn't work:
-        // navigate('/admin-new');
+        // Alternative admin routes if needed:
+        // navigate('/admin');
         // navigate('/admin/dashboard');
-        
-        console.log('Redirecting admin user:', data.user);
       } else {
         navigate('/dashboard');
       }
