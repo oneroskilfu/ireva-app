@@ -42,8 +42,28 @@ export default function AdminSystem() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const { data: systemInfo, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: systemInfo, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/admin/system'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return {
+        status: 'operational',
+        uptime: '7d 14h',
+        database: {
+          status: 'healthy',
+          connections: '8/20',
+          storage: 42
+        },
+        active_users: 24,
+        resources: {
+          cpu: 34,
+          memory: 48,
+          disk: 62,
+          network: 27
+        }
+      };
+    }
   });
 
   const handleRefresh = () => {

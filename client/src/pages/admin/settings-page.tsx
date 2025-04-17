@@ -45,8 +45,20 @@ export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState('general');
   const [settingsChanged, setSettingsChanged] = useState(false);
 
-  const { data: settings, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: settings, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/admin/settings'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return {
+        general: {
+          platformName: "iREVA",
+          contactEmail: "contact@ireva.com",
+          supportEmail: "support@ireva.com",
+          homepageDescription: "A comprehensive real estate investment platform empowering investors across African markets with advanced digital tools and cross-border financial engagement capabilities."
+        }
+      };
+    }
   });
 
   const handleSaveChanges = () => {
@@ -99,6 +111,7 @@ export default function AdminSettings() {
         <Button
           variant="outline"
           className="mt-4"
+          onClick={() => refetch()}
         >
           Retry
         </Button>

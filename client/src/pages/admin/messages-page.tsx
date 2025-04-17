@@ -23,8 +23,13 @@ export default function AdminMessages() {
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [replyText, setReplyText] = useState('');
 
-  const { data: messages, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: messages, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/admin/messages'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return [];
+    }
   });
 
   const handleRefresh = () => {
