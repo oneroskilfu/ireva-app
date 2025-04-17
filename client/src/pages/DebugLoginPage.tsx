@@ -40,13 +40,14 @@ const DebugLoginPage = () => {
       
       // Redirect based on role
       if (data.user.role === 'admin') {
-        // Navigate to admin-new first as it should work with our React Query setup
-        console.log('Redirecting admin user to admin-new:', data.user);
-        navigate('/admin-new');
+        // Navigate to admin/projects which is a normal route without dynamic imports
+        console.log('Redirecting admin user to admin/projects:', data.user);
+        navigate('/admin/projects');
         
         // Alternative admin routes if needed:
         // navigate('/admin');
         // navigate('/admin/dashboard');
+        // navigate('/admin-new');
       } else {
         navigate('/dashboard');
       }
