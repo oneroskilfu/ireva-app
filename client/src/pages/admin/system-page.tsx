@@ -71,6 +71,7 @@ export default function AdminSystem() {
       title: "Refreshing system information",
       description: "The system information is being updated.",
     });
+    refetch();
   };
 
   // Loading state

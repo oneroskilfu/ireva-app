@@ -34,6 +34,7 @@ export default function AdminPayments() {
       title: "Refreshing payments data",
       description: "The payments list is being updated.",
     });
+    refetch();
   };
 
   const handleExport = () => {
