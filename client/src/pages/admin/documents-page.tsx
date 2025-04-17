@@ -34,6 +34,7 @@ export default function AdminDocuments() {
       title: "Refreshing documents data",
       description: "The documents list is being updated.",
     });
+    refetch();
   };
 
   const handleUpload = () => {

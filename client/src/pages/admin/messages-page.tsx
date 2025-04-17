@@ -37,6 +37,7 @@ export default function AdminMessages() {
       title: "Refreshing messages",
       description: "The messages list is being updated.",
     });
+    refetch();
   };
 
   const handleSendReply = () => {
