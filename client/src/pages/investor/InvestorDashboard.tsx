@@ -27,7 +27,7 @@ import {
   BarChart,
   PieChart,
   BellRing,
-  Certificate
+  Award // Replaced Certificate with Award icon
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 

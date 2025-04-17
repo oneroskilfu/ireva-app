@@ -18,24 +18,47 @@ const adminRouter = Router();
 // Admin dashboard overview stats
 adminRouter.get('/dashboard/stats', ensureAdmin, async (req: Request, res: Response) => {
   try {
-    // Get counts for various entities
+    console.log("Fetching admin dashboard stats");
+    
+    // Get all counts from storage
+    const users = await storage.getAllUsers();
     const properties = await storage.getAllProperties();
-    const userCount = (await storage.getAllUsers()).length;
-    const totalInvestments = await storage.getAllInvestments();
+    const investments = await storage.getAllInvestments();
+    const pendingKycUsers = await storage.getUsersByKycStatus('pending');
     
-    const totalInvestmentAmount = totalInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-    const activeInvestmentCount = totalInvestments.filter(inv => inv.status === 'active').length;
-    const pendingKycCount = (await storage.getUsersByKycStatus('pending')).length;
+    // Calculate total investment amount
+    const totalInvestmentAmount = investments.reduce((sum, investment) => sum + investment.amount, 0);
     
-    return res.json({
-      userCount,
+    // Calculate active investments
+    const activeInvestments = investments.filter(inv => inv.status === 'active');
+    
+    // Calculate property funding progress (average of all properties)
+    const propertyFundingProgress = properties.length > 0 
+      ? properties.reduce((sum, property) => {
+          return sum + (property.currentFunding / property.totalFunding);
+        }, 0) / properties.length * 100 
+      : 0;
+    
+    // Calculate total returns (if applicable)
+    const totalReturns = investments.reduce((sum, investment) => {
+      return sum + (investment.returns || 0);
+    }, 0);
+    
+    // Prepare dashboard stats response
+    const dashboardStats = {
+      userCount: users.length,
       propertyCount: properties.length,
+      investmentCount: investments.length,
       totalInvestmentAmount,
-      activeInvestmentCount,
-      pendingKycCount,
-      propertyFundingProgress: properties.reduce((sum, p) => sum + (p.currentFunding || 0), 0) / 
-                             properties.reduce((sum, p) => sum + p.totalFunding, 0) * 100
-    });
+      activeInvestmentCount: activeInvestments.length,
+      pendingKycCount: pendingKycUsers.length,
+      propertyFundingProgress,
+      totalReturns
+    };
+    
+    console.log("Admin dashboard stats:", dashboardStats);
+    
+    return res.status(200).json(dashboardStats);
   } catch (error) {
     console.error('Error fetching admin dashboard stats:', error);
     return res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
@@ -471,6 +494,27 @@ adminRouter.get('/roi/summary', ensureAdmin, async (req: Request, res: Response)
   } catch (error) {
     console.error("ROI Summary Error:", error);
     res.status(500).json({ error: "Failed to fetch ROI summary data" });
+  }
+});
+
+// Notification count endpoint
+adminRouter.get('/notifications/unread', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    // Get unread notifications for the admin user
+    const notifications = await storage.getUserNotificationsByStatus(req.user.id, 'unread');
+    
+    // Return the count and the notifications
+    return res.json({
+      count: notifications.length,
+      notifications: notifications
+    });
+  } catch (error) {
+    console.error('Error fetching unread notifications:', error);
+    return res.status(500).json({ error: 'Failed to fetch unread notifications' });
   }
 });
 
