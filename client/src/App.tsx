@@ -22,6 +22,7 @@ import MobileHomePage from "@/pages/mobile-home-page";
 import AdminDashboard from "@/pages/admin/admin-dashboard";
 import JwtTestPage from "@/pages/jwt-test-page";
 import TestLogin from "./test-login";
+import DebugLoginPage from "@/pages/DebugLoginPage";
 import { ProtectedRoute } from "./lib/protected-route";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -62,6 +63,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/jwt-test" component={JwtTestPage} />
       <Route path="/test-login" component={TestLogin} />
+      <Route path="/debug-login" component={DebugLoginPage} />
       <Route path="/forum" component={ForumPage} />
       <Route path="/forum/topic/:id" component={TopicDetailPage} />
       <Route path="/company/team" component={TeamPage} />
