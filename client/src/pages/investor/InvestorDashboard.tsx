@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { 
@@ -30,15 +30,28 @@ import {
   Award // Replaced Certificate with Award icon
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { getQueryFn } from '@/lib/queryClient';
+
+// Dashboard stats interface
+interface InvestorDashboardStats {
+  totalInvested: number;
+  totalEarnings: number;
+  activeInvestments: number;
+  nextPayout: number;
+  portfolioGrowth: number;
+}
 
 export default function InvestorDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isPending, startTransition] = useTransition();
   
   // Fetch dashboard stats
-  const { data = {}, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<InvestorDashboardStats>({
     queryKey: ['/api/investor/dashboard'],
-    // The path will be registered in server routes
+    queryFn: getQueryFn({ on401: "throw" }),
+    retry: 1, // Only retry once
+    refetchOnWindowFocus: false
   });
   
   // Show loading state
@@ -60,7 +73,7 @@ export default function InvestorDashboard() {
     activeInvestments = 0,
     nextPayout = 0,
     portfolioGrowth = 0
-  } = data;
+  } = data || {};
   
   return (
     <div className="space-y-6">
@@ -132,7 +145,11 @@ export default function InvestorDashboard() {
       </div>
       
       {/* Main content */}
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs 
+        defaultValue="overview" 
+        value={activeTab} 
+        onValueChange={(value) => startTransition(() => setActiveTab(value))}
+      >
         <TabsList>
           <TabsTrigger value="overview">Portfolio Overview</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>

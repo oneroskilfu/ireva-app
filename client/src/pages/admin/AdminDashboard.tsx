@@ -41,7 +41,6 @@ export default function AdminDashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
     retry: 1, // Only retry once to prevent excessive API calls
     refetchOnWindowFocus: false, // Prevent refetching on window focus
-    suspense: false, // Disable suspense mode to handle loading state manually
   });
   
   // Count notifications for the admin
@@ -49,8 +48,7 @@ export default function AdminDashboard() {
     queryKey: ['/api/notifications/unread'],
     queryFn: getQueryFn({ on401: "throw" }),
     retry: 1, // Only retry once
-    refetchOnWindowFocus: false, // Prevent refetching on window focus
-    suspense: false, // Disable suspense mode to handle loading state manually
+    refetchOnWindowFocus: false // Prevent refetching on window focus
   });
   
   // Show loading state
