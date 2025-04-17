@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, useTransition } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
@@ -16,6 +16,7 @@ interface AuthMiddlewareProps {
 const AuthMiddleware = ({ children, requiredRoles = [] }: AuthMiddlewareProps) => {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
+  const [isPending, startTransition] = useTransition();
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(true);
 
@@ -24,7 +25,9 @@ const AuthMiddleware = ({ children, requiredRoles = [] }: AuthMiddlewareProps) =
       if (!user) {
         // User is not authenticated
         console.log('User not authenticated, redirecting to auth page');
-        navigate('/auth');
+        startTransition(() => {
+          navigate('/auth');
+        });
         setIsChecking(false);
         return;
       }
@@ -44,12 +47,14 @@ const AuthMiddleware = ({ children, requiredRoles = [] }: AuthMiddlewareProps) =
       } else {
         console.log(`Access denied. Required roles: [${requiredRoles.join(', ')}], user role: ${user.role}`);
         
-        // Redirect based on user role
-        if (user.role === 'admin' || user.role === 'super_admin') {
-          navigate('/admin');
-        } else {
-          navigate('/investor');
-        }
+        // Redirect based on user role - wrapped in startTransition
+        startTransition(() => {
+          if (user.role === 'admin' || user.role === 'super_admin') {
+            navigate('/admin');
+          } else {
+            navigate('/investor');
+          }
+        });
       }
       
       setIsChecking(false);

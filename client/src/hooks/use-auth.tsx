@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect } from "react";
+import { createContext, ReactNode, useContext, useEffect, useTransition } from "react";
 import {
   useQuery,
   useMutation,
@@ -44,6 +44,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const [isPending, startTransition] = useTransition();
   
   // Get initial token from localStorage
   const initialToken = getAuthToken();
@@ -86,14 +87,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "You have successfully logged in.",
       });
       
-      // Redirect based on user role
-      if (data.user.role === 'admin' || data.user.role === 'super_admin') {
-        console.log('Admin user detected, redirecting to admin dashboard');
-        navigate("/admin-new"); // Using the new route path
-      } else {
-        console.log('Regular user detected, redirecting to investor dashboard');
-        navigate("/investor"); // Using the new route path for investors
-      }
+      // Redirect based on user role - wrapped in startTransition to avoid suspension errors
+      startTransition(() => {
+        if (data.user.role === 'admin' || data.user.role === 'super_admin') {
+          console.log('Admin user detected, redirecting to admin dashboard');
+          navigate("/admin-new"); // Using the new route path
+        } else {
+          console.log('Regular user detected, redirecting to investor dashboard');
+          navigate("/investor"); // Using the new route path for investors
+        }
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -126,14 +129,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Your account has been successfully created.",
       });
       
-      // Redirect based on user role
-      if (data.user.role === 'admin' || data.user.role === 'super_admin') {
-        console.log('Admin user registered, redirecting to admin dashboard');
-        navigate("/admin-new"); // Using the new route path
-      } else {
-        console.log('Regular user registered, redirecting to investor dashboard');
-        navigate("/investor"); // Using the new route path for investors
-      }
+      // Redirect based on user role - wrapped in startTransition
+      startTransition(() => {
+        if (data.user.role === 'admin' || data.user.role === 'super_admin') {
+          console.log('Admin user registered, redirecting to admin dashboard');
+          navigate("/admin-new"); // Using the new route path
+        } else {
+          console.log('Regular user registered, redirecting to investor dashboard');
+          navigate("/investor"); // Using the new route path for investors
+        }
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -169,8 +174,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "You have been successfully logged out.",
       });
       
-      // Redirect to home page after logout
-      navigate("/");
+      // Redirect to home page after logout - wrapped in startTransition
+      startTransition(() => {
+        navigate("/");
+      });
     },
     onError: (error: Error) => {
       toast({
