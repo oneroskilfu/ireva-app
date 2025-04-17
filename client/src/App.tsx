@@ -55,6 +55,9 @@ function Router() {
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ROICalculatorPage = lazy(() => import('@/pages/investor/ROICalculatorPage'));
   const InvestorSavedPropertiesPage = lazy(() => import('@/pages/investor/InvestorSavedPropertiesPage'));
+  const InvestorPortfolioPage = lazy(() => import('@/pages/investor/portfolio-page'));
+  const InvestorPropertiesPage = lazy(() => import('@/pages/investor/properties-page'));
+  const InvestorWalletPage = lazy(() => import('@/pages/investor/wallet-page'));
   
   useEffect(() => {
     // Function to check if viewport is mobile
@@ -201,6 +204,58 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <InvestorLayout>
                 <InvestorSavedPropertiesPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor Dashboard Page */}
+      <Route path="/investor/dashboard">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <InvestorDashboard />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor Portfolio Page */}
+      <Route path="/investor/portfolio">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <InvestorPortfolioPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor Properties Page */}
+      <Route path="/investor/properties">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <InvestorPropertiesPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor Wallet Page */}
+      <Route path="/investor/wallet">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <InvestorWalletPage />
               </InvestorLayout>
             </Suspense>
           </AuthMiddleware>
