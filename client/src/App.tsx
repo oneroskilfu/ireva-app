@@ -2,6 +2,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/hooks/use-theme";
 import { useEffect, useState, lazy, Suspense, StrictMode } from "react";
 import { DebugHelper } from "@/components/DebugHelper";
 import AuthMiddleware from "@/middleware/AuthMiddleware";
@@ -359,23 +360,25 @@ function App() {
   return (
     <StrictMode>
       <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-screen">
-              <div className="text-center">
-                <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
-                <p className="text-muted-foreground">Loading application...</p>
+        <ThemeProvider defaultTheme="system" storageKey="ireva-theme">
+          <QueryClientProvider client={queryClient}>
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-screen">
+                <div className="text-center">
+                  <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
+                  <p className="text-muted-foreground">Loading application...</p>
+                </div>
               </div>
-            </div>
-          }>
-            <AuthProvider>
-              <Router />
-              <Toaster />
-              {/* Only show debug helper in development mode */}
-              {isDevelopment && <DebugHelper />}
-            </AuthProvider>
-          </Suspense>
-        </QueryClientProvider>
+            }>
+              <AuthProvider>
+                <Router />
+                <Toaster />
+                {/* Only show debug helper in development mode */}
+                {isDevelopment && <DebugHelper />}
+              </AuthProvider>
+            </Suspense>
+          </QueryClientProvider>
+        </ThemeProvider>
       </HelmetProvider>
     </StrictMode>
   );
