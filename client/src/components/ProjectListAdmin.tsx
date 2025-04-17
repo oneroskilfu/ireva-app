@@ -31,8 +31,13 @@ const ProjectListAdmin = () => {
   const [projectToDelete, setProjectToDelete] = useState<any>(null);
   const [viewingProject, setViewingProject] = useState<any>(null);
 
-  const { data: projects, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: projects, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/properties'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return [];
+    }
   });
 
   const deleteMutation = useMutation({

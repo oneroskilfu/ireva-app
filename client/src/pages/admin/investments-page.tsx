@@ -19,8 +19,13 @@ export default function AdminInvestments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
-  const { data: investments, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: investments, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/admin/investments'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return [];
+    }
   });
 
   const handleRefresh = () => {
@@ -28,6 +33,7 @@ export default function AdminInvestments() {
       title: "Refreshing investments data",
       description: "The investments list is being updated.",
     });
+    refetch();
   };
 
   // Loading state
