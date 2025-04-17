@@ -261,7 +261,7 @@ export default function InvestorDashboard() {
                 <CardTitle>Investment Opportunities</CardTitle>
                 <CardDescription>New properties that match your investment profile</CardDescription>
               </div>
-              <Certificate className="h-5 w-5 text-muted-foreground" />
+              <Award className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
