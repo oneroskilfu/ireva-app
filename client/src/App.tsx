@@ -27,6 +27,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
+import { DebugHelper } from "@/components/DebugHelper";
 
 const queryClient = new QueryClient();
 
@@ -166,11 +167,16 @@ function Router() {
 }
 
 function App() {
+  // Determine if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router />
         <Toaster />
+        {/* Only show debug helper in development mode */}
+        {isDevelopment && <DebugHelper />}
       </AuthProvider>
     </QueryClientProvider>
   );
