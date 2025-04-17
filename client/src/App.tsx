@@ -53,6 +53,7 @@ function Router() {
   const AdminProjectsPage = lazy(() => import('@/pages/admin/AdminProjectsPage'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
+  const ROICalculatorPage = lazy(() => import('@/pages/investor/ROICalculatorPage'));
   
   useEffect(() => {
     // Function to check if viewport is mobile
@@ -176,6 +177,17 @@ function Router() {
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
             <Suspense fallback={<div>Loading...</div>}>
               <InvestorProjectsPage />
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor ROI Calculator Page */}
+      <Route path="/investor/roi-calculator">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <ROICalculatorPage />
             </Suspense>
           </AuthMiddleware>
         )}
