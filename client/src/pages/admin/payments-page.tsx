@@ -20,8 +20,13 @@ export default function AdminPayments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
-  const { data: payments, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: payments, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/admin/payments'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return [];
+    }
   });
 
   const handleRefresh = () => {
