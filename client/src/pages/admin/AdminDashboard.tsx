@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Card, 
@@ -33,6 +33,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isPending, startTransition] = useTransition();
   
   // Fetch dashboard stats
   const { data, isLoading, error } = useQuery<DashboardStats>({
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
     retry: 1, // Only retry once to prevent excessive API calls
     refetchOnWindowFocus: false, // Prevent refetching on window focus
+    suspense: false, // Disable suspense mode to handle loading state manually
   });
   
   // Count notifications for the admin
@@ -48,6 +50,7 @@ export default function AdminDashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
     retry: 1, // Only retry once
     refetchOnWindowFocus: false, // Prevent refetching on window focus
+    suspense: false, // Disable suspense mode to handle loading state manually
   });
   
   // Show loading state
@@ -95,7 +98,7 @@ export default function AdminDashboard() {
           </p>
         </div>
       
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={(value) => startTransition(() => setActiveTab(value))}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="properties">Properties</TabsTrigger>
