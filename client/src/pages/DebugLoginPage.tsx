@@ -37,7 +37,14 @@ const DebugLoginPage = () => {
       
       // Redirect based on role
       if (data.user.role === 'admin') {
-        navigate('/admin/dashboard');
+        // Try the legacy admin route since we know it exists
+        navigate('/admin');
+        
+        // Alternative admin routes to try if the above doesn't work:
+        // navigate('/admin-new');
+        // navigate('/admin/dashboard');
+        
+        console.log('Redirecting admin user:', data.user);
       } else {
         navigate('/dashboard');
       }
