@@ -32,12 +32,12 @@ const ProjectListAdmin = () => {
   const [viewingProject, setViewingProject] = useState<any>(null);
 
   const { data: projects, isLoading, isError } = useQuery({
-    queryKey: ['/api/projects'],
+    queryKey: ['/api/properties'],
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/projects/${id}`);
+      const response = await apiRequest('DELETE', `/api/properties/${id}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete project');
@@ -45,7 +45,7 @@ const ProjectListAdmin = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
       toast({
         title: 'Project Deleted',
         description: 'The project has been successfully deleted.',
@@ -108,7 +108,7 @@ const ProjectListAdmin = () => {
         <Button
           variant="outline"
           className="mt-4"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/projects'] })}
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/properties'] })}
         >
           Retry
         </Button>
@@ -139,7 +139,7 @@ const ProjectListAdmin = () => {
                 project={editingProject}
                 onSuccess={() => {
                   setEditingProject(null);
-                  queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/properties'] });
                 }}
                 onCancel={() => setEditingProject(null)}
               />
