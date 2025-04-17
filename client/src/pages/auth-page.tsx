@@ -6,27 +6,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { insertUserSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Info, Lock } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { loginFormSchema, registrationFormSchema } from "@/shared/validators/formValidators";
 
-// Extended schemas with validation
-const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-  rememberMe: z.boolean().optional(),
-});
-
-const registerSchema = insertUserSchema.extend({
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(11, "Phone number must be at least 11 digits"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type LoginFormValues = z.infer<typeof loginFormSchema>;
+type RegisterFormValues = z.infer<typeof registrationFormSchema>;
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
@@ -46,14 +33,16 @@ export default function AuthPage() {
   
   // Register form
   const registerForm = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registrationFormSchema),
     defaultValues: {
       username: "",
       password: "",
+      confirmPassword: "",
       email: "",
       firstName: "",
       lastName: "",
       phoneNumber: "",
+      agreeToTerms: false,
     },
   });
   
