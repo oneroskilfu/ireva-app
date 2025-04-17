@@ -58,6 +58,8 @@ function Router() {
   const InvestorPortfolioPage = lazy(() => import('@/pages/investor/portfolio-page'));
   const InvestorPropertiesPage = lazy(() => import('@/pages/investor/properties-page'));
   const InvestorWalletPage = lazy(() => import('@/pages/investor/wallet-page'));
+  const InvestorDocumentsPage = lazy(() => import('@/pages/investor/InvestorDocumentsPage'));
+  const InvestorKYCPage = lazy(() => import('@/pages/investor/KYCPage'));
   
   useEffect(() => {
     // Function to check if viewport is mobile
@@ -256,6 +258,32 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <InvestorLayout>
                 <InvestorWalletPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor Documents Page */}
+      <Route path="/investor/documents">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <InvestorDocumentsPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor KYC Page */}
+      <Route path="/investor/kyc">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <InvestorKYCPage />
               </InvestorLayout>
             </Suspense>
           </AuthMiddleware>
