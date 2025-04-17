@@ -7,6 +7,7 @@ import { DebugHelper } from "@/components/DebugHelper";
 import AuthMiddleware from "@/middleware/AuthMiddleware";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import InvestorLayout from "@/components/layouts/InvestorLayout";
+import { HelmetProvider } from 'react-helmet-async';
 
 // Lazily load all page components
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -183,14 +184,16 @@ function App() {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-        {/* Only show debug helper in development mode */}
-        {isDevelopment && <DebugHelper />}
-      </AuthProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router />
+          <Toaster />
+          {/* Only show debug helper in development mode */}
+          {isDevelopment && <DebugHelper />}
+        </AuthProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 
