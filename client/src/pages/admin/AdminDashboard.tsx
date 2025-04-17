@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { getQueryFn } from '@/lib/queryClient';
 
 interface DashboardStats {
   userCount: number;
@@ -34,8 +35,9 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   
   // Fetch dashboard stats
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<DashboardStats>({
     queryKey: ['/api/admin/dashboard/stats'],
+    queryFn: getQueryFn({ on401: "throw" }),
     retry: 1, // Only retry once to prevent excessive API calls
     refetchOnWindowFocus: false, // Prevent refetching on window focus
   });
@@ -43,6 +45,7 @@ export default function AdminDashboard() {
   // Count notifications for the admin
   const { data: notifications } = useQuery({
     queryKey: ['/api/notifications/unread'],
+    queryFn: getQueryFn({ on401: "throw" }),
     retry: 1, // Only retry once
     refetchOnWindowFocus: false, // Prevent refetching on window focus
   });
@@ -80,13 +83,17 @@ export default function AdminDashboard() {
   }
   
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">
-          Overview of platform performance and management tasks.
-        </p>
-      </div>
+    <AdminLayout>
+      <Helmet>
+        <title>Admin Dashboard | iREVA</title>
+      </Helmet>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">
+            Overview of platform performance and management tasks.
+          </p>
+        </div>
       
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -258,6 +265,7 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
