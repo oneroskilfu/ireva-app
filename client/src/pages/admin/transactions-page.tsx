@@ -27,8 +27,13 @@ export default function AdminTransactions() {
   const [activeTab, setActiveTab] = useState('all');
   const [dateRange, setDateRange] = useState('last30days');
 
-  const { data: transactions, isLoading, isError } = useQuery({
+  // Temporarily use a mock data approach until the API endpoint is implemented
+  const { data: transactions, isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/admin/transactions'],
+    queryFn: async () => {
+      // Return mock data instead of making an actual API call that would fail
+      return [];
+    }
   });
 
   const handleRefresh = () => {
@@ -36,6 +41,7 @@ export default function AdminTransactions() {
       title: "Refreshing transactions data",
       description: "The transactions list is being updated.",
     });
+    refetch();
   };
 
   const handleExport = () => {
