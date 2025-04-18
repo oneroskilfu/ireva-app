@@ -186,6 +186,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ROI logs endpoint for admins
+  roiDistributionRouter.get('/logs', verifyToken, (req, res, next) => {
+    // Check if user is admin
+    if (req.jwtPayload?.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    next();
+  }, async (req, res) => {
+    try {
+      // Import the controller
+      const { getROIDistributionLogs } = require('./controllers/roiController');
+      
+      // Call the controller function
+      await getROIDistributionLogs(req, res);
+    } catch (error) {
+      console.error('Error fetching ROI logs:', error);
+      res.status(500).json({ message: 'Failed to fetch ROI logs', error: String(error) });
+    }
+  });
+  
   // Set up ROI distribution routes
   app.use('/api/roi-distribution', roiDistributionRouter);
   console.log("ROI distribution routes registered");

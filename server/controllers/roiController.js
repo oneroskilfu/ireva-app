@@ -4,9 +4,10 @@ const Investment = require('../models/Investment');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Wallet = require('../models/Wallet');
+const Log = require('../models/Log');
 const { generateReference } = require('../utils/referenceGenerator');
 const sendMail = require('../utils/sendMail');
-const { logAdminAction } = require('../utils/adminLogger');
+const { logAdminAction, getLogsByType } = require('../utils/adminLogger');
 const mongoose = require('mongoose');
 
 /**
@@ -162,6 +163,22 @@ const calculateAndDistributeROI = async (req, res) => {
           sendMail(investor.email, `ROI Payment Credited - ${project.name}`, emailHTML).catch(err => {
             console.error(`Failed to send ROI notification email to ${investor.email}:`, err);
           });
+          
+          // Log individual ROI distribution notification
+          const Log = require('../models/Log');
+          await Log.create({
+            type: 'ROI',
+            action: 'Distributed',
+            details: `ROI of ₦${formattedAmount} sent to ${investor.email} for Project ${project.name}`,
+            adminId: req.user?._id,
+            metadata: {
+              investorId: investor._id,
+              projectId,
+              amount: roiAmount,
+              distributionId: distribution._id,
+              transactionReference
+            }
+          });
         }
         
         distributions.push(distribution);
@@ -176,6 +193,22 @@ const calculateAndDistributeROI = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
+
+    // Log the admin action
+    await logAdminAction(
+      'ROI',
+      'Distributed',
+      `Distributed ${roiPercentage}% ROI to ${distributions.length} investors for project ${project.name}`,
+      req.user,
+      {
+        projectId,
+        roiPercentage,
+        distributionPeriod,
+        totalAmount: distributions.reduce((sum, dist) => sum + dist.amount, 0),
+        investorCount: distributions.length,
+        failedCount: failedDistributions.length
+      }
+    );
 
     res.status(200).json({
       message: 'ROI distribution completed',
@@ -379,9 +412,63 @@ const getInvestorROIDistributions = async (req, res) => {
   }
 };
 
+/**
+ * Get ROI distribution logs for admin review
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const getROIDistributionLogs = async (req, res) => {
+  try {
+    const { limit = 100 } = req.query;
+    
+    // Get all logs related to ROI distributions
+    const logs = await getLogsByType('ROI', parseInt(limit));
+    
+    // Count logs by action type
+    const actionCounts = {};
+    logs.forEach(log => {
+      if (!actionCounts[log.action]) {
+        actionCounts[log.action] = 0;
+      }
+      actionCounts[log.action]++;
+    });
+    
+    // Get recent distribution totals by date
+    const recentDistributions = await RoiDistribution.aggregate([
+      { $match: { status: 'Completed' } },
+      { $sort: { distributionDate: -1 } },
+      { $limit: 30 }, // Last 30 days or records
+      { 
+        $group: { 
+          _id: { 
+            $dateToString: { format: "%Y-%m-%d", date: "$distributionDate" } 
+          },
+          totalAmount: { $sum: "$amount" },
+          count: { $sum: 1 }
+        } 
+      },
+      { $sort: { _id: -1 } }
+    ]);
+    
+    res.status(200).json({
+      logs,
+      actionCounts,
+      recentDistributions,
+      totalLogs: logs.length
+    });
+  } catch (error) {
+    console.error('Error fetching ROI logs:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch ROI distribution logs', 
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   calculateAndDistributeROI,
   getROISummary,
   getProjectROIDistributions,
-  getInvestorROIDistributions
+  getInvestorROIDistributions,
+  getROIDistributionLogs
 };
