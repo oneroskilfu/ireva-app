@@ -1,0 +1,69 @@
+import React, { useEffect, useState } from 'react';
+import { fetchStats, fetchChartData, fetchTableData, triggerPayout } from '../services/roiService';
+import { Button, Table, TableRow, TableHead, TableBody, TableCell, Typography } from '@mui/material';
+import { Bar } from 'react-chartjs-2';
+
+const AdminROIDashboard = () => {
+  const [stats, setStats] = useState({});
+  const [chartData, setChartData] = useState([]);
+  const [tableData, setTableData] = useState([]);
+
+  useEffect(() => {
+    fetchStats().then(res => setStats(res.data));
+    fetchChartData().then(res => setChartData(res.data));
+    fetchTableData().then(res => setTableData(res.data));
+  }, []);
+
+  const chartConfig = {
+    labels: chartData.map(d => d.month),
+    datasets: [{
+      label: 'Monthly ROI (₦)',
+      data: chartData.map(d => d.roi),
+      backgroundColor: 'rgba(75,192,192,0.6)'
+    }]
+  };
+
+  return (
+    <div>
+      <Typography variant="h4">ROI Overview</Typography>
+      <div style={{ margin: '20px 0' }}>
+        <Typography>Total Paid: ₦{stats.totalPaid?.toLocaleString()}</Typography>
+        <Typography>Pending ROI: ₦{stats.pendingROI?.toLocaleString()}</Typography>
+        <Typography>Investors Paid: {stats.investorsPaid}</Typography>
+        <Typography>Active Projects: {stats.projectsActive}</Typography>
+      </div>
+
+      <Bar data={chartConfig} />
+
+      <Typography variant="h6" style={{ marginTop: 40 }}>ROI Transactions</Typography>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Investor</TableCell>
+            <TableCell>Project</TableCell>
+            <TableCell>Amount</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Date</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {tableData.map((row, index) => (
+            <TableRow key={index}>
+              <TableCell>{row.investor}</TableCell>
+              <TableCell>{row.project}</TableCell>
+              <TableCell>{row.amount}</TableCell>
+              <TableCell>{row.status}</TableCell>
+              <TableCell>{row.date}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Button variant="contained" color="primary" style={{ marginTop: 20 }} onClick={triggerPayout}>
+        Trigger ROI Payout
+      </Button>
+    </div>
+  );
+};
+
+export default AdminROIDashboard;
