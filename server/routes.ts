@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { setupJwtAuth, verifyToken, authMiddleware } from "./auth-jwt";
@@ -17,6 +17,7 @@ import faqRoutes from './routes/faq';
 import messageRoutes from './routes/messages';
 import projectsRoutes from './routes/projects';
 import emailCampaignRoutes from './routes/email-campaign';
+// Import ROI distribution routes using require instead of import
 // Skip transactions import for now while we work on other fixes
 // Import the new routes
 import adminRoutes from './routes/admin.js';
@@ -99,6 +100,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up ROI calculation routes
   app.use('/api/roi', roiRoutes);
   console.log("ROI routes registered");
+  
+  // Creating a manual router for ROI distribution
+  const roiDistributionRouter = express.Router();
+  
+  // Distribution routes
+  roiDistributionRouter.post('/distribute', verifyToken, (req, res) => {
+    res.status(503).json({ message: "ROI distribution endpoint temporarily under maintenance" });
+  });
+  
+  // Get project ROI history
+  roiDistributionRouter.get('/project/:projectId', verifyToken, (req, res) => {
+    res.status(503).json({ message: "ROI project history endpoint temporarily under maintenance" });
+  });
+  
+  // Get investor ROI history
+  roiDistributionRouter.get('/investor/:investorId', verifyToken, (req, res) => {
+    res.status(503).json({ message: "ROI investor history endpoint temporarily under maintenance" });
+  });
+  
+  // Get ROI summary
+  roiDistributionRouter.get('/summary', verifyToken, (req, res) => {
+    res.status(503).json({ message: "ROI summary endpoint temporarily under maintenance" });
+  });
+  
+  app.use('/api/roi-distribution', roiDistributionRouter);
+  console.log("ROI distribution routes registered (placeholder)");
   
   // Set up FAQ routes
   app.use('/api/faqs', faqRoutes);
