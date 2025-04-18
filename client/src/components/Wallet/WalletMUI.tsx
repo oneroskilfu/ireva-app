@@ -42,7 +42,8 @@ import {
   Refresh as RefreshIcon,
   Payments as PaymentsIcon,
   ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon
+  ArrowDownward as ArrowDownwardIcon,
+  CreditCard
 } from '@mui/icons-material';
 
 interface Transaction {
@@ -75,7 +76,7 @@ const transactionTypes = {
   referral_bonus: { label: 'Referral Bonus', color: 'success' }
 };
 
-const WalletMUI = () => {
+const WalletMUI: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [filter, setFilter] = useState('');
   const [fundAmount, setFundAmount] = useState('1000');
@@ -222,8 +223,26 @@ const WalletMUI = () => {
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
-      {/* Main Wallet Card */}
-      <Card elevation={3} sx={{ mb: 4, borderRadius: 2, overflow: 'hidden' }} className="mui-wallet-card">
+      {/* Tabs Navigation */}
+      <Box className="mui-wallet-tabs" sx={{ mb: 4, borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          aria-label="wallet tabs"
+        >
+          <Tab label="Overview" icon={<WalletIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
+          <Tab label="Transactions" icon={<HistoryIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
+          <Tab label="Payment Methods" icon={<CreditCard sx={{ fontSize: 18 }} />} iconPosition="start" />
+        </Tabs>
+      </Box>
+      
+      {/* Main Wallet Content */}
+      {tabValue === 0 && (
+        <>
+          {/* Main Wallet Card */}
+          <Card elevation={3} sx={{ mb: 4, borderRadius: 2, overflow: 'hidden' }} className="mui-wallet-card">
         <Box 
           sx={{ 
             bgcolor: 'primary.main', 
@@ -423,6 +442,172 @@ const WalletMUI = () => {
           )}
         </CardContent>
       </Card>
+        </>
+      )}
+      
+      {/* Transactions Tab */}
+      {tabValue === 1 && (
+        <Card elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          <CardContent>
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6" fontWeight="medium">Transaction History</Typography>
+              <TextField
+                size="small"
+                placeholder="Filter transactions"
+                variant="outlined"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <FilterIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ width: 200 }}
+              />
+            </Box>
+            
+            {transactionsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : filteredTransactions.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <HistoryIcon sx={{ fontSize: 40, color: 'grey.400', mb: 1 }} />
+                <Typography color="textSecondary">No transactions found</Typography>
+              </Box>
+            ) : (
+              <Table className="mui-transaction-table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell>Amount</TableCell>
+                    <TableCell>Status</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredTransactions.map(tx => (
+                    <TableRow key={tx.id} hover>
+                      <TableCell>
+                        <Typography variant="body2">{formatDate(tx.date)}</Typography>
+                        {tx.reference && (
+                          <Typography variant="caption" color="textSecondary">
+                            Ref: {tx.reference}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={transactionTypes[tx.type as keyof typeof transactionTypes]?.label || tx.type}
+                          size="small"
+                          color={transactionTypes[tx.type as keyof typeof transactionTypes]?.color as any || 'default'}
+                          variant="filled"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {tx.description || 'No description'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography 
+                          variant="body2" 
+                          color={tx.type === 'deposit' || tx.type === 'return' || tx.type === 'referral_bonus' ? 'success.main' : 
+                                  tx.type === 'withdrawal' || tx.type === 'fee' ? 'error.main' : 
+                                  'inherit'}
+                          fontWeight="medium"
+                        >
+                          {tx.type === 'deposit' || tx.type === 'return' || tx.type === 'referral_bonus' ? '+' : 
+                            tx.type === 'withdrawal' || tx.type === 'fee' ? '-' : ''}
+                          ₦{tx.amount.toLocaleString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={tx.status}
+                          size="small"
+                          color={getStatusChipColor(tx.status) as any}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Payment Methods Tab */}
+      {tabValue === 2 && (
+        <Card elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight="medium" gutterBottom>Payment Methods</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              Manage your payment methods for deposits and withdrawals
+            </Typography>
+            
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="subtitle2" fontWeight="medium" gutterBottom>
+                Saved Payment Methods
+              </Typography>
+              
+              <Paper sx={{ p: 3, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <CreditCard sx={{ fontSize: 34, mr: 2, color: 'primary.main' }} />
+                    <Box>
+                      <Typography variant="subtitle1">Visa ending in 4242</Typography>
+                      <Typography variant="body2" color="text.secondary">Expires 12/25</Typography>
+                    </Box>
+                  </Box>
+                  <Chip label="Default" color="primary" size="small" />
+                </Box>
+              </Paper>
+              
+              <Button variant="outlined" startIcon={<AddIcon />} fullWidth>
+                Add New Payment Method
+              </Button>
+            </Box>
+            
+            <Divider sx={{ my: 4 }} />
+            
+            <Typography variant="subtitle2" fontWeight="medium" gutterBottom>
+              Banking Information
+            </Typography>
+            <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Bank Name
+                </Typography>
+                <Typography variant="body1">
+                  First Bank of Nigeria
+                </Typography>
+              </Box>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Account Name
+                </Typography>
+                <Typography variant="body1">
+                  John Doe
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Account Number
+                </Typography>
+                <Typography variant="body1">
+                  0123456789
+                </Typography>
+              </Box>
+            </Paper>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Fund Wallet Dialog */}
       <Dialog 
