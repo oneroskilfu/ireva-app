@@ -110,7 +110,7 @@ router.patch('/:id/status', verifyToken, async (req: Request, res: Response) => 
           respondedBy: req.jwtPayload.id
         } : {})
       })
-      .where(db.sql`${userFeedback.id} = ${feedbackId}`)
+      .where(eq(userFeedback.id, feedbackId))
       .returning();
     
     if (!updatedFeedback) {
