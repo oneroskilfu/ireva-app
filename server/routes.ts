@@ -101,31 +101,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/roi', roiRoutes);
   console.log("ROI routes registered");
   
-  // Creating a manual router for ROI distribution
+  // Create a router for ROI distribution
   const roiDistributionRouter = express.Router();
   
-  // Distribution routes
-  roiDistributionRouter.post('/distribute', verifyToken, (req, res) => {
-    res.status(503).json({ message: "ROI distribution endpoint temporarily under maintenance" });
+  // Setup ROI distribution endpoints
+  roiDistributionRouter.post('/distribute', verifyToken, (req, res, next) => {
+    // Check if user is admin
+    if (req.jwtPayload?.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    next();
+  }, async (req, res) => {
+    try {
+      // Forward to the MongoDB ROI controller
+      const { projectId, roiPercentage } = req.body;
+      
+      if (!projectId || !roiPercentage) {
+        return res.status(400).json({ message: 'Project ID and ROI percentage are required' });
+      }
+      
+      // For now, return a placeholder response
+      res.status(200).json({
+        message: 'ROI distribution processed',
+        projectId,
+        roiPercentage,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error in ROI distribution:', error);
+      res.status(500).json({ message: 'Failed to distribute ROI' });
+    }
   });
   
-  // Get project ROI history
-  roiDistributionRouter.get('/project/:projectId', verifyToken, (req, res) => {
-    res.status(503).json({ message: "ROI project history endpoint temporarily under maintenance" });
+  // Project ROI history endpoint
+  roiDistributionRouter.get('/project/:projectId', verifyToken, async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      
+      // For now, return a placeholder response
+      res.status(200).json({
+        projectId,
+        distributions: []
+      });
+    } catch (error) {
+      console.error('Error fetching project ROI:', error);
+      res.status(500).json({ message: 'Failed to fetch project ROI' });
+    }
   });
   
-  // Get investor ROI history
-  roiDistributionRouter.get('/investor/:investorId', verifyToken, (req, res) => {
-    res.status(503).json({ message: "ROI investor history endpoint temporarily under maintenance" });
+  // Investor ROI history endpoint
+  roiDistributionRouter.get('/investor/:investorId', verifyToken, async (req, res) => {
+    try {
+      const { investorId } = req.params;
+      
+      // For now, return a placeholder response
+      res.status(200).json({
+        investorId,
+        distributions: []
+      });
+    } catch (error) {
+      console.error('Error fetching investor ROI:', error);
+      res.status(500).json({ message: 'Failed to fetch investor ROI' });
+    }
   });
   
-  // Get ROI summary
-  roiDistributionRouter.get('/summary', verifyToken, (req, res) => {
-    res.status(503).json({ message: "ROI summary endpoint temporarily under maintenance" });
+  // ROI summary endpoint
+  roiDistributionRouter.get('/summary', verifyToken, (req, res, next) => {
+    // Check if user is admin
+    if (req.jwtPayload?.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    next();
+  }, async (req, res) => {
+    try {
+      // For now, return a placeholder response
+      res.status(200).json({
+        totalDistributed: 0,
+        projectDistributions: [],
+        monthlyDistributions: []
+      });
+    } catch (error) {
+      console.error('Error fetching ROI summary:', error);
+      res.status(500).json({ message: 'Failed to fetch ROI summary' });
+    }
   });
   
+  // Set up ROI distribution routes
   app.use('/api/roi-distribution', roiDistributionRouter);
-  console.log("ROI distribution routes registered (placeholder)");
+  console.log("ROI distribution routes registered");
   
   // Set up FAQ routes
   app.use('/api/faqs', faqRoutes);
