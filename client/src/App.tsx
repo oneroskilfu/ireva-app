@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -124,12 +124,9 @@ function Router() {
       <Route path="/dashboard">
         {() => <DashboardPage />}
       </Route>
+      {/* Admin redirect to ROI Dashboard */}
       <Route path="/admin">
-        {() => (
-          <Suspense fallback={<div>Loading...</div>}>
-            <AdminDashboard />
-          </Suspense>
-        )}
+        {() => <Redirect to="/admin/roi-dashboard" />}
       </Route>
       <Route path="/analytics">
         {() => <AnalyticsPage />}
