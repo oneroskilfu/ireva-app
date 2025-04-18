@@ -6,12 +6,14 @@ import {
   wallets,
   insertInvestmentSchema, 
   walletTransaction, 
-  notifications 
+  notifications,
+  users 
 } from '../../shared/schema';
 import { and, eq } from 'drizzle-orm';
 import { verifyToken, authMiddleware, ensureAdmin } from '../auth-jwt';
 import { ZodError } from 'zod';
 import AdminLogger from '../services/adminLogger';
+import { sendInvestmentConfirmationEmail } from '../services/nodemailerService';
 
 const investmentsRouter = Router();
 

@@ -1,0 +1,62 @@
+import React, { useEffect, useState } from 'react';
+import { Container, Typography, Card, CardContent, Button, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
+import axios from 'axios';
+
+const Wallet = () => {
+  const [wallet, setWallet] = useState({ balance: 0 });
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    // Fetch wallet and transactions
+    const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      const walletRes = await axios.get('/api/wallet', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const transRes = await axios.get('/api/wallet/transactions', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setWallet(walletRes.data);
+      setTransactions(transRes.data);
+    };
+
+    fetchData();
+  }, []);
+
+  return (
+    <Container>
+      <Typography variant="h4" gutterBottom>My Wallet</Typography>
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6">Available Balance: ₦{wallet.balance.toLocaleString()}</Typography>
+          <Button variant="contained" sx={{ mt: 2 }}>Fund Wallet</Button>
+        </CardContent>
+      </Card>
+
+      <Typography variant="h5" gutterBottom>Transaction History</Typography>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Date</TableCell>
+            <TableCell>Type</TableCell>
+            <TableCell>Amount (₦)</TableCell>
+            <TableCell>Status</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {transactions.map(tx => (
+            <TableRow key={tx._id}>
+              <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
+              <TableCell>{tx.type}</TableCell>
+              <TableCell>{tx.amount.toLocaleString()}</TableCell>
+              <TableCell>{tx.status}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Container>
+  );
+};
+
+export default Wallet;

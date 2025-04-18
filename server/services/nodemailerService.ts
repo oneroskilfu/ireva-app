@@ -73,6 +73,58 @@ export async function sendWelcomeEmail(user: User): Promise<any> {
         <p style="margin: 0; font-weight: bold;">Get Started:</p>
         <p style="margin: 10px 0 0;">Log in to your account and complete your KYC verification to start investing.</p>
       </div>
+      
+/**
+ * Send investment confirmation email
+ * 
+ * @param user User object
+ * @param property Property object
+ * @param investment Investment details
+ * @returns Promise with send info
+ */
+export async function sendInvestmentConfirmationEmail(user: User, property: any, investment: any): Promise<any> {
+  const subject = 'iREVA - Investment Confirmation';
+  const formattedAmount = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(investment.amount);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #2C3E50;">Investment Confirmation</h1>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <p>Hello ${user.firstName || user.username},</p>
+        <p>Thank you for your investment! Here's a confirmation of your transaction:</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #2C3E50;">Investment Details</h3>
+          <p style="margin: 5px 0;"><strong>Property:</strong> ${property.name}</p>
+          <p style="margin: 5px 0;"><strong>Location:</strong> ${property.location}</p>
+          <p style="margin: 5px 0;"><strong>Amount Invested:</strong> ${formattedAmount}</p>
+          <p style="margin: 5px 0;"><strong>Investment Date:</strong> ${new Date().toLocaleDateString()}</p>
+          <p style="margin: 5px 0;"><strong>Transaction ID:</strong> ${investment.id}</p>
+          <p style="margin: 5px 0;"><strong>Status:</strong> ${investment.status.toUpperCase()}</p>
+          <p style="margin: 5px 0;"><strong>Expected Return:</strong> ${property.targetReturn}%</p>
+          <p style="margin: 5px 0;"><strong>Maturity Period:</strong> ${property.term} months</p>
+        </div>
+        
+        <p>You can track the performance of your investment in your dashboard under the Portfolio section.</p>
+      </div>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <p style="margin: 0; font-weight: bold;">Next Steps:</p>
+        <p style="margin: 10px 0 0;">Login to your account to view detailed investment information, track returns, and explore more investment opportunities.</p>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <p style="color: #777; font-size: 12px;">
+          &copy; ${new Date().getFullYear()} iREVA. All rights reserved.<br>
+          If you have any questions, please contact our support team at support@ireva.com
+        </p>
+      </div>
+    </div>
+  `;
+  
+  return await sendEmail(user.email, subject, html);
+}
       <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
         <p style="color: #777; font-size: 12px;">
           &copy; ${new Date().getFullYear()} iREVA. All rights reserved.<br>
