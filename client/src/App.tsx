@@ -72,6 +72,7 @@ function Router() {
   const InvestorProfilePage = lazy(() => import('@/pages/investor/profile-page'));
   const InvestorPropertiesPage = lazy(() => import('@/pages/investor/properties-page'));
   const InvestorWalletPage = lazy(() => import('@/pages/investor/wallet-page'));
+  const InvestorWalletMUIPage = lazy(() => import('@/pages/investor/wallet-mui-page'));
   const NotificationsPage = lazy(() => import('@/pages/investor/notifications-page'));
   const InvestorDocumentsPage = lazy(() => import('@/pages/investor/InvestorDocumentsPage'));
   const InvestorKYCPage = lazy(() => import('@/pages/investor/KYCPage'));
@@ -436,6 +437,17 @@ function Router() {
               <InvestorLayout>
                 <InvestorWalletPage />
               </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor Wallet MUI Page */}
+      <Route path="/investor/wallet-mui">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorWalletMUIPage />
             </Suspense>
           </AuthMiddleware>
         )}

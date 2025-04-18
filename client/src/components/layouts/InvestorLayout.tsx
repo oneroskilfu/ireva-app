@@ -225,6 +225,14 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/investor/wallet-mui">
+                    <div className="flex items-center w-full">
+                      <Wallet className="mr-2 h-4 w-4" />
+                      <span>Wallet (Material UI)</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/investor/settings">
                     <div className="flex items-center w-full">
                       <Settings className="mr-2 h-4 w-4" />
