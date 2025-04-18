@@ -88,11 +88,11 @@ const ProjectList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   
   const { data: propertiesFromAPI, isLoading, error } = useQuery<PropertyFromAPI[]>({
-    queryKey: ['/api/projects'],
+    queryKey: ['/api/properties'],
     queryFn: async () => {
       try {
         console.log('Fetching projects data from API');
-        const res = await apiRequest('GET', '/api/projects');
+        const res = await apiRequest('GET', '/api/properties');
         if (!res.ok) {
           throw new Error(`API returned status ${res.status}`);
         }

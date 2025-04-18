@@ -28,12 +28,60 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Define the Property type interface
+interface Property {
+  id: number;
+  name: string;
+  location: string;
+  description: string;
+  type: string;
+  imageUrl: string;
+  imageGallery?: string[];
+  videoUrl?: string | null;
+  tier: string;
+  targetReturn: string;
+  minimumInvestment: number;
+  term: number;
+  totalFunding: number;
+  currentFunding: number;
+  numberOfInvestors: number;
+  size?: string | null;
+  builtYear?: string | null;
+  occupancy?: string | null;
+  cashFlow?: string | null;
+  daysLeft?: number;
+  amenities?: string[];
+  developer: string;
+  developerProfile?: string | null;
+  riskLevel?: string | null;
+  projectedCashflow?: any | null;
+  documents?: any[] | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  accreditedOnly: boolean;
+  sustainabilityFeatures?: string[] | null;
+  constructionUpdates?: any[] | null;
+  completionDate?: string | null;
+}
+
 const ProjectDetailPage: React.FC = () => {
   const { id } = useParams();
   const [location, setLocation] = useLocation();
   
-  const { data: project, isLoading, error } = useQuery({
+  const { data: project, isLoading, error } = useQuery<Property>({
     queryKey: [`/api/properties/${id}`],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/properties/${id}`);
+        if (!res.ok) {
+          throw new Error(`API returned status ${res.status}`);
+        }
+        return await res.json();
+      } catch (err) {
+        console.error('Error fetching project details:', err);
+        throw err;
+      }
+    }
   });
 
   if (isLoading) {
