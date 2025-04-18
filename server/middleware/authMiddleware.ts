@@ -1,104 +1,39 @@
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
+import { config } from '../config';
 
-// JWT secret (in production, this should be in environment variables)
-const JWT_SECRET = process.env.JWT_SECRET || 'ireva_real_estate_secret_key';
-
-// Define JWT payload interface
-interface IrevaJwtPayload {
+interface JwtPayload {
   id: number;
   username: string;
   role: string;
-  iat?: number;
-  exp?: number;
 }
 
-// Define extended request interface with JWT payload
-interface AuthenticatedRequest extends Request {
-  jwtPayload?: IrevaJwtPayload;
+// Extend Express Request type to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: JwtPayload;
+    }
+  }
 }
 
-/**
- * Middleware to verify JWT token
- */
-export function verifyToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  // Get token from Authorization header
+export default function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' });
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No token provided' });
   }
 
   const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
 
   try {
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as IrevaJwtPayload;
-    req.jwtPayload = decoded;
+    const secret = process.env.JWT_SECRET || config.jwtSecret;
+    const decoded = jwt.verify(token, secret) as JwtPayload;
+    req.user = decoded;
     next();
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    return res.status(401).json({ message: 'Invalid or expired token' });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
   }
-}
-
-/**
- * Middleware to protect routes based on user roles
- * @param roles - Array of allowed roles for the route
- */
-export function protect(roles: string[] = []) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    // First verify token
-    verifyToken(req, res, (err) => {
-      if (err) {
-        return next(err);
-      }
-
-      // If no roles specified, just verify authentication
-      if (roles.length === 0) {
-        return next();
-      }
-
-      // Check if user role is in the allowed roles
-      const userRole = req.jwtPayload?.role;
-      
-      if (!userRole || !roles.includes(userRole)) {
-        return res.status(403).json({ 
-          message: 'Access denied. Insufficient permissions.',
-          userRole,
-          requiredRoles: roles
-        });
-      }
-
-      next();
-    });
-  };
-}
-
-/**
- * Middleware to require admin role
- */
-export function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  return protect(['admin', 'super_admin'])(req, res, next);
-}
-
-/**
- * Middleware to require super admin role
- */
-export function requireSuperAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  return protect(['super_admin'])(req, res, next);
-}
-
-/**
- * Helper function to generate JWT token
- */
-export function generateToken(user: { id: number; username: string; role: string }): string {
-  return jwt.sign(
-    { 
-      id: user.id, 
-      username: user.username,
-      role: user.role || 'user'
-    },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
 }
