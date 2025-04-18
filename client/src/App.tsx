@@ -81,6 +81,7 @@ function Router() {
   const SupportPage = lazy(() => import('@/pages/investor/SupportPage'));
   const FAQsPage = lazy(() => import('@/pages/investor/FAQsPage'));
   const SettingsPage = lazy(() => import('@/pages/investor/SettingsPage'));
+  const InvestorROIDashboardPage = lazy(() => import('@/pages/InvestorROIDashboard'));
   
   useEffect(() => {
     // Function to check if viewport is mobile
@@ -396,6 +397,19 @@ function Router() {
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
             <Suspense fallback={<div>Loading...</div>}>
               <ROICalculatorPage />
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor ROI Dashboard Page */}
+      <Route path="/investor/roi-dashboard">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <InvestorROIDashboardPage />
+              </InvestorLayout>
             </Suspense>
           </AuthMiddleware>
         )}

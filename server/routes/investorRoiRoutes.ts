@@ -1,5 +1,5 @@
 import express from 'express';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { authMiddleware } from '../auth-jwt';
 import investorRoiController from '../controllers/investorRoiController';
 
 const router = express.Router();

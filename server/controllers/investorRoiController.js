@@ -1,14 +1,14 @@
-const mongoose = require('mongoose');
-const Transaction = require('../models/Transaction');
-const Wallet = require('../models/Wallet');
-const Property = require('../models/Property');
-const Investment = require('../models/Investment');
-const RoiDistribution = require('../models/RoiDistribution');
+import mongoose from 'mongoose';
+import Transaction from '../models/Transaction';
+import Wallet from '../models/Wallet';
+import Property from '../models/Property';
+import Investment from '../models/Investment';
+import RoiDistribution from '../models/RoiDistribution';
 
 /**
  * Get ROI summary statistics for an investor
  */
-exports.getRoiStats = async (req, res) => {
+const getRoiStats = async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -101,7 +101,7 @@ exports.getRoiStats = async (req, res) => {
 /**
  * Get ROI distribution chart data for an investor
  */
-exports.getRoiChartData = async (req, res) => {
+const getRoiChartData = async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -186,7 +186,7 @@ exports.getRoiChartData = async (req, res) => {
 /**
  * Get ROI transaction history for an investor
  */
-exports.getRoiTransactions = async (req, res) => {
+const getRoiTransactions = async (req, res) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 10, sort = 'desc', projectId } = req.query;
@@ -243,7 +243,7 @@ exports.getRoiTransactions = async (req, res) => {
 /**
  * Get investment performance metrics for an investor
  */
-exports.getInvestmentPerformance = async (req, res) => {
+const getInvestmentPerformance = async (req, res) => {
   try {
     const userId = req.user.id;
     

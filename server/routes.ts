@@ -23,6 +23,7 @@ import emailCampaignRoutes from './routes/email-campaign';
 import adminRoutes from './routes/admin.js';
 import investorRoutes from './routes/investor.js';
 import debugLoginRouter from './routes/debugLogin';
+import investorRoiRoutes from './routes/investorRoiRoutes';
 import fs from 'fs';
 import path from 'path';
 
@@ -100,6 +101,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up ROI calculation routes
   app.use('/api/roi', roiRoutes);
   console.log("ROI routes registered");
+  
+  // Set up Investor ROI routes
+  app.use('/api/investor/roi', investorRoiRoutes);
+  console.log("Investor ROI routes registered");
   
   // Create a router for ROI distribution
   const roiDistributionRouter = express.Router();
