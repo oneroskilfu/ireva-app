@@ -29,6 +29,11 @@ import adminPropertiesRoutes from './api/admin/properties';
 import investorKycRoutes from './api/investor/kyc';
 import messagesRoutes from './api/messages';
 
+// Import transaction and wallet routes
+import transactionRouter from './transaction-routes';
+import walletRouter from './wallet-routes';
+import notificationRouter from './notification-routes';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up JWT authentication routes
   setupJwtAuth(app);
