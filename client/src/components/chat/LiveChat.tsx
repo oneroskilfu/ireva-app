@@ -58,6 +58,26 @@ export default function LiveChat() {
           response = "Our properties offer returns ranging from 12-18% annually, depending on the property type and location. Would you like to discuss specific investment options?";
         } else if (lastUserMessage.includes('hello') || lastUserMessage.includes('hi')) {
           response = "Hello! Welcome to iREVA. How can I assist you with your real estate investment journey today?";
+        } else if (lastUserMessage.includes('minimum') || lastUserMessage.includes('start')) {
+          response = "Our minimum investment starts at ₦100,000 for entry-level opportunities, with premium properties requiring ₦500,000+. We designed these tiers to make real estate investing accessible to more Nigerians.";
+        } else if (lastUserMessage.includes('location') || lastUserMessage.includes('where')) {
+          response = "We currently offer investment opportunities in major Nigerian cities including Lagos, Abuja, Port Harcourt, and Ibadan. We're also expanding to other emerging markets across Africa in the near future.";
+        } else if (lastUserMessage.includes('risk') || lastUserMessage.includes('safe')) {
+          response = "Every investment carries some risk, but we minimize this through rigorous property vetting, legal due diligence, and insurance coverage. We also diversify our portfolio across different property types and locations to further reduce risk exposure.";
+        } else if (lastUserMessage.includes('payment') || lastUserMessage.includes('pay')) {
+          response = "We offer multiple payment options including bank transfers, card payments, and digital wallets. All transactions are processed securely, and you'll receive instant confirmation of your investment.";
+        } else if (lastUserMessage.includes('withdraw') || lastUserMessage.includes('cash out')) {
+          response = "You can request a withdrawal through your investor dashboard. Standard investments have a 5-year maturity period, but we offer flexible exit options with terms clearly outlined in your investment agreement.";
+        } else if (lastUserMessage.includes('how') && lastUserMessage.includes('work')) {
+          response = "iREVA works by pooling funds from multiple investors to purchase carefully vetted real estate assets. You receive returns based on rental income and property appreciation. Our platform handles all property management, making it a truly passive investment for you.";
+        } else if (lastUserMessage.includes('document') || lastUserMessage.includes('paperwork')) {
+          response = "We provide all necessary documentation electronically, including your investment certificate, property details, and quarterly performance reports. All documents are securely stored in your account dashboard for easy access.";
+        } else if (lastUserMessage.includes('tax')) {
+          response = "While we can provide general information, we recommend consulting with a tax professional regarding your specific situation. We do provide annual statements that summarize your investment income for tax reporting purposes.";
+        } else if (lastUserMessage.includes('register') || lastUserMessage.includes('sign up')) {
+          response = "You can register for an account by clicking the 'Sign Up' button at the top of our website. The process takes just a few minutes, and you'll need to provide basic information and complete our KYC verification before making your first investment.";
+        } else if (lastUserMessage.includes('contact') || lastUserMessage.includes('phone')) {
+          response = "You can reach our customer support team at support@ireva.com or call +234 803 639 9665. Our office hours are Monday to Friday, 9am to 5pm Nigerian time.";
         }
         
         setMessages(prev => [...prev, {
@@ -98,8 +118,8 @@ export default function LiveChat() {
   };
   
   const openWhatsApp = () => {
-    // Replace with your actual WhatsApp business number
-    window.open('https://wa.me/2348000000000?text=Hello%20iREVA%2C%20I%27m%20interested%20in%20learning%20more%20about%20your%20investment%20opportunities.');
+    // Using the business WhatsApp number
+    window.open('https://wa.me/2348036399665?text=Hello%20iREVA%2C%20I%27m%20interested%20in%20learning%20more%20about%20your%20investment%20opportunities.');
   };
 
   return (
@@ -264,7 +284,7 @@ export default function LiveChat() {
                   
                   <div className="mt-6 text-sm text-gray-500 dark:text-gray-400 flex items-center">
                     <PhoneCall className="h-4 w-4 mr-2" />
-                    <span>Or call us: +234 800 000 0000</span>
+                    <span>Or call us: +234 803 639 9665</span>
                   </div>
                 </div>
               </TabsContent>
