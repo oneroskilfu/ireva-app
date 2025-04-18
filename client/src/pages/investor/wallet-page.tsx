@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { 
   ArrowBigDownDash, 
   ArrowBigUpDash,
   BarChart3,
   CreditCard,
-  DollarSign
+  DollarSign,
+  HelpCircle
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import WalletCard from '@/components/Wallet/WalletCard';
@@ -17,8 +18,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InvestorLayout from '@/components/layouts/InvestorLayout';
+import { OnboardingTour, TourButton } from '@/components/OnboardingTour';
+import { Step } from 'react-joyride';
 
 // Summary Card Component
 const SummaryCard = ({ 
@@ -54,6 +58,60 @@ export default function WalletPage() {
   const totalWithdrawn = 450000;
   const totalInvested = 750000;
   const monthlyReturns = 25000;
+  
+  // Refs for the tour
+  const walletCardRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const summaryCardRef = useRef<HTMLDivElement>(null);
+  const transactionsRef = useRef<HTMLDivElement>(null);
+  
+  // Tour steps for the wallet page
+  const tourSteps: Step[] = [
+    {
+      target: 'body',
+      content: 'Welcome to your iREVA Wallet! Let\'s walk through the key features to help you manage your investments.',
+      placement: 'center',
+      disableBeacon: true,
+    },
+    {
+      target: '.wallet-card',
+      content: 'This is your wallet balance. Here you can see your available funds and quickly deposit or withdraw money.',
+      placement: 'bottom',
+    },
+    {
+      target: '.wallet-tabs',
+      content: 'Use these tabs to navigate between different sections of your wallet.',
+      placement: 'bottom',
+    },
+    {
+      target: '.summary-cards',
+      content: 'These cards show a summary of your wallet activity, including total funding, withdrawals, investments, and returns.',
+      placement: 'left',
+    },
+    {
+      target: '.transaction-list',
+      content: 'Here you can view your recent transactions. Click on any transaction to see more details.',
+      placement: 'top',
+    },
+    {
+      target: 'body',
+      content: 'That\'s it! You\'re now ready to manage your real estate investments through your iREVA wallet.',
+      placement: 'center',
+    }
+  ];
+  
+  // Function to start the tour manually
+  const startTour = () => {
+    // Reset tour and start again
+    const existingTours = localStorage.getItem('iREVA-completed-tours');
+    if (existingTours) {
+      const tours = JSON.parse(existingTours);
+      const filteredTours = tours.filter((tour: string) => tour !== 'wallet-tour');
+      localStorage.setItem('iREVA-completed-tours', JSON.stringify(filteredTours));
+    }
+    // Refresh page to trigger tour
+    window.location.reload();
+  };
 
   return (
     <InvestorLayout>
@@ -61,12 +119,23 @@ export default function WalletPage() {
         <title>Wallet | iREVA Real Estate Investments</title>
       </Helmet>
       
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        steps={tourSteps}
+        tourId="wallet-tour"
+      />
+      
       <div className="flex flex-col space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">My Wallet</h1>
+          <TourButton 
+            onClick={startTour}
+            label="Tour Wallet"
+            tooltipText="Take a guided tour of your wallet features"
+          />
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="overview" className="space-y-6 wallet-tabs" ref={tabsRef}>
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
@@ -75,14 +144,18 @@ export default function WalletPage() {
           
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <WalletCard className="md:col-span-2" />
+              <div className="wallet-card md:col-span-2" ref={walletCardRef}>
+                <WalletCard className="h-full" />
+              </div>
               
-              <SummaryCard
-                title="Total Funded"
-                value={`₦${totalFunded.toLocaleString()}`}
-                description="Lifetime deposits"
-                icon={<ArrowBigDownDash className="h-4 w-4 text-green-500" />}
-              />
+              <div className="summary-cards" ref={summaryCardRef}>
+                <SummaryCard
+                  title="Total Funded"
+                  value={`₦${totalFunded.toLocaleString()}`}
+                  description="Lifetime deposits"
+                  icon={<ArrowBigDownDash className="h-4 w-4 text-green-500" />}
+                />
+              </div>
               
               <SummaryCard
                 title="Total Withdrawn"
@@ -106,7 +179,9 @@ export default function WalletPage() {
               />
             </div>
             
-            <WalletTransactionList className="mt-6" />
+            <div className="transaction-list" ref={transactionsRef}>
+              <WalletTransactionList className="mt-6" />
+            </div>
           </TabsContent>
           
           <TabsContent value="transactions">
