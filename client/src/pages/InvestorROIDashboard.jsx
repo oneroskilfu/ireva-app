@@ -45,7 +45,14 @@ const InvestorROIDashboard = () => {
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#4B3B2A', mb: 1 }}>
+        <Typography variant="h4" component="h1" sx={{ 
+          fontWeight: 700, 
+          color: '#4B3B2A',
+          mb: 1,
+          background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}>
           Your ROI Dashboard
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -53,11 +60,17 @@ const InvestorROIDashboard = () => {
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 2, mb: 4, backgroundColor: '#FFF8E1', border: '1px solid #FFE082' }}>
+      <Paper sx={{ 
+        p: 2, 
+        mb: 4, 
+        backgroundColor: 'rgba(75, 59, 42, 0.05)', 
+        border: '1px solid rgba(75, 59, 42, 0.2)',
+        borderRadius: '8px' 
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-          <InfoIcon color="warning" />
+          <InfoIcon sx={{ color: '#4B3B2A' }} />
           <Box>
-            <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5, color: '#4B3B2A' }}>
               Understanding Your ROI
             </Typography>
             <Typography variant="body2">
@@ -73,7 +86,7 @@ const InvestorROIDashboard = () => {
       <ROIOverview />
 
       {/* Tabs for different sections */}
-      <Paper sx={{ mb: 4 }}>
+      <Paper sx={{ mb: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '8px', overflow: 'hidden' }}>
         <Tabs 
           value={tabValue} 
           onChange={handleTabChange} 
@@ -91,7 +104,8 @@ const InvestorROIDashboard = () => {
               color: '#4B3B2A !important' 
             },
             '& .MuiTabs-indicator': { 
-              backgroundColor: '#4B3B2A' 
+              backgroundColor: '#4B3B2A',
+              height: '3px'
             }
           }}
         >
@@ -133,7 +147,18 @@ const InvestorROIDashboard = () => {
         </TabPanel>
       </Paper>
       
-      <ToastContainer position="bottom-right" autoClose={5000} />
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Container>
   );
 };

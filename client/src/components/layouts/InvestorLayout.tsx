@@ -64,6 +64,7 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
     { path: "/investor/projects", label: "Invest Now", icon: <Building className="w-5 h-5" />, highlight: true },
     { path: "/investor/properties", label: "Browse Properties", icon: <FileText className="w-5 h-5" /> },
     { path: "/investor/wallet", label: "Wallet", icon: <Wallet className="w-5 h-5" /> },
+    { path: "/investor/roi-dashboard", label: "ROI Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
     { path: "/investor/saved", label: "Saved Properties", icon: <Bookmark className="w-5 h-5" /> },
     { path: "/investor/roi-calculator", label: "ROI Calculator", icon: <Calculator className="w-5 h-5" /> },
     { path: "/investor/documents", label: "Documents", icon: <FileText className="w-5 h-5" /> },
@@ -120,8 +121,8 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
   }, []);
 
   // Group navigation items for better organization
-  const mainNavItems = navItems.slice(0, 7);
-  const accountNavItems = navItems.slice(7);
+  const mainNavItems = navItems.slice(0, 8);
+  const accountNavItems = navItems.slice(8);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
