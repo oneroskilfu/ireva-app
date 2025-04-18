@@ -19,6 +19,7 @@ import projectsRoutes from './routes/projects';
 import emailCampaignRoutes from './routes/email-campaign';
 import feedbackRoutes from './routes/feedback';
 import adminLogsRoutes from './routes/adminLogs';
+import issuesRoutes from './routes/issues';
 // Import ROI distribution routes using require instead of import
 // Skip transactions import for now while we work on other fixes
 // Import the new routes
@@ -247,6 +248,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Admin Logs routes
   app.use('/api/admin-logs', adminLogsRoutes);
   console.log("Admin logs routes registered");
+  
+  // Set up Issues routes
+  app.use('/api/issues', issuesRoutes);
+  console.log("Issues routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);

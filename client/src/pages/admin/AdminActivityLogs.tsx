@@ -37,6 +37,7 @@ import {
   Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import TestAdminLogsButton from '@/components/admin/TestAdminLogsButton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
@@ -147,14 +148,17 @@ const AdminActivityLogs: React.FC = () => {
               Track all administrative actions in the iREVA platform
             </CardDescription>
           </div>
-          <Button 
-            onClick={handleRefresh} 
-            variant="outline" 
-            size="sm"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <TestAdminLogsButton />
+          </div>
         </div>
       </CardHeader>
       

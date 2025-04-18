@@ -50,6 +50,7 @@ function Router() {
   
   // Lazy load the page components to avoid potential issues with circular dependencies
   const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+  const AdminActivityLogs = lazy(() => import('@/pages/admin/AdminActivityLogs'));
   const KYCManagementPage = lazy(() => import('@/pages/admin/kyc-management'));
   const AdminProjectsPage = lazy(() => import('@/pages/admin/AdminProjectsPage'));
   const AdminUsersPage = lazy(() => import('@/pages/admin/users-page'));
@@ -348,6 +349,19 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <AdminROIDashboardPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Activity Logs Route */}
+      <Route path="/admin/activity-logs">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminActivityLogs />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>
