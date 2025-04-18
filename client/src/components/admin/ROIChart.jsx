@@ -1,6 +1,17 @@
 import React from 'react';
 import { Bar } from 'recharts';
-import { BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { 
+  BarChart, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Cell,
+  LinearGradient,
+  defs
+} from 'recharts';
 
 const data = [
   { month: 'Jan', amount: 2400000 },

@@ -131,7 +131,10 @@ const ROITable = ({ data = null }) => {
               </TableHead>
               <TableBody>
                 {tableData.map((row, index) => (
-                  <TableRow key={index}>
+                  <TableRow 
+                    key={index}
+                    sx={{ backgroundColor: index % 2 === 0 ? '#FFFFFF' : '#F3F3F3' }}
+                  >
                     <TableCell>{row.investor}</TableCell>
                     <TableCell>{row.project}</TableCell>
                     <TableCell>{row.amount}</TableCell>
