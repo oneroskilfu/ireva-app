@@ -1,25 +1,15 @@
 import { useState, useEffect } from 'react';
 
-/**
- * A hook for persisting state in localStorage
- * @param key The localStorage key
- * @param initialValue The initial value (used if no value exists in localStorage)
- * @returns [storedValue, setValue] - Similar to useState
- */
-export function useLocalStorage<T>(
-  key: string,
-  initialValue: T
-): [T, (value: T | ((val: T) => T)) => void] {
-  // Get from local storage then parse stored json or return initialValue
+function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
+  // Get stored value from localStorage, or use initialValue if none exists
   const readValue = (): T => {
-    // Prevent build error "window is undefined" but keep working in SSR
     if (typeof window === 'undefined') {
       return initialValue;
     }
 
     try {
       const item = window.localStorage.getItem(key);
-      return item ? (JSON.parse(item) as T) : initialValue;
+      return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
       return initialValue;
@@ -29,17 +19,17 @@ export function useLocalStorage<T>(
   // State to store our value
   const [storedValue, setStoredValue] = useState<T>(readValue);
 
-  // Return a wrapped version of useState's setter function that persists the new value to localStorage
-  const setValue = (value: T | ((val: T) => T)) => {
+  // Return a wrapped version of useState's setter function that
+  // persists the new value to localStorage
+  const setValue = (value: T): void => {
     try {
-      // Allow value to be a function so we have the same API as useState
-      const valueToStore =
-        value instanceof Function ? value(storedValue) : value;
+      // Allow value to be a function so we have same API as useState
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
       
-      // Save to state
+      // Save state
       setStoredValue(valueToStore);
       
-      // Save to local storage
+      // Save to localStorage
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
@@ -48,16 +38,16 @@ export function useLocalStorage<T>(
     }
   };
 
-  // Listen for changes to the item in other tabs/windows
+  // Listen for changes to this localStorage key in other windows/tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue) {
         setStoredValue(JSON.parse(e.newValue));
       }
     };
-    
+
+    // Listen for storage events when other documents update localStorage
     window.addEventListener('storage', handleStorageChange);
-    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -65,3 +55,5 @@ export function useLocalStorage<T>(
 
   return [storedValue, setValue];
 }
+
+export default useLocalStorage;

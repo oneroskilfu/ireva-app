@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS, STATUS as JoyrideStatus } from 'react-joyride';
 import { useAuth } from '@/hooks/use-auth';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import useLocalStorage from '@/hooks/use-local-storage';
 
 interface OnboardingTourProps {
   steps: Step[];
