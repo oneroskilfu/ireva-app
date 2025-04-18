@@ -21,42 +21,38 @@ router.get('/balance', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // Get pending transactions
-    const pendingDeposits = await db.query.walletTransactions.findMany({
-      where: and(
+    const pendingDeposits = await db.select().from(walletTransaction)
+      .where(and(
         eq(walletTransaction.userId, userId),
         eq(walletTransaction.type, 'deposit'),
         eq(walletTransaction.status, 'pending')
-      ),
-    });
+      ));
 
-    const pendingWithdrawals = await db.query.walletTransactions.findMany({
-      where: and(
+    const pendingWithdrawals = await db.select().from(walletTransaction)
+      .where(and(
         eq(walletTransaction.userId, userId),
         eq(walletTransaction.type, 'withdrawal'),
         eq(walletTransaction.status, 'pending')
-      ),
-    });
+      ));
 
     // Calculate pending amounts
     const totalPendingDeposits = pendingDeposits.reduce((sum, tx) => sum + tx.amount, 0);
     const totalPendingWithdrawals = pendingWithdrawals.reduce((sum, tx) => sum + tx.amount, 0);
 
     // Get total invested amount
-    const investments = await db.query.investments.findMany({
-      where: eq(db.schema.investments.userId, userId),
-    });
+    const investments = await db.select().from(db.schema.investments)
+      .where(eq(db.schema.investments.userId, userId));
     
-    const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalInvested = investments.reduce((sum: number, inv: any) => sum + inv.amount, 0);
     
     // Calculate total returns (simplified for now)
-    const totalReturns = investments.reduce((sum, inv) => sum + (inv.returns || 0), 0);
+    const totalReturns = investments.reduce((sum: number, inv: any) => sum + (inv.earnings || 0), 0);
 
     // Get recent transactions
-    const recentTransactions = await db.query.walletTransactions.findMany({
-      where: eq(walletTransaction.userId, userId),
-      orderBy: [desc(walletTransaction.createdAt)],
-      limit: 5,
-    });
+    const recentTransactions = await db.select().from(walletTransaction)
+      .where(eq(walletTransaction.userId, userId))
+      .orderBy(desc(walletTransaction.createdAt))
+      .limit(5);
 
     // Format the response
     const response = {
