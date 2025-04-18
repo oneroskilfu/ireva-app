@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
+import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS, STATUS as JoyrideStatus } from 'react-joyride';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
@@ -38,7 +38,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({
     const { status, type } = data;
     
     // When the tour is finished or skipped, mark it as completed
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRunTour(false);
       
       // Add this tour to the list of completed tours
@@ -58,7 +58,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
   // Allow manual resetting of tour completion status
   const resetTourStatus = () => {
-    setCompletedTours(completedTours.filter(tour => tour !== tourId));
+    setCompletedTours(completedTours.filter((tour: string) => tour !== tourId));
   };
 
   return (

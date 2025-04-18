@@ -223,7 +223,7 @@ const WalletMUI = () => {
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
       {/* Main Wallet Card */}
-      <Card elevation={3} sx={{ mb: 4, borderRadius: 2, overflow: 'hidden' }}>
+      <Card elevation={3} sx={{ mb: 4, borderRadius: 2, overflow: 'hidden' }} className="mui-wallet-card">
         <Box 
           sx={{ 
             bgcolor: 'primary.main', 
@@ -244,7 +244,7 @@ const WalletMUI = () => {
             </Typography>
           )}
           
-          <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+          <Box sx={{ mt: 2, display: 'flex', gap: 2 }} className="mui-wallet-actions">
             <Button 
               variant="contained" 
               color="success" 
@@ -349,7 +349,7 @@ const WalletMUI = () => {
                 </Tooltip>
               </Box>
               
-              <Table>
+              <Table className="mui-transaction-table">
                 <TableHead>
                   <TableRow>
                     <TableCell>Date</TableCell>
