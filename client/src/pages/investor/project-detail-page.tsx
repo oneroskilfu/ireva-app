@@ -33,7 +33,7 @@ const ProjectDetailPage: React.FC = () => {
   const [location, setLocation] = useLocation();
   
   const { data: project, isLoading, error } = useQuery({
-    queryKey: [`/api/projects/${id}`],
+    queryKey: [`/api/properties/${id}`],
   });
 
   if (isLoading) {
