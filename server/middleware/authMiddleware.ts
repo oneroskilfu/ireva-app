@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '../config';
 
 interface JwtPayload {
   id: number;
@@ -29,7 +28,7 @@ export default function authMiddleware(req: Request, res: Response, next: NextFu
   }
 
   try {
-    const secret = process.env.JWT_SECRET || config.jwtSecret;
+    const secret = process.env.JWT_SECRET || 'your-default-secret-key';
     const decoded = jwt.verify(token, secret) as JwtPayload;
     req.user = decoded;
     next();

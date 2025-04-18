@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
-  TextField, Button, Typography, Box, Grid, Paper,
+  TextField, Button, Typography, Box, Paper,
   CircularProgress, Alert
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useAuth } from '@/hooks/use-auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -96,7 +97,7 @@ const KYCForm = () => {
       
       <Box component="form" onSubmit={handleSubmit}>
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField 
               label="Full Name" 
               name="fullName" 
@@ -107,7 +108,7 @@ const KYCForm = () => {
               helperText="As it appears on your official ID"
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField 
               label="Address" 
               name="address" 
@@ -118,7 +119,7 @@ const KYCForm = () => {
               helperText="Your current residential address"
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField 
               label="ID Number (NIN/BVN/Passport)" 
               name="idNumber" 
@@ -129,7 +130,7 @@ const KYCForm = () => {
               helperText="Government-issued identification number"
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="body2" gutterBottom>Upload ID Document:</Typography>
             <input 
               type="file" 
@@ -143,7 +144,7 @@ const KYCForm = () => {
               Acceptable formats: JPEG, PNG, PDF (max 5MB)
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="body2" gutterBottom>Upload Selfie:</Typography>
             <input 
               type="file" 
@@ -157,7 +158,7 @@ const KYCForm = () => {
               Clear photo of your face (JPEG or PNG, max 5MB)
             </Typography>
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Button 
               type="submit" 
               variant="contained" 
