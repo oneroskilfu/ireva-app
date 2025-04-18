@@ -64,8 +64,6 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
     { path: "/investor/projects", label: "Invest Now", icon: <Building className="w-5 h-5" />, highlight: true },
     { path: "/investor/properties", label: "Browse Properties", icon: <FileText className="w-5 h-5" /> },
     { path: "/investor/wallet", label: "Wallet", icon: <Wallet className="w-5 h-5" /> },
-    { path: "/investor/wallet-mui", label: "Wallet (Material UI)", icon: <Wallet className="w-5 h-5" /> },
-    { path: "/investor/wallet-enhanced", label: "Enhanced Wallet", icon: <Wallet className="w-5 h-5" /> },
     { path: "/investor/saved", label: "Saved Properties", icon: <Bookmark className="w-5 h-5" /> },
     { path: "/investor/roi-calculator", label: "ROI Calculator", icon: <Calculator className="w-5 h-5" /> },
     { path: "/investor/documents", label: "Documents", icon: <FileText className="w-5 h-5" /> },
