@@ -61,7 +61,7 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
   const navItems = [
     { path: "/investor/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
     { path: "/investor/portfolio", label: "My Portfolio", icon: <TrendingUp className="w-5 h-5" /> },
-    { path: "/investor/projects", label: "Investment Projects", icon: <Building className="w-5 h-5" /> },
+    { path: "/investor/projects", label: "Invest Now", icon: <Building className="w-5 h-5" />, highlight: true },
     { path: "/investor/properties", label: "Browse Properties", icon: <FileText className="w-5 h-5" /> },
     { path: "/investor/wallet", label: "Wallet", icon: <Wallet className="w-5 h-5" /> },
     { path: "/investor/saved", label: "Saved Properties", icon: <Bookmark className="w-5 h-5" /> },
@@ -199,6 +199,15 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
+                <DropdownMenuItem asChild className="bg-primary text-white hover:bg-primary/90 hover:text-white">
+                  <Link href="/investor/projects">
+                    <div className="flex items-center w-full">
+                      <Building className="mr-2 h-4 w-4" />
+                      <span>Invest Now</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/investor/profile">
                     <div className="flex items-center w-full">
@@ -264,12 +273,14 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
                     return (
                       <Link key={item.path} href={item.path}>
                         <Button
-                          variant={isActive ? "default" : "ghost"}
+                          variant={isActive ? "default" : item.highlight ? "default" : "ghost"}
                           className={cn(
                             "w-full justify-start font-medium",
                             isActive 
-                              ? "bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20" 
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                              ? "bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20"
+                              : item.highlight
+                                ? "bg-primary text-white hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
                           )}
                           size="sm"
                         >
