@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import InvestorLayout from '@/components/layouts/InvestorLayout';
-import InvestNow from '@/components/Investor/InvestNow';
+import InvestmentForm from '@/components/Investor/InvestmentForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -411,7 +411,7 @@ const ProjectDetailPage: React.FC = () => {
                 <Separator />
                 
                 {/* Investment component */}
-                <InvestNow />
+                <InvestmentForm property={project} />
               </CardContent>
             </Card>
           </div>
