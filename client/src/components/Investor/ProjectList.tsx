@@ -9,7 +9,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building, MapPin, TrendingUp, Calendar, Users, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { apiRequest } from '@/lib/queryClient';
 
+// Interface representing the property data structure from the API
+interface PropertyFromAPI {
+  id: number;
+  name: string;
+  description: string;
+  type: string;
+  location: string;
+  totalFunding: number;
+  currentFunding: number;
+  targetReturn: string;
+  term: number;
+  imageUrl: string;
+  numberOfInvestors: number;
+  minimumInvestment: number;
+  tier: string;
+  daysLeft?: number;
+  accreditedOnly: boolean;
+}
+
+// Interface for the project data structure expected by the component
 interface Project {
   id: number;
   title: string;
@@ -21,23 +42,72 @@ interface Project {
   roi: number;
   maturityPeriod: number;
   imageUrl: string;
-  availableUnits: number;
-  totalUnits: number;
   status: 'active' | 'fully_funded' | 'completed' | 'coming_soon';
-  startDate: string;
-  endDate: string;
   investorCount: number;
   minimumInvestment: number;
   featured: boolean;
 }
 
+// Function to map property data from API to project structure
+const mapPropertyToProject = (property: PropertyFromAPI): Project => {
+  // Determine project status based on funding or other attributes
+  let status: 'active' | 'fully_funded' | 'completed' | 'coming_soon' = 'active';
+  
+  // If fully funded or almost fully funded
+  if (property.currentFunding >= property.totalFunding) {
+    status = 'fully_funded';
+  }
+  // If it's marked as coming soon (based on daysLeft, if available)
+  else if (property.daysLeft && property.daysLeft > 60) {
+    status = 'coming_soon';
+  }
+  
+  // Featured if it's a premium tier
+  const featured = property.tier === 'premium';
+  
+  return {
+    id: property.id,
+    title: property.name,
+    description: property.description,
+    type: property.type,
+    location: property.location,
+    totalFunding: property.totalFunding,
+    fundingRaised: property.currentFunding,
+    roi: parseFloat(property.targetReturn),
+    maturityPeriod: Math.ceil(property.term / 12), // Convert months to years
+    imageUrl: property.imageUrl,
+    status,
+    investorCount: property.numberOfInvestors,
+    minimumInvestment: property.minimumInvestment,
+    featured
+  };
+};
+
 const ProjectList: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  const { data: projects, isLoading, error } = useQuery<Project[]>({
+  const { data: propertiesFromAPI, isLoading, error } = useQuery<PropertyFromAPI[]>({
     queryKey: ['/api/projects'],
+    queryFn: async () => {
+      try {
+        console.log('Fetching projects data from API');
+        const res = await apiRequest('GET', '/api/projects');
+        if (!res.ok) {
+          throw new Error(`API returned status ${res.status}`);
+        }
+        const data = await res.json();
+        console.log('Projects data received:', data);
+        return data;
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        throw err;
+      }
+    }
   });
+  
+  // Transform API data to expected project structure
+  const projects: Project[] = propertiesFromAPI ? propertiesFromAPI.map(mapPropertyToProject) : [];
 
   if (isLoading) {
     return (
