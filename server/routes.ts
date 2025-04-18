@@ -34,7 +34,6 @@ import path from 'path';
 import adminKycRoutes from './api/admin/kyc';
 import adminPropertiesRoutes from './api/admin/properties';
 import investorKycRoutes from './api/investor/kyc';
-import messagesRoutes from './api/messages';
 
 // Import transaction and wallet routes
 import transactionRouter from './transaction-routes';
@@ -225,9 +224,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Messaging routes
   app.use('/api/messages', messageRoutes);
   console.log("Message routes registered");
-  
-  // Set up new messaging routes
-  app.use('/api/messages', messagesRoutes);
   
   // Set up Projects routes
   app.use('/api/projects', projectsRoutes);
