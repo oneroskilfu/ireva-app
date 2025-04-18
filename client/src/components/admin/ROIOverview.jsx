@@ -21,7 +21,12 @@ const ROIOverview = () => {
           <Typography variant="h6" sx={{ color: '#4B3B2A', fontWeight: 600, mb: 1 }}>
             Total ROI Distributed
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>₦23.5M</Typography>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 700, 
+            background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>₦23.5M</Typography>
           <Typography variant="subtitle2" color="text.secondary">
             Across all projects
           </Typography>
@@ -47,7 +52,12 @@ const ROIOverview = () => {
           <Typography variant="h6" sx={{ color: '#4B3B2A', fontWeight: 600, mb: 1 }}>
             Average ROI
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>12.8%</Typography>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 700, 
+            background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>12.8%</Typography>
           <Typography variant="subtitle2" color="text.secondary">
             Annual return
           </Typography>
@@ -74,7 +84,12 @@ const ROIOverview = () => {
           <Typography variant="h6" sx={{ color: '#4B3B2A', fontWeight: 600, mb: 1 }}>
             Active Investors
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>324</Typography>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 700, 
+            background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>324</Typography>
           <Typography variant="subtitle2" color="text.secondary">
             Receiving returns
           </Typography>
@@ -99,7 +114,12 @@ const ROIOverview = () => {
           <Typography variant="h6" sx={{ color: '#4B3B2A', fontWeight: 600, mb: 1 }}>
             Next Distribution
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>14 days</Typography>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 700, 
+            background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>14 days</Typography>
           <Typography variant="subtitle2" color="text.secondary">
             May 2, 2025
           </Typography>

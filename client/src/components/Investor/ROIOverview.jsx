@@ -88,7 +88,12 @@ const ROIOverview = () => {
           {loading ? (
             <Skeleton variant="text" width="80%" height={60} sx={{ mx: 'auto' }} />
           ) : (
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 700, 
+              background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
               {formatCurrency(stats?.totalEarnings || 0)}
             </Typography>
           )}
@@ -120,7 +125,12 @@ const ROIOverview = () => {
           {loading ? (
             <Skeleton variant="text" width="80%" height={60} sx={{ mx: 'auto' }} />
           ) : (
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 700, 
+              background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
               {stats?.averageRoi || '0.0'}%
             </Typography>
           )}
@@ -151,7 +161,12 @@ const ROIOverview = () => {
           {loading ? (
             <Skeleton variant="text" width="80%" height={60} sx={{ mx: 'auto' }} />
           ) : (
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 700, 
+              background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
               {stats?.activeInvestments || 0}
             </Typography>
           )}
@@ -182,7 +197,12 @@ const ROIOverview = () => {
           {loading ? (
             <Skeleton variant="text" width="80%" height={60} sx={{ mx: 'auto' }} />
           ) : (
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#4B3B2A' }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 700, 
+              background: 'linear-gradient(45deg, #4B3B2A 30%, #6A5140 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
               {getDaysUntilNextPayout(stats?.nextPayoutDate)}
             </Typography>
           )}
