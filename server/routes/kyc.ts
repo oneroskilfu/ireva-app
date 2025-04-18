@@ -1,91 +1,76 @@
-import express, { Router } from 'express';
-import { submitKYC, getKYCStatus, getPendingKYC, verifyKYC, upload } from '../controllers/kycController';
-import authMiddleware from '../middleware/authMiddleware';
+import express from 'express';
+import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { Request, Response } from 'express';
+import { authMiddleware } from '../auth-jwt';
+import { getKYCStatus, submitKYC, getKYCDocument, getPendingKYC, verifyKYC } from '../controllers/kycController';
 
-const router: Router = express.Router();
+const router = express.Router();
 
-// User routes
-router.post('/submit', 
-  authMiddleware, 
+// Set up multer for file upload
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    // Get user ID from JWT token
+    const userId = req.user?.id;
+    if (!userId) {
+      return cb(new Error('User not authenticated'), '');
+    }
+    
+    // Create directory if it doesn't exist
+    const uploadDir = path.join(process.cwd(), 'uploads', 'kyc', userId.toString());
+    fs.mkdirSync(uploadDir, { recursive: true });
+    
+    cb(null, uploadDir);
+  },
+  filename: function(req, file, cb) {
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+
+// File filter to only allow images and PDFs
+const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  // Allow only images and PDFs
+  if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only images and PDF files are allowed'));
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+    files: 3 // Maximum 3 files (ID, selfie, proof of address)
+  },
+  fileFilter: fileFilter
+});
+
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
+
+// Get user's KYC status
+router.get('/status', getKYCStatus);
+
+// Submit KYC application
+router.post(
+  '/submit',
   upload.fields([
+    { name: 'idDocument', maxCount: 1 },
     { name: 'selfie', maxCount: 1 },
-    { name: 'idDoc', maxCount: 1 }
+    { name: 'proofOfAddress', maxCount: 1 }
   ]),
   submitKYC
 );
 
-router.get('/status', 
-  authMiddleware, 
-  getKYCStatus
-);
+// Get KYC document (for authorized users only)
+router.get('/document/:kycId/:documentType', getKYCDocument);
 
 // Admin routes
-// Get all submitted KYCs (matching expected GET /api/kyc/all)
-router.get('/all', 
-  authMiddleware, 
-  getPendingKYC
-);
-
-// Also keep /pending for backwards compatibility
-router.get('/pending', 
-  authMiddleware, 
-  getPendingKYC
-);
-
-// Update KYC status (matching expected PUT /api/kyc/status/:id)
-router.put('/status/:userId', 
-  authMiddleware, 
-  verifyKYC
-);
-
-// Also keep the POST endpoint for backwards compatibility
-router.post('/:userId/verify', 
-  authMiddleware, 
-  verifyKYC
-);
-
-// Serve KYC document files
-router.get('/:userId/files/:fileType', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    // Only allow admins or the owner to view their own files
-    if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && 
-        req.user.id !== parseInt(req.params.userId)) {
-      return res.status(403).json({ error: 'Not authorized to access this resource' });
-    }
-    
-    const userId = req.params.userId;
-    const fileType = req.params.fileType;
-    
-    if (fileType !== 'selfie' && fileType !== 'idDoc') {
-      return res.status(400).json({ error: 'Invalid file type requested' });
-    }
-    
-    // In a real system we'd look up the file path from the database
-    // Here we'll just use the uploads directory
-    const uploadDir = path.join(process.cwd(), 'uploads');
-    
-    // This is a simplified way to find the file
-    // In a production app, you'd store the filenames in the database
-    const files = fs.readdirSync(uploadDir);
-    const userFile = files.find(f => f.startsWith(`${fileType}-`) && f.includes(userId));
-    
-    if (!userFile) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-    
-    const filePath = path.join(uploadDir, userFile);
-    res.sendFile(filePath);
-  } catch (error) {
-    console.error('Error serving KYC file:', error);
-    res.status(500).json({ error: 'Error serving file' });
-  }
-});
+router.get('/pending', getPendingKYC);
+router.post('/:kycId/verify', verifyKYC);
 
 export default router;

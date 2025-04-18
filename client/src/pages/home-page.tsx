@@ -10,6 +10,7 @@ import PropertyGrid from "@/components/properties/PropertyGrid";
 import ModernHero from "@/components/home/ModernHero";
 import AnimatedFeatures from "@/components/home/AnimatedFeatures";
 import InvestmentPlanner from "@/components/home/InvestmentPlanner";
+import LiveChat from "@/components/chat/LiveChat";
 import { motion } from "framer-motion";
 
 export default function HomePage() {
@@ -35,6 +36,9 @@ export default function HomePage() {
         
         {/* Investment Planner Section */}
         <InvestmentPlanner />
+        
+        {/* Live Chat Component */}
+        <LiveChat />
         
         {/* Testimonials Section */}
         <section className="py-20 bg-gray-900 text-white">

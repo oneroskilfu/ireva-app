@@ -1,58 +1,171 @@
-import { z } from 'zod';
-import { createSelectSchema, createInsertSchema } from 'drizzle-zod';
-import { pgTable, serial, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
+import mongoose, { Schema, Document } from 'mongoose';
 
-// KYC status options
-export enum KycStatus {
-  NOT_STARTED = 'not_started',
-  PENDING = 'pending',
-  VERIFIED = 'verified',
-  REJECTED = 'rejected',
+// Define the document interface
+export interface IKYC extends Document {
+  user: mongoose.Types.ObjectId;
+  status: 'pending' | 'approved' | 'rejected';
+  documents: {
+    idDocument: {
+      type: 'national_id' | 'passport' | 'drivers_license' | 'voters_card';
+      url: string;
+      uploadedAt: Date;
+      verificationStatus?: 'pending' | 'verified' | 'rejected';
+      rejectionReason?: string;
+    };
+    selfie?: {
+      url: string;
+      uploadedAt: Date;
+      verificationStatus?: 'pending' | 'verified' | 'rejected';
+      rejectionReason?: string;
+    };
+    proofOfAddress?: {
+      type: 'utility_bill' | 'bank_statement' | 'tax_document' | 'rental_agreement';
+      url: string;
+      uploadedAt: Date;
+      verificationStatus?: 'pending' | 'verified' | 'rejected';
+      rejectionReason?: string;
+    };
+  };
+  personalInfo: {
+    dateOfBirth: Date;
+    nationality: string;
+    residentialAddress: string;
+    city: string;
+    state: string;
+    postalCode?: string;
+    gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+    occupation?: string;
+    employmentStatus?: 'employed' | 'self_employed' | 'unemployed' | 'student' | 'retired';
+  };
+  submittedAt: Date;
+  processedAt?: Date;
+  processedBy?: mongoose.Types.ObjectId;
+  rejectionReason?: string;
+  adminNotes?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  verificationAttempts: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// KYC submissions table schema
-export const kycSubmissions = pgTable('kyc_submissions', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').notNull(),
-  fullName: text('full_name').notNull(),
-  address: text('address').notNull(),
-  idType: text('id_type').notNull(),
-  idNumber: text('id_number').notNull(),
-  selfieUrl: text('selfie_url').notNull(),
-  idDocUrl: text('id_doc_url').notNull(),
-  status: text('status').notNull().default(KycStatus.PENDING),
-  submittedAt: timestamp('submitted_at').defaultNow(),
-  verifiedAt: timestamp('verified_at'),
-  rejectionReason: text('rejection_reason'),
-  verifiedBy: integer('verified_by'),
-  notes: text('notes'),
-});
-
-// Define schemas for validation
-export const selectKycSchema = createSelectSchema(kycSubmissions);
-export const insertKycSchema = createInsertSchema(kycSubmissions, {
-  userId: z.number(),
-  fullName: z.string().min(3, "Full name must be at least 3 characters"),
-  address: z.string().min(3, "Address must be at least 3 characters"),
-  idType: z.string(),
-  idNumber: z.string().min(3, "ID number must be at least 3 characters"),
-  selfieUrl: z.string(),
-  idDocUrl: z.string(),
-}).omit({ 
-  id: true, 
-  submittedAt: true, 
-  verifiedAt: true, 
-  rejectionReason: true, 
-  verifiedBy: true,
-  notes: true
-});
-
-// Define types
-export type KycSubmission = typeof kycSubmissions.$inferSelect;
-export type InsertKycSubmission = z.infer<typeof insertKycSchema>;
-export type KycSubmissionWithUser = KycSubmission & {
-  user: {
-    username: string;
-    email: string;
+// Define the KYC schema
+const KYCSchema: Schema = new Schema(
+  {
+    user: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'User', 
+      required: true,
+      index: true
+    },
+    status: { 
+      type: String, 
+      enum: ['pending', 'approved', 'rejected'], 
+      default: 'pending',
+      index: true
+    },
+    documents: {
+      idDocument: {
+        type: { 
+          type: String, 
+          enum: ['national_id', 'passport', 'drivers_license', 'voters_card'], 
+          required: true 
+        },
+        url: { type: String, required: true },
+        uploadedAt: { type: Date, default: Date.now },
+        verificationStatus: { 
+          type: String, 
+          enum: ['pending', 'verified', 'rejected'], 
+          default: 'pending' 
+        },
+        rejectionReason: { type: String }
+      },
+      selfie: {
+        url: { type: String },
+        uploadedAt: { type: Date },
+        verificationStatus: { 
+          type: String, 
+          enum: ['pending', 'verified', 'rejected'], 
+          default: 'pending' 
+        },
+        rejectionReason: { type: String }
+      },
+      proofOfAddress: {
+        type: { 
+          type: String, 
+          enum: ['utility_bill', 'bank_statement', 'tax_document', 'rental_agreement'] 
+        },
+        url: { type: String },
+        uploadedAt: { type: Date },
+        verificationStatus: { 
+          type: String, 
+          enum: ['pending', 'verified', 'rejected'], 
+          default: 'pending' 
+        },
+        rejectionReason: { type: String }
+      }
+    },
+    personalInfo: {
+      dateOfBirth: { type: Date, required: true },
+      nationality: { type: String, required: true },
+      residentialAddress: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      postalCode: { type: String },
+      gender: { 
+        type: String,
+        enum: ['male', 'female', 'other', 'prefer_not_to_say']
+      },
+      occupation: { type: String },
+      employmentStatus: { 
+        type: String,
+        enum: ['employed', 'self_employed', 'unemployed', 'student', 'retired']
+      }
+    },
+    submittedAt: { type: Date, default: Date.now },
+    processedAt: { type: Date },
+    processedBy: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'User' 
+    },
+    rejectionReason: { type: String },
+    adminNotes: { type: String },
+    ipAddress: { type: String },
+    userAgent: { type: String },
+    verificationAttempts: { type: Number, default: 1 }
+  },
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
-};
+);
+
+// Index for faster queries
+KYCSchema.index({ 'documents.idDocument.verificationStatus': 1 });
+KYCSchema.index({ submittedAt: -1 });
+KYCSchema.index({ status: 1, submittedAt: -1 });
+
+// Pre save middleware to update the user's KYC status
+KYCSchema.pre('save', async function(next) {
+  if (this.isModified('status')) {
+    try {
+      // Update the user's KYC status
+      const User = mongoose.model('User');
+      await User.findByIdAndUpdate(this.user, { 
+        kycStatus: this.status,
+        kycSubmittedAt: this.submittedAt,
+        kycVerifiedAt: this.status === 'approved' ? this.processedAt : undefined,
+        kycRejectionReason: this.status === 'rejected' ? this.rejectionReason : undefined
+      });
+    } catch (error) {
+      console.error('Error updating user KYC status:', error);
+    }
+  }
+  next();
+});
+
+// Create and export the KYC model
+const KYC = mongoose.model<IKYC>('KYC', KYCSchema);
+
+export default KYC;

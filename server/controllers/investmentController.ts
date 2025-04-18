@@ -1,439 +1,359 @@
 import { Request, Response } from 'express';
-import { storage } from '../storage';
-import { z } from 'zod';
-import { insertInvestmentSchema } from '../../shared/schema';
-import * as emailService from '../services/emailService';
-import * as roiController from './roiController';
+import mongoose from 'mongoose';
+import Investment, { IInvestment } from '../models/Investment';
+import Project from '../models/Project';
+import User from '../models/User'; // Assuming you have a User model
 
 // Get all investments for a user
-export async function getUserInvestments(req: Request, res: Response) {
+export const getUserInvestments = async (req: Request, res: Response): Promise<void> => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const investments = await storage.getUserInvestments(req.user.id);
+    const userId = req.user?.id;
     
-    // Fetch property details for each investment
-    const investmentsWithPropertyDetails = await Promise.all(
-      investments.map(async (investment) => {
-        const property = await storage.getProperty(investment.propertyId);
-        return {
-          ...investment,
-          property
-        };
-      })
-    );
-
-    return res.status(200).json(investmentsWithPropertyDetails);
+    // Find all investments for the user and populate with project details
+    const investments = await Investment.find({ investor: userId })
+      .populate('property')
+      .sort({ createdAt: -1 });
+    
+    res.json(investments);
   } catch (error) {
     console.error('Error fetching user investments:', error);
-    return res.status(500).json({ message: 'Error fetching investments' });
-  }
-}
-
-// Get investment by ID
-export async function getInvestmentById(req: Request, res: Response) {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const { id } = req.params;
-    const investmentId = parseInt(id);
-
-    if (isNaN(investmentId)) {
-      return res.status(400).json({ message: 'Invalid investment ID' });
-    }
-
-    const investment = await storage.getInvestment(investmentId);
-
-    if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
-    }
-
-    // Check if the user owns this investment or is an admin
-    if (investment.userId !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'You do not have permission to view this investment' });
-    }
-
-    // Get property details
-    const property = await storage.getProperty(investment.propertyId);
-
-    return res.status(200).json({
-      ...investment,
-      property
+    res.status(500).json({
+      message: 'Failed to fetch investments',
+      error: error instanceof Error ? error.message : String(error)
     });
+  }
+};
+
+// Get a specific investment by ID
+export const getInvestmentById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const investmentId = req.params.id;
+    
+    // Find investment and populate with project details
+    const investment = await Investment.findById(investmentId)
+      .populate('property')
+      .populate('investor', 'username email firstName lastName');
+    
+    if (!investment) {
+      res.status(404).json({ message: 'Investment not found' });
+      return;
+    }
+    
+    // Verify that the investment belongs to the user
+    if (investment.investor._id.toString() !== userId && req.user?.role !== 'admin') {
+      res.status(403).json({ message: 'Not authorized to access this investment' });
+      return;
+    }
+    
+    res.json(investment);
   } catch (error) {
     console.error('Error fetching investment:', error);
-    return res.status(500).json({ message: 'Error fetching investment details' });
+    res.status(500).json({
+      message: 'Failed to fetch investment',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
-}
+};
 
 // Create a new investment
-export async function createInvestment(req: Request, res: Response) {
+export const createInvestment = async (req: Request, res: Response): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
+    const userId = req.user?.id;
+    const { propertyId, amount } = req.body;
+    
+    // Validate amount
+    if (!amount || isNaN(amount) || amount <= 0) {
+      res.status(400).json({ message: 'Valid investment amount is required' });
+      return;
     }
-
-    const schema = z.object({
-      propertyId: z.number(),
-      amount: z.number().positive('Amount must be positive'),
-      paymentMethod: z.enum(['wallet', 'card', 'bank_transfer']),
-      paymentReference: z.string().optional()
-    });
-
-    const { propertyId, amount, paymentMethod, paymentReference } = schema.parse(req.body);
-
-    // Get property details
-    const property = await storage.getProperty(propertyId);
-
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
+    
+    // Find the project
+    const project = await Project.findById(propertyId).session(session);
+    
+    if (!project) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(404).json({ message: 'Project not found' });
+      return;
     }
-
+    
+    // Check if project is active
+    if (project.status !== 'active') {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({ message: 'Project is not available for investment' });
+      return;
+    }
+    
     // Check minimum investment
-    if (amount < property.minimumInvestment) {
-      return res.status(400).json({ 
-        message: `Minimum investment amount is ₦${property.minimumInvestment.toLocaleString()}` 
+    if (amount < project.minimumInvestment) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({ 
+        message: `Minimum investment for this project is ₦${project.minimumInvestment}` 
       });
+      return;
     }
-
-    // Check available funding
-    const availableFunding = property.totalFunding - property.currentFunding;
-    if (amount > availableFunding) {
-      return res.status(400).json({ 
-        message: `Only ₦${availableFunding.toLocaleString()} funding available` 
-      });
-    }
-
-    // Check user KYC status
-    const user = await storage.getUser(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.kycStatus !== 'verified' && property.accreditedOnly) {
-      return res.status(403).json({ 
-        message: 'KYC verification required for this investment' 
-      });
-    }
-
-    if (property.accreditationLevel && (!user.accreditationLevel || user.accreditationLevel !== property.accreditationLevel)) {
-      return res.status(403).json({ 
-        message: `This investment requires ${property.accreditationLevel} accreditation level` 
-      });
-    }
-
-    // Handle payment based on method
-    if (paymentMethod === 'wallet') {
-      // Check wallet balance
-      const wallet = await storage.getUserWallet(req.user.id);
-      if (!wallet) {
-        return res.status(404).json({ message: 'Wallet not found' });
-      }
-
-      if (wallet.balance < amount) {
-        return res.status(400).json({ message: 'Insufficient wallet balance' });
-      }
-
-      // Update wallet balance
-      await storage.updateWalletBalance(wallet.id, -amount);
-
-      // Create wallet transaction
-      await storage.createWalletTransaction({
-        walletId: wallet.id,
-        amount: -amount,
-        type: 'investment',
-        description: `Investment in ${property.name}`,
-        reference: `INV-${Date.now()}`,
-        status: 'successful'
-      }, wallet);
-    } else if (paymentMethod === 'card') {
-      // For now, we'll assume card payment was successful
-      // In a real application, you would integrate with a payment processor
-      if (!paymentReference) {
-        return res.status(400).json({ message: 'Payment reference is required for card payments' });
-      }
-
-      // Create payment transaction
-      await storage.createPaymentTransaction({
-        userId: req.user.id,
-        amount,
-        method: 'card',
-        reference: paymentReference,
-        description: `Investment in ${property.name}`,
-        status: 'successful'
-      });
-    } else {
-      // Handle bank transfer
-      return res.status(400).json({ message: 'Bank transfer not implemented yet' });
-    }
-
-    // Parse target return from property
-    const targetReturn = parseFloat(property.targetReturn.replace('%', ''));
     
-    // Use ROI calculator to generate projected returns for 5 years
-    const defaultTerm = property.term || 60; // Default to 5 years (60 months) if not specified
-    const termInYears = defaultTerm / 12;
+    // Check if there's enough funding capacity left
+    const remainingFunding = project.totalFunding - project.currentFunding;
+    if (amount > remainingFunding) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({ 
+        message: `Only ₦${remainingFunding} of funding capacity remains` 
+      });
+      return;
+    }
     
-    // Calculate monthly returns
-    const monthlyReturns = roiController.generateMonthlyReturns(amount, targetReturn, termInYears);
+    // Check if user has enough balance (this would integrate with your wallet system)
+    // We'll leave this for you to implement based on your wallet structure
     
-    // Calculate projected earnings
-    const projectedEarnings = roiController.calculateCompoundROI(amount, targetReturn, termInYears);
-    
-    // Create investment with projected returns
-    const investmentData = insertInvestmentSchema.parse({
-      userId: req.user.id,
-      propertyId,
+    // Create the investment
+    const investment = new Investment({
+      investor: userId,
+      property: propertyId,
       amount,
-      currentValue: amount,
-      status: 'active',
-      earnings: 0,
-      projectedEarnings,
-      projectedROI: (projectedEarnings / amount) * 100,
-      monthlyReturns: JSON.stringify(monthlyReturns)
+      status: 'pending',
+      monthlyReturn: parseFloat(project.targetReturn) / 12, // Monthly return rate
+      term: project.term,
+      roi: parseFloat(project.targetReturn),
+      startDate: new Date(),
+      endDate: new Date(Date.now() + project.term * 30 * 24 * 60 * 60 * 1000), // Approximate end date
+      payoutHistory: [],
+      documents: []
     });
-
-    const investment = await storage.createInvestment(investmentData);
-
-    // Update property funding
-    await storage.updateProperty(propertyId, {
-      currentFunding: property.currentFunding + amount,
-      numberOfInvestors: (property.numberOfInvestors || 0) + 1
-    });
-
-    // Send investment confirmation email
-    if (user.email) {
-      await emailService.sendInvestmentConfirmationEmail(user, property, investment);
+    
+    await investment.save({ session });
+    
+    // Update project funding status
+    project.currentFunding += amount;
+    project.numberOfInvestors += 1;
+    
+    // Update project status if fully funded
+    if (project.currentFunding >= project.totalFunding) {
+      project.status = 'active';
     }
-
-    // Create notification
-    await storage.createNotification({
-      userId: req.user.id,
-      type: 'investment',
-      title: 'Investment Successful',
-      message: `Your investment of ₦${amount.toLocaleString()} in ${property.name} was successful.`,
-      link: `/investments/${investment.id}`,
-      isRead: false,
+    
+    await project.save({ session });
+    
+    // Generate investment receipt document
+    const receiptDocument = {
+      name: `Investment Receipt - ${project.name}`,
+      url: `/receipts/investment_${investment._id}.pdf`, // URL would be generated when PDF is created
+      type: 'receipt',
       createdAt: new Date()
-    });
-
-    return res.status(201).json({
+    };
+    
+    investment.documents.push(receiptDocument);
+    await investment.save({ session });
+    
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+    
+    // Populate the investment with project details
+    const populatedInvestment = await Investment.findById(investment._id)
+      .populate('property');
+    
+    res.status(201).json({
       message: 'Investment created successfully',
-      investment,
-      property
+      investment: populatedInvestment
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid investment data', errors: error.errors });
-    }
+    // Abort the transaction on error
+    await session.abortTransaction();
+    session.endSession();
+    
     console.error('Error creating investment:', error);
-    return res.status(500).json({ message: 'Error creating investment' });
-  }
-}
-
-// Get all investments (admin only)
-export async function getAllInvestments(req: Request, res: Response) {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const investments = await storage.getAllInvestments();
-
-    // Fetch user and property details for each investment
-    const investmentsWithDetails = await Promise.all(
-      investments.map(async (investment) => {
-        const user = await storage.getUser(investment.userId);
-        const property = await storage.getProperty(investment.propertyId);
-        return {
-          ...investment,
-          user: {
-            id: user?.id,
-            username: user?.username,
-            email: user?.email,
-            firstName: user?.firstName,
-            lastName: user?.lastName
-          },
-          property
-        };
-      })
-    );
-
-    return res.status(200).json(investmentsWithDetails);
-  } catch (error) {
-    console.error('Error fetching all investments:', error);
-    return res.status(500).json({ message: 'Error fetching investments' });
-  }
-}
-
-// Get investments by property
-export async function getInvestmentsByProperty(req: Request, res: Response) {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const { propertyId } = req.params;
-    const id = parseInt(propertyId);
-
-    if (isNaN(id)) {
-      return res.status(400).json({ message: 'Invalid property ID' });
-    }
-
-    const investments = await storage.getInvestmentsByProperty(id);
-
-    // Fetch user details for each investment
-    const investmentsWithUserDetails = await Promise.all(
-      investments.map(async (investment) => {
-        const user = await storage.getUser(investment.userId);
-        return {
-          ...investment,
-          user: {
-            id: user?.id,
-            username: user?.username,
-            email: user?.email,
-            firstName: user?.firstName,
-            lastName: user?.lastName
-          }
-        };
-      })
-    );
-
-    return res.status(200).json(investmentsWithUserDetails);
-  } catch (error) {
-    console.error('Error fetching investments by property:', error);
-    return res.status(500).json({ message: 'Error fetching investments' });
-  }
-}
-
-// Update investment status (admin only)
-export async function updateInvestmentStatus(req: Request, res: Response) {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const { id } = req.params;
-    const investmentId = parseInt(id);
-
-    if (isNaN(investmentId)) {
-      return res.status(400).json({ message: 'Invalid investment ID' });
-    }
-
-    const schema = z.object({
-      status: z.enum(['pending', 'active', 'completed'])
+    res.status(500).json({
+      message: 'Failed to create investment',
+      error: error instanceof Error ? error.message : String(error)
     });
+  }
+};
 
-    const { status } = schema.parse(req.body);
-
-    const investment = await storage.getInvestment(investmentId);
-
+// Update investment returns (admin only)
+export const updateInvestmentReturns = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { earnings, monthlyReturns } = req.body;
+    
+    if (typeof earnings !== 'number' || earnings < 0) {
+      res.status(400).json({ message: 'Valid earnings amount is required' });
+      return;
+    }
+    
+    const investment = await Investment.findById(req.params.id);
+    
     if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
+      res.status(404).json({ message: 'Investment not found' });
+      return;
     }
-
-    const updatedInvestment = await storage.updateInvestmentStatus(investmentId, status);
-
-    return res.status(200).json({
-      message: 'Investment status updated successfully',
-      investment: updatedInvestment
+    
+    // Update the investment with new earnings
+    investment.earnings = earnings;
+    
+    // Update monthly return rate if provided
+    if (typeof monthlyReturns === 'number' && monthlyReturns >= 0) {
+      investment.monthlyReturn = monthlyReturns;
+    }
+    
+    // Calculate accrued ROI
+    investment.roiAccrued = (earnings / investment.amount) * 100;
+    
+    // Set next payout date to 30 days from now
+    investment.nextPayoutDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    
+    // Add to payout history
+    investment.payoutHistory.push({
+      date: new Date(),
+      amount: earnings - investment.earnings, // The difference is the newly added earnings
+      status: 'completed'
     });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid status', errors: error.errors });
-    }
-    console.error('Error updating investment status:', error);
-    return res.status(500).json({ message: 'Error updating investment status' });
-  }
-}
-
-// Update investment returns
-export async function updateInvestmentReturns(req: Request, res: Response) {
-  try {
-    if (!req.user?.id) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const { id } = req.params;
-    const investmentId = parseInt(id);
-
-    if (isNaN(investmentId)) {
-      return res.status(400).json({ message: 'Invalid investment ID' });
-    }
-
-    const schema = z.object({
-      earnings: z.number(),
-      monthlyReturns: z.record(z.string(), z.number()).optional()
-    });
-
-    const { earnings, monthlyReturns } = schema.parse(req.body);
-
-    const investment = await storage.getInvestment(investmentId);
-
-    if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
-    }
-
-    const updatedInvestment = await storage.updateInvestmentReturns(
-      investmentId, 
-      earnings, 
-      monthlyReturns || {}
-    );
-
-    // Get user and property details for email notification
-    const user = await storage.getUser(investment.userId);
-    const property = await storage.getProperty(investment.propertyId);
-
-    if (user && property) {
-      // Calculate monthly return based on the difference in earnings
-      const monthlyReturn = earnings - (investment.earnings || 0);
-
-      // Send email notification if there's a monthly return
-      if (monthlyReturn > 0 && user.email) {
-        await emailService.sendMonthlyReturnsEmail(user, updatedInvestment, property, monthlyReturn);
-      }
-
-      // Create in-app notification
-      await storage.createNotification({
-        userId: investment.userId,
-        type: 'investment',
-        title: 'Investment Returns Updated',
-        message: `Your investment in ${property.name} has generated returns of ₦${monthlyReturn.toLocaleString()} this month.`,
-        link: `/investments/${investment.id}`,
-        isRead: false,
-        createdAt: new Date()
-      });
-    }
-
-    return res.status(200).json({
+    
+    await investment.save();
+    
+    res.json({
       message: 'Investment returns updated successfully',
-      investment: updatedInvestment
+      investment
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
-    }
     console.error('Error updating investment returns:', error);
-    return res.status(500).json({ message: 'Error updating investment returns' });
+    res.status(500).json({
+      message: 'Failed to update investment returns',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
-}
+};
+
+// Request investment withdrawal
+export const requestWithdrawal = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { investmentId, amount, reason } = req.body;
+    
+    if (!investmentId || typeof amount !== 'number' || amount <= 0) {
+      res.status(400).json({ message: 'Valid investment ID and amount are required' });
+      return;
+    }
+    
+    // Find the investment
+    const investment = await Investment.findById(investmentId);
+    
+    if (!investment) {
+      res.status(404).json({ message: 'Investment not found' });
+      return;
+    }
+    
+    // Verify that the investment belongs to the user
+    if (investment.investor.toString() !== userId) {
+      res.status(403).json({ message: 'Not authorized to access this investment' });
+      return;
+    }
+    
+    // Check if the investment is active
+    if (investment.status !== 'active') {
+      res.status(400).json({ message: 'Only active investments can have withdrawals' });
+      return;
+    }
+    
+    // Check if there are enough earnings
+    if (amount > investment.earnings) {
+      res.status(400).json({ 
+        message: `Cannot withdraw more than available earnings (₦${investment.earnings})` 
+      });
+      return;
+    }
+    
+    // Create a withdrawal record
+    // This would normally integrate with your wallet and transaction system
+    // For now, we'll just update the investment record
+    
+    // Reduce earnings
+    investment.earnings -= amount;
+    
+    // Add to payout history
+    investment.payoutHistory.push({
+      date: new Date(),
+      amount,
+      status: 'pending',
+      reference: `WD-${Date.now()}`,
+      notes: reason || 'User-requested withdrawal'
+    });
+    
+    await investment.save();
+    
+    // Here you would typically create a withdrawal transaction in your wallet system
+    
+    res.json({
+      message: 'Withdrawal request submitted successfully',
+      withdrawal: {
+        amount,
+        status: 'pending',
+        investment: investment._id,
+        property: investment.property,
+        date: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('Error requesting withdrawal:', error);
+    res.status(500).json({
+      message: 'Failed to process withdrawal request',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+};
+
+// Get ROI summary for an investor
+export const getROISummary = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    // Get all investments for the user
+    const investments = await Investment.find({ investor: userId });
+    
+    // Calculate summary statistics
+    const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalEarnings = investments.reduce((sum, inv) => sum + inv.earnings, 0);
+    const activeInvestments = investments.filter(inv => inv.status === 'active').length;
+    
+    // Calculate average ROI (weighted by investment amount)
+    let weightedRoiSum = 0;
+    let totalWeight = 0;
+    
+    investments.forEach(inv => {
+      if (inv.status === 'active') {
+        weightedRoiSum += inv.roi * inv.amount;
+        totalWeight += inv.amount;
+      }
+    });
+    
+    const averageROI = totalWeight > 0 ? weightedRoiSum / totalWeight : 0;
+    
+    // Calculate projected annual return
+    const projectedAnnualReturn = investments.reduce((sum, inv) => {
+      if (inv.status === 'active') {
+        return sum + (inv.amount * (inv.roi / 100));
+      }
+      return sum;
+    }, 0);
+    
+    res.json({
+      totalInvested,
+      totalEarnings,
+      activeInvestments,
+      averageROI,
+      projectedAnnualReturn
+    });
+  } catch (error) {
+    console.error('Error calculating ROI summary:', error);
+    res.status(500).json({
+      message: 'Failed to calculate ROI summary',
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+};
