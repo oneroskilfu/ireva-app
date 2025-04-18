@@ -63,6 +63,7 @@ function Router() {
   const AdminSettingsPage = lazy(() => import('@/pages/admin/settings-page'));
   const AdminResourcesPage = lazy(() => import('@/pages/admin/resources-page'));
   const AdminWalletManagementPage = lazy(() => import('@/pages/admin/wallet-management'));
+  const AdminROIDashboardPage = lazy(() => import('@/pages/AdminROIDashboard'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ProjectsPage = lazy(() => import('@/pages/investor/projects-page'));
@@ -336,6 +337,19 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <AdminWalletManagementPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin ROI Dashboard Route */}
+      <Route path="/admin/roi-dashboard">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminROIDashboardPage />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>
