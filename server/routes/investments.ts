@@ -1,37 +1,65 @@
-import express from 'express';
+import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { investments, properties, users } from '../../shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
-import { verifyToken } from '../auth-jwt';
+import { 
+  investments, 
+  properties, 
+  wallets,
+  insertInvestmentSchema, 
+  walletTransaction, 
+  notifications 
+} from '../../shared/schema';
+import { and, eq } from 'drizzle-orm';
+import { verifyToken, authMiddleware, ensureAdmin } from '../auth-jwt';
+import { ZodError } from 'zod';
+import AdminLogger from '../services/adminLogger';
 
-const router = express.Router();
+const investmentsRouter = Router();
 
 /**
  * @route GET /api/investments
- * @desc Get all investments for the logged in user
+ * @desc Get all investments for the authenticated user
  * @access Private
  */
-router.get('/', verifyToken, async (req, res) => {
+investmentsRouter.get('/', verifyToken, async (req: Request, res: Response) => {
   try {
+    // Get user ID from JWT payload
     const userId = req.jwtPayload?.id;
     
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
+    // Get user investments
     const userInvestments = await db.select()
       .from(investments)
-      .where(eq(investments.userId, userId))
-      .orderBy(desc(investments.date));
-      
-    if (!userInvestments || userInvestments.length === 0) {
+      .where(eq(investments.userId, userId));
+
+    // If no investments found, return empty array
+    if (!userInvestments.length) {
       return res.json([]);
     }
+
+    // Get property details for each investment
+    const investmentsWithDetails = await Promise.all(
+      userInvestments.map(async (investment) => {
+        const [property] = await db.select()
+          .from(properties)
+          .where(eq(properties.id, investment.propertyId));
+        
+        return {
+          ...investment,
+          property
+        };
+      })
+    );
     
-    res.json(userInvestments);
+    res.json(investmentsWithDetails);
   } catch (error) {
-    console.error('Get investments error:', error);
-    res.status(500).json({ message: 'Server error getting investments' });
+    console.error("Error fetching investments:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch investments", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
@@ -40,33 +68,48 @@ router.get('/', verifyToken, async (req, res) => {
  * @desc Get a specific investment by ID
  * @access Private
  */
-router.get('/:id', verifyToken, async (req, res) => {
+investmentsRouter.get('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
+    // Get user ID from JWT payload
     const userId = req.jwtPayload?.id;
-    const investmentId = parseInt(req.params.id);
     
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    // Verify that the investment belongs to the current user
-    const [investment] = await db.select()
-      .from(investments)
-      .where(
-        and(
-          eq(investments.id, investmentId),
-          eq(investments.userId, userId)
-        )
-      );
-      
-    if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
+    const investmentId = parseInt(req.params.id);
+    
+    if (isNaN(investmentId)) {
+      return res.status(400).json({ message: "Invalid investment ID" });
     }
     
-    res.json(investment);
+    // Get investment
+    const [investment] = await db.select()
+      .from(investments)
+      .where(and(
+        eq(investments.id, investmentId),
+        eq(investments.userId, userId)
+      ));
+    
+    if (!investment) {
+      return res.status(404).json({ message: "Investment not found or does not belong to you" });
+    }
+    
+    // Get property details
+    const [property] = await db.select()
+      .from(properties)
+      .where(eq(properties.id, investment.propertyId));
+    
+    res.json({
+      ...investment,
+      property
+    });
   } catch (error) {
-    console.error('Get investment error:', error);
-    res.status(500).json({ message: 'Server error getting investment' });
+    console.error("Error fetching investment:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch investment", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
@@ -75,300 +118,239 @@ router.get('/:id', verifyToken, async (req, res) => {
  * @desc Create a new investment
  * @access Private
  */
-router.post('/', verifyToken, async (req, res) => {
+investmentsRouter.post('/', verifyToken, async (req: Request, res: Response) => {
   try {
+    // Get user ID from JWT payload
     const userId = req.jwtPayload?.id;
     
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    const { propertyId, amount } = req.body;
+    // Extract request data
+    const { projectId, amount, units } = req.body;
     
-    // Validate input
-    if (!propertyId || !amount) {
-      return res.status(400).json({ message: 'Property ID and amount are required' });
+    if (!projectId || isNaN(parseInt(projectId))) {
+      return res.status(400).json({ message: "Invalid project ID" });
     }
     
-    // Verify the property exists
+    const propertyId = parseInt(projectId);
+    
+    // Validate investment amount
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid investment amount" });
+    }
+    
+    // Check if property exists
     const [property] = await db.select()
       .from(properties)
       .where(eq(properties.id, propertyId));
-      
+    
     if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
+      return res.status(404).json({ message: "Property not found" });
     }
     
-    // Check if minimum investment is met
+    // Check if investment amount meets minimum
     if (amount < property.minimumInvestment) {
       return res.status(400).json({ 
-        message: `Minimum investment for this property is ₦${property.minimumInvestment.toLocaleString()}` 
+        message: `Minimum investment is ₦${property.minimumInvestment.toLocaleString()}` 
       });
     }
     
-    // Check if property is for accredited investors only
-    if (property.accreditedOnly) {
-      const [user] = await db.select()
-        .from(users)
-        .where(eq(users.id, userId));
-        
-      if (user.accreditationLevel === 'non_accredited') {
-        return res.status(403).json({ 
-          message: 'This property is available only to accredited investors' 
-        });
-      }
+    // Check if user has enough balance in wallet
+    const [wallet] = await db.select()
+      .from(wallets)
+      .where(eq(wallets.userId, userId));
+    
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet not found" });
     }
     
-    // Create the investment
-    const [investment] = await db.insert(investments)
-      .values({
-        userId,
-        propertyId,
-        amount,
-        currentValue: amount, // Initial value is the same as investment amount
-        date: new Date(),
-        maturityDate: new Date(new Date().setMonth(new Date().getMonth() + property.term)),
-        status: 'active',
-      })
-      .returning();
+    if (wallet.balance < amount) {
+      return res.status(400).json({ 
+        message: "Insufficient funds in wallet", 
+        currentBalance: wallet.balance,
+        requiredAmount: amount
+      });
+    }
+    
+    // Begin transaction to ensure atomicity
+    await db.transaction(async (tx) => {
+      // 1. Deduct amount from wallet
+      await tx.update(wallets)
+        .set({ 
+          balance: wallet.balance - amount,
+          lastUpdated: new Date()
+        })
+        .where(eq(wallets.id, wallet.id));
       
-    // Update property funding and investor count
-    await db.update(properties)
-      .set({
-        currentFunding: property.currentFunding + amount,
-        numberOfInvestors: property.numberOfInvestors + 1
-      })
+      // 2. Record wallet transaction
+      await tx.insert(walletTransaction)
+        .values({
+          userId,
+          amount,
+          type: "investment",
+          status: "completed",
+          description: `Investment in ${property.name}`,
+          reference: `INV-${Date.now()}-${userId}-${propertyId}`,
+          metadata: { propertyId, units }
+        });
+      
+      // 3. Create investment record
+      const [investment] = await tx.insert(investments)
+        .values({
+          userId,
+          propertyId,
+          amount,
+          currentValue: amount,
+          status: "active",
+          maturityDate: new Date(Date.now() + (property.term * 30 * 24 * 60 * 60 * 1000)) // Approximate months to milliseconds
+        })
+        .returning();
+      
+      // 4. Update property funding and investor count
+      await tx.update(properties)
+        .set({ 
+          currentFunding: property.currentFunding + amount,
+          numberOfInvestors: property.numberOfInvestors + 1
+        })
+        .where(eq(properties.id, propertyId));
+      
+      // 5. Create notification
+      await tx.insert(notifications)
+        .values({
+          userId,
+          type: "investment",
+          title: "Investment Successful",
+          message: `Your investment of ₦${amount.toLocaleString()} in ${property.name} was successful.`,
+          link: `/investor/investments/${investment.id}`,
+          isRead: false
+        });
+    });
+    
+    // Get updated investment with property details
+    const [newInvestment] = await db.select()
+      .from(investments)
+      .where(and(
+        eq(investments.userId, userId),
+        eq(investments.propertyId, propertyId)
+      ))
+      .orderBy(investments.id)
+      .limit(1);
+    
+    // Get updated property
+    const [updatedProperty] = await db.select()
+      .from(properties)
       .where(eq(properties.id, propertyId));
-      
-    // Update user's total invested amount
-    await db.update(users)
-      .set({
-        totalInvested: (user.totalInvested || 0) + amount
-      })
-      .where(eq(users.id, userId));
-      
-    res.status(201).json({
-      message: 'Investment created successfully',
-      investment
+    
+    res.status(201).json({ 
+      message: "Investment successful",
+      investment: newInvestment,
+      property: updatedProperty
     });
   } catch (error) {
-    console.error('Create investment error:', error);
-    res.status(500).json({ message: 'Server error creating investment' });
+    console.error("Error creating investment:", error);
+    
+    if (error instanceof ZodError) {
+      return res.status(400).json({ 
+        message: "Validation error", 
+        errors: error.errors 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: "Failed to create investment", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
 /**
  * @route GET /api/investments/property/:propertyId
- * @desc Get all investments for a specific property
+ * @desc Get all investments for a specific property (Admin only)
  * @access Admin
  */
-router.get('/property/:propertyId', verifyToken, async (req, res) => {
+investmentsRouter.get('/property/:propertyId', verifyToken, ensureAdmin, async (req: Request, res: Response) => {
   try {
-    const userId = req.jwtPayload?.id;
-    const userRole = req.jwtPayload?.role;
     const propertyId = parseInt(req.params.propertyId);
     
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (isNaN(propertyId)) {
+      return res.status(400).json({ message: "Invalid property ID" });
     }
     
-    if (userRole !== 'admin' && userRole !== 'super_admin') {
-      return res.status(403).json({ message: "Forbidden. Admin access required." });
+    // Check if property exists
+    const [property] = await db.select()
+      .from(properties)
+      .where(eq(properties.id, propertyId));
+    
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
     }
     
+    // Get all investments for this property
     const propertyInvestments = await db.select()
       .from(investments)
-      .where(eq(investments.propertyId, propertyId))
-      .orderBy(desc(investments.date));
-      
-    if (!propertyInvestments || propertyInvestments.length === 0) {
-      return res.json([]);
+      .where(eq(investments.propertyId, propertyId));
+    
+    res.json({
+      property,
+      investments: propertyInvestments,
+      totalInvested: propertyInvestments.reduce((sum, inv) => sum + inv.amount, 0),
+      investorCount: propertyInvestments.length
+    });
+  } catch (error) {
+    console.error("Error fetching property investments:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch property investments", 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+  }
+});
+
+/**
+ * @route GET /api/investments/user/:userId
+ * @desc Get all investments for a specific user (Admin only)
+ * @access Admin
+ */
+investmentsRouter.get('/user/:userId', verifyToken, ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
     }
     
-    // Get user details for each investment
-    const investmentsWithUserDetails = await Promise.all(
-      propertyInvestments.map(async (investment) => {
-        const [user] = await db
-          .select({
-            id: users.id,
-            username: users.username,
-            email: users.email,
-            firstName: users.firstName,
-            lastName: users.lastName,
-          })
-          .from(users)
-          .where(eq(users.id, investment.userId));
-          
+    // Get all investments for this user
+    const userInvestments = await db.select()
+      .from(investments)
+      .where(eq(investments.userId, userId));
+    
+    // Get property details for each investment
+    const investmentsWithDetails = await Promise.all(
+      userInvestments.map(async (investment) => {
+        const [property] = await db.select()
+          .from(properties)
+          .where(eq(properties.id, investment.propertyId));
+        
         return {
           ...investment,
-          user,
+          property
         };
       })
     );
     
-    res.json(investmentsWithUserDetails);
-  } catch (error) {
-    console.error('Get property investments error:', error);
-    res.status(500).json({ message: 'Server error getting property investments' });
-  }
-});
-
-/**
- * @route PATCH /api/investments/:id/cancel
- * @desc Cancel an investment (only if it's recent)
- * @access Private
- */
-router.patch('/:id/cancel', verifyToken, async (req, res) => {
-  try {
-    const userId = req.jwtPayload?.id;
-    const investmentId = parseInt(req.params.id);
-    
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    // Verify that the investment belongs to the current user
-    const [investment] = await db.select()
-      .from(investments)
-      .where(
-        and(
-          eq(investments.id, investmentId),
-          eq(investments.userId, userId)
-        )
-      );
-      
-    if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
-    }
-    
-    // Check if investment is recent (within 24 hours)
-    const investmentDate = new Date(investment.date);
-    const currentDate = new Date();
-    const hoursDifference = (currentDate.getTime() - investmentDate.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursDifference > 24) {
-      return res.status(400).json({ 
-        message: 'Investments can only be cancelled within 24 hours of creation' 
-      });
-    }
-    
-    // Update investment status
-    const [updatedInvestment] = await db.update(investments)
-      .set({
-        status: 'cancelled',
-      })
-      .where(eq(investments.id, investmentId))
-      .returning();
-      
-    // Update property funding and investor count
-    const [property] = await db.select()
-      .from(properties)
-      .where(eq(properties.id, investment.propertyId));
-      
-    await db.update(properties)
-      .set({
-        currentFunding: property.currentFunding - investment.amount,
-        numberOfInvestors: property.numberOfInvestors - 1
-      })
-      .where(eq(properties.id, investment.propertyId));
-      
-    // Update user's total invested amount
-    const [user] = await db.select()
-      .from(users)
-      .where(eq(users.id, userId));
-      
-    await db.update(users)
-      .set({
-        totalInvested: user.totalInvested - investment.amount
-      })
-      .where(eq(users.id, userId));
-      
     res.json({
-      message: 'Investment cancelled successfully',
-      investment: updatedInvestment
+      investments: investmentsWithDetails,
+      totalInvested: userInvestments.reduce((sum, inv) => sum + inv.amount, 0),
+      investmentCount: userInvestments.length
     });
   } catch (error) {
-    console.error('Cancel investment error:', error);
-    res.status(500).json({ message: 'Server error cancelling investment' });
-  }
-});
-
-/**
- * @route PATCH /api/investments/:id/returns
- * @desc Update investment returns (admin only)
- * @access Admin
- */
-router.patch('/:id/returns', verifyToken, async (req, res) => {
-  try {
-    const userId = req.jwtPayload?.id;
-    const userRole = req.jwtPayload?.role;
-    const investmentId = parseInt(req.params.id);
-    
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    if (userRole !== 'admin' && userRole !== 'super_admin') {
-      return res.status(403).json({ message: "Forbidden. Admin access required." });
-    }
-    
-    const { currentValue, earnings, monthlyReturns } = req.body;
-    
-    // Validate input
-    if (!currentValue && !earnings && !monthlyReturns) {
-      return res.status(400).json({ 
-        message: 'At least one of currentValue, earnings, or monthlyReturns must be provided' 
-      });
-    }
-    
-    // Get the investment
-    const [investment] = await db.select()
-      .from(investments)
-      .where(eq(investments.id, investmentId));
-      
-    if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
-    }
-    
-    // Update the investment
-    const updateData: any = {};
-    
-    if (currentValue !== undefined) {
-      updateData.currentValue = currentValue;
-    }
-    
-    if (earnings !== undefined) {
-      updateData.earnings = earnings;
-      
-      // Update user's total earnings
-      const [user] = await db.select()
-        .from(users)
-        .where(eq(users.id, investment.userId));
-        
-      await db.update(users)
-        .set({
-          totalEarnings: (user.totalEarnings || 0) + (earnings - (investment.earnings || 0))
-        })
-        .where(eq(users.id, investment.userId));
-    }
-    
-    if (monthlyReturns !== undefined) {
-      updateData.monthlyReturns = monthlyReturns;
-    }
-    
-    const [updatedInvestment] = await db.update(investments)
-      .set(updateData)
-      .where(eq(investments.id, investmentId))
-      .returning();
-      
-    res.json({
-      message: 'Investment returns updated successfully',
-      investment: updatedInvestment
+    console.error("Error fetching user investments:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch user investments", 
+      error: error instanceof Error ? error.message : String(error) 
     });
-  } catch (error) {
-    console.error('Update investment returns error:', error);
-    res.status(500).json({ message: 'Server error updating investment returns' });
   }
 });
 
-export default router;
+export default investmentsRouter;

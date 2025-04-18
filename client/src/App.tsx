@@ -64,6 +64,8 @@ function Router() {
   const AdminResourcesPage = lazy(() => import('@/pages/admin/resources-page'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
+  const ProjectsPage = lazy(() => import('@/pages/investor/projects-page'));
+  const ProjectDetailPage = lazy(() => import('@/pages/investor/project-detail-page'));
   const ROICalculatorPage = lazy(() => import('@/pages/investor/ROICalculatorPage'));
   const InvestorSavedPropertiesPage = lazy(() => import('@/pages/investor/InvestorSavedPropertiesPage'));
   const InvestorPortfolioPage = lazy(() => import('@/pages/investor/portfolio-page'));
@@ -344,7 +346,20 @@ function Router() {
         {() => (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
             <Suspense fallback={<div>Loading...</div>}>
-              <InvestorProjectsPage />
+              <InvestorLayout>
+                <ProjectsPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Investor Project Detail Page */}
+      <Route path="/investor/projects/:id">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <ProjectDetailPage />
             </Suspense>
           </AuthMiddleware>
         )}
