@@ -22,7 +22,8 @@ import {
   CreditCard,
   BookOpen,
   Activity,
-  Home
+  Home,
+  Wallet
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -55,6 +56,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { path: "/admin/properties", label: "Properties", icon: <FileText className="w-5 h-5" /> },
     { path: "/admin/kyc", label: "KYC Verification", icon: <ClipboardCheck className="w-5 h-5" /> },
     { path: "/admin/investments", label: "Investments", icon: <BarChart3 className="w-5 h-5" /> },
+    { path: "/admin/wallet-management", label: "Wallet Management", icon: <Wallet className="w-5 h-5" /> },
     { path: "/admin/transactions", label: "Transactions", icon: <Activity className="w-5 h-5" /> },
     { path: "/admin/payments", label: "Payments", icon: <CreditCard className="w-5 h-5" /> },
     { path: "/admin/documents", label: "Documents", icon: <FileText className="w-5 h-5" /> },
