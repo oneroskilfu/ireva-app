@@ -62,7 +62,9 @@ import {
   Schedule as ScheduleIcon,
   SaveAlt as SaveAltIcon,
   Print as PrintIcon,
-  PictureAsPdf as PdfIcon
+  PictureAsPdf as PdfIcon,
+  Delete as DeleteIcon,
+  AccountBalance as AccountBalanceIcon
 } from '@mui/icons-material';
 
 interface Transaction {
@@ -474,6 +476,7 @@ const WalletMUI: React.FC = () => {
         >
           <Tab label="Overview" icon={<WalletIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
           <Tab label="Transactions" icon={<HistoryIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
+          <Tab label="Analytics" icon={<BarChartIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
           <Tab label="Payment Methods" icon={<CreditCard sx={{ fontSize: 18 }} />} iconPosition="start" />
         </Tabs>
       </Box>
@@ -747,6 +750,262 @@ const WalletMUI: React.FC = () => {
         </>
       )}
       
+      {/* Analytics Tab */}
+      {tabValue === 2 && (
+        <Card elevation={3} sx={{ borderRadius: 2, overflow: 'hidden', mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" fontWeight="medium" gutterBottom>Financial Analytics</Typography>
+            
+            {investmentsLoading || transactionsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <>
+                {/* Investment Summary */}
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="subtitle1" gutterBottom>Investment Summary</Typography>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={4}>
+                      <Paper sx={{ p: 3, height: '100%', bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box>
+                            <Typography variant="body2" gutterBottom>Total Invested</Typography>
+                            <Typography variant="h4" fontWeight="bold">
+                              ₦{investments.reduce((sum, inv) => sum + inv.amount, 0).toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <BusinessIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+                        </Box>
+                      </Paper>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={4}>
+                      <Paper sx={{ p: 3, height: '100%', bgcolor: 'success.light', color: 'success.contrastText' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box>
+                            <Typography variant="body2" gutterBottom>Total Earnings</Typography>
+                            <Typography variant="h4" fontWeight="bold">
+                              ₦{investments.reduce((sum, inv) => sum + inv.earnings, 0).toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <PaymentIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+                        </Box>
+                      </Paper>
+                    </Grid>
+                    
+                    <Grid item xs={12} md={4}>
+                      <Paper sx={{ p: 3, height: '100%', bgcolor: 'secondary.light', color: 'secondary.contrastText' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box>
+                            <Typography variant="body2" gutterBottom>Projected ROI</Typography>
+                            <Typography variant="h4" fontWeight="bold">
+                              {investments.length > 0 
+                                ? (investments.reduce((sum, inv) => sum + inv.projectedROI, 0) / investments.length).toFixed(2)
+                                : 0}%
+                            </Typography>
+                          </Box>
+                          <BarChartIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+                </Box>
+                
+                {/* Transaction Analysis */}
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="subtitle1" gutterBottom>Transaction Analysis</Typography>
+                  <Paper sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {/* Deposits vs Withdrawals */}
+                      <Box>
+                        <Typography variant="body2" gutterBottom>Deposits vs Withdrawals</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="caption">Deposits</Typography>
+                              <Typography variant="caption">
+                                ₦{transactions
+                                  .filter(tx => tx.type === 'deposit')
+                                  .reduce((sum, tx) => sum + tx.amount, 0)
+                                  .toLocaleString()}
+                              </Typography>
+                            </Box>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={100} 
+                              sx={{ 
+                                height: 8, 
+                                borderRadius: 4, 
+                                bgcolor: 'success.light',
+                                '.MuiLinearProgress-bar': {
+                                  bgcolor: 'success.main',
+                                }
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ flex: 1 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="caption">Withdrawals</Typography>
+                              <Typography variant="caption">
+                                ₦{transactions
+                                  .filter(tx => tx.type === 'withdrawal')
+                                  .reduce((sum, tx) => sum + tx.amount, 0)
+                                  .toLocaleString()}
+                              </Typography>
+                            </Box>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={100} 
+                              sx={{ 
+                                height: 8, 
+                                borderRadius: 4, 
+                                bgcolor: 'error.light',
+                                '.MuiLinearProgress-bar': {
+                                  bgcolor: 'error.main',
+                                }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      </Box>
+                      
+                      {/* Investment Distribution */}
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="body2" gutterBottom>Investment Distribution</Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
+                          {investments.map(inv => (
+                            <Chip 
+                              key={inv.id}
+                              label={inv.property?.name || `Property #${inv.propertyId}`}
+                              variant="outlined"
+                              color="primary"
+                              sx={{ 
+                                fontSize: '0.75rem',
+                                height: 28,
+                                '& .MuiChip-label': {
+                                  px: 1
+                                }
+                              }}
+                            />
+                          ))}
+                          {investments.length === 0 && (
+                            <Typography variant="caption" color="text.secondary">
+                              No investments yet
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Box>
+                
+                {/* Monthly Activity */}
+                <Box>
+                  <Typography variant="subtitle1" gutterBottom>Monthly Activity</Typography>
+                  <Paper sx={{ p: 3 }}>
+                    <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {transactions.length > 0 ? (
+                        <Typography>Monthly activity chart will appear here</Typography>
+                      ) : (
+                        <Box sx={{ textAlign: 'center', py: 4 }}>
+                          <HistoryIcon sx={{ fontSize: 40, color: 'grey.400', mb: 1 }} />
+                          <Typography color="textSecondary">No transaction history available</Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Paper>
+                </Box>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Payment Methods Tab */}
+      {tabValue === 3 && (
+        <Card elevation={3} sx={{ borderRadius: 2, overflow: 'hidden', mb: 4 }}>
+          <CardContent>
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6" fontWeight="medium">Payment Methods</Typography>
+              <Button 
+                variant="contained" 
+                startIcon={<AddIcon />}
+                size="small"
+              >
+                Add New Card
+              </Button>
+            </Box>
+            
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="subtitle1" gutterBottom>Saved Cards</Typography>
+              
+              {/* Sample saved cards */}
+              <Stack spacing={2} sx={{ mt: 2 }}>
+                <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <CreditCard sx={{ fontSize: 36, mr: 2, color: 'primary.main' }} />
+                      <Box>
+                        <Typography variant="subtitle2">•••• •••• •••• 4242</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Expires 08/2024
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Chip size="small" label="Default" color="primary" sx={{ mr: 1 }} />
+                      <IconButton size="small">
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </Paper>
+                
+                <Paper sx={{ p: 2, border: '1px solid', borderColor: 'divider' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <CreditCard sx={{ fontSize: 36, mr: 2, color: 'text.secondary' }} />
+                      <Box>
+                        <Typography variant="subtitle2">•••• •••• •••• 5555</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Expires 12/2025
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Button size="small" variant="outlined" sx={{ mr: 1 }}>
+                        Set Default
+                      </Button>
+                      <IconButton size="small">
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </Paper>
+              </Stack>
+            </Box>
+            
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>Bank Accounts</Typography>
+              
+              <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
+                <AccountBalanceIcon sx={{ fontSize: 40, color: 'grey.400', mb: 1 }} />
+                <Typography color="textSecondary" gutterBottom>No bank accounts added yet</Typography>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<AddIcon />}
+                  size="small"
+                  sx={{ mt: 1 }}
+                >
+                  Add Bank Account
+                </Button>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Transactions Tab */}
       {tabValue === 1 && (
         <Card elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
@@ -844,72 +1103,7 @@ const WalletMUI: React.FC = () => {
         </Card>
       )}
       
-      {/* Payment Methods Tab */}
-      {tabValue === 2 && (
-        <Card elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-          <CardContent>
-            <Typography variant="h6" fontWeight="medium" gutterBottom>Payment Methods</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Manage your payment methods for deposits and withdrawals
-            </Typography>
-            
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="subtitle2" fontWeight="medium" gutterBottom>
-                Saved Payment Methods
-              </Typography>
-              
-              <Paper sx={{ p: 3, mb: 3, border: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CreditCard sx={{ fontSize: 34, mr: 2, color: 'primary.main' }} />
-                    <Box>
-                      <Typography variant="subtitle1">Visa ending in 4242</Typography>
-                      <Typography variant="body2" color="text.secondary">Expires 12/25</Typography>
-                    </Box>
-                  </Box>
-                  <Chip label="Default" color="primary" size="small" />
-                </Box>
-              </Paper>
-              
-              <Button variant="outlined" startIcon={<AddIcon />} fullWidth>
-                Add New Payment Method
-              </Button>
-            </Box>
-            
-            <Divider sx={{ my: 4 }} />
-            
-            <Typography variant="subtitle2" fontWeight="medium" gutterBottom>
-              Banking Information
-            </Typography>
-            <Paper sx={{ p: 3, border: '1px solid', borderColor: 'divider' }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Bank Name
-                </Typography>
-                <Typography variant="body1">
-                  First Bank of Nigeria
-                </Typography>
-              </Box>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Account Name
-                </Typography>
-                <Typography variant="body1">
-                  John Doe
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Account Number
-                </Typography>
-                <Typography variant="body1">
-                  0123456789
-                </Typography>
-              </Box>
-            </Paper>
-          </CardContent>
-        </Card>
-      )}
+
       
       {/* Fund Wallet Dialog */}
       <Dialog 
