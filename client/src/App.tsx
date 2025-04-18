@@ -62,6 +62,7 @@ function Router() {
   const AdminSystemPage = lazy(() => import('@/pages/admin/system-page'));
   const AdminSettingsPage = lazy(() => import('@/pages/admin/settings-page'));
   const AdminResourcesPage = lazy(() => import('@/pages/admin/resources-page'));
+  const AdminWalletManagementPage = lazy(() => import('@/pages/admin/wallet-management'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ProjectsPage = lazy(() => import('@/pages/investor/projects-page'));
@@ -323,6 +324,19 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <AdminResourcesPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Wallet Management Route */}
+      <Route path="/admin/wallet-management">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <AdminWalletManagementPage />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>
