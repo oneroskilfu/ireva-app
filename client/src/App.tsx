@@ -65,6 +65,7 @@ function Router() {
   const AdminResourcesPage = lazy(() => import('@/pages/admin/resources-page'));
   const AdminWalletManagementPage = lazy(() => import('@/pages/admin/wallet-management'));
   const AdminROIDashboardPage = lazy(() => import('@/pages/AdminROIDashboard'));
+  const UserEngagementDashboardPage = lazy(() => import('@/pages/metrics/UserEngagementDashboardPage'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ProjectsPage = lazy(() => import('@/pages/investor/projects-page'));
@@ -82,7 +83,12 @@ function Router() {
   const SupportPage = lazy(() => import('@/pages/investor/SupportPage'));
   const FAQsPage = lazy(() => import('@/pages/investor/FAQsPage'));
   const SettingsPage = lazy(() => import('@/pages/investor/SettingsPage'));
+  const UserSettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
   const InvestorROIDashboardPage = lazy(() => import('@/pages/InvestorROIDashboard'));
+  // Issue Tracker Pages
+  const IssuesPage = lazy(() => import('@/pages/issues/IssuesPage'));
+  const IssueDetailPage = lazy(() => import('@/pages/issues/IssueDetailPage'));
+  const NewIssuePage = lazy(() => import('@/pages/issues/NewIssuePage'));
   
   useEffect(() => {
     // Function to check if viewport is mobile
@@ -423,6 +429,69 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <InvestorLayout>
                 <InvestorROIDashboardPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Issue Tracker Routes */}
+      <Route path="/issues">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <IssuesPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      <Route path="/issues/new">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <NewIssuePage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      <Route path="/issues/:id">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <IssueDetailPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* User Engagement Metrics Dashboard */}
+      <Route path="/admin/engagement-metrics">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <UserEngagementDashboardPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* User Settings & Preferences Page */}
+      <Route path="/account/settings">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <UserSettingsPage />
               </InvestorLayout>
             </Suspense>
           </AuthMiddleware>
