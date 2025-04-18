@@ -17,6 +17,7 @@ import faqRoutes from './routes/faq';
 import messageRoutes from './routes/messages';
 import projectsRoutes from './routes/projects';
 import emailCampaignRoutes from './routes/email-campaign';
+import feedbackRoutes from './routes/feedback';
 // Import ROI distribution routes using require instead of import
 // Skip transactions import for now while we work on other fixes
 // Import the new routes
@@ -237,6 +238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Email Campaign routes
   app.use('/api/email-campaigns', emailCampaignRoutes);
   console.log("Email campaign routes registered");
+  
+  // Set up Feedback routes
+  app.use('/api/feedback', feedbackRoutes);
+  console.log("Feedback routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
