@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import NotificationBell from "@/components/NotificationBell";
 import {
   LayoutDashboard,
   Wallet,
@@ -153,28 +154,9 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative">
-                      <Bell className="h-5 w-5" />
-                      <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-80 max-h-[80vh] overflow-auto">
-                    <DropdownMenuLabel className="flex justify-between items-center">
-                      <span>Notifications</span>
-                      <Badge variant="secondary" className="ml-2">New</Badge>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <div className="p-2">
-                      <div className="text-center text-muted-foreground py-8 px-4">
-                        <Bell className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                        <p className="font-medium">No new notifications</p>
-                        <p className="text-sm mt-1">We'll notify you when there are updates on your investments</p>
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div>
+                  <NotificationBell />
+                </div>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Notifications</p>

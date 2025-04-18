@@ -72,13 +72,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/investments', investmentRoutes);
   console.log("Investment routes registered");
   
-  // Set up Wallet routes
+  // Set up Wallet routes (legacy routes)
   app.use('/api/wallet', walletRoutes);
+  
+  // Set up our new Wallet routes
+  app.use('/api/wallet', walletRouter);
   console.log("Wallet routes registered");
   
-  // Set up Notification routes
+  // Set up Notification routes (legacy routes)
   app.use('/api/notifications', notificationRoutes);
+  
+  // Set up our new Notification routes
+  app.use('/api/notifications', notificationRouter);
   console.log("Notification routes registered");
+  
+  // Set up Transaction routes
+  app.use('/api/investor/transactions', transactionRouter);
+  console.log("Transaction routes registered");
   
   // Set up Settings routes
   app.use('/api/settings', settingsRoutes);

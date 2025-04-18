@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 interface Notification {
   id: number;
@@ -32,7 +32,7 @@ interface Notification {
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   
   // Get unread notification count
   const { data: unreadData } = useQuery<{ count: number }>({
