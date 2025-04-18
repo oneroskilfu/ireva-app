@@ -749,25 +749,25 @@ const EnhancedWallet: React.FC = () => {
         </Box>
         <MuiCardContent>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={4} component="div">
               <Box sx={{ p: 1, textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Pending Transactions
                 </Typography>
                 <Typography variant="h6" fontWeight="medium">
-                  ₦{(wallet.pendingDeposits + wallet.pendingWithdrawals).toLocaleString()}
+                  ₦{((wallet.pendingDeposits || 0) + (wallet.pendingWithdrawals || 0)).toLocaleString()}
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-around', mt: 1 }}>
                   <Typography variant="caption" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <ArrowDownwardIcon fontSize="inherit" /> ₦{wallet.pendingDeposits?.toLocaleString()}
+                    <ArrowDownwardIcon fontSize="inherit" /> ₦{wallet.pendingDeposits?.toLocaleString() || '0'}
                   </Typography>
                   <Typography variant="caption" color="error.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <ArrowUpwardIcon fontSize="inherit" /> ₦{wallet.pendingWithdrawals?.toLocaleString()}
+                    <ArrowUpwardIcon fontSize="inherit" /> ₦{wallet.pendingWithdrawals?.toLocaleString() || '0'}
                   </Typography>
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={4} component="div">
               <Box sx={{ p: 1, textAlign: 'center', borderLeft: { xs: 0, md: 1 }, borderRight: { xs: 0, md: 1 }, borderColor: 'divider' }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Total Invested
@@ -785,7 +785,7 @@ const EnhancedWallet: React.FC = () => {
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={4} component="div">
               <Box sx={{ p: 1, textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
                   Active Investments
@@ -990,7 +990,7 @@ const EnhancedWallet: React.FC = () => {
           className="h-9"
           onClick={() => setOpenInvestDialog(true)}
         >
-          <Business className="h-4 w-4 mr-2" />
+          <BusinessIcon className="h-4 w-4 mr-2" />
           Invest Now
         </Button>
       </div>
