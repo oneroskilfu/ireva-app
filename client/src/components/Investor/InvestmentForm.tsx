@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -99,9 +99,20 @@ export default function InvestmentForm({ property }: InvestmentFormProps) {
     },
   });
 
+  // Set initial amount when property changes
+  useEffect(() => {
+    form.setValue('amount', property.minimumInvestment.toString());
+  }, [property, form]);
+
   // Investment mutation with React Query
   const investMutation = useMutation({
     mutationFn: async (data: InvestmentFormValues) => {
+      // Show a loading toast notification
+      toast({
+        title: "Processing Investment",
+        description: "Your investment is being processed...",
+      });
+      
       const res = await apiRequest('POST', '/api/investments', {
         propertyId: property.id,
         amount: parseInt(data.amount),
@@ -109,8 +120,16 @@ export default function InvestmentForm({ property }: InvestmentFormProps) {
       return await res.json();
     },
     onSuccess: (data) => {
+      // Clear previous toasts and show success toast
+      toast({
+        title: 'Investment Successful!',
+        description: `You have successfully invested ₦${parseInt(form.getValues().amount).toLocaleString()} in ${property.name}`,
+        variant: 'default',
+      });
+      
       setShowSuccess(true);
       setTimeout(() => {
+        // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['/api/wallet'] });
         queryClient.invalidateQueries({ queryKey: ['/api/investments'] });
         queryClient.invalidateQueries({ queryKey: ['/api/properties', property.id] });
@@ -305,7 +324,7 @@ export default function InvestmentForm({ property }: InvestmentFormProps) {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full relative"
               disabled={
                 investMutation.isPending || 
                 (wallet && wallet.balance < property.minimumInvestment) ||
@@ -315,12 +334,28 @@ export default function InvestmentForm({ property }: InvestmentFormProps) {
               {investMutation.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  Processing Investment...
                 </>
               ) : (
-                'Confirm Investment'
+                <>
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Confirm Investment
+                </>
               )}
             </Button>
+            
+            {/* Disabled reasons */}
+            {!investMutation.isPending && wallet && wallet.balance < property.minimumInvestment && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                ⓘ You need to add funds to your wallet to continue
+              </p>
+            )}
+            
+            {!investMutation.isPending && property.currentFunding >= property.totalFunding && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                ⓘ This property is fully funded
+              </p>
+            )}
           </form>
         </Form>
       </CardContent>
