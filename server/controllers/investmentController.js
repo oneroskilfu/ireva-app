@@ -1,235 +1,342 @@
-const { db } = require('../db');
-const { investments, properties, users } = require('../../shared/schema');
-const { eq, and, desc, sql } = require('drizzle-orm');
-
-/**
- * Get all investments for the current user
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
-const getUserInvestments = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    
-    const userInvestments = await db.query.investments.findMany({
-      where: eq(investments.userId, userId),
-      with: {
-        property: true
-      },
-      orderBy: desc(investments.date)
-    });
-    
-    res.json(userInvestments);
-  } catch (error) {
-    console.error('Error fetching user investments:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-/**
- * Get a specific investment by ID
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
-const getInvestmentById = async (req, res) => {
-  try {
-    const investmentId = parseInt(req.params.id);
-    const userId = req.user.id;
-    
-    const investment = await db.query.investments.findFirst({
-      where: and(
-        eq(investments.id, investmentId),
-        eq(investments.userId, userId)
-      ),
-      with: {
-        property: true
-      }
-    });
-    
-    if (!investment) {
-      return res.status(404).json({ message: 'Investment not found' });
-    }
-    
-    res.json(investment);
-  } catch (error) {
-    console.error('Error fetching investment:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+const mongoose = require('mongoose');
+const Investment = require('../models/Investment');
+const Transaction = require('../models/Transaction');
+const Wallet = require('../models/Wallet');
+const Project = require('../models/Project');
+const { generateInvestmentReference } = require('../utils/referenceGenerator');
 
 /**
  * Create a new investment
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
  */
-const createInvestment = async (req, res) => {
+const investInProject = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { propertyId, amount } = req.body;
-    const userId = req.user.id;
-    
-    // Validate amount
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Invalid investment amount' });
-    }
-    
-    // Check if property exists and is available for investment
-    const property = await db.query.properties.findFirst({
-      where: eq(properties.id, propertyId)
-    });
-    
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-    
-    if (property.accreditedOnly) {
-      // Check if user is accredited
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-        columns: {
-          accreditationLevel: true
-        }
+    const { userId, projectId, amount } = req.body;
+
+    // Validate project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Project not found' 
       });
-      
-      if (!user || user.accreditationLevel === 'non_accredited') {
-        return res.status(403).json({ 
-          message: 'This property is only available to accredited investors' 
-        });
-      }
     }
-    
-    // Check if minimum investment amount is met
-    if (amount < property.minimumInvestment) {
+
+    // Validate minimum investment amount
+    if (amount < project.minimumInvestment) {
       return res.status(400).json({ 
-        message: `Minimum investment amount is ₦${property.minimumInvestment}` 
+        success: false, 
+        message: `Minimum investment amount is ${project.minimumInvestment}` 
+      });
+    }
+
+    // Find or create user wallet
+    let wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      wallet = new Wallet({ userId });
+    }
+
+    // Check wallet balance
+    if (wallet.balance < amount) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Insufficient funds in wallet' 
+      });
+    }
+
+    // Generate a unique reference
+    const reference = generateInvestmentReference();
+
+    // Create investment
+    const investment = await Investment.create({
+      userId,
+      projectId,
+      amount,
+      investmentDate: new Date(),
+      status: 'active',
+      reference
+    });
+
+    // Create transaction record
+    const transaction = await Transaction.create({
+      userId,
+      amount,
+      type: 'investment',
+      reference,
+      projectId,
+      status: 'completed',
+      description: `Investment in ${project.name}`
+    });
+
+    // Update wallet
+    wallet.balance -= amount;
+    wallet.totalInvested += amount;
+    await wallet.save();
+
+    // Update project funding
+    project.currentFunding += amount;
+    project.numberOfInvestors = await Investment.countDocuments({ projectId, status: { $ne: 'cancelled' } });
+    await project.save();
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    // Return success response
+    res.status(201).json({ 
+      success: true, 
+      investment,
+      transaction,
+      wallet: {
+        balance: wallet.balance,
+        totalInvested: wallet.totalInvested
+      }
+    });
+  } catch (error) {
+    // Abort transaction on error
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error('Investment error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to process investment',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get user investments
+ */
+const getUserInvestments = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const investments = await Investment.find({ userId })
+      .populate('projectId')
+      .sort({ investmentDate: -1 });
+    
+    res.status(200).json({ 
+      success: true, 
+      count: investments.length,
+      data: investments
+    });
+  } catch (error) {
+    console.error('Error fetching user investments:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch investments',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get investment details
+ */
+const getInvestmentDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const investment = await Investment.findById(id)
+      .populate('projectId')
+      .populate('userId', 'firstName lastName email username');
+    
+    if (!investment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Investment not found' 
       });
     }
     
-    // Create investment
-    const [newInvestment] = await db.insert(investments)
-      .values({
-        userId,
-        propertyId,
-        amount,
-        date: new Date(),
-        status: 'pending',
-        currentValue: amount,
-        earnings: 0
-      })
-      .returning();
+    // Get related transactions
+    const transactions = await Transaction.find({ 
+      userId: investment.userId,
+      projectId: investment.projectId,
+      type: { $in: ['investment', 'return'] }
+    }).sort({ createdAt: -1 });
     
-    // Update property stats
-    await db.update(properties)
-      .set({
-        currentFunding: sql`${properties.currentFunding} + ${amount}`,
-        numberOfInvestors: sql`${properties.numberOfInvestors} + 1`
-      })
-      .where(eq(properties.id, propertyId));
-    
-    res.status(201).json(newInvestment);
+    res.status(200).json({ 
+      success: true, 
+      data: { investment, transactions }
+    });
   } catch (error) {
-    console.error('Error creating investment:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching investment details:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch investment details',
+      error: error.message
+    });
   }
 };
 
 /**
- * Update investment status (for admin)
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * Update investment returns
  */
-const updateInvestmentStatus = async (req, res) => {
+const updateInvestmentReturns = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
-    const investmentId = parseInt(req.params.id);
-    const { status } = req.body;
+    const { id } = req.params;
+    const { monthlyReturn, totalReturn, returnDate } = req.body;
     
-    // Validate status
-    if (!['active', 'pending', 'completed'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+    const investment = await Investment.findById(id);
+    
+    if (!investment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Investment not found' 
+      });
     }
     
-    // Check if investment exists
-    const existingInvestment = await db.query.investments.findFirst({
-      where: eq(investments.id, investmentId)
+    // Update investment returns
+    investment.totalReturns = (investment.totalReturns || 0) + totalReturn;
+    investment.lastReturnDate = returnDate || new Date();
+    investment.monthlyReturns = investment.monthlyReturns || [];
+    
+    // Add monthly return record
+    investment.monthlyReturns.push({
+      amount: monthlyReturn,
+      date: returnDate || new Date(),
+      status: 'paid'
     });
     
-    if (!existingInvestment) {
-      return res.status(404).json({ message: 'Investment not found' });
+    await investment.save();
+    
+    // Create transaction for the return
+    const transaction = await Transaction.create({
+      userId: investment.userId,
+      amount: totalReturn,
+      type: 'return',
+      reference: `RET-${Date.now()}`,
+      projectId: investment.projectId,
+      status: 'completed',
+      description: `Returns from investment ${investment.reference}`
+    });
+    
+    // Update user wallet
+    let wallet = await Wallet.findOne({ userId: investment.userId });
+    if (wallet) {
+      wallet.balance += totalReturn;
+      wallet.totalReturns += totalReturn;
+      await wallet.save();
     }
     
-    // Update status
-    const statusData = {
-      status,
-      completedDate: status === 'completed' ? new Date() : existingInvestment.completedDate
-    };
+    await session.commitTransaction();
+    session.endSession();
     
-    const [updatedInvestment] = await db.update(investments)
-      .set(statusData)
-      .where(eq(investments.id, investmentId))
-      .returning();
-    
-    res.json(updatedInvestment);
+    res.status(200).json({ 
+      success: true, 
+      data: { investment, transaction }
+    });
   } catch (error) {
-    console.error('Error updating investment status:', error);
-    res.status(500).json({ message: 'Server error' });
+    await session.abortTransaction();
+    session.endSession();
+    
+    console.error('Error updating investment returns:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update investment returns',
+      error: error.message
+    });
   }
 };
 
 /**
- * Get ROI data for a user's investments
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * Cancel investment
  */
-const getUserROI = async (req, res) => {
+const cancelInvestment = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
-    const userId = req.user.id;
+    const { id } = req.params;
+    const { reason } = req.body;
     
-    // Get all user investments
-    const userInvestments = await db.query.investments.findMany({
-      where: eq(investments.userId, userId),
-      with: {
-        property: true
-      }
-    });
+    const investment = await Investment.findById(id);
     
-    // Get monthly ROI data from monthlyReturns JSON field
-    const roiData = userInvestments.flatMap(investment => {
-      // If the investment has monthly returns data
-      if (investment.monthlyReturns) {
-        return investment.monthlyReturns.map((monthlyReturn, index) => {
-          const date = new Date(investment.date);
-          date.setMonth(date.getMonth() + index);
-          
-          return {
-            id: `${investment.id}-${index}`,
-            investmentId: investment.id,
-            propertyId: investment.propertyId,
-            month: date.toLocaleString('default', { month: 'long' }),
-            year: date.getFullYear(),
-            amount: monthlyReturn.amount,
-            percentage: monthlyReturn.percentage,
-            paymentDate: monthlyReturn.paymentDate,
-            paymentStatus: monthlyReturn.status,
-            paymentMethod: monthlyReturn.paymentMethod,
-            transactionId: monthlyReturn.transactionId
-          };
-        });
+    if (!investment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Investment not found' 
+      });
+    }
+    
+    // Check if investment can be cancelled
+    if (investment.status !== 'pending' && investment.status !== 'active') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'This investment cannot be cancelled' 
+      });
+    }
+    
+    // Update investment status
+    investment.status = 'cancelled';
+    investment.cancellationReason = reason;
+    investment.cancellationDate = new Date();
+    await investment.save();
+    
+    // Refund to wallet if active
+    if (investment.status === 'active') {
+      // Create refund transaction
+      const transaction = await Transaction.create({
+        userId: investment.userId,
+        amount: investment.amount,
+        type: 'divestment',
+        reference: `DIV-${Date.now()}`,
+        projectId: investment.projectId,
+        status: 'completed',
+        description: `Refund from cancelled investment ${investment.reference}`
+      });
+      
+      // Update user wallet
+      let wallet = await Wallet.findOne({ userId: investment.userId });
+      if (wallet) {
+        wallet.balance += investment.amount;
+        wallet.totalInvested -= investment.amount;
+        await wallet.save();
       }
       
-      // If no monthly returns data, generate placeholder data
-      return [];
-    });
+      // Update project funding
+      const project = await Project.findById(investment.projectId);
+      if (project) {
+        project.currentFunding -= investment.amount;
+        project.numberOfInvestors = await Investment.countDocuments({ 
+          projectId: project._id, 
+          status: { $ne: 'cancelled' } 
+        });
+        await project.save();
+      }
+    }
     
-    res.json(roiData);
+    await session.commitTransaction();
+    session.endSession();
+    
+    res.status(200).json({ 
+      success: true, 
+      data: investment
+    });
   } catch (error) {
-    console.error('Error fetching ROI data:', error);
-    res.status(500).json({ message: 'Server error' });
+    await session.abortTransaction();
+    session.endSession();
+    
+    console.error('Error cancelling investment:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to cancel investment',
+      error: error.message
+    });
   }
 };
 
 module.exports = {
+  investInProject,
   getUserInvestments,
-  getInvestmentById,
-  createInvestment,
-  updateInvestmentStatus,
-  getUserROI
+  getInvestmentDetails,
+  updateInvestmentReturns,
+  cancelInvestment
 };
