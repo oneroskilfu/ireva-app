@@ -622,3 +622,51 @@ export const insertUserFeedbackSchema = createInsertSchema(userFeedback).omit({
 
 export type UserFeedback = typeof userFeedback.$inferSelect;
 export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
+
+// Issue status enum
+export const issueStatusEnum = pgEnum("issue_status", [
+  "open",
+  "in_progress",
+  "resolved",
+  "closed"
+]);
+
+// Issues tracking schema
+export const issues = pgTable("issues", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  userId: integer("user_id").notNull(),
+  status: issueStatusEnum("status").default("open"),
+  priority: text("priority").default("medium"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  assignedTo: integer("assigned_to"),
+  category: text("category").default("general"),
+});
+
+export const insertIssueSchema = createInsertSchema(issues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Issue comments schema
+export const issueComments = pgTable("issue_comments", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull(),
+  comment: text("comment").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  isInternal: boolean("is_internal").default(false),
+});
+
+export const insertIssueCommentSchema = createInsertSchema(issueComments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Issue = typeof issues.$inferSelect;
+export type InsertIssue = z.infer<typeof insertIssueSchema>;
+export type IssueComment = typeof issueComments.$inferSelect;
+export type InsertIssueComment = z.infer<typeof insertIssueCommentSchema>;

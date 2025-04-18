@@ -1,18 +1,21 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { adminLogs, insertAdminLogSchema } from '@shared/schema';
+import { adminLogs } from '@shared/schema';
 import { verifyToken } from '../auth-jwt';
 import { z } from 'zod';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, and } from 'drizzle-orm';
 
 const router = Router();
 
 // Request validation schema for creating admin logs
 const createLogSchema = z.object({
-  action: z.string().min(1, "Action is required"),
-  targetType: z.string().min(1, "Target type is required"),
+  action: z.enum(["login", "create", "update", "delete", "approve", "reject", "verify", "system_update"]),
+  targetType: z.enum(["user", "property", "investment", "kyc", "payment", "system", "achievement", "educational_resource"]),
   targetId: z.number().optional(),
+  description: z.string().min(1, "Description is required"),
   details: z.record(z.any()).optional(),
+  ipAddress: z.string().optional(),
+  userAgent: z.string().optional(),
 });
 
 // Create a new admin log entry (used internally)
@@ -32,9 +35,12 @@ router.post('/', verifyToken, async (req: Request, res: Response) => {
         adminId: req.jwtPayload.id,
         action: validatedData.action,
         targetType: validatedData.targetType,
-        targetId: validatedData.targetId,
+        targetId: validatedData.targetId || 0,
+        description: validatedData.description,
         details: validatedData.details ? JSON.stringify(validatedData.details) : null,
-        createdAt: new Date()
+        ipAddress: validatedData.ipAddress,
+        userAgent: validatedData.userAgent,
+        timestamp: new Date()
       })
       .returning();
     
@@ -65,23 +71,29 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
     
     // Optional filters
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-    const action = req.query.action as string | undefined;
-    const targetType = req.query.targetType as string | undefined;
+    const actionFilter = req.query.action as string | undefined;
+    const targetTypeFilter = req.query.targetType as string | undefined;
     
-    // Build query
-    let query = db.select()
-      .from(adminLogs)
-      .orderBy(desc(adminLogs.createdAt))
-      .limit(limit);
+    // Build base query
+    let query = db.select().from(adminLogs);
     
     // Apply filters if provided
-    if (action) {
-      query = query.where(eq(adminLogs.action, action));
+    const conditions = [];
+    
+    if (actionFilter) {
+      conditions.push(eq(adminLogs.action, actionFilter as any));
     }
     
-    if (targetType) {
-      query = query.where(eq(adminLogs.targetType, targetType));
+    if (targetTypeFilter) {
+      conditions.push(eq(adminLogs.targetType, targetTypeFilter as any));
     }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    // Apply sorting and limit
+    query = query.orderBy(desc(adminLogs.timestamp)).limit(limit);
     
     // Execute query
     const logs = await query;
