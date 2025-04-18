@@ -16,6 +16,7 @@ import roiRoutes from './routes/roiRoutes';
 import faqRoutes from './routes/faq';
 import messageRoutes from './routes/messages';
 import projectsRoutes from './routes/projects';
+import emailCampaignRoutes from './routes/email-campaign';
 // Import the new routes
 import adminRoutes from './routes/admin.js';
 import investorRoutes from './routes/investor.js';
@@ -116,6 +117,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Debug Login routes
   app.use('/api/auth', debugLoginRouter);
   console.log("Debug login routes registered");
+  
+  // Set up Email Campaign routes
+  app.use('/api/email-campaigns', emailCampaignRoutes);
+  console.log("Email campaign routes registered");
   
   // Test route for JWT auth
   app.get('/api/test-jwt', verifyToken, (req, res) => {
