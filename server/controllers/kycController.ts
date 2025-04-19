@@ -10,11 +10,18 @@ export const getKYCStatus = async (req: Request, res: Response): Promise<void> =
   try {
     const userId = req.user?.id;
     
-    // Check if the user has already submitted KYC
-    const kyc = await KYC.findOne({ user: userId });
+    // For SQL users, use the numeric ID directly
+    // For MongoDB collection, try to find by an alternative method - username
+    // First, get the user to find their username
+    const user = await User.findOne({ userId: userId }).select('kycStatus kycSubmittedAt kycVerifiedAt kycRejectionReason username');
     
-    // Also get user to have the latest status
-    const user = await User.findById(userId).select('kycStatus kycSubmittedAt kycVerifiedAt kycRejectionReason');
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    
+    // Check if the user has already submitted KYC using username instead of ID
+    const kyc = await KYC.findOne({ username: user.username });
     
     res.json({
       kycStatus: user?.kycStatus || 'not_started',
@@ -77,8 +84,15 @@ export const submitKYC = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
+    // Get user info first to get username
+    const user = await User.findOne({ userId: userId });
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    
     // Check if the user already has a KYC submission
-    const existingKYC = await KYC.findOne({ user: userId });
+    const existingKYC = await KYC.findOne({ username: user.username });
     
     if (existingKYC && existingKYC.status === 'pending') {
       res.status(400).json({ message: 'You already have a pending KYC application' });
@@ -186,8 +200,11 @@ export const getKYCDocument = async (req: Request, res: Response): Promise<void>
       return;
     }
     
-    // Check if user is authorized (owns the KYC or is admin)
-    if (kyc.user.toString() !== req.user?.id && req.user?.role !== 'admin') {
+    // Get user to check username
+    const user = await User.findOne({ userId: req.user?.id });
+    
+    // Check if user is authorized (owns the KYC or is admin) - comparing by username instead of id
+    if (user && user.username !== kyc.username && req.user?.role !== 'admin') {
       res.status(403).json({ message: 'Not authorized to access this document' });
       return;
     }
@@ -324,12 +341,16 @@ export const verifyKYC = async (req: Request, res: Response): Promise<void> => {
     
     await kyc.save();
     
-    // Update user's KYC status
-    await User.findByIdAndUpdate(kyc.user, {
-      kycStatus: status,
-      kycVerifiedAt: status === 'approved' ? new Date() : undefined,
-      kycRejectionReason: status === 'rejected' ? rejectionReason : undefined
-    });
+    // Get the user by username instead of ID
+    const user = await User.findOne({ username: kyc.username });
+    
+    if (user) {
+      // Update user's KYC status
+      user.kycStatus = status;
+      user.kycVerifiedAt = status === 'approved' ? new Date() : undefined;
+      user.kycRejectionReason = status === 'rejected' ? rejectionReason : undefined;
+      await user.save();
+    }
     
     res.json({
       message: `KYC ${status === 'approved' ? 'approved' : 'rejected'} successfully`,

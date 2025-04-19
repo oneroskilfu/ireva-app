@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 // Define the document interface
 export interface IKYC extends Document {
   user: mongoose.Types.ObjectId;
+  userId: number; // Numeric ID from SQL database
+  username: string; // Username for easier lookups
   status: 'pending' | 'approved' | 'rejected';
   documents: {
     idDocument: {
@@ -55,6 +57,16 @@ const KYCSchema: Schema = new Schema(
     user: { 
       type: Schema.Types.ObjectId, 
       ref: 'User', 
+      required: true,
+      index: true
+    },
+    userId: {
+      type: Number,
+      required: true,
+      index: true
+    },
+    username: {
+      type: String,
       required: true,
       index: true
     },
