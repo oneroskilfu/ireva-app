@@ -137,6 +137,8 @@ export const submitKYC = async (req: Request, res: Response): Promise<void> => {
         existingKYC._id,
         {
           status: 'pending',
+          userId: userId, // Update numeric ID just in case
+          username: user.username, // Update username just in case
           documents,
           personalInfo,
           submittedAt: new Date(),
@@ -152,7 +154,9 @@ export const submitKYC = async (req: Request, res: Response): Promise<void> => {
     } else {
       // Create new KYC
       kyc = await KYC.create({
-        user: userId,
+        user: new mongoose.Types.ObjectId(), // Create a dummy ObjectId
+        userId: userId, // Store the numeric ID
+        username: user.username, // Store the username for lookups
         status: 'pending',
         documents,
         personalInfo,
@@ -162,13 +166,14 @@ export const submitKYC = async (req: Request, res: Response): Promise<void> => {
       });
     }
     
-    // Update user's KYC status
-    await User.findByIdAndUpdate(userId, {
-      kycStatus: 'pending',
-      kycSubmittedAt: new Date(),
-      kycVerifiedAt: undefined,
-      kycRejectionReason: undefined
-    });
+    // Update user's KYC status directly with user object
+    if (user) {
+      user.kycStatus = 'pending';
+      user.kycSubmittedAt = new Date();
+      user.kycVerifiedAt = undefined;
+      user.kycRejectionReason = undefined;
+      await user.save();
+    }
     
     res.status(201).json({
       message: 'KYC application submitted successfully',
