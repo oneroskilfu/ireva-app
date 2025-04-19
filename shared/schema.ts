@@ -1,672 +1,226 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, boolean, timestamp, numeric, integer, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 import { z } from "zod";
 
-// KYC status enum
-export const kycStatusEnum = pgEnum("kyc_status", [
-  "not_started",
-  "pending",
-  "verified",
-  "rejected"
-]);
-
-// Verification method enum
-export const verificationMethodEnum = pgEnum("verification_method", [
-  "otp",
-  "email",
-  "document"
-]);
-
-// User accreditation level enum
-export const accreditationLevelEnum = pgEnum("accreditation_level", [
-  "non_accredited",
-  "accredited",
-  "qualified_purchaser"
-]);
-
-// User role enum
-export const userRoleEnum = pgEnum("user_role", [
-  "user",
-  "admin",
-  "super_admin"
-]);
+// Define all the enums that are needed in admin-routes.ts
+export const userRoleEnum = pgEnum("user_role", ["investor", "admin", "super_admin"]);
+export const kycStatusEnum = pgEnum("kyc_status", ["not_started", "pending", "approved", "rejected"]);
+export const propertyTypeEnum = pgEnum("property_type", ["residential", "commercial", "industrial", "mixed_use", "land"]);
+export const investmentTierEnum = pgEnum("investment_tier", ["starter", "growth", "premium", "elite"]);
+export const investmentStatusEnum = pgEnum("investment_status", ["active", "completed", "refunded", "cancelled"]);
+export const accreditationLevelEnum = pgEnum("accreditation_level", ["non_accredited", "accredited", "qualified_purchaser"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "card", "bank_transfer", "crypto"]);
 
 // User schema
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull(),
-  role: userRoleEnum("role").default("user"),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
-  phoneNumber: text("phone_number"),
-  isPhoneVerified: boolean("is_phone_verified").default(false),
-  kycStatus: kycStatusEnum("kyc_status").default("not_started"),
-  kycDocuments: jsonb("kyc_documents"),
-  kycRejectionReason: text("kyc_rejection_reason"),
-  kycSubmittedAt: timestamp("kyc_submitted_at"),
-  kycVerifiedAt: timestamp("kyc_verified_at"),
-  accreditationLevel: accreditationLevelEnum("accreditation_level").default("non_accredited"),
-  accreditationDocuments: jsonb("accreditation_documents"),
-  accreditationVerifiedAt: timestamp("accreditation_verified_at"),
-  profileImage: text("profile_image"),
-  bio: text("bio"),
-  investmentPreferences: jsonb("investment_preferences"), // Types of properties interested in
-  totalInvested: integer("total_invested").default(0),
-  totalEarnings: integer("total_earnings").default(0),
-  rewardsPoints: integer("rewards_points").default(0),
-  badges: jsonb("badges"), // Achievement badges
-  referralCode: text("referral_code"),
-  referredBy: integer("referred_by"), // User ID who referred this user
-  referralBonus: integer("referral_bonus").default(0),
-  notificationPreferences: jsonb("notification_preferences"),
-  directMessageEnabled: boolean("direct_message_enabled").default(true),
-  lastActiveAt: timestamp("last_active_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  lastLoginAt: timestamp("last_login_at"),
-});
-
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  email: true,
-  firstName: true,
-  lastName: true,
-  phoneNumber: true,
-});
-
-export const phoneVerificationSchema = z.object({
-  phoneNumber: z.string().min(10).max(15),
-  code: z.string().length(6),
-});
-
-export const kycDocumentSchema = z.object({
-  idType: z.enum(["national_id", "drivers_license", "passport", "voters_card"]),
-  idNumber: z.string().min(3),
-  frontImage: z.string(),
-  backImage: z.string().optional(),
-  selfieImage: z.string(),
-  addressProofImage: z.string().optional(),
-  addressProofType: z.enum(["utility_bill", "bank_statement", "tax_document", "rental_agreement"]).optional(),
-  fullName: z.string().min(3, "Full name must be at least 3 characters"),
-  bankName: z.string().min(2, "Bank name must be at least 2 characters"),
-  accountNumber: z.string().min(10, "Account number must be at least 10 digits"),
-});
-
-// Property type enum
-export const propertyTypeEnum = pgEnum("property_type", [
-  "residential",
-  "commercial",
-  "industrial",
-  "mixed-use",
-  "land",
-]);
-
-// Investment tier enum
-export const investmentTierEnum = pgEnum("investment_tier", [
-  "starter", // For non-accredited investors, lowest minimum
-  "growth",  // Mid-level investment tier
-  "premium", // Higher minimum, higher returns
-  "elite",   // Accredited investors only, highest returns
-]);
-
-// KYC schema
-export const kycSubmissions = pgTable("kyc_submissions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  id: uuid("id").primaryKey().defaultRandom(),
   fullName: text("full_name").notNull(),
-  idType: text("id_type").notNull(),
-  idNumber: text("id_number").notNull(),
-  bankName: text("bank_name").notNull(),
-  accountNumber: text("account_number").notNull(),
-  address: text("address").notNull(),
-  frontImage: text("front_image").notNull(),
-  backImage: text("back_image"),
-  selfieImage: text("selfie_image").notNull(),
-  addressProofImage: text("address_proof_image"),
-  addressProofType: text("address_proof_type"),
-  status: kycStatusEnum("status").default("pending"),
-  rejectionReason: text("rejection_reason"),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").default("investor"), // investor or admin
+  phoneNumber: text("phone_number"),
+  isVerified: boolean("is_verified").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// KYC Submissions schema
+export const kycSubmissions = pgTable("kyc_submissions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  documentType: text("document_type"),
+  documentNumber: text("document_number"),
+  documentUrl: text("document_url"),
+  selfieUrl: text("selfie_url"),
+  status: text("status").default("pending"), // pending, approved, rejected
   submittedAt: timestamp("submitted_at").defaultNow(),
-  verifiedAt: timestamp("verified_at"),
-  verifiedBy: integer("verified_by"),
+  reviewedAt: timestamp("reviewed_at")
+});
+
+// Projects schema
+export const projects = pgTable("projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description"),
+  location: text("location"),
+  totalUnits: integer("total_units"),
+  availableUnits: integer("available_units"),
+  pricePerUnit: numeric("price_per_unit", { precision: 12, scale: 2 }),
+  roiPercent: numeric("roi_percent", { precision: 5, scale: 2 }),
+  tenorMonths: integer("tenor_months"),
+  status: text("status").default("active"), // active, closed, upcoming
+  launchDate: timestamp("launch_date"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Investments schema
+export const investments = pgTable("investments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  unitsInvested: integer("units_invested").notNull(),
+  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+  roiEarned: numeric("roi_earned", { precision: 12, scale: 2 }).default("0"),
+  status: text("status").default("active"), // active, completed, refunded
+  investedAt: timestamp("invested_at").defaultNow()
+});
+
+// Wallets schema
+export const wallets = pgTable("wallets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
+  lastUpdated: timestamp("last_updated").defaultNow()
+});
+
+// Transactions schema
+export const transactions = pgTable("transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  walletId: uuid("wallet_id").notNull().references(() => wallets.id, { onDelete: "cascade" }),
+  amount: numeric("amount", { precision: 12, scale: 2 }),
+  type: text("type"), // deposit, withdrawal, investment, roi_credit
+  reference: text("reference"),
+  status: text("status").default("completed"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Messages schema (Investor Messaging System)
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  senderId: uuid("sender_id").references(() => users.id, { onDelete: "set null" }),
+  recipientId: uuid("recipient_id").references(() => users.id, { onDelete: "set null" }),
+  subject: text("subject"),
+  content: text("content"),
+  isRead: boolean("is_read").default(false),
+  sentAt: timestamp("sent_at").defaultNow()
+});
+
+// Define relations
+export const usersRelations = relations(users, ({ many, one }) => ({
+  kycSubmissions: many(kycSubmissions),
+  investments: many(investments),
+  wallet: one(wallets, {
+    fields: [users.id],
+    references: [wallets.userId]
+  }),
+  sentMessages: many(messages, { relationName: "sentMessages" }),
+  receivedMessages: many(messages, { relationName: "receivedMessages" })
+}));
+
+export const kycSubmissionsRelations = relations(kycSubmissions, ({ one }) => ({
+  user: one(users, {
+    fields: [kycSubmissions.userId],
+    references: [users.id]
+  })
+}));
+
+export const projectsRelations = relations(projects, ({ many }) => ({
+  investments: many(investments)
+}));
+
+export const investmentsRelations = relations(investments, ({ one }) => ({
+  user: one(users, {
+    fields: [investments.userId],
+    references: [users.id]
+  }),
+  project: one(projects, {
+    fields: [investments.projectId],
+    references: [projects.id]
+  })
+}));
+
+export const walletsRelations = relations(wallets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [wallets.userId],
+    references: [users.id]
+  }),
+  transactions: many(transactions)
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  wallet: one(wallets, {
+    fields: [transactions.walletId],
+    references: [wallets.id]
+  })
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+    relationName: "sentMessages"
+  }),
+  recipient: one(users, {
+    fields: [messages.recipientId],
+    references: [users.id],
+    relationName: "receivedMessages"
+  })
+}));
+
+// Create schemas for insertions
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertKycSubmissionSchema = createInsertSchema(kycSubmissions).omit({
   id: true,
-  status: true,
   submittedAt: true,
-  verifiedAt: true,
-  verifiedBy: true,
-  rejectionReason: true,
+  reviewedAt: true
 });
 
-// Property schema
-export const properties = pgTable("properties", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  location: text("location").notNull(),
-  description: text("description").notNull(),
-  type: propertyTypeEnum("type").notNull(),
-  imageUrl: text("image_url").notNull(),
-  imageGallery: jsonb("image_gallery"), // Array of additional images
-  videoUrl: text("video_url"), // Virtual tour or promotional video
-  tier: investmentTierEnum("tier").default("starter"), // Investment tier
-  targetReturn: decimal("target_return").notNull(),
-  minimumInvestment: integer("minimum_investment").notNull(),
-  term: integer("term").notNull(), // in months
-  totalFunding: integer("total_funding").notNull(),
-  currentFunding: integer("current_funding").notNull(),
-  numberOfInvestors: integer("number_of_investors").default(0),
-  size: text("size"),
-  builtYear: text("built_year"),
-  occupancy: text("occupancy"),
-  cashFlow: text("cash_flow"),
-  daysLeft: integer("days_left").default(30),
-  amenities: jsonb("amenities"), // Property amenities
-  developer: text("developer"), // Property developer name
-  developerProfile: text("developer_profile"), // Developer history and track record
-  riskLevel: text("risk_level"), // Low, Medium, High
-  projectedCashflow: jsonb("projected_cashflow"), // Monthly/yearly projections
-  documents: jsonb("documents"), // Due diligence documents
-  latitude: decimal("latitude"), // For map integration
-  longitude: decimal("longitude"), // For map integration
-  accreditedOnly: boolean("accredited_only").default(false), // Whether only accredited investors can invest
-  sustainabilityFeatures: jsonb("sustainability_features"), // Green features of the property
-  constructionUpdates: jsonb("construction_updates"), // For properties under development
-  completionDate: timestamp("completion_date"), // Expected or actual completion date
-});
-
-export const insertPropertySchema = createInsertSchema(properties).omit({
+export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
-});
-
-// Investment status enum
-export const investmentStatusEnum = pgEnum("investment_status", [
-  "active",
-  "completed",
-  "pending",
-]);
-
-// Investment schema
-export const investments = pgTable("investments", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  propertyId: integer("property_id").notNull(),
-  amount: integer("amount").notNull(),
-  date: timestamp("date").defaultNow(),
-  status: investmentStatusEnum("status").default("active"),
-  currentValue: integer("current_value").notNull(),
-  completedDate: timestamp("completed_date"),
-  earnings: integer("earnings").default(0),
-  monthlyReturns: jsonb("monthly_returns"), // Monthly earnings data
-  reinvestmentOption: boolean("reinvestment_option").default(false), // Whether earnings are automatically reinvested
-  transactionId: text("transaction_id"), // Reference to payment transaction
-  certificateUrl: text("certificate_url"), // URL to download investment certificate
-  notes: text("notes"), // User notes about this investment
-  lastValuationDate: timestamp("last_valuation_date"), // When was the investment last valued
-  performanceHistory: jsonb("performance_history"), // Historical performance data
-  maturityDate: timestamp("maturity_date"), // When the investment matures
-  exitOptions: jsonb("exit_options"), // Available exit options
+  createdAt: true
 });
 
 export const insertInvestmentSchema = createInsertSchema(investments).omit({
   id: true,
-});
-
-// Notification type enum
-export const notificationTypeEnum = pgEnum("notification_type", [
-  "system",
-  "investment",
-  "property",
-  "kyc",
-  "payment",
-  "social",
-  "forum"
-]);
-
-// Notification schema
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  type: notificationTypeEnum("type").notNull(),
-  title: text("title").notNull(),
-  message: text("message").notNull(),
-  link: text("link"),
-  isRead: boolean("is_read").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  readAt: timestamp("read_at"),
-  metadata: jsonb("metadata"),
-});
-
-export const insertNotificationSchema = createInsertSchema(notifications).omit({
-  id: true,
-  isRead: true,
-  readAt: true,
-  createdAt: true,
-});
-
-// Direct message schema
-export const directMessages = pgTable("direct_messages", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull(),
-  recipientId: integer("recipient_id").notNull(),
-  message: text("message").notNull(),
-  isRead: boolean("is_read").default(false),
-  readAt: timestamp("read_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  attachments: jsonb("attachments"),
-});
-
-export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({
-  id: true,
-  isRead: true,
-  readAt: true,
-  createdAt: true,
-});
-
-// Content categories for educational resources
-export const contentCategoryEnum = pgEnum("content_category", [
-  "beginner_guides",
-  "investment_strategies",
-  "market_analysis",
-  "tax_planning",
-  "legal_considerations",
-  "case_studies",
-  "webinars",
-  "video_tutorials"
-]);
-
-// Educational resources schema
-export const educationalResources = pgTable("educational_resources", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  content: text("content").notNull(),
-  category: contentCategoryEnum("category").notNull(),
-  authorId: integer("author_id"), // Can be null for system-generated content
-  thumbnailUrl: text("thumbnail_url"),
-  videoUrl: text("video_url"),
-  resourceUrl: text("resource_url"), // For downloadable content
-  readTimeMinutes: integer("read_time_minutes"),
-  publishedAt: timestamp("published_at").defaultNow(),
-  updatedAt: timestamp("updated_at"),
-  likeCount: integer("like_count").default(0),
-  viewCount: integer("view_count").default(0),
-  tags: jsonb("tags"),
-  isPreview: boolean("is_preview").default(false), // If this content is available without full registration
-  isPremium: boolean("is_premium").default(false), // If this requires a premium account
-});
-
-export const insertEducationalResourceSchema = createInsertSchema(educationalResources).omit({
-  id: true,
-  likeCount: true,
-  viewCount: true,
-  publishedAt: true,
-  updatedAt: true,
-});
-
-// Transaction type enum
-export const transactionTypeEnum = pgEnum("transaction_type", [
-  "deposit",
-  "withdrawal",
-  "investment",
-  "return"
-]);
-
-// Transaction status enum
-export const transactionStatusEnum = pgEnum("transaction_status", [
-  "pending",
-  "completed",
-  "failed"
-]);
-
-// Wallet schema
-export const wallets = pgTable("wallets", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().unique(),
-  balance: integer("balance").default(0),
-  lastUpdated: timestamp("last_updated").defaultNow(),
-  currency: text("currency").default("NGN"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
+  investedAt: true
 });
 
 export const insertWalletSchema = createInsertSchema(wallets).omit({
   id: true,
-  lastUpdated: true,
-  createdAt: true,
+  lastUpdated: true
 });
 
-// Wallet transaction schema
-export const walletTransaction = pgTable("wallet_transactions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  amount: integer("amount").notNull(),
-  type: transactionTypeEnum("type").notNull(),
-  status: transactionStatusEnum("status").default("completed"),
-  description: text("description"),
-  reference: text("reference").unique(),
-  metadata: jsonb("metadata"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at"),
-});
-
-export const insertWalletTransactionSchema = createInsertSchema(walletTransaction).omit({
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
+  createdAt: true
 });
 
-// Payment methods schema
-export const paymentMethodEnum = pgEnum("payment_method", [
-  "bank_transfer",
-  "credit_card",
-  "debit_card",
-  "paystack",
-  "flutterwave",
-  "wallet"
-]);
-
-// Payment transactions schema
-export const paymentTransactions = pgTable("payment_transactions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  investmentId: integer("investment_id"),
-  amount: integer("amount").notNull(),
-  currency: text("currency").default("NGN"),
-  method: paymentMethodEnum("method").notNull(),
-  status: text("status").notNull(), // pending, successful, failed, reversed
-  reference: text("reference").notNull(),
-  gatewayReference: text("gateway_reference"),
-  gatewayResponse: text("gateway_response"),
-  createdAt: timestamp("created_at").defaultNow(),
-  completedAt: timestamp("completed_at"),
-  metaData: jsonb("meta_data"),
-});
-
-export const insertPaymentTransactionSchema = createInsertSchema(paymentTransactions).omit({
+export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
-  createdAt: true,
-  completedAt: true,
+  sentAt: true,
+  isRead: true
 });
 
-// User Achievement badges
-export const achievementBadges = pgTable("achievement_badges", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  iconUrl: text("icon_url").notNull(),
-  points: integer("points").default(0),
-  criteria: text("criteria").notNull(), // E.g., "Invest in 5 properties"
-  level: integer("level").default(1),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertAchievementBadgeSchema = createInsertSchema(achievementBadges).omit({
+// Export the property schema with a new name to match the import in admin-routes.ts
+export const insertPropertySchema = createInsertSchema(projects).omit({
   id: true,
-  createdAt: true,
-});
-
-// User achievements (which badges they've earned)
-export const userAchievements = pgTable("user_achievements", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  badgeId: integer("badge_id").notNull(),
-  earnedAt: timestamp("earned_at").defaultNow(),
-  displayed: boolean("displayed").default(true), // Whether to display on profile
-});
-
-export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
-  id: true,
-  earnedAt: true,
+  createdAt: true
 });
 
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type PhoneVerification = z.infer<typeof phoneVerificationSchema>;
-export type KycDocument = z.infer<typeof kycDocumentSchema>;
-export type KycStatus = "not_started" | "pending" | "verified" | "rejected";
-export type VerificationMethod = "otp" | "email" | "document";
-export type NotificationType = "system" | "investment" | "property" | "kyc" | "payment" | "social" | "forum";
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
-export type Property = typeof properties.$inferSelect;
-export type InsertProperty = z.infer<typeof insertPropertySchema>;
+export type KycSubmission = typeof kycSubmissions.$inferSelect;
+export type InsertKycSubmission = z.infer<typeof insertKycSubmissionSchema>;
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
 
 export type Investment = typeof investments.$inferSelect;
 export type InsertInvestment = z.infer<typeof insertInvestmentSchema>;
 
-export type DirectMessage = typeof directMessages.$inferSelect;
-export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
-
-export type EducationalResource = typeof educationalResources.$inferSelect;
-export type InsertEducationalResource = z.infer<typeof insertEducationalResourceSchema>;
-
-export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
-export type InsertPaymentTransaction = z.infer<typeof insertPaymentTransactionSchema>;
-
-export type AchievementBadge = typeof achievementBadges.$inferSelect;
-export type InsertAchievementBadge = z.infer<typeof insertAchievementBadgeSchema>;
-
-export type UserAchievement = typeof userAchievements.$inferSelect;
-export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
-
 export type Wallet = typeof wallets.$inferSelect;
 export type InsertWallet = z.infer<typeof insertWalletSchema>;
-
-export type WalletTransaction = typeof walletTransaction.$inferSelect;
-export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
-
-// Message status enum
-export const messageStatusEnum = pgEnum("message_status", [
-  "unread",
-  "read",
-  "archived",
-  "deleted"
-]);
-
-// Messages schema for investor communications
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull().references(() => users.id),
-  receiverId: integer("receiver_id").notNull().references(() => users.id),
-  subject: text("subject"),
-  content: text("content").notNull(),
-  status: messageStatusEnum("status").default("unread"),
-  parentMessageId: integer("parent_message_id"),
-  isSystemMessage: boolean("is_system_message").default(false),
-  metadata: jsonb("metadata"),
-  createdAt: timestamp("created_at").defaultNow(),
-  readAt: timestamp("read_at"),
-});
-
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  createdAt: true,
-  readAt: true,
-});
-
-export type Message = typeof messages.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-
-// Action type enum for admin logs
-export const adminActionEnum = pgEnum("admin_action", [
-  "login",
-  "create",
-  "update",
-  "delete",
-  "approve",
-  "reject",
-  "verify",
-  "system_update"
-]);
-
-// Target type enum for admin logs
-export const targetTypeEnum = pgEnum("target_type", [
-  "user",
-  "property",
-  "investment",
-  "kyc",
-  "payment",
-  "system",
-  "achievement",
-  "educational_resource"
-]);
-
-// Admin logs schema
-export const adminLogs = pgTable("admin_logs", {
-  id: serial("id").primaryKey(),
-  adminId: integer("admin_id").notNull(),
-  action: adminActionEnum("action").notNull(),
-  targetType: targetTypeEnum("target_type").notNull(),
-  targetId: integer("target_id").notNull(),
-  description: text("description").notNull(),
-  details: jsonb("details"), // Additional context about the action
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  timestamp: timestamp("timestamp").defaultNow(),
-});
-
-export const insertAdminLogSchema = createInsertSchema(adminLogs).omit({
-  id: true,
-  timestamp: true,
-});
-
-export type AdminLog = typeof adminLogs.$inferSelect;
-export type InsertAdminLog = z.infer<typeof insertAdminLogSchema>;
-
-// FAQ schema (Frequently Asked Questions)
-export const faqs = pgTable("faqs", {
-  id: serial("id").primaryKey(),
-  question: text("question").notNull(),
-  answer: text("answer").notNull(),
-  category: text("category").default("general"),
-  order: integer("order").default(0),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at"),
-  createdBy: integer("created_by"),
-  updatedBy: integer("updated_by"),
-});
-
-export const insertFaqSchema = createInsertSchema(faqs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type Faq = typeof faqs.$inferSelect;
-export type InsertFaq = z.infer<typeof insertFaqSchema>;
-
-// Transaction type enum
-export const transactionActionEnum = pgEnum("transaction_action", [
-  "deposit",
-  "withdrawal",
-  "investment", 
-  "divestment",
-  "return",
-  "fee",
-  "transfer",
-  "referral_bonus"
-]);
-
-// Transaction schema for financial activity logging
-export const transactions = pgTable("transactions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  type: transactionActionEnum("type").notNull(),
-  amount: integer("amount").notNull(),
-  description: text("description").notNull(),
-  reference: text("reference"),
-  metadata: jsonb("metadata"),
-  status: text("status").default("completed"),
-  propertyId: integer("property_id"),
-  investmentId: integer("investment_id"),
-  walletId: integer("wallet_id"),
-  balanceBefore: integer("balance_before"),
-  balanceAfter: integer("balance_after"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertTransactionSchema = createInsertSchema(transactions).omit({
-  id: true,
-  createdAt: true,
-});
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
-// Feedback schema for user feedback
-export const userFeedback = pgTable("user_feedback", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  message: text("message").notNull(),
-  status: text("status").default("new"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at"),
-  adminResponse: text("admin_response"),
-  respondedAt: timestamp("responded_at"),
-  respondedBy: integer("responded_by"),
-});
-
-export const insertUserFeedbackSchema = createInsertSchema(userFeedback).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  respondedAt: true,
-});
-
-export type UserFeedback = typeof userFeedback.$inferSelect;
-export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
-
-// Issue status enum
-export const issueStatusEnum = pgEnum("issue_status", [
-  "open",
-  "in_progress",
-  "resolved",
-  "closed"
-]);
-
-// Issues tracking schema
-export const issues = pgTable("issues", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  userId: integer("user_id").notNull(),
-  status: issueStatusEnum("status").default("open"),
-  priority: text("priority").default("medium"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at"),
-  assignedTo: integer("assigned_to"),
-  category: text("category").default("general"),
-});
-
-export const insertIssueSchema = createInsertSchema(issues).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-// Issue comments schema
-export const issueComments = pgTable("issue_comments", {
-  id: serial("id").primaryKey(),
-  issueId: integer("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-  userId: integer("user_id").notNull(),
-  comment: text("comment").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  isInternal: boolean("is_internal").default(false),
-});
-
-export const insertIssueCommentSchema = createInsertSchema(issueComments).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type Issue = typeof issues.$inferSelect;
-export type InsertIssue = z.infer<typeof insertIssueSchema>;
-export type IssueComment = typeof issueComments.$inferSelect;
-export type InsertIssueComment = z.infer<typeof insertIssueCommentSchema>;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
