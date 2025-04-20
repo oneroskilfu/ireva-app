@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../../db";
-import { properties, insertPropertySchema } from "@shared/schema";
+import { projects, insertPropertySchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -17,7 +17,7 @@ const ensureAdmin = (req, res, next) => {
 // Get all properties (admin view with more details)
 router.get("/", ensureAdmin, async (req, res) => {
   try {
-    const allProperties = await db.select().from(properties).orderBy(properties.id);
+    const allProperties = await db.select().from(projects).orderBy(projects.id);
     res.json(allProperties);
   } catch (error) {
     console.error("Error fetching properties:", error);
@@ -32,8 +32,8 @@ router.get("/:id", ensureAdmin, async (req, res) => {
     
     const [property] = await db
       .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
+      .from(projects)
+      .where(eq(projects.id, propertyId));
     
     if (!property) {
       return res.status(404).json({ error: "Property not found" });

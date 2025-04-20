@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, boolean, timestamp, numeric, integer, pgEnum, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, boolean, timestamp, numeric, integer, pgEnum, jsonb, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -85,6 +85,81 @@ export const transactions = pgTable("transactions", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// Notifications schema
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").default("general"), // general, investment, system, etc.
+  isRead: boolean("is_read").default(false),
+  link: text("link"), // Optional link to relevant page
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Admin logs schema
+export const adminLogs = pgTable("admin_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminId: uuid("admin_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  description: text("description").notNull(),
+  metadata: jsonb("metadata"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// FAQs schema
+export const faqs = pgTable("faqs", {
+  id: integer("id").primaryKey(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  category: text("category").notNull(),
+  order: integer("order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+  updatedBy: uuid("updated_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+});
+
+// User Feedback schema
+export const userFeedback = pgTable("user_feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  status: text("status").default("new"), // new, in_progress, resolved, closed
+  adminResponse: text("admin_response"),
+  respondedBy: uuid("responded_by").references(() => users.id, { onDelete: "set null" }),
+  respondedAt: timestamp("responded_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+});
+
+// Issues schema (Issue Tracking System)
+export const issues = pgTable("issues", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: text("status").default("open").notNull(), // open, in_progress, resolved, closed
+  priority: text("priority").default("medium").notNull(), // low, medium, high, critical
+  category: text("category").default("general").notNull(),
+  assignedTo: uuid("assigned_to").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+});
+
+// Issue Comments schema
+export const issueComments = pgTable("issue_comments", {
+  id: serial("id").primaryKey(),
+  issueId: integer("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  comment: text("comment").notNull(),
+  isInternal: boolean("is_internal").default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Messages schema (Investor Messaging System)
 export const messages = pgTable("messages", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -104,8 +179,13 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     fields: [users.id],
     references: [wallets.userId]
   }),
+  notifications: many(notifications),
   sentMessages: many(messages, { relationName: "sentMessages" }),
-  receivedMessages: many(messages, { relationName: "receivedMessages" })
+  receivedMessages: many(messages, { relationName: "receivedMessages" }),
+  feedback: many(userFeedback),
+  issues: many(issues),
+  issueComments: many(issueComments),
+  assignedIssues: many(issues, { relationName: "assignedIssues" })
 }));
 
 export const kycSubmissionsRelations = relations(kycSubmissions, ({ one }) => ({
@@ -158,6 +238,66 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   })
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id]
+  })
+}));
+
+export const adminLogsRelations = relations(adminLogs, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminLogs.adminId],
+    references: [users.id]
+  })
+}));
+
+export const faqsRelations = relations(faqs, ({ one }) => ({
+  creator: one(users, {
+    fields: [faqs.createdBy],
+    references: [users.id]
+  }),
+  updater: one(users, {
+    fields: [faqs.updatedBy],
+    references: [users.id]
+  })
+}));
+
+export const userFeedbackRelations = relations(userFeedback, ({ one }) => ({
+  user: one(users, {
+    fields: [userFeedback.userId],
+    references: [users.id]
+  }),
+  responder: one(users, {
+    fields: [userFeedback.respondedBy],
+    references: [users.id]
+  })
+}));
+
+export const issuesRelations = relations(issues, ({ one, many }) => ({
+  user: one(users, {
+    fields: [issues.userId],
+    references: [users.id]
+  }),
+  assignee: one(users, {
+    fields: [issues.assignedTo],
+    references: [users.id],
+    relationName: "assignedIssues"
+  }),
+  comments: many(issueComments)
+}));
+
+export const issueCommentsRelations = relations(issueComments, ({ one }) => ({
+  issue: one(issues, {
+    fields: [issueComments.issueId],
+    references: [issues.id]
+  }),
+  user: one(users, {
+    fields: [issueComments.userId],
+    references: [users.id]
+  })
+}));
+
 // Create schemas for insertions
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -197,6 +337,35 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   isRead: true
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertFaqSchema = createInsertSchema(faqs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertUserFeedbackSchema = createInsertSchema(userFeedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  respondedAt: true
+});
+
+export const insertIssueSchema = createInsertSchema(issues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertIssueCommentSchema = createInsertSchema(issueComments).omit({
+  id: true,
+  createdAt: true
+});
+
 // Export the property schema with a new name to match the import in admin-routes.ts
 export const insertPropertySchema = createInsertSchema(projects).omit({
   id: true,
@@ -224,3 +393,18 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type FAQ = typeof faqs.$inferSelect;
+export type InsertFAQ = z.infer<typeof insertFaqSchema>;
+
+export type UserFeedback = typeof userFeedback.$inferSelect;
+export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
+
+export type Issue = typeof issues.$inferSelect;
+export type InsertIssue = z.infer<typeof insertIssueSchema>;
+
+export type IssueComment = typeof issueComments.$inferSelect;
+export type InsertIssueComment = z.infer<typeof insertIssueCommentSchema>;

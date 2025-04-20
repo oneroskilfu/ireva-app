@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { properties, insertPropertySchema } from '../../shared/schema';
+import { projects, insertProjectSchema } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { verifyToken, authMiddleware, ensureAdmin } from '../auth-jwt';
 import { ZodError } from 'zod';
@@ -23,15 +23,15 @@ projectsRouter.get('/', async (req: Request, res: Response) => {
     const tier = req.query.tier as string | undefined;
 
     // Base query
-    let query = db.select().from(properties);
+    let query = db.select().from(projects);
 
     // Apply filters
     if (type && type !== "all") {
-      query = query.where(eq(properties.type, type));
+      query = query.where(eq(projects.type, type));
     }
     
     if (location && location !== "all") {
-      query = query.where(eq(properties.location, location));
+      query = query.where(eq(projects.location, location));
     }
     
     // Execute query
@@ -77,8 +77,8 @@ projectsRouter.get('/:id', async (req: Request, res: Response) => {
     }
     
     const [project] = await db.select()
-      .from(properties)
-      .where(eq(properties.id, projectId));
+      .from(projects)
+      .where(eq(projects.id, projectId));
     
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
@@ -104,10 +104,10 @@ projectsRouter.post('/', verifyToken, ensureAdmin, async (req: Request, res: Res
     console.log("Creating new project with data:", req.body);
     
     // Validate request body against schema
-    const validatedData = insertPropertySchema.parse(req.body);
+    const validatedData = insertProjectSchema.parse(req.body);
     
     // Insert new project
-    const [newProject] = await db.insert(properties)
+    const [newProject] = await db.insert(projects)
       .values(validatedData)
       .returning();
     
@@ -156,20 +156,20 @@ projectsRouter.put('/:id', verifyToken, ensureAdmin, async (req: Request, res: R
     
     // Check if project exists
     const [existingProject] = await db.select()
-      .from(properties)
-      .where(eq(properties.id, projectId));
+      .from(projects)
+      .where(eq(projects.id, projectId));
     
     if (!existingProject) {
       return res.status(404).json({ message: "Project not found" });
     }
     
     // Validate request body against schema
-    const validatedData = insertPropertySchema.partial().parse(req.body);
+    const validatedData = insertProjectSchema.partial().parse(req.body);
     
     // Update project
-    const [updatedProject] = await db.update(properties)
+    const [updatedProject] = await db.update(projects)
       .set(validatedData)
-      .where(eq(properties.id, projectId))
+      .where(eq(projects.id, projectId))
       .returning();
     
     // Log admin action
@@ -217,16 +217,16 @@ projectsRouter.delete('/:id', verifyToken, ensureAdmin, async (req: Request, res
     
     // Check if project exists
     const [existingProject] = await db.select()
-      .from(properties)
-      .where(eq(properties.id, projectId));
+      .from(projects)
+      .where(eq(projects.id, projectId));
     
     if (!existingProject) {
       return res.status(404).json({ message: "Project not found" });
     }
     
     // Delete project
-    await db.delete(properties)
-      .where(eq(properties.id, projectId));
+    await db.delete(projects)
+      .where(eq(projects.id, projectId));
     
     // Log admin action
     await AdminLogger.logAction(

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { authMiddleware } from '../auth-jwt';
 import { db } from '../db';
-import { walletTransaction, wallets } from '@shared/schema';
+import { transactions, wallets } from '@shared/schema';
 import { eq, desc, and, between, or } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -21,18 +21,18 @@ router.get('/balance', authMiddleware, async (req: Request, res: Response) => {
     }
 
     // Get pending transactions
-    const pendingDeposits = await db.select().from(walletTransaction)
+    const pendingDeposits = await db.select().from(transactions)
       .where(and(
-        eq(walletTransaction.userId, userId),
-        eq(walletTransaction.type, 'deposit'),
-        eq(walletTransaction.status, 'pending')
+        eq(transactions.walletId, walletData.id),
+        eq(transactions.type, 'deposit'),
+        eq(transactions.status, 'pending')
       ));
 
-    const pendingWithdrawals = await db.select().from(walletTransaction)
+    const pendingWithdrawals = await db.select().from(transactions)
       .where(and(
-        eq(walletTransaction.userId, userId),
-        eq(walletTransaction.type, 'withdrawal'),
-        eq(walletTransaction.status, 'pending')
+        eq(transactions.walletId, walletData.id),
+        eq(transactions.type, 'withdrawal'),
+        eq(transactions.status, 'pending')
       ));
 
     // Calculate pending amounts
@@ -49,9 +49,9 @@ router.get('/balance', authMiddleware, async (req: Request, res: Response) => {
     const totalReturns = investments.reduce((sum: number, inv: any) => sum + (inv.earnings || 0), 0);
 
     // Get recent transactions
-    const recentTransactions = await db.select().from(walletTransaction)
-      .where(eq(walletTransaction.userId, userId))
-      .orderBy(desc(walletTransaction.createdAt))
+    const recentTransactions = await db.select().from(transactions)
+      .where(eq(transactions.walletId, walletData.id))
+      .orderBy(desc(transactions.createdAt))
       .limit(5);
 
     // Format the response
@@ -82,14 +82,21 @@ router.post('/fund', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid amount' });
     }
 
+    // Get user's wallet 
+    const [userWallet] = await db.select().from(wallets)
+      .where(eq(wallets.userId, userId));
+      
+    if (!userWallet) {
+      return res.status(404).json({ message: 'Wallet not found' });
+    }
+    
     // Create a new transaction record
     const transactionId = uuidv4();
-    const newTransaction = await db.insert(walletTransaction).values({
-      userId,
-      type: 'deposit',
+    const newTransaction = await db.insert(transactions).values({
+      walletId: userWallet.id,
       amount,
+      type: 'deposit',
       status: 'pending', // Initially set as pending
-      description: `Deposit via ${paymentMethod}`,
       reference: transactionId,
     }).returning();
 
@@ -97,27 +104,17 @@ router.post('/fund', authMiddleware, async (req: Request, res: Response) => {
     // For demo purposes, we'll mark the transaction as completed immediately
     
     // Update the transaction status to completed
-    await db.update(walletTransaction)
+    await db.update(transactions)
       .set({ status: 'completed' })
-      .where(eq(walletTransaction.reference, transactionId));
+      .where(eq(transactions.reference, transactionId));
 
-    // Get the user's wallet and update the balance
-    const [userWallet] = await db.query.wallets.findMany({
-      where: eq(db.schema.wallets.userId, userId),
-    });
-
-    if (userWallet) {
-      // Update existing wallet
-      await db.update(db.schema.wallets)
-        .set({ balance: userWallet.balance + amount })
-        .where(eq(db.schema.wallets.userId, userId));
-    } else {
-      // Create new wallet if it doesn't exist
-      await db.insert(db.schema.wallets).values({
-        userId,
-        balance: amount,
-      });
-    }
+    // Update the wallet balance
+    await db.update(wallets)
+      .set({ 
+        balance: Number(userWallet.balance || 0) + Number(amount),
+        lastUpdated: new Date()
+      })
+      .where(eq(wallets.id, userWallet.id));
 
     res.status(200).json({ 
       message: 'Funds added successfully',
@@ -139,29 +136,33 @@ router.post('/withdraw', authMiddleware, async (req: Request, res: Response) => 
       return res.status(400).json({ message: 'Invalid amount' });
     }
 
-    // Check if user has sufficient balance
-    const [userWallet] = await db.query.wallets.findMany({
-      where: eq(db.schema.wallets.userId, userId),
-    });
-
+    // Get user's wallet
+    const [userWallet] = await db.select().from(wallets)
+      .where(eq(wallets.userId, userId));
+      
     if (!userWallet) {
       return res.status(404).json({ message: 'Wallet not found' });
     }
-
+    
     // Get pending withdrawals
-    const pendingWithdrawals = await db.query.walletTransactions.findMany({
-      where: and(
-        eq(walletTransaction.userId, userId),
-        eq(walletTransaction.type, 'withdrawal'),
-        eq(walletTransaction.status, 'pending')
-      ),
-    });
+    const pendingWithdrawals = await db.select().from(transactions)
+      .where(and(
+        eq(transactions.walletId, userWallet.id),
+        eq(transactions.type, 'withdrawal'),
+        eq(transactions.status, 'pending')
+      ));
 
-    const totalPendingWithdrawals = pendingWithdrawals.reduce((sum, tx) => sum + tx.amount, 0);
-    const availableBalance = userWallet.balance - totalPendingWithdrawals;
+    const totalPendingWithdrawals = pendingWithdrawals.reduce((sum: number, tx: any) => 
+      sum + Number(tx.amount || 0), 0);
+      
+    const availableBalance = Number(userWallet.balance || 0) - totalPendingWithdrawals;
 
     if (amount > availableBalance) {
-      return res.status(400).json({ message: 'Insufficient funds' });
+      return res.status(400).json({ 
+        message: 'Insufficient funds',
+        available: availableBalance,
+        requested: amount
+      });
     }
 
     // Create a new withdrawal transaction
@@ -170,12 +171,11 @@ router.post('/withdraw', authMiddleware, async (req: Request, res: Response) => 
       ? `Withdrawal to ${bankName} - ${accountNumber} (${accountName}): ${description}`
       : `Withdrawal to ${bankName} - ${accountNumber} (${accountName})`;
 
-    await db.insert(walletTransaction).values({
-      userId,
-      type: 'withdrawal',
+    await db.insert(transactions).values({
+      walletId: userWallet.id,
       amount,
+      type: 'withdrawal',
       status: 'pending', // Withdrawals are initially pending until processed
-      description: withdrawalDesc,
       reference: transactionId,
     });
 
@@ -198,26 +198,35 @@ router.get('/history', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { type, status, startDate, endDate, page = 1, limit = 10 } = req.query;
     
+    // Get user's wallet first
+    const [wallet] = await db.select().from(wallets)
+      .where(eq(wallets.userId, userId));
+      
+    if (!wallet) {
+      return res.status(404).json({ message: 'Wallet not found' });
+    }
+    
     const offset = (Number(page) - 1) * Number(limit);
     
-    // Build the query with filters
-    let query = db.select().from(walletTransaction).where(eq(walletTransaction.userId, userId));
+    // Build the base query
+    let query = db.select().from(transactions)
+      .where(eq(transactions.walletId, wallet.id));
     
     // Apply type filter
     if (type && type !== 'all') {
-      query = query.where(eq(walletTransaction.type, type as string));
+      query = query.where(eq(transactions.type, type as string));
     }
     
     // Apply status filter
     if (status && status !== 'all') {
-      query = query.where(eq(walletTransaction.status, status as string));
+      query = query.where(eq(transactions.status, status as string));
     }
     
     // Apply date range filter
     if (startDate && endDate) {
       query = query.where(
         between(
-          walletTransaction.createdAt,
+          transactions.createdAt,
           new Date(startDate as string),
           new Date(endDate as string)
         )
@@ -225,12 +234,12 @@ router.get('/history', authMiddleware, async (req: Request, res: Response) => {
     }
     
     // Order by most recent first
-    const transactions = await query
-      .orderBy(desc(walletTransaction.createdAt))
+    const transactionHistory = await query
+      .orderBy(desc(transactions.createdAt))
       .limit(Number(limit))
       .offset(offset);
     
-    res.json(transactions);
+    res.json(transactionHistory);
   } catch (error) {
     console.error('Error fetching transaction history:', error);
     res.status(500).json({ message: 'Failed to fetch transaction history' });

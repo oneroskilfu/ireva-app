@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from './db';
-import { wallets, walletTransaction } from '../shared/schema';
+import { wallets, transactions } from '../shared/schema';
 import { and, eq, desc } from 'drizzle-orm';
 import { verifyToken } from './auth-jwt';
 
@@ -53,16 +53,25 @@ walletRouter.get('/transactions', verifyToken, async (req: Request, res: Respons
       return res.status(401).json({ message: "Unauthorized" });
     }
     
+    // Get user wallet first
+    const [wallet] = await db.select()
+      .from(wallets)
+      .where(eq(wallets.userId, userId));
+    
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet not found" });
+    }
+    
     // Get transactions with pagination
     const limit = parseInt(req.query.limit as string) || 10;
     const page = parseInt(req.query.page as string) || 1;
     const offset = (page - 1) * limit;
     
     // Get user transactions
-    const transactions = await db.select()
-      .from(walletTransaction)
-      .where(eq(walletTransaction.userId, userId))
-      .orderBy(desc(walletTransaction.createdAt))
+    const userTransactions = await db.select()
+      .from(transactions)
+      .where(eq(transactions.walletId, wallet.id))
+      .orderBy(desc(transactions.createdAt))
       .limit(limit)
       .offset(offset);
     
@@ -70,11 +79,11 @@ walletRouter.get('/transactions', verifyToken, async (req: Request, res: Respons
     const [{ count }] = await db.select({ 
         count: db.fn.count() 
       })
-      .from(walletTransaction)
-      .where(eq(walletTransaction.userId, userId));
+      .from(transactions)
+      .where(eq(transactions.walletId, wallet.id));
     
     res.json({
-      transactions,
+      transactions: userTransactions,
       pagination: {
         total: Number(count),
         page,
@@ -130,21 +139,21 @@ walletRouter.post('/fund', verifyToken, async (req: Request, res: Response) => {
     // Process funding in a transaction
     await db.transaction(async (tx) => {
       // Record transaction
-      await tx.insert(walletTransaction)
+      await tx.insert(transactions)
         .values({
-          userId,
-          amount,
+          walletId: wallet.id,
+          amount: amount.toString(),
           type: "deposit",
           status: "completed",
-          description: `Wallet funding via ${paymentMethod}`,
           reference,
-          metadata: { paymentMethod }
+          metadata: { paymentMethod, description: `Wallet funding via ${paymentMethod}` }
         });
       
       // Update wallet balance
+      const newBalance = wallet.balance ? parseFloat(wallet.balance) + amount : amount;
       await tx.update(wallets)
         .set({ 
-          balance: wallet.balance + amount,
+          balance: newBalance.toString(),
           lastUpdated: new Date()
         })
         .where(eq(wallets.id, wallet.id));
@@ -203,10 +212,11 @@ walletRouter.post('/withdraw', verifyToken, async (req: Request, res: Response) 
     }
     
     // Check if sufficient balance
-    if (wallet.balance < amount) {
+    const currentBalance = wallet.balance ? parseFloat(wallet.balance) : 0;
+    if (currentBalance < amount) {
       return res.status(400).json({ 
         message: "Insufficient funds", 
-        balance: wallet.balance,
+        balance: currentBalance,
         requested: amount
       });
     }
@@ -217,21 +227,21 @@ walletRouter.post('/withdraw', verifyToken, async (req: Request, res: Response) 
     // Process withdrawal in a transaction
     await db.transaction(async (tx) => {
       // Record transaction
-      await tx.insert(walletTransaction)
+      await tx.insert(transactions)
         .values({
-          userId,
-          amount,
+          walletId: wallet.id,
+          amount: amount.toString(),
           type: "withdrawal",
           status: "pending",
-          description: `Withdrawal to bank account`,
           reference,
-          metadata: { bankAccount }
+          metadata: { bankAccount, description: `Withdrawal to bank account` }
         });
       
       // Update wallet balance
+      const newBalance = currentBalance - amount;
       await tx.update(wallets)
         .set({ 
-          balance: wallet.balance - amount,
+          balance: newBalance.toString(),
           lastUpdated: new Date()
         })
         .where(eq(wallets.id, wallet.id));
