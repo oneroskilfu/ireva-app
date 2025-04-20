@@ -77,8 +77,8 @@ router.patch("/:id", ensureAdmin, async (req, res) => {
     // Check if property exists
     const [existingProperty] = await db
       .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
+      .from(projects)
+      .where(eq(projects.id, propertyId));
     
     if (!existingProperty) {
       return res.status(404).json({ error: "Property not found" });
@@ -86,9 +86,9 @@ router.patch("/:id", ensureAdmin, async (req, res) => {
     
     // Update property
     const [updatedProperty] = await db
-      .update(properties)
+      .update(projects)
       .set(req.body)
-      .where(eq(properties.id, propertyId))
+      .where(eq(projects.id, propertyId))
       .returning();
     
     res.json(updatedProperty);
@@ -106,8 +106,8 @@ router.delete("/:id", ensureAdmin, async (req, res) => {
     // Check if property exists
     const [existingProperty] = await db
       .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
+      .from(projects)
+      .where(eq(projects.id, propertyId));
     
     if (!existingProperty) {
       return res.status(404).json({ error: "Property not found" });
@@ -115,8 +115,8 @@ router.delete("/:id", ensureAdmin, async (req, res) => {
     
     // Delete property
     await db
-      .delete(properties)
-      .where(eq(properties.id, propertyId));
+      .delete(projects)
+      .where(eq(projects.id, propertyId));
     
     res.status(200).json({ message: "Property deleted successfully" });
   } catch (error) {

@@ -20,7 +20,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").default("investor"), // investor or admin
   phoneNumber: text("phone_number"),
-  isVerified: boolean("is_verified").default(false),
+  kycStatus: text("kyc_status").default("not_started"), // Added kycStatus field
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
