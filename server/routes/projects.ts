@@ -156,8 +156,8 @@ projectsRouter.put('/:id', verifyToken, ensureAdmin, async (req: Request, res: R
     
     // Check if project exists
     const [existingProject] = await db.select()
-      .from(projects)
-      .where(eq(projects.id, projectId));
+      .from(properties)
+      .where(eq(properties.id, projectId));
     
     if (!existingProject) {
       return res.status(404).json({ message: "Project not found" });
@@ -167,9 +167,9 @@ projectsRouter.put('/:id', verifyToken, ensureAdmin, async (req: Request, res: R
     const validatedData = insertProjectSchema.partial().parse(req.body);
     
     // Update project
-    const [updatedProject] = await db.update(projects)
+    const [updatedProject] = await db.update(properties)
       .set(validatedData)
-      .where(eq(projects.id, projectId))
+      .where(eq(properties.id, projectId))
       .returning();
     
     // Log admin action
@@ -217,16 +217,16 @@ projectsRouter.delete('/:id', verifyToken, ensureAdmin, async (req: Request, res
     
     // Check if project exists
     const [existingProject] = await db.select()
-      .from(projects)
-      .where(eq(projects.id, projectId));
+      .from(properties)
+      .where(eq(properties.id, projectId));
     
     if (!existingProject) {
       return res.status(404).json({ message: "Project not found" });
     }
     
     // Delete project
-    await db.delete(projects)
-      .where(eq(projects.id, projectId));
+    await db.delete(properties)
+      .where(eq(properties.id, projectId));
     
     // Log admin action
     await AdminLogger.logAction(

@@ -55,7 +55,7 @@ investmentsRouter.post('/', verifyToken, async (req: Request, res: Response) => 
     const [wallet] = await db
       .select()
       .from(wallets)
-      .where(eq(wallets.userId, userId));
+      .where(eq(wallets.userId, userId.toString()));
     
     if (!wallet) {
       return res.status(404).json({ message: "Wallet not found" });
@@ -80,25 +80,29 @@ investmentsRouter.post('/', verifyToken, async (req: Request, res: Response) => 
       await tx.insert(transactions)
         .values({
           walletId: wallet.id,
+          type: "debit",
           amount: amount.toString(),
-          type: "investment",
+          reference,
+          description: `Investment in ${property.name}`,
           status: "completed",
-          reference
+          metadata: JSON.stringify({
+            propertyId: property.id,
+            propertyName: property.name
+          })
         });
       
       // Update wallet balance
       await tx.update(wallets)
         .set({ 
-          balance: (Number(wallet.balance) - amount).toString(),
-          lastUpdated: new Date()
+          balance: String(Number(wallet.balance) - amount)
         })
         .where(eq(wallets.id, wallet.id));
       
       // Create investment
       const [newInvestment] = await tx.insert(investments)
         .values({
-          userId,
-          projectId,
+          userId: userId.toString(),
+          projectId: projectId.toString(),
           unitsInvested,
           totalAmount: amount.toString(),
           status: "active",
@@ -127,7 +131,7 @@ investmentsRouter.post('/', verifyToken, async (req: Request, res: Response) => 
     const [updatedWallet] = await db
       .select()
       .from(wallets)
-      .where(eq(wallets.userId, userId));
+      .where(eq(wallets.userId, userId.toString()));
     
     res.status(201).json({ 
       message: "Investment successful",
@@ -170,20 +174,19 @@ investmentsRouter.get('/', verifyToken, async (req: Request, res: Response) => {
         investment: investments,
         property: {
           id: properties.id,
-          title: properties.title,
+          name: properties.name,
           location: properties.location,
           description: properties.description,
-          roi: properties.roi,
-          duration: properties.duration,
-          targetFunding: properties.targetFunding,
+          targetReturn: properties.targetReturn,
+          term: properties.term,
+          totalFunding: properties.totalFunding,
           currentFunding: properties.currentFunding,
-          status: properties.status
+          type: properties.type
         }
       })
       .from(investments)
-      .leftJoin(properties, eq(investments.projectId, properties.id))
-      .where(eq(investments.userId, userId))
-      .orderBy(investments.investedAt);
+      .leftJoin(properties, eq(investments.projectId, properties.id.toString()))
+      .where(eq(investments.userId, userId.toString()));
     
     // Format the investments for response
     const formattedInvestments = userInvestments.map(({ investment, property }) => ({
@@ -215,39 +218,41 @@ investmentsRouter.get('/:id', verifyToken, async (req: Request, res: Response) =
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    const investmentId = parseInt(req.params.id);
+    const investmentId = req.params.id;
     
-    // Get investment with property details
-    const [investmentWithProperty] = await db
+    // Get specific investment with property details
+    const [investmentData] = await db
       .select({
         investment: investments,
         property: {
           id: properties.id,
-          title: properties.title,
+          name: properties.name,
           location: properties.location,
           description: properties.description,
-          roi: properties.roi,
-          duration: properties.duration,
-          targetFunding: properties.targetFunding,
+          targetReturn: properties.targetReturn,
+          term: properties.term,
+          totalFunding: properties.totalFunding,
           currentFunding: properties.currentFunding,
-          status: properties.status
+          type: properties.type
         }
       })
       .from(investments)
-      .leftJoin(properties, eq(investments.projectId, properties.id))
-      .where(and(
-        eq(investments.id, investmentId),
-        eq(investments.userId, userId)
-      ));
+      .leftJoin(properties, eq(investments.projectId, properties.id.toString()))
+      .where(
+        and(
+          eq(investments.id, investmentId),
+          eq(investments.userId, userId.toString())
+        )
+      );
     
-    if (!investmentWithProperty) {
+    if (!investmentData) {
       return res.status(404).json({ message: "Investment not found" });
     }
     
     // Format the investment for response
     const formattedInvestment = {
-      ...investmentWithProperty.investment,
-      property: investmentWithProperty.property
+      ...investmentData.investment,
+      property: investmentData.property
     };
     
     res.json(formattedInvestment);
