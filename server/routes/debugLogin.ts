@@ -9,21 +9,26 @@ const debugLoginRouter = Router();
 // This route is only for development and testing purposes
 debugLoginRouter.post('/debug-login', async (req: Request, res: Response) => {
   try {
+    console.log("Debug login attempt for testuser");
+    
     // Find the user with username 'testuser'
     const [user] = await db.select().from(users).where(eq(users.username, 'testuser'));
     
     if (!user) {
+      console.log("Test user not found in database");
       return res.status(404).json({ error: 'Test user not found' });
     }
     
-    // Generate a JWT token
+    console.log("Found test user:", user.username, user.role);
+    
+    // Generate a JWT token with the same secret used in auth-jwt.ts
     const token = jwt.sign(
       {
         id: user.id,
         username: user.username,
         role: user.role,
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+      'supersecretkey', // Must match the one in auth-jwt.ts
       { expiresIn: '7d' }
     );
     
@@ -32,11 +37,11 @@ debugLoginRouter.post('/debug-login', async (req: Request, res: Response) => {
       user: {
         id: user.id,
         username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
         role: user.role,
-        profileImage: user.profileImage,
+        profileImage: user.profileImage || null,
       },
       token,
     });

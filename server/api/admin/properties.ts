@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../../db";
-import { projects, insertPropertySchema } from "@shared/schema";
+import { properties, insertPropertySchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -17,7 +17,7 @@ const ensureAdmin = (req, res, next) => {
 // Get all properties (admin view with more details)
 router.get("/", ensureAdmin, async (req, res) => {
   try {
-    const allProperties = await db.select().from(projects).orderBy(projects.id);
+    const allProperties = await db.select().from(properties).orderBy(properties.id);
     res.json(allProperties);
   } catch (error) {
     console.error("Error fetching properties:", error);
@@ -32,8 +32,8 @@ router.get("/:id", ensureAdmin, async (req, res) => {
     
     const [property] = await db
       .select()
-      .from(projects)
-      .where(eq(projects.id, propertyId));
+      .from(properties)
+      .where(eq(properties.id, propertyId));
     
     if (!property) {
       return res.status(404).json({ error: "Property not found" });
@@ -54,7 +54,7 @@ router.post("/", ensureAdmin, async (req, res) => {
     
     // Insert the new property
     const [newProperty] = await db
-      .insert(projects)
+      .insert(properties)
       .values(propertyData)
       .returning();
     
@@ -77,8 +77,8 @@ router.patch("/:id", ensureAdmin, async (req, res) => {
     // Check if property exists
     const [existingProperty] = await db
       .select()
-      .from(projects)
-      .where(eq(projects.id, propertyId));
+      .from(properties)
+      .where(eq(properties.id, propertyId));
     
     if (!existingProperty) {
       return res.status(404).json({ error: "Property not found" });
@@ -86,9 +86,9 @@ router.patch("/:id", ensureAdmin, async (req, res) => {
     
     // Update property
     const [updatedProperty] = await db
-      .update(projects)
+      .update(properties)
       .set(req.body)
-      .where(eq(projects.id, propertyId))
+      .where(eq(properties.id, propertyId))
       .returning();
     
     res.json(updatedProperty);
@@ -106,8 +106,8 @@ router.delete("/:id", ensureAdmin, async (req, res) => {
     // Check if property exists
     const [existingProperty] = await db
       .select()
-      .from(projects)
-      .where(eq(projects.id, propertyId));
+      .from(properties)
+      .where(eq(properties.id, propertyId));
     
     if (!existingProperty) {
       return res.status(404).json({ error: "Property not found" });
@@ -115,8 +115,8 @@ router.delete("/:id", ensureAdmin, async (req, res) => {
     
     // Delete property
     await db
-      .delete(projects)
-      .where(eq(projects.id, propertyId));
+      .delete(properties)
+      .where(eq(properties.id, propertyId));
     
     res.status(200).json({ message: "Property deleted successfully" });
   } catch (error) {

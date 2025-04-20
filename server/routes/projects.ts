@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { projects, insertProjectSchema } from '../../shared/schema';
+import { properties, insertPropertySchema } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { verifyToken, authMiddleware, ensureAdmin } from '../auth-jwt';
 import { ZodError } from 'zod';
@@ -23,15 +23,15 @@ projectsRouter.get('/', async (req: Request, res: Response) => {
     const tier = req.query.tier as string | undefined;
 
     // Base query
-    let query = db.select().from(projects);
+    let query = db.select().from(properties);
 
     // Apply filters
     if (type && type !== "all") {
-      query = query.where(eq(projects.type, type));
+      query = query.where(eq(properties.type, type));
     }
     
     if (location && location !== "all") {
-      query = query.where(eq(projects.location, location));
+      query = query.where(eq(properties.location, location));
     }
     
     // Execute query
@@ -77,8 +77,8 @@ projectsRouter.get('/:id', async (req: Request, res: Response) => {
     }
     
     const [project] = await db.select()
-      .from(projects)
-      .where(eq(projects.id, projectId));
+      .from(properties)
+      .where(eq(properties.id, projectId));
     
     if (!project) {
       return res.status(404).json({ message: "Project not found" });

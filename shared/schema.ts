@@ -101,7 +101,7 @@ export const properties = pgTable("properties", {
 export const investments = pgTable("investments", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  projectId: uuid("project_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
   unitsInvested: integer("units_invested").notNull(),
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
   roiEarned: numeric("roi_earned", { precision: 12, scale: 2 }).default("0"),
@@ -238,7 +238,7 @@ export const kycSubmissionsRelations = relations(kycSubmissions, ({ one }) => ({
   })
 }));
 
-export const projectsRelations = relations(projects, ({ many }) => ({
+export const propertiesRelations = relations(properties, ({ many }) => ({
   investments: many(investments)
 }));
 
@@ -247,9 +247,9 @@ export const investmentsRelations = relations(investments, ({ one }) => ({
     fields: [investments.userId],
     references: [users.id]
   }),
-  project: one(projects, {
+  project: one(properties, {
     fields: [investments.projectId],
-    references: [projects.id]
+    references: [properties.id]
   })
 }));
 
@@ -354,7 +354,7 @@ export const insertKycSubmissionSchema = createInsertSchema(kycSubmissions).omit
   reviewedAt: true
 });
 
-export const insertProjectSchema = createInsertSchema(projects).omit({
+export const insertProjectSchema = createInsertSchema(properties).omit({
   id: true,
   createdAt: true
 });
@@ -410,7 +410,7 @@ export const insertIssueCommentSchema = createInsertSchema(issueComments).omit({
 });
 
 // Export the property schema with a new name to match the import in admin-routes.ts
-export const insertPropertySchema = createInsertSchema(projects).omit({
+export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
   createdAt: true
 });
@@ -422,7 +422,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type KycSubmission = typeof kycSubmissions.$inferSelect;
 export type InsertKycSubmission = z.infer<typeof insertKycSubmissionSchema>;
 
-export type Project = typeof projects.$inferSelect;
+export type Project = typeof properties.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 
 export type Investment = typeof investments.$inferSelect;

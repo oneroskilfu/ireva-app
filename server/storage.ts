@@ -740,25 +740,43 @@ export class DatabaseStorage implements IStorage {
 
   // ===== User Methods =====
   async getUser(id: number): Promise<User | undefined> {
-    return await db.query.users.findFirst({
-      where: eq(schema.users.id, id)
-    });
+    try {
+      const [user] = await db.select().from(schema.users).where(eq(schema.users.id, id));
+      return user;
+    } catch (error) {
+      console.error("Error in getUser:", error);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return await db.query.users.findFirst({
-      where: eq(schema.users.username, username)
-    });
+    try {
+      const [user] = await db.select().from(schema.users).where(eq(schema.users.username, username));
+      return user;
+    } catch (error) {
+      console.error("Error in getUserByUsername:", error);
+      return undefined;
+    }
   }
   
   async getAllUsers(): Promise<User[]> {
-    return await db.query.users.findMany();
+    try {
+      const users = await db.select().from(schema.users);
+      return users;
+    } catch (error) {
+      console.error("Error in getAllUsers:", error);
+      return [];
+    }
   }
   
   async getUsersByKycStatus(status: string): Promise<User[]> {
-    return await db.query.users.findMany({
-      where: eq(schema.users.kycStatus, status as any)
-    });
+    try {
+      const users = await db.select().from(schema.users).where(eq(schema.users.kycStatus, status as any));
+      return users;
+    } catch (error) {
+      console.error("Error in getUsersByKycStatus:", error);
+      return [];
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -866,15 +884,19 @@ export class DatabaseStorage implements IStorage {
 
   // ===== Property Methods =====
   async getProperty(id: number): Promise<Property | undefined> {
-    return await db.query.properties.findFirst({
-      where: eq(schema.properties.id, id)
-    });
+    try {
+      const [property] = await db.select().from(schema.properties).where(eq(schema.properties.id, id));
+      return property;
+    } catch (error) {
+      console.error("Error in getProperty:", error);
+      return undefined;
+    }
   }
 
   async getAllProperties(): Promise<Property[]> {
     try {
       console.log("getAllProperties: Fetching all properties from database");
-      const properties = await db.query.properties.findMany();
+      const properties = await db.select().from(schema.properties);
       console.log(`getAllProperties: Found ${properties.length} properties`);
       
       if (properties.length === 0) {
@@ -894,7 +916,7 @@ export class DatabaseStorage implements IStorage {
         
         // Try fetching again
         console.log("Trying to fetch properties again after seeding");
-        const newProperties = await db.query.properties.findMany();
+        const newProperties = await db.select().from(schema.properties);
         console.log(`After seeding: Found ${newProperties.length} properties`);
         return newProperties;
       }
