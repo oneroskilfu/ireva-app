@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { properties, insertPropertySchema } from '../../shared/schema';
+import { properties, insertPropertySchema, insertProjectSchema } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { verifyToken, authMiddleware, ensureAdmin } from '../auth-jwt';
 import { ZodError } from 'zod';
@@ -107,7 +107,7 @@ projectsRouter.post('/', verifyToken, ensureAdmin, async (req: Request, res: Res
     const validatedData = insertProjectSchema.parse(req.body);
     
     // Insert new project
-    const [newProject] = await db.insert(projects)
+    const [newProject] = await db.insert(properties)
       .values(validatedData)
       .returning();
     
