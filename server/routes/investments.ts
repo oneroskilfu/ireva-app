@@ -163,31 +163,31 @@ investmentsRouter.get('/', verifyToken, async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    // Get user investments with property details
+    // Get user investments with project details
     const userInvestments = await db
       .select({
         investment: investments,
-        property: {
-          id: properties.id,
-          name: properties.name,
-          location: properties.location,
-          type: properties.type,
-          imageUrl: properties.imageUrl,
-          targetReturn: properties.targetReturn,
-          term: properties.term,
-          currentFunding: properties.currentFunding,
-          totalFunding: properties.totalFunding
+        project: {
+          id: projects.id,
+          title: projects.title,
+          location: projects.location,
+          pricePerUnit: projects.pricePerUnit,
+          roiPercent: projects.roiPercent,
+          tenorMonths: projects.tenorMonths,
+          totalUnits: projects.totalUnits,
+          availableUnits: projects.availableUnits,
+          status: projects.status
         }
       })
       .from(investments)
-      .leftJoin(properties, eq(investments.propertyId, properties.id))
+      .leftJoin(projects, eq(investments.projectId, projects.id))
       .where(eq(investments.userId, userId))
-      .orderBy(sql`${investments.date} DESC`);
+      .orderBy(investments.investedAt);
     
     // Format the investments for response
-    const formattedInvestments = userInvestments.map(({ investment, property }) => ({
+    const formattedInvestments = userInvestments.map(({ investment, project }) => ({
       ...investment,
-      property
+      project
     }));
     
     res.json(formattedInvestments);
@@ -216,27 +216,37 @@ investmentsRouter.get('/:id', verifyToken, async (req: Request, res: Response) =
     
     const investmentId = parseInt(req.params.id);
     
-    // Get investment with property details
-    const [investmentWithProperty] = await db
+    // Get investment with project details
+    const [investmentWithProject] = await db
       .select({
         investment: investments,
-        property: properties
+        project: {
+          id: projects.id,
+          title: projects.title,
+          location: projects.location,
+          pricePerUnit: projects.pricePerUnit,
+          roiPercent: projects.roiPercent,
+          tenorMonths: projects.tenorMonths,
+          totalUnits: projects.totalUnits,
+          availableUnits: projects.availableUnits,
+          status: projects.status
+        }
       })
       .from(investments)
-      .leftJoin(properties, eq(investments.propertyId, properties.id))
+      .leftJoin(projects, eq(investments.projectId, projects.id))
       .where(and(
         eq(investments.id, investmentId),
         eq(investments.userId, userId)
       ));
     
-    if (!investmentWithProperty) {
+    if (!investmentWithProject) {
       return res.status(404).json({ message: "Investment not found" });
     }
     
     // Format the investment for response
     const formattedInvestment = {
-      ...investmentWithProperty.investment,
-      property: investmentWithProperty.property
+      ...investmentWithProject.investment,
+      project: investmentWithProject.project
     };
     
     res.json(formattedInvestment);

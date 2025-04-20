@@ -21,8 +21,8 @@ export const users = pgTable("users", {
   role: text("role").default("investor"), // investor or admin
   phoneNumber: text("phone_number"),
   kycStatus: text("kyc_status").default("not_started"), // Added kycStatus field
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
+  createdAt: timestamp("created_at").defaultNow()
+  // Removed updatedAt as it doesn't exist in the database
 });
 
 // KYC Submissions schema
@@ -301,8 +301,8 @@ export const issueCommentsRelations = relations(issueComments, ({ one }) => ({
 // Create schemas for insertions
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  createdAt: true
+  // Removed updatedAt as it doesn't exist in the schema anymore
 });
 
 export const insertKycSubmissionSchema = createInsertSchema(kycSubmissions).omit({
