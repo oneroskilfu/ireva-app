@@ -14,15 +14,38 @@ export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "card", "ba
 
 // User schema
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: integer("id").primaryKey(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").default("investor"), // investor or admin
+  role: userRoleEnum("role").default("investor"),
   phoneNumber: text("phone_number"),
-  kycStatus: text("kyc_status").default("not_started"), // Added kycStatus field
-  createdAt: timestamp("created_at").defaultNow()
-  // Removed updatedAt as it doesn't exist in the database
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  bio: text("bio"),
+  profileImage: text("profile_image"),
+  kycStatus: kycStatusEnum("kyc_status").default("not_started"),
+  kycDocuments: jsonb("kyc_documents"),
+  kycSubmittedAt: timestamp("kyc_submitted_at"),
+  kycVerifiedAt: timestamp("kyc_verified_at"),
+  kycRejectionReason: text("kyc_rejection_reason"),
+  isPhoneVerified: boolean("is_phone_verified"),
+  accreditationLevel: accreditationLevelEnum("accreditation_level"),
+  accreditationDocuments: jsonb("accreditation_documents"),
+  accreditationVerifiedAt: timestamp("accreditation_verified_at"),
+  investmentPreferences: jsonb("investment_preferences"),
+  totalInvested: integer("total_invested"),
+  totalEarnings: integer("total_earnings"),
+  rewardsPoints: integer("rewards_points"),
+  badges: jsonb("badges"),
+  referredBy: integer("referred_by"),
+  referralCode: text("referral_code"),
+  referralBonus: integer("referral_bonus"),
+  notificationPreferences: jsonb("notification_preferences"),
+  directMessageEnabled: boolean("direct_message_enabled"),
+  lastLoginAt: timestamp("last_login_at"),
+  lastActiveAt: timestamp("last_active_at"),
+  createdAt: timestamp("created_at")
 });
 
 // KYC Submissions schema
@@ -38,20 +61,40 @@ export const kycSubmissions = pgTable("kyc_submissions", {
   reviewedAt: timestamp("reviewed_at")
 });
 
-// Projects schema
-export const projects = pgTable("projects", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  title: text("title").notNull(),
-  description: text("description"),
+// Properties schema (renamed to match database)
+export const properties = pgTable("properties", {
+  id: integer("id").primaryKey(),
+  name: text("name"),
   location: text("location"),
-  totalUnits: integer("total_units"),
-  availableUnits: integer("available_units"),
-  pricePerUnit: numeric("price_per_unit", { precision: 12, scale: 2 }),
-  roiPercent: numeric("roi_percent", { precision: 5, scale: 2 }),
-  tenorMonths: integer("tenor_months"),
-  status: text("status").default("active"), // active, closed, upcoming
-  launchDate: timestamp("launch_date"),
-  createdAt: timestamp("created_at").defaultNow()
+  description: text("description"),
+  type: propertyTypeEnum("type"),
+  imageUrl: text("image_url"),
+  imageGallery: jsonb("image_gallery"),
+  videoUrl: text("video_url"),
+  developer: text("developer"),
+  developerProfile: text("developer_profile"),
+  riskLevel: text("risk_level"),
+  targetReturn: numeric("target_return"),
+  minimumInvestment: integer("minimum_investment"),
+  term: integer("term"),
+  totalFunding: integer("total_funding"),
+  currentFunding: integer("current_funding"),
+  numberOfInvestors: integer("number_of_investors"),
+  daysLeft: integer("days_left"),
+  size: text("size"),
+  builtYear: text("built_year"),
+  occupancy: text("occupancy"),
+  cashFlow: text("cash_flow"),
+  amenities: jsonb("amenities"),
+  projectedCashflow: jsonb("projected_cashflow"),
+  documents: jsonb("documents"),
+  constructionUpdates: jsonb("construction_updates"),
+  sustainabilityFeatures: jsonb("sustainability_features"),
+  latitude: numeric("latitude"),
+  longitude: numeric("longitude"),
+  accreditedOnly: boolean("accredited_only"),
+  tier: investmentTierEnum("tier"),
+  completionDate: timestamp("completion_date")
 });
 
 // Investments schema
