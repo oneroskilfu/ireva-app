@@ -54,7 +54,7 @@ router.post("/", ensureAdmin, async (req, res) => {
     
     // Insert the new property
     const [newProperty] = await db
-      .insert(properties)
+      .insert(projects)
       .values(propertyData)
       .returning();
     
