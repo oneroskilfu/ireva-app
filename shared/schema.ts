@@ -15,9 +15,9 @@ export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "card", "ba
 // User schema
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
-  fullName: text("full_name").notNull(),
+  username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  password: text("password").notNull(),
   role: text("role").default("investor"), // investor or admin
   phoneNumber: text("phone_number"),
   isVerified: boolean("is_verified").default(false),
