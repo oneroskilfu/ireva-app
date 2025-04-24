@@ -1,94 +1,82 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 import "./PropertyEscrow.sol";
 import "./PropertyToken.sol";
+import "./ROIDistributor.sol";
 
 /**
  * @title PropertyContractFactory
- * @dev Factory contract for creating and managing property-related contracts
- * This allows the iREVA platform to deploy new contracts for each property
+ * @dev Factory contract for creating and managing property contracts
  */
 contract PropertyContractFactory {
-    address public admin;
+    address public owner;
     
     struct PropertyContract {
-        uint256 propertyId;
         address escrowAddress;
         address tokenAddress;
-        uint256 createdAt;
+        address roiDistributorAddress;
         bool isActive;
     }
     
-    mapping(uint256 => PropertyContract) public propertyContracts;
-    uint256[] public propertyIds;
+    // Mapping of property ID to property contract addresses
+    mapping(uint256 => PropertyContract) private propertyContracts;
+    // List of all property IDs in the system
+    uint256[] private propertyIds;
     
-    event EscrowContractCreated(uint256 indexed propertyId, address escrowAddress, address developer);
-    event TokenContractCreated(uint256 indexed propertyId, address tokenAddress, string symbol);
-    event ContractDeactivated(uint256 indexed propertyId);
-    event ContractReactivated(uint256 indexed propertyId);
+    event PropertyContractsCreated(
+        uint256 indexed propertyId,
+        address escrowAddress,
+        address tokenAddress,
+        address roiDistributorAddress,
+        address developer
+    );
     
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin can call this function");
+    event PropertyDeactivated(uint256 indexed propertyId);
+    
+    constructor() {
+        owner = msg.sender;
+    }
+    
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
         _;
     }
     
-    constructor() {
-        admin = msg.sender;
-    }
-    
     /**
-     * @dev Create a new escrow contract for a property
-     * @param propertyId ID of the property in the iREVA platform
-     * @param developer Address of the property developer
-     * @param targetAmount Funding target in wei
-     * @param investmentPeriodInDays Duration of investment period in days
-     * @return address Address of the newly created escrow contract
+     * @dev Create an escrow contract for a property
      */
     function createEscrowContract(
         uint256 propertyId,
-        address payable developer,
+        address developer,
         uint256 targetAmount,
         uint256 investmentPeriodInDays
-    ) external onlyAdmin returns (address) {
+    ) external onlyOwner returns (address) {
+        // Check if property contracts already exist
         require(propertyContracts[propertyId].escrowAddress == address(0), "Escrow contract already exists for this property");
         
-        PropertyEscrow escrowContract = new PropertyEscrow(
-            developer,
+        // Deploy escrow contract
+        PropertyEscrow escrow = new PropertyEscrow(
             propertyId,
+            developer,
             targetAmount,
             investmentPeriodInDays
         );
         
-        if (propertyContracts[propertyId].tokenAddress == address(0)) {
-            propertyContracts[propertyId] = PropertyContract({
-                propertyId: propertyId,
-                escrowAddress: address(escrowContract),
-                tokenAddress: address(0),
-                createdAt: block.timestamp,
-                isActive: true
-            });
-            
+        // Store escrow address in mapping
+        propertyContracts[propertyId].escrowAddress = address(escrow);
+        
+        // Add property ID to list if it's a new property
+        if (!propertyContracts[propertyId].isActive) {
             propertyIds.push(propertyId);
-        } else {
-            propertyContracts[propertyId].escrowAddress = address(escrowContract);
+            propertyContracts[propertyId].isActive = true;
         }
         
-        emit EscrowContractCreated(propertyId, address(escrowContract), developer);
-        
-        return address(escrowContract);
+        return address(escrow);
     }
     
     /**
-     * @dev Create a new token contract for a property
-     * @param propertyId ID of the property in the iREVA platform
-     * @param name Name of the token
-     * @param symbol Symbol of the token
-     * @param decimals Decimals for token precision
-     * @param initialSupply Initial token supply
-     * @param developer Address of the property developer
-     * @param pricePerToken Initial price per token in wei
-     * @return address Address of the newly created token contract
+     * @dev Create a token contract for a property
      */
     function createTokenContract(
         uint256 propertyId,
@@ -97,96 +85,127 @@ contract PropertyContractFactory {
         uint8 decimals,
         uint256 initialSupply,
         address developer,
-        uint256 pricePerToken
-    ) external onlyAdmin returns (address) {
+        uint256 tokenPrice
+    ) external onlyOwner returns (address) {
+        // Check if property contracts already exist
         require(propertyContracts[propertyId].tokenAddress == address(0), "Token contract already exists for this property");
         
-        PropertyToken tokenContract = new PropertyToken(
+        // Deploy token contract
+        PropertyToken token = new PropertyToken(
+            propertyId,
             name,
             symbol,
             decimals,
-            propertyId,
             initialSupply,
             developer,
-            pricePerToken
+            tokenPrice
         );
         
-        if (propertyContracts[propertyId].escrowAddress == address(0)) {
-            propertyContracts[propertyId] = PropertyContract({
-                propertyId: propertyId,
-                escrowAddress: address(0),
-                tokenAddress: address(tokenContract),
-                createdAt: block.timestamp,
-                isActive: true
-            });
-            
+        // Store token address in mapping
+        propertyContracts[propertyId].tokenAddress = address(token);
+        
+        // Add property ID to list if it's a new property
+        if (!propertyContracts[propertyId].isActive) {
             propertyIds.push(propertyId);
-        } else {
-            propertyContracts[propertyId].tokenAddress = address(tokenContract);
+            propertyContracts[propertyId].isActive = true;
         }
         
-        emit TokenContractCreated(propertyId, address(tokenContract), symbol);
-        
-        return address(tokenContract);
+        return address(token);
     }
     
     /**
-     * @dev Deactivate a property contract
-     * @param propertyId ID of the property to deactivate
+     * @dev Create a ROI distributor contract for a property
      */
-    function deactivateContract(uint256 propertyId) external onlyAdmin {
-        require(propertyContracts[propertyId].escrowAddress != address(0) || propertyContracts[propertyId].tokenAddress != address(0), "No contracts found for this property");
-        require(propertyContracts[propertyId].isActive, "Contract is already inactive");
+    function createROIDistributorContract(
+        uint256 propertyId,
+        address developer
+    ) external onlyOwner returns (address) {
+        // Check if token contract exists
+        require(propertyContracts[propertyId].tokenAddress != address(0), "Token contract must be created first");
+        
+        // Check if ROI distributor contract already exists
+        require(propertyContracts[propertyId].roiDistributorAddress == address(0), "ROI distributor contract already exists for this property");
+        
+        // Deploy ROI distributor contract
+        ROIDistributor roiDistributor = new ROIDistributor(
+            propertyId,
+            propertyContracts[propertyId].tokenAddress,
+            developer
+        );
+        
+        // Store ROI distributor address in mapping
+        propertyContracts[propertyId].roiDistributorAddress = address(roiDistributor);
+        
+        // Add property ID to list if it's a new property
+        if (!propertyContracts[propertyId].isActive) {
+            propertyIds.push(propertyId);
+            propertyContracts[propertyId].isActive = true;
+        }
+        
+        // Emit event
+        emit PropertyContractsCreated(
+            propertyId,
+            propertyContracts[propertyId].escrowAddress,
+            propertyContracts[propertyId].tokenAddress,
+            address(roiDistributor),
+            developer
+        );
+        
+        return address(roiDistributor);
+    }
+    
+    /**
+     * @dev Deactivate a property
+     */
+    function deactivateProperty(uint256 propertyId) external onlyOwner {
+        require(propertyContracts[propertyId].isActive, "Property is not active");
         
         propertyContracts[propertyId].isActive = false;
         
-        emit ContractDeactivated(propertyId);
+        emit PropertyDeactivated(propertyId);
     }
     
     /**
-     * @dev Reactivate a property contract
-     * @param propertyId ID of the property to reactivate
+     * @dev Get property contract addresses
      */
-    function reactivateContract(uint256 propertyId) external onlyAdmin {
-        require(propertyContracts[propertyId].escrowAddress != address(0) || propertyContracts[propertyId].tokenAddress != address(0), "No contracts found for this property");
-        require(!propertyContracts[propertyId].isActive, "Contract is already active");
+    function getPropertyContract(uint256 propertyId) external view returns (
+        address escrowAddress,
+        address tokenAddress,
+        address roiDistributorAddress,
+        bool isActive
+    ) {
+        PropertyContract memory contract = propertyContracts[propertyId];
         
-        propertyContracts[propertyId].isActive = true;
-        
-        emit ContractReactivated(propertyId);
+        return (
+            contract.escrowAddress,
+            contract.tokenAddress,
+            contract.roiDistributorAddress,
+            contract.isActive
+        );
     }
     
     /**
-     * @dev Get a property's contract details
-     * @param propertyId ID of the property
-     * @return PropertyContract The property contract details
-     */
-    function getPropertyContract(uint256 propertyId) external view returns (PropertyContract memory) {
-        return propertyContracts[propertyId];
-    }
-    
-    /**
-     * @dev Get the total number of properties with contracts
-     * @return uint256 The number of properties
+     * @dev Get the number of properties
      */
     function getPropertyCount() external view returns (uint256) {
         return propertyIds.length;
     }
     
     /**
-     * @dev Get a list of all property IDs
-     * @return uint256[] Array of property IDs
+     * @dev Get property ID by index
      */
-    function getAllPropertyIds() external view returns (uint256[] memory) {
-        return propertyIds;
+    function getPropertyIdByIndex(uint256 index) external view returns (uint256) {
+        require(index < propertyIds.length, "Index out of bounds");
+        
+        return propertyIds[index];
     }
     
     /**
-     * @dev Transfer admin rights to a new address
-     * @param newAdmin Address of the new admin
+     * @dev Change the owner of the factory
      */
-    function transferAdmin(address newAdmin) external onlyAdmin {
-        require(newAdmin != address(0), "Cannot transfer to zero address");
-        admin = newAdmin;
+    function changeOwner(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "New owner cannot be the zero address");
+        
+        owner = newOwner;
     }
 }

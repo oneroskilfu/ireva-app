@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import dotenv from 'dotenv';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { BlockchainUtils } from './blockchain-utils';
 
 dotenv.config();
 
@@ -67,7 +68,7 @@ class BlockchainService {
       const developerPayable = developerAddress as string;
       
       // Convert targetFunding to wei
-      const targetAmount = ethers.parseEther(property.totalFunding?.toString() || "0");
+      const targetAmount = BlockchainUtils.toWei(property.totalFunding || 0);
       
       // Investment period in days (convert from propertyDaysLeft or use default)
       const investmentPeriodInDays = property.daysLeft || 60;
@@ -89,23 +90,18 @@ class BlockchainService {
       const escrowAddress = propertyContract.escrowAddress;
       
       // Create token symbol from property name
-      const propertyName = property.name;
-      const tokenSymbol = propertyName
-        .split(' ')
-        .map(word => word.charAt(0))
-        .join('')
-        .toUpperCase();
+      const tokenSymbol = BlockchainUtils.createTokenSymbol(property.name);
       
       // Create token contract
       console.log(`Creating token contract for property ${propertyId} with symbol ${tokenSymbol}...`);
       const tokenTx = await this.factoryContract.createTokenContract(
         propertyId,
-        propertyName,
+        property.name || `Property ${propertyId}`,
         tokenSymbol,
         18, // decimals
         1000000, // initial supply (1 million tokens)
         developerPayable,
-        ethers.parseEther('0.0001') // price per token (0.0001 ETH)
+        BlockchainUtils.toWei(0.0001) // price per token (0.0001 ETH)
       );
       
       await tokenTx.wait();
@@ -142,7 +138,7 @@ class BlockchainService {
       const propertyContract = await this.factoryContract.getPropertyContract(propertyId);
       const escrowAddress = propertyContract.escrowAddress;
       
-      if (ethers.constants.AddressZero === escrowAddress) {
+      if (BlockchainUtils.isZeroAddress(escrowAddress)) {
         throw new Error(`No escrow contract found for property ID ${propertyId}`);
       }
       
@@ -153,7 +149,7 @@ class BlockchainService {
       const escrowContract = new ethers.Contract(escrowAddress, PropertyEscrowABI, investor);
       
       // Convert amount to wei
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = BlockchainUtils.toWei(amount);
       
       // Make investment
       const tx = await escrowContract.invest({
@@ -194,7 +190,8 @@ class BlockchainService {
       }
       
       // TODO: Replace with actual field name that stores the ROI distributor address
-      const roiDistributorAddress = property.roiDistributorAddress || '';
+      // For now using a placeholder property in the comment
+      const roiDistributorAddress = (property as any).roiDistributorAddress || '';
       
       if (!roiDistributorAddress) {
         throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
@@ -204,7 +201,7 @@ class BlockchainService {
       const roiDistributorContract = new ethers.Contract(roiDistributorAddress, ROIDistributorABI, this.wallet);
       
       // Convert amount to wei
-      const amountInWei = ethers.utils.parseEther(amount);
+      const amountInWei = BlockchainUtils.toWei(amount);
       
       // Distribute ROI
       const tx = await roiDistributorContract.distributeROI(description, {
@@ -239,7 +236,7 @@ class BlockchainService {
       const propertyContract = await this.factoryContract.getPropertyContract(propertyId);
       const escrowAddress = propertyContract.escrowAddress;
       
-      if (ethers.constants.AddressZero === escrowAddress) {
+      if (BlockchainUtils.isZeroAddress(escrowAddress)) {
         throw new Error(`No escrow contract found for property ID ${propertyId}`);
       }
       
@@ -254,11 +251,11 @@ class BlockchainService {
       const remainingTime = await escrowContract.getRemainingTime();
       
       return {
-        totalInvested: ethers.utils.formatEther(totalInvested),
-        targetAmount: ethers.utils.formatEther(targetAmount),
-        investorCount: investorCount.toNumber(),
+        totalInvested: BlockchainUtils.fromWei(totalInvested),
+        targetAmount: BlockchainUtils.fromWei(targetAmount),
+        investorCount: Number(investorCount),
         fundingComplete,
-        remainingTime: remainingTime.toNumber()
+        remainingTime: Number(remainingTime)
       };
     } catch (error) {
       console.error("Error getting property investment statistics:", error);
@@ -287,7 +284,8 @@ class BlockchainService {
       }
       
       // TODO: Replace with actual field name that stores the ROI distributor address
-      const roiDistributorAddress = property.roiDistributorAddress || '';
+      // For now using a placeholder property in the comment
+      const roiDistributorAddress = (property as any).roiDistributorAddress || '';
       
       if (!roiDistributorAddress) {
         throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
@@ -301,7 +299,7 @@ class BlockchainService {
       const hasPendingRewards = await roiDistributorContract.hasPendingRewards(investorAddress);
       
       return {
-        pendingRewards: ethers.utils.formatEther(pendingRewards),
+        pendingRewards: BlockchainUtils.fromWei(pendingRewards),
         hasPendingRewards
       };
     } catch (error) {
@@ -313,7 +311,7 @@ class BlockchainService {
   /**
    * Claim investor's ROI rewards
    * @param propertyId Property ID in the database
-   * @param investorAddress Blockchain address of the investor
+   * @param investorPrivateKey Private key of the investor
    */
   async claimRewards(propertyId: number, investorPrivateKey: string): Promise<{
     transactionHash: string;
@@ -332,7 +330,8 @@ class BlockchainService {
       }
       
       // TODO: Replace with actual field name that stores the ROI distributor address
-      const roiDistributorAddress = property.roiDistributorAddress || '';
+      // For now using a placeholder property in the comment
+      const roiDistributorAddress = (property as any).roiDistributorAddress || '';
       
       if (!roiDistributorAddress) {
         throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
@@ -349,7 +348,7 @@ class BlockchainService {
       const pendingRewards = await roiDistributorContract.calculatePendingRewards(investorAddress);
       
       // Check if there are rewards to claim
-      if (pendingRewards.eq(0)) {
+      if (pendingRewards === BigInt(0)) {
         throw new Error("No pending rewards to claim");
       }
       
@@ -360,7 +359,7 @@ class BlockchainService {
       return {
         transactionHash: tx.hash,
         success: true,
-        amountClaimed: ethers.utils.formatEther(pendingRewards)
+        amountClaimed: BlockchainUtils.fromWei(pendingRewards)
       };
     } catch (error) {
       console.error("Error claiming rewards:", error);

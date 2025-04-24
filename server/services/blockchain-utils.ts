@@ -7,19 +7,19 @@ export class BlockchainUtils {
   /**
    * Convert a value to Wei (Ether's smallest unit)
    * @param amount Amount as string or number
-   * @returns BigNumber representing the amount in wei
+   * @returns BigInt representing the amount in wei
    */
-  static toWei(amount: string | number): ethers.BigNumber {
+  static toWei(amount: string | number): bigint {
     const amountStr = amount?.toString() || "0";
     return ethers.parseEther(amountStr);
   }
   
   /**
    * Format Wei to Ether (human-readable)
-   * @param wei Amount in wei
+   * @param wei Amount in wei as bigint
    * @returns String representing the amount in Ether
    */
-  static fromWei(wei: ethers.BigNumber): string {
+  static fromWei(wei: bigint): string {
     return ethers.formatEther(wei);
   }
   
