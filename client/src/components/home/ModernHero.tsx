@@ -105,21 +105,25 @@ export default function ModernHero() {
               variants={fadeIn}
               className="mt-8 flex flex-wrap gap-4"
             >
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 group"
-              >
-                Start Investing 
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Button>
+              <Link href="/auth">
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 group"
+                >
+                  Start Investing 
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
               
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-              >
-                Explore Properties
-              </Button>
+              <Link href="/properties">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                >
+                  Explore Properties
+                </Button>
+              </Link>
             </motion.div>
             
             {/* Stats Row */}
