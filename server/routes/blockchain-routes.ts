@@ -3,6 +3,7 @@ import { authMiddleware, ensureAdmin } from '../auth-jwt';
 import { z } from 'zod';
 import { ethers } from 'ethers';
 import { blockchainService } from '../services/blockchain-service';
+import { blockchainStatusController } from '../controllers/blockchain-status-controller';
 
 const blockchainRouter = Router();
 
@@ -179,5 +180,19 @@ blockchainRouter.post('/distribute-roi/:propertyId', authMiddleware, ensureAdmin
     res.status(500).json({ error: 'Failed to distribute ROI', details: String(error) });
   }
 });
+
+/**
+ * @route GET /api/blockchain/status
+ * @desc Check status of blockchain providers
+ * @access Public
+ */
+blockchainRouter.get('/status', blockchainStatusController.checkStatus);
+
+/**
+ * @route POST /api/blockchain/api-keys
+ * @desc Save blockchain provider API keys
+ * @access Private
+ */
+blockchainRouter.post('/api-keys', authMiddleware, blockchainStatusController.saveApiKeys);
 
 export default blockchainRouter;
