@@ -39,6 +39,8 @@ import adminKycSecurityRoutes from './routes/admin-kyc-routes';
 import dataProtectionRoutes from './routes/data-protection-routes';
 // Import stablecoin routes
 import stablecoinRoutes from './routes/stablecoin-routes';
+// Import milestone escrow routes
+import milestoneEscrowRoutes from './routes/milestone-escrow-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -292,6 +294,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Stablecoin routes
   app.use('/api/stablecoins', stablecoinRoutes);
   console.log("Stablecoin routes registered");
+  
+  // Set up Milestone Escrow routes
+  app.use('/api/milestone-escrow', milestoneEscrowRoutes);
+  console.log("Milestone escrow routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);

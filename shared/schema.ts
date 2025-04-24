@@ -158,6 +158,32 @@ export const cryptoTransactions = pgTable("crypto_transactions", {
   confirmedAt: timestamp("confirmed_at")
 });
 
+// Milestone status enum
+export const milestoneStatusEnum = pgEnum("milestone_status", [
+  "pending", 
+  "in_progress", 
+  "completed",
+  "cancelled",
+  "failed"
+]);
+
+// Milestones for escrow contracts
+export const milestones = pgTable("milestones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  escrowId: text("escrow_id").notNull(),
+  milestoneIndex: integer("milestone_index").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  amount: text("amount").notNull(),
+  status: milestoneStatusEnum("status").notNull().default("pending"),
+  completionDate: timestamp("completion_date").notNull(),
+  completedAt: timestamp("completed_at"),
+  network: cryptoNetworkEnum("network").notNull(),
+  hash: text("hash"),
+  proofData: text("proof_data"),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
 // Notifications schema
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -468,6 +494,13 @@ export const insertCryptoTransactionSchema = createInsertSchema(cryptoTransactio
   confirmedAt: true
 });
 
+// Create schema for milestones
+export const insertMilestoneSchema = createInsertSchema(milestones).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true
+});
+
 // Export the property schema with a new name to match the import in admin-routes.ts
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
@@ -516,3 +549,6 @@ export type InsertCryptoWallet = z.infer<typeof insertCryptoWalletSchema>;
 
 export type CryptoTransaction = typeof cryptoTransactions.$inferSelect;
 export type InsertCryptoTransaction = z.infer<typeof insertCryptoTransactionSchema>;
+
+export type Milestone = typeof milestones.$inferSelect;
+export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
