@@ -27,6 +27,9 @@ import adminRoutes from './routes/admin.js';
 import investorRoutes from './routes/investor.js';
 import debugLoginRouter from './routes/debugLogin';
 import investorRoiRoutes from './routes/investorRoiRoutes';
+// Import crypto routes
+import cryptoWalletRouter from './routes/crypto-wallets';
+import cryptoTransactionRouter from './routes/crypto-transactions';
 import fs from 'fs';
 import path from 'path';
 
@@ -248,6 +251,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Issues routes
   app.use('/api/issues', issuesRoutes);
   console.log("Issues routes registered");
+  
+  // Set up Crypto Wallet routes
+  app.use('/api/crypto-wallets', cryptoWalletRouter);
+  console.log("Crypto wallet routes registered");
+  
+  // Set up Crypto Transaction routes
+  app.use('/api/crypto-transactions', cryptoTransactionRouter);
+  console.log("Crypto transaction routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
