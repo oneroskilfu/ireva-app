@@ -185,23 +185,37 @@ const WalletOverview = () => {
             <Download className="h-4 w-4 mr-2" />
             Download Statement
           </Button>
-          <Sheet open={showAddFunds} onOpenChange={setShowAddFunds}>
-            <SheetTrigger asChild>
-              <Button size="sm" className="h-9">
-                <ArrowDownCircle className="h-4 w-4 mr-2" />
-                Add Funds
+          <div className="flex gap-0.5">
+            <Sheet open={showAddFunds} onOpenChange={setShowAddFunds}>
+              <SheetTrigger asChild>
+                <Button size="sm" className="h-9 rounded-r-none">
+                  <ArrowDownCircle className="h-4 w-4 mr-2" />
+                  Add Funds
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Add Funds to Wallet</SheetTitle>
+                  <SheetDescription>
+                    Add funds to your wallet to invest in properties
+                  </SheetDescription>
+                </SheetHeader>
+                <AddFunds onSuccess={() => { setShowAddFunds(false); refetch(); }} />
+              </SheetContent>
+            </Sheet>
+            <div className="inline-flex h-9 divide-x">
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="rounded-l-none px-2 h-9" 
+                onClick={() => window.location.href = '/wallet/crypto'}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
+                </svg>
               </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Add Funds to Wallet</SheetTitle>
-                <SheetDescription>
-                  Add funds to your wallet to invest in properties
-                </SheetDescription>
-              </SheetHeader>
-              <AddFunds onSuccess={() => { setShowAddFunds(false); refetch(); }} />
-            </SheetContent>
-          </Sheet>
+            </div>
+          </div>
           <Sheet open={showWithdraw} onOpenChange={setShowWithdraw}>
             <SheetTrigger asChild>
               <Button variant="secondary" size="sm" className="h-9">
