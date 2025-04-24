@@ -35,10 +35,10 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
   useEffect(() => {
     // Check for existing connection on component mount
     const checkConnection = async () => {
-      if (hasProvider) {
+      if (hasProvider && window.ethereum) {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
+          if (accounts && accounts.length > 0) {
             setWalletAddress(accounts[0]);
             fetchBalance(accounts[0]);
             detectNetwork();
@@ -56,13 +56,13 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
     checkConnection();
 
     // Listen for account changes
-    if (hasProvider) {
+    if (hasProvider && window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
     }
 
     return () => {
-      if (hasProvider) {
+      if (hasProvider && window.ethereum) {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
         window.ethereum.removeListener('chainChanged', handleChainChanged);
       }
@@ -111,7 +111,7 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
   };
 
   const connectWallet = async () => {
-    if (!hasProvider) {
+    if (!hasProvider || !window.ethereum) {
       toast({
         title: 'Wallet provider not found',
         description: 'Please install MetaMask or another Ethereum wallet extension.',
@@ -124,12 +124,14 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
 
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      setWalletAddress(accounts[0]);
-      fetchBalance(accounts[0]);
-      detectNetwork();
-      
-      if (onWalletConnected) {
-        onWalletConnected(accounts[0], network);
+      if (accounts && accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+        fetchBalance(accounts[0]);
+        detectNetwork();
+        
+        if (onWalletConnected) {
+          onWalletConnected(accounts[0], network);
+        }
       }
 
       // Send wallet info to backend
@@ -160,6 +162,8 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
   };
 
   const fetchBalance = async (address: string) => {
+    if (!window.ethereum) return;
+    
     try {
       const result = await window.ethereum.request({
         method: 'eth_getBalance',
@@ -286,12 +290,15 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="flex items-center"
+                aria-live="polite"
+                role="status"
               >
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Connecting...
+                <span>Connecting...</span>
+                <span className="sr-only">Connecting wallet, please wait</span>
               </motion.div>
             ) : walletAddress ? (
               <motion.div
@@ -300,10 +307,11 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="flex items-center"
+                aria-label={`Connected wallet ${truncateAddress(walletAddress)} on ${getCurrentNetworkName()}`}
               >
                 {getNetworkIcon(network)}
                 <span className="mr-1">{truncateAddress(walletAddress)}</span>
-                <ChevronDown className="h-4 w-4 ml-1" />
+                <ChevronDown className="h-4 w-4 ml-1" aria-hidden="true" />
               </motion.div>
             ) : (
               <motion.div
@@ -313,8 +321,8 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
                 exit={{ opacity: 0 }}
                 className="flex items-center"
               >
-                <Wallet className="mr-2 h-4 w-4" />
-                Connect Wallet
+                <Wallet className="mr-2 h-4 w-4" aria-hidden="true" />
+                <span>Connect Wallet</span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -322,52 +330,64 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
       </PopoverTrigger>
       
       {walletAddress && (
-        <PopoverContent className="w-80 p-4">
+        <PopoverContent className="w-80 p-4" role="dialog" aria-label="Wallet Information">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
                 {getNetworkIcon(network)}
                 <span className="font-semibold">{getCurrentNetworkName()}</span>
               </div>
               
-              <div className="flex items-center">
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
+              <div className="flex items-center" aria-live="polite">
+                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" aria-hidden="true" />
                 <span className="text-xs text-green-600">Connected</span>
               </div>
             </div>
             
             <div className="bg-muted/50 p-3 rounded-md">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-sm text-muted-foreground">Wallet Address</span>
+                <span className="text-sm text-muted-foreground" id="wallet-address-label">Wallet Address</span>
                 <div className="flex space-x-1">
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6"
                     onClick={() => walletAddress && copyToClipboard(walletAddress)}
+                    aria-label="Copy wallet address to clipboard"
+                    title="Copy to clipboard"
                   >
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-3 w-3" aria-hidden="true" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6"
                     onClick={openWalletExplorer}
+                    aria-label="View on blockchain explorer"
+                    title="View on blockchain explorer"
                   >
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
-              <div className="text-sm font-mono break-all">{walletAddress}</div>
+              <div 
+                className="text-sm font-mono break-all" 
+                aria-labelledby="wallet-address-label"
+              >
+                {walletAddress}
+              </div>
             </div>
             
             <div className="flex justify-between items-center">
               <span className="font-medium">Balance</span>
-              <div className="flex items-center">
+              <div className="flex items-center" aria-live="polite">
                 {balance ? (
                   <span className="font-medium">{balance} {network === 'ethereum' ? 'ETH' : network === 'polygon' ? 'MATIC' : 'BNB'}</span>
                 ) : (
-                  <span className="text-muted-foreground text-sm">Loading...</span>
+                  <div className="flex items-center">
+                    <span className="text-muted-foreground text-sm mr-2">Loading</span>
+                    <div className="h-3 w-3 rounded-full border-2 border-t-transparent border-muted-foreground animate-spin"></div>
+                  </div>
                 )}
               </div>
             </div>
