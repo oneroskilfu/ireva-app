@@ -1,60 +1,118 @@
-// This script distributes ROI to token holders
-const { ethers } = require("ethers");
-require('dotenv').config();
+// Script to distribute ROI to property investors
+const { ethers } = require("hardhat");
+const { parseEther } = ethers.utils;
+const readline = require("readline");
 
-// You would replace these with the actual contract addresses after deployment
-const ROI_DISTRIBUTOR_ADDRESS = process.env.ROI_DISTRIBUTOR_ADDRESS;
+// Create a readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+// Function to get user input
+function askQuestion(query) {
+  return new Promise((resolve) => {
+    rl.question(`${query}: `, (answer) => {
+      resolve(answer);
+    });
+  });
+}
 
 async function main() {
-  // Initialize provider
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-  
-  // Initialize signer (this would be the developer/admin in production)
-  const privateKey = process.env.PRIVATE_KEY;
-  const wallet = new ethers.Wallet(privateKey, provider);
-  
-  console.log("Distributing ROI with account:", wallet.address);
-  console.log("Account balance:", ethers.utils.formatEther(await wallet.getBalance()), "ETH");
-  
-  // Get the ROI distributor contract instance
-  const distributorABI = require("../artifacts/contracts/ROIDistributor.sol/ROIDistributor.json").abi;
-  const distributorContract = new ethers.Contract(ROI_DISTRIBUTOR_ADDRESS, distributorABI, wallet);
-  
-  // Distribution amount and description
-  const distributionAmount = ethers.utils.parseEther("1.0"); // 1 ETH
-  const description = "October 2023 Rental Income Distribution";
-  
-  // Distribute ROI
-  console.log(`Distributing ${ethers.utils.formatEther(distributionAmount)} ETH to token holders...`);
-  console.log(`Description: ${description}`);
-  
   try {
-    const tx = await distributorContract.distributeROI(
-      description,
-      { value: distributionAmount }
-    );
+    console.log("Starting ROI distribution process...");
     
-    console.log("Transaction hash:", tx.hash);
-    console.log("Waiting for confirmation...");
+    // Get factory address from command line or user input
+    let factoryAddress = process.argv[2];
+    if (!factoryAddress || !ethers.utils.isAddress(factoryAddress)) {
+      console.log("No valid factory address provided in command line arguments.");
+      factoryAddress = await askQuestion("Please enter the PropertyContractFactory address");
+      
+      if (!ethers.utils.isAddress(factoryAddress)) {
+        throw new Error("Invalid factory address");
+      }
+    }
     
+    // Get deployer account
+    const [deployer] = await ethers.getSigners();
+    console.log(`\nUsing account: ${deployer.address}`);
+    
+    // Display account balance
+    const deployerBalance = await deployer.getBalance();
+    console.log(`Account balance: ${ethers.utils.formatEther(deployerBalance)} ETH`);
+    
+    // Get distribution details from the user
+    const propertyId = await askQuestion("Enter property ID (number)");
+    const amount = await askQuestion("Enter ROI distribution amount in ETH");
+    const description = await askQuestion("Enter distribution description (e.g., 'Q2 2025 Dividend')");
+    
+    // Create property contract factory instance
+    const PropertyContractFactory = await ethers.getContractFactory("PropertyContractFactory");
+    const factory = PropertyContractFactory.attach(factoryAddress);
+    
+    // Get property contract details
+    const propertyContract = await factory.getPropertyContract(propertyId);
+    
+    if (ethers.constants.AddressZero === propertyContract.roiDistributorAddress) {
+      throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
+    }
+    
+    // Create ROI distributor contract instance
+    const ROIDistributor = await ethers.getContractFactory("ROIDistributor");
+    const roiDistributor = ROIDistributor.attach(propertyContract.roiDistributorAddress);
+    
+    console.log(`\nPreparing to distribute ROI with the following details:`);
+    console.log(`Property ID: ${propertyId}`);
+    console.log(`Amount: ${amount} ETH`);
+    console.log(`Description: ${description}`);
+    console.log(`ROI Distributor Address: ${propertyContract.roiDistributorAddress}`);
+    
+    // Confirm with user
+    const confirm = await askQuestion("\nConfirm these details? (yes/no)");
+    if (confirm.toLowerCase() !== "yes") {
+      console.log("Operation cancelled by user");
+      return;
+    }
+    
+    // Distribute ROI
+    console.log("\nDistributing ROI...");
+    const tx = await roiDistributor.distributeROI(description, {
+      value: parseEther(amount)
+    });
+    
+    console.log(`Transaction hash: ${tx.hash}`);
     await tx.wait();
     
-    console.log("ROI distribution successful!");
+    console.log("\nROI distribution completed successfully!");
     
-    // Get distribution details
-    const distributionCount = await distributorContract.getDistributionCount();
-    console.log("Total distributions:", distributionCount.toString());
+    // Get total distributed
+    const totalDistributed = await roiDistributor.getTotalDistributed();
+    const distributionCount = await roiDistributor.getDistributionCount();
     
-    const totalDistributed = await distributorContract.getTotalDistributed();
-    console.log("Total distributed:", ethers.utils.formatEther(totalDistributed), "ETH");
+    console.log(`\nDistribution Statistics:`);
+    console.log(`Total Distributed: ${ethers.utils.formatEther(totalDistributed)} ETH`);
+    console.log(`Distribution Count: ${distributionCount}`);
+    
+    return {
+      propertyId,
+      amount,
+      description,
+      transactionHash: tx.hash,
+      totalDistributed: ethers.utils.formatEther(totalDistributed),
+      distributionCount: distributionCount.toString()
+    };
   } catch (error) {
-    console.error("Error distributing ROI:", error);
+    console.error("Error during ROI distribution:", error);
+    process.exit(1);
+  } finally {
+    rl.close();
   }
 }
 
+// Execute the script
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    console.error("Unhandled error:", error);
     process.exit(1);
   });

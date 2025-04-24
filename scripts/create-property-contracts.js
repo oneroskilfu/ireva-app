@@ -1,82 +1,157 @@
-// This script creates escrow and token contracts for a property using the factory
-const { ethers } = require("ethers");
-require('dotenv').config();
+// Script to create contracts for a property
+const { ethers } = require("hardhat");
+const { parseEther } = ethers.utils;
+const readline = require("readline");
 
-// You would replace this with the actual factory contract address after deployment
-const FACTORY_CONTRACT_ADDRESS = process.env.FACTORY_CONTRACT_ADDRESS;
+// Create a readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-async function main() {
-  // Initialize provider
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-  
-  // Initialize signer
-  const privateKey = process.env.PRIVATE_KEY;
-  const wallet = new ethers.Wallet(privateKey, provider);
-  
-  console.log("Using account:", wallet.address);
-  console.log("Account balance:", (await wallet.getBalance()).toString());
-  
-  // Get the factory contract instance
-  const factoryABI = require("../artifacts/contracts/PropertyContractFactory.sol/PropertyContractFactory.json").abi;
-  const factoryContract = new ethers.Contract(FACTORY_CONTRACT_ADDRESS, factoryABI, wallet);
-  
-  // Example property details
-  const propertyId = 1; // This should match your propertyId in the database
-  const developer = wallet.address; // In production, this would be the developer's address
-  const targetAmount = ethers.utils.parseEther("100"); // 100 ETH funding target
-  const investmentPeriodInDays = 60; // 60 day investment period
-  
-  // Create escrow contract
-  console.log(`Creating escrow contract for property ${propertyId}...`);
-  const escrowTx = await factoryContract.createEscrowContract(
-    propertyId,
-    developer,
-    targetAmount,
-    investmentPeriodInDays
-  );
-  
-  await escrowTx.wait();
-  console.log("Escrow contract creation transaction:", escrowTx.hash);
-  
-  // Get the created escrow contract address
-  const propertyContract = await factoryContract.getPropertyContract(propertyId);
-  console.log("Escrow contract created at:", propertyContract.escrowAddress);
-  
-  // Token details
-  const tokenName = "iREVA Property Token";
-  const tokenSymbol = "IREV";
-  const tokenDecimals = 18;
-  const initialSupply = 1000000; // 1 million tokens
-  const pricePerToken = ethers.utils.parseEther("0.0001"); // 0.0001 ETH per token
-  
-  // Create token contract
-  console.log(`Creating token contract for property ${propertyId}...`);
-  const tokenTx = await factoryContract.createTokenContract(
-    propertyId,
-    tokenName,
-    tokenSymbol,
-    tokenDecimals,
-    initialSupply,
-    developer,
-    pricePerToken
-  );
-  
-  await tokenTx.wait();
-  console.log("Token contract creation transaction:", tokenTx.hash);
-  
-  // Get the updated property contract details with both contracts
-  const updatedPropertyContract = await factoryContract.getPropertyContract(propertyId);
-  console.log("\nProperty contracts created successfully:");
-  console.log("Property ID:", updatedPropertyContract.propertyId.toString());
-  console.log("Escrow Contract:", updatedPropertyContract.escrowAddress);
-  console.log("Token Contract:", updatedPropertyContract.tokenAddress);
-  console.log("Created At:", new Date(updatedPropertyContract.createdAt.toNumber() * 1000).toISOString());
-  console.log("Is Active:", updatedPropertyContract.isActive);
+// Function to get user input
+function askQuestion(query) {
+  return new Promise((resolve) => {
+    rl.question(`${query}: `, (answer) => {
+      resolve(answer);
+    });
+  });
 }
 
+async function main() {
+  try {
+    console.log("Starting property contract creation process...");
+    
+    // Get the factory contract address from command line args or ask user
+    let factoryAddress = process.argv[2];
+    if (!factoryAddress || !ethers.utils.isAddress(factoryAddress)) {
+      console.log("No valid factory address provided in command line arguments.");
+      factoryAddress = await askQuestion("Please enter the PropertyContractFactory address");
+      
+      if (!ethers.utils.isAddress(factoryAddress)) {
+        throw new Error("Invalid factory address");
+      }
+    }
+    
+    // Get deployer account
+    const [deployer] = await ethers.getSigners();
+    console.log(`\nUsing account: ${deployer.address}`);
+    
+    // Display account balance
+    const deployerBalance = await deployer.getBalance();
+    console.log(`Account balance: ${ethers.utils.formatEther(deployerBalance)} ETH`);
+    
+    // Get property information from the user
+    const propertyId = await askQuestion("Enter property ID (number)");
+    const developerAddress = await askQuestion("Enter developer address");
+    const tokenName = await askQuestion("Enter token name (e.g., 'Westfield Retail Center')");
+    const targetAmount = await askQuestion("Enter target funding amount in ETH");
+    const investmentPeriodInDays = await askQuestion("Enter investment period in days");
+    
+    // Create property contract factory instance
+    const PropertyContractFactory = await ethers.getContractFactory("PropertyContractFactory");
+    const factory = PropertyContractFactory.attach(factoryAddress);
+    
+    // Create token symbol from property name
+    const tokenSymbol = tokenName
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase();
+    
+    console.log(`\nCreating property contracts with the following details:`);
+    console.log(`Property ID: ${propertyId}`);
+    console.log(`Developer: ${developerAddress}`);
+    console.log(`Token Name: ${tokenName}`);
+    console.log(`Token Symbol: ${tokenSymbol}`);
+    console.log(`Target Amount: ${targetAmount} ETH`);
+    console.log(`Investment Period: ${investmentPeriodInDays} days`);
+    
+    // Confirm with user
+    const confirm = await askQuestion("\nConfirm these details? (yes/no)");
+    if (confirm.toLowerCase() !== "yes") {
+      console.log("Operation cancelled by user");
+      return;
+    }
+    
+    // Step 1: Create escrow contract
+    console.log("\nStep 1: Creating escrow contract...");
+    const escrowTx = await factory.createEscrowContract(
+      propertyId,
+      developerAddress,
+      parseEther(targetAmount),
+      investmentPeriodInDays
+    );
+    
+    console.log(`Transaction hash: ${escrowTx.hash}`);
+    await escrowTx.wait();
+    console.log("Escrow contract created successfully");
+    
+    // Get escrow contract address
+    const propertyContractAfterEscrow = await factory.getPropertyContract(propertyId);
+    console.log(`Escrow contract address: ${propertyContractAfterEscrow.escrowAddress}`);
+    
+    // Step 2: Create token contract
+    console.log("\nStep 2: Creating token contract...");
+    const tokenTx = await factory.createTokenContract(
+      propertyId,
+      tokenName,
+      tokenSymbol,
+      18, // decimals
+      1000000, // initial supply (1 million tokens)
+      developerAddress,
+      parseEther('0.0001') // price per token (0.0001 ETH)
+    );
+    
+    console.log(`Transaction hash: ${tokenTx.hash}`);
+    await tokenTx.wait();
+    console.log("Token contract created successfully");
+    
+    // Get token contract address
+    const propertyContractAfterToken = await factory.getPropertyContract(propertyId);
+    console.log(`Token contract address: ${propertyContractAfterToken.tokenAddress}`);
+    
+    // Step 3: Create ROI distributor contract
+    console.log("\nStep 3: Creating ROI distributor contract...");
+    const roiDistributorTx = await factory.createROIDistributorContract(
+      propertyId,
+      developerAddress
+    );
+    
+    console.log(`Transaction hash: ${roiDistributorTx.hash}`);
+    await roiDistributorTx.wait();
+    console.log("ROI distributor contract created successfully");
+    
+    // Get full property contract details
+    const propertyContract = await factory.getPropertyContract(propertyId);
+    
+    console.log("\nProperty contracts created successfully!");
+    console.log("\nContract addresses:");
+    console.log(`- Escrow: ${propertyContract.escrowAddress}`);
+    console.log(`- Token: ${propertyContract.tokenAddress}`);
+    console.log(`- ROI Distributor: ${propertyContract.roiDistributorAddress}`);
+    
+    // Important: Store these addresses in your database
+    console.log("\nIMPORTANT: Store these addresses in your database for property ID", propertyId);
+    
+    return {
+      propertyId,
+      escrowAddress: propertyContract.escrowAddress,
+      tokenAddress: propertyContract.tokenAddress,
+      roiDistributorAddress: propertyContract.roiDistributorAddress
+    };
+  } catch (error) {
+    console.error("Error during property contract creation:", error);
+    process.exit(1);
+  } finally {
+    rl.close();
+  }
+}
+
+// Execute the script
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    console.error("Unhandled error:", error);
     process.exit(1);
   });

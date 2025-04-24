@@ -1,57 +1,121 @@
-// This script allows investors to claim their ROI
-const { ethers } = require("ethers");
-require('dotenv').config();
+// Script to claim ROI rewards from property investments
+const { ethers } = require("hardhat");
+const readline = require("readline");
 
-// You would replace this with the actual contract address after deployment
-const ROI_DISTRIBUTOR_ADDRESS = process.env.ROI_DISTRIBUTOR_ADDRESS;
+// Create a readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+// Function to get user input
+function askQuestion(query) {
+  return new Promise((resolve) => {
+    rl.question(`${query}: `, (answer) => {
+      resolve(answer);
+    });
+  });
+}
 
 async function main() {
-  // Initialize provider
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-  
-  // Initialize signer (this would be the investor in production)
-  const privateKey = process.env.PRIVATE_KEY;
-  const wallet = new ethers.Wallet(privateKey, provider);
-  
-  console.log("Claiming ROI with account:", wallet.address);
-  console.log("Account balance before claiming:", ethers.utils.formatEther(await wallet.getBalance()), "ETH");
-  
-  // Get the ROI distributor contract instance
-  const distributorABI = require("../artifacts/contracts/ROIDistributor.sol/ROIDistributor.json").abi;
-  const distributorContract = new ethers.Contract(ROI_DISTRIBUTOR_ADDRESS, distributorABI, wallet);
-  
-  // Check if investor has any pending rewards
-  const hasPendingRewards = await distributorContract.hasPendingRewards(wallet.address);
-  
-  if (!hasPendingRewards) {
-    console.log("No pending rewards to claim.");
-    return;
-  }
-  
-  // Calculate pending rewards
-  const pendingRewards = await distributorContract.calculatePendingRewards(wallet.address);
-  console.log("Pending rewards:", ethers.utils.formatEther(pendingRewards), "ETH");
-  
   try {
+    console.log("Starting ROI claiming process...");
+    
+    // Get factory address from command line or user input
+    let factoryAddress = process.argv[2];
+    if (!factoryAddress || !ethers.utils.isAddress(factoryAddress)) {
+      console.log("No valid factory address provided in command line arguments.");
+      factoryAddress = await askQuestion("Please enter the PropertyContractFactory address");
+      
+      if (!ethers.utils.isAddress(factoryAddress)) {
+        throw new Error("Invalid factory address");
+      }
+    }
+    
+    // Get ROI claiming details from the user
+    const propertyId = await askQuestion("Enter property ID (number)");
+    const investorPrivateKey = await askQuestion("Enter investor private key (Warning: Handle with care!)");
+    
+    if (!investorPrivateKey || investorPrivateKey.length < 64) {
+      throw new Error("Invalid private key");
+    }
+    
+    // Create wallet from private key
+    const provider = ethers.provider;
+    const wallet = new ethers.Wallet(investorPrivateKey, provider);
+    const investorAddress = wallet.address;
+    
+    console.log(`\nInvestor address: ${investorAddress}`);
+    
+    // Display account balance
+    const investorBalance = await wallet.getBalance();
+    console.log(`Investor balance: ${ethers.utils.formatEther(investorBalance)} ETH`);
+    
+    // Create property contract factory instance
+    const PropertyContractFactory = await ethers.getContractFactory("PropertyContractFactory");
+    const factory = PropertyContractFactory.attach(factoryAddress);
+    
+    // Get property contract details
+    const propertyContract = await factory.getPropertyContract(propertyId);
+    
+    if (ethers.constants.AddressZero === propertyContract.roiDistributorAddress) {
+      throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
+    }
+    
+    // Create ROI distributor contract instance with investor wallet
+    const ROIDistributor = await ethers.getContractFactory("ROIDistributor");
+    const roiDistributor = ROIDistributor.attach(propertyContract.roiDistributorAddress).connect(wallet);
+    
+    // Check if investor has any pending rewards
+    const pendingRewards = await roiDistributor.calculatePendingRewards(investorAddress);
+    const hasPendingRewards = await roiDistributor.hasPendingRewards(investorAddress);
+    
+    console.log(`\nPending rewards: ${ethers.utils.formatEther(pendingRewards)} ETH`);
+    
+    if (!hasPendingRewards) {
+      console.log("You have no pending rewards to claim.");
+      return;
+    }
+    
+    // Confirm with user
+    const confirm = await askQuestion("\nClaim these rewards? (yes/no)");
+    if (confirm.toLowerCase() !== "yes") {
+      console.log("Operation cancelled by user");
+      return;
+    }
+    
     // Claim rewards
-    console.log("Claiming rewards...");
-    const tx = await distributorContract.claimRewards();
+    console.log("\nClaiming rewards...");
+    const tx = await roiDistributor.claimRewards();
     
-    console.log("Transaction hash:", tx.hash);
-    console.log("Waiting for confirmation...");
-    
+    console.log(`Transaction hash: ${tx.hash}`);
     await tx.wait();
     
-    console.log("Rewards claimed successfully!");
-    console.log("Account balance after claiming:", ethers.utils.formatEther(await wallet.getBalance()), "ETH");
+    console.log("\nRewards claimed successfully!");
+    
+    // Get updated balances
+    const updatedBalance = await wallet.getBalance();
+    console.log(`\nUpdated investor balance: ${ethers.utils.formatEther(updatedBalance)} ETH`);
+    console.log(`Balance increase: ${ethers.utils.formatEther(updatedBalance.sub(investorBalance))} ETH`);
+    
+    return {
+      propertyId,
+      investorAddress,
+      claimedAmount: ethers.utils.formatEther(pendingRewards),
+      transactionHash: tx.hash
+    };
   } catch (error) {
-    console.error("Error claiming rewards:", error);
+    console.error("Error during ROI claiming:", error);
+    process.exit(1);
+  } finally {
+    rl.close();
   }
 }
 
+// Execute the script
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    console.error("Unhandled error:", error);
     process.exit(1);
   });

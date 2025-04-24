@@ -1,39 +1,49 @@
-// This script deploys the PropertyContractFactory contract
-const { ethers } = require("ethers");
-require('dotenv').config();
+// Deploy script for the Property Contract Factory and related contracts
+const { ethers } = require("hardhat");
 
 async function main() {
-  // Initialize provider
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-  
-  // Initialize signer (account that will deploy the contract)
-  const privateKey = process.env.PRIVATE_KEY;
-  const wallet = new ethers.Wallet(privateKey, provider);
-  
-  console.log("Deploying contracts with the account:", wallet.address);
-  console.log("Account balance:", (await wallet.getBalance()).toString());
-  
-  // Get the contract factories
-  const PropertyContractFactory = await ethers.getContractFactory("PropertyContractFactory", wallet);
-  
-  // Deploy PropertyContractFactory
-  console.log("Deploying PropertyContractFactory...");
-  const factoryContract = await PropertyContractFactory.deploy();
-  await factoryContract.deployed();
-  console.log("PropertyContractFactory deployed to:", factoryContract.address);
-  
-  // Save the contract addresses for future use
-  console.log("\nSave these contract addresses:");
-  console.log("PropertyContractFactory:", factoryContract.address);
-  
-  return {
-    factoryContract
-  };
+  try {
+    console.log("Starting deployment process...");
+    
+    // Get deployer account
+    const [deployer] = await ethers.getSigners();
+    console.log(`Deploying contracts with account: ${deployer.address}`);
+    
+    // Display account balance
+    const deployerBalance = await deployer.getBalance();
+    console.log(`Account balance: ${ethers.formatEther(deployerBalance)} ETH`);
+    
+    // Deploy PropertyContractFactory
+    const PropertyContractFactory = await ethers.getContractFactory("PropertyContractFactory");
+    const factoryContract = await PropertyContractFactory.deploy();
+    await factoryContract.waitForDeployment();
+    
+    const factoryAddress = await factoryContract.getAddress();
+    console.log(`PropertyContractFactory deployed to: ${factoryAddress}`);
+    
+    console.log("\nDeployment completed successfully!");
+    console.log("\nContract addresses:");
+    console.log(`- PropertyContractFactory: ${factoryAddress}`);
+    
+    // Important: Store these addresses in your deployment environment or database
+    console.log("\nIMPORTANT: Save the above contract addresses in your environment variables or database.");
+    console.log("For example in your .env file:");
+    console.log(`FACTORY_CONTRACT_ADDRESS=${factoryAddress}`);
+    
+    // Return the deployed addresses (useful for automated scripts)
+    return {
+      factoryAddress
+    };
+  } catch (error) {
+    console.error("Error during deployment:", error);
+    process.exit(1);
+  }
 }
 
+// Execute the script
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    console.error("Unhandled error:", error);
     process.exit(1);
   });
