@@ -118,6 +118,20 @@ export const wallets = pgTable("wallets", {
   lastUpdated: timestamp("last_updated").defaultNow()
 });
 
+// Crypto Wallets schema
+export const cryptoWallets = pgTable("crypto_wallets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  network: cryptoNetworkEnum("network").notNull(),
+  address: text("address").notNull(),
+  label: text("label"),
+  isVerified: boolean("is_verified").default(false),
+  isPrimary: boolean("is_primary").default(false),
+  lastUsed: timestamp("last_used"),
+  balance: text("balance"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Transactions schema
 export const transactions = pgTable("transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -127,6 +141,21 @@ export const transactions = pgTable("transactions", {
   reference: text("reference"),
   status: text("status").default("completed"),
   createdAt: timestamp("created_at").defaultNow()
+});
+
+// Crypto Transactions schema
+export const cryptoTransactions = pgTable("crypto_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cryptoWalletId: uuid("crypto_wallet_id").notNull().references(() => cryptoWallets.id, { onDelete: "cascade" }),
+  txHash: text("tx_hash").notNull(),
+  network: cryptoNetworkEnum("network").notNull(),
+  amount: text("amount").notNull(),
+  amountInFiat: numeric("amount_in_fiat", { precision: 12, scale: 2 }),
+  type: text("type").notNull(), // deposit, withdrawal, investment, roi_credit
+  status: text("status").default("pending"), // pending, completed, failed
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  confirmedAt: timestamp("confirmed_at")
 });
 
 // Notifications schema
@@ -223,6 +252,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     fields: [users.id],
     references: [wallets.userId]
   }),
+  cryptoWallets: many(cryptoWallets),
   notifications: many(notifications),
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
@@ -266,6 +296,21 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   wallet: one(wallets, {
     fields: [transactions.walletId],
     references: [wallets.id]
+  })
+}));
+
+export const cryptoWalletsRelations = relations(cryptoWallets, ({ one, many }) => ({
+  user: one(users, {
+    fields: [cryptoWallets.userId],
+    references: [users.id]
+  }),
+  transactions: many(cryptoTransactions)
+}));
+
+export const cryptoTransactionsRelations = relations(cryptoTransactions, ({ one }) => ({
+  wallet: one(cryptoWallets, {
+    fields: [cryptoTransactions.cryptoWalletId],
+    references: [cryptoWallets.id]
   })
 }));
 
@@ -410,6 +455,19 @@ export const insertIssueCommentSchema = createInsertSchema(issueComments).omit({
   createdAt: true
 });
 
+// Create schemas for crypto tables
+export const insertCryptoWalletSchema = createInsertSchema(cryptoWallets).omit({
+  id: true,
+  createdAt: true,
+  lastUsed: true
+});
+
+export const insertCryptoTransactionSchema = createInsertSchema(cryptoTransactions).omit({
+  id: true,
+  createdAt: true,
+  confirmedAt: true
+});
+
 // Export the property schema with a new name to match the import in admin-routes.ts
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
@@ -452,3 +510,9 @@ export type InsertIssue = z.infer<typeof insertIssueSchema>;
 
 export type IssueComment = typeof issueComments.$inferSelect;
 export type InsertIssueComment = z.infer<typeof insertIssueCommentSchema>;
+
+export type CryptoWallet = typeof cryptoWallets.$inferSelect;
+export type InsertCryptoWallet = z.infer<typeof insertCryptoWalletSchema>;
+
+export type CryptoTransaction = typeof cryptoTransactions.$inferSelect;
+export type InsertCryptoTransaction = z.infer<typeof insertCryptoTransactionSchema>;
