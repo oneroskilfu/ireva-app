@@ -10,7 +10,9 @@ import {
   Building, 
   Factory, 
   LayoutGrid, 
-  LandPlot 
+  LandPlot,
+  Wallet,
+  BookOpen
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -101,6 +103,23 @@ export default function Header() {
                   <Link href="/company/press" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
                     <Newspaper className="h-4 w-4 mr-2 text-primary" />
                     Press
+                  </Link>
+                </div>
+              </div>
+              <div className="relative group">
+                <button className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                  Resources
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </button>
+                {/* Resources Dropdown menu */}
+                <div className="absolute left-0 mt-2 w-48 bg-white shadow-md rounded-md p-2 hidden group-hover:block transition-all duration-200 z-50">
+                  <Link href="/crypto-education" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <BookOpen className="h-4 w-4 mr-2 text-primary" />
+                    Crypto Education
+                  </Link>
+                  <Link href="/wallet" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                    <Wallet className="h-4 w-4 mr-2 text-primary" />
+                    Wallet
                   </Link>
                 </div>
               </div>
