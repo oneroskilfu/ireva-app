@@ -125,7 +125,7 @@ cryptoTransactionRouter.post('/deposit', verifyToken, async (req: Request, res: 
     await db
       .update(cryptoWallets)
       .set({ 
-        lastUsed: new Date().toISOString()
+        lastUsed: new Date()
       })
       .where(eq(cryptoWallets.id, walletId));
 
@@ -211,7 +211,7 @@ cryptoTransactionRouter.post('/withdrawal', verifyToken, async (req: Request, re
     await db
       .update(cryptoWallets)
       .set({ 
-        lastUsed: new Date().toISOString()
+        lastUsed: new Date()
       })
       .where(eq(cryptoWallets.id, walletId));
 
@@ -290,7 +290,7 @@ cryptoTransactionRouter.put('/:id/confirm', verifyToken, async (req: Request, re
       .update(cryptoTransactions)
       .set({ 
         status: "completed",
-        confirmedAt: new Date().toISOString()
+        confirmedAt: new Date()
       })
       .where(eq(cryptoTransactions.id, transactionId))
       .returning();
