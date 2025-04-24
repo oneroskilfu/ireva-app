@@ -1,34 +1,31 @@
-import { useState } from 'react';
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
+  AlertCircle, 
   ArrowRight, 
   BookOpen, 
+  CheckCircle, 
+  CopyIcon, 
+  Download, 
+  ExternalLink, 
   FileText, 
-  Lightbulb, 
-  Search, 
-  Youtube, 
-  BookMarked, 
-  HelpCircle, 
-  CheckCircle2, 
-  AlertCircle, 
-  GraduationCap,
-  Link as LinkIcon,
-  Download,
-  Wallet,
-  Coins,
-  Building,
-  ChevronDown,
-  ChevronUp
+  Info, 
+  Lock, 
+  Wallet, 
+  Shield,
+  WalletCards,
+  LineChart,
+  HelpCircle,
+  Video
 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Link } from 'wouter';
-import { motion } from 'framer-motion';
 
 interface ResourceItem {
   id: string;
@@ -40,243 +37,158 @@ interface ResourceItem {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
 }
 
+const educationalResources: ResourceItem[] = [
+  {
+    id: 'intro-crypto',
+    title: 'Introduction to Cryptocurrency',
+    description: 'Learn the basics of blockchain technology and how digital currencies work',
+    icon: <BookOpen className="h-6 w-6" />,
+    type: 'guide',
+    difficulty: 'beginner'
+  },
+  {
+    id: 'wallet-setup',
+    title: 'Setting Up Your Crypto Wallet',
+    description: 'Step-by-step guide to creating and securing a wallet for your digital assets',
+    icon: <Wallet className="h-6 w-6" />,
+    type: 'tutorial',
+    difficulty: 'beginner'
+  },
+  {
+    id: 'wallet-connection',
+    title: 'Connecting Your Wallet to iREVA',
+    description: 'Learn how to connect your cryptocurrency wallet to the iREVA platform',
+    icon: <WalletCards className="h-6 w-6" />,
+    type: 'tutorial',
+    difficulty: 'beginner'
+  },
+  {
+    id: 'security',
+    title: 'Crypto Security Best Practices',
+    description: 'Essential tips for securing your cryptocurrency and protecting your investments',
+    icon: <Shield className="h-6 w-6" />,
+    type: 'guide',
+    difficulty: 'intermediate'
+  },
+  {
+    id: 'blockchain-real-estate',
+    title: 'Blockchain in Real Estate',
+    description: 'How blockchain technology is revolutionizing property investment and ownership',
+    icon: <FileText className="h-6 w-6" />,
+    type: 'article',
+    difficulty: 'intermediate'
+  },
+  {
+    id: 'crypto-investment',
+    title: 'Investing in Properties with Crypto',
+    description: 'Complete guide to using cryptocurrency for real estate investment on iREVA',
+    icon: <LineChart className="h-6 w-6" />,
+    type: 'guide',
+    difficulty: 'intermediate'
+  },
+  {
+    id: 'crypto-faq',
+    title: 'Cryptocurrency FAQ',
+    description: 'Answers to frequently asked questions about using crypto on iREVA',
+    icon: <HelpCircle className="h-6 w-6" />,
+    type: 'faq',
+    difficulty: 'beginner'
+  },
+  {
+    id: 'tokenization',
+    title: 'Property Tokenization Explained',
+    description: 'Understanding how real estate assets are tokenized and traded on the blockchain',
+    icon: <FileText className="h-6 w-6" />,
+    type: 'article',
+    difficulty: 'advanced'
+  }
+];
+
 export default function CryptoEducationPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-
-  const resources: ResourceItem[] = [
-    {
-      id: '1',
-      title: 'Getting Started with Cryptocurrency',
-      description: 'Learn the basics of cryptocurrency, blockchain technology, and how to set up your first wallet.',
-      icon: <Wallet className="h-6 w-6 text-blue-500" />,
-      link: '/resources/crypto-basics',
-      type: 'guide',
-      difficulty: 'beginner',
-    },
-    {
-      id: '2',
-      title: 'How to Buy and Store Cryptocurrencies',
-      description: 'A step-by-step guide on purchasing crypto from exchanges and securely storing it.',
-      icon: <Coins className="h-6 w-6 text-green-500" />,
-      link: '/resources/buying-crypto',
-      type: 'tutorial',
-      difficulty: 'beginner',
-    },
-    {
-      id: '3',
-      title: 'Real Estate Tokenization Explained',
-      description: 'Understand how properties are tokenized on the blockchain and how ownership is distributed.',
-      icon: <Building className="h-6 w-6 text-purple-500" />,
-      link: '/resources/tokenization',
-      type: 'article',
-      difficulty: 'intermediate',
-    },
-    {
-      id: '4',
-      title: 'Security Best Practices for Crypto Investors',
-      description: 'Essential security measures to protect your cryptocurrency investments.',
-      icon: <CheckCircle2 className="h-6 w-6 text-red-500" />,
-      link: '/resources/crypto-security',
-      type: 'guide',
-      difficulty: 'intermediate',
-    },
-    {
-      id: '5',
-      title: 'Advanced Blockchain Concepts',
-      description: 'Dive deeper into smart contracts, consensus mechanisms, and DeFi concepts.',
-      icon: <GraduationCap className="h-6 w-6 text-amber-500" />,
-      link: '/resources/advanced-blockchain',
-      type: 'article',
-      difficulty: 'advanced',
-    },
-    {
-      id: '6',
-      title: 'Video Tutorial: Connecting MetaMask to iREVA',
-      description: 'A visual guide to connecting your MetaMask wallet to the iREVA platform.',
-      icon: <Youtube className="h-6 w-6 text-red-500" />,
-      link: '/resources/metamask-tutorial',
-      type: 'tutorial',
-      difficulty: 'beginner',
-    },
-    {
-      id: '7',
-      title: 'Understanding Investment ROI and Distributions',
-      description: 'Learn how returns are calculated, distributed, and claimed on property investments.',
-      icon: <FileText className="h-6 w-6 text-blue-500" />,
-      link: '/resources/crypto-roi',
-      type: 'guide',
-      difficulty: 'intermediate',
-    },
-    {
-      id: '8',
-      title: 'Tax Implications of Crypto Real Estate Investments',
-      description: 'Important tax considerations for cryptocurrency property investments in Nigeria and beyond.',
-      icon: <BookMarked className="h-6 w-6 text-green-500" />,
-      link: '/resources/crypto-taxes',
-      type: 'article',
-      difficulty: 'advanced',
-    },
-  ];
-
-  const faqs = [
-    {
-      id: 'faq-1',
-      question: 'What cryptocurrencies does iREVA accept for property investments?',
-      answer: 'iREVA currently accepts Ethereum (ETH), Polygon (MATIC), and Binance Coin (BNB) for property investments. We are continuously evaluating and adding support for additional cryptocurrencies based on market stability and user demand.'
-    },
-    {
-      id: 'faq-2',
-      question: 'How secure are cryptocurrency investments on iREVA?',
-      answer: 'iREVA employs multiple layers of security to protect your cryptocurrency investments. All property investments are secured through smart contracts that have been audited by third-party security firms. Your property rights are tokenized and recorded on the blockchain, providing transparent and immutable proof of ownership. We also implement industry-standard security practices such as multi-signature wallets, cold storage, and regular security audits.'
-    },
-    {
-      id: 'faq-3',
-      question: 'Do I need technical knowledge to invest with cryptocurrency?',
-      answer: 'No, iREVA is designed to be user-friendly even for those new to cryptocurrency. Our platform provides step-by-step guidance, and our educational resources can help you understand the basics. All you need is a cryptocurrency wallet like MetaMask, and we'll guide you through the rest of the process.'
-    },
-    {
-      id: 'faq-4',
-      question: 'What happens if I lose access to my crypto wallet?',
-      answer: 'If you lose access to your crypto wallet, your investments are still recorded on the blockchain and associated with your wallet address. However, without your private keys or recovery phrase, you won't be able to access or manage these investments. iREVA cannot recover your wallet for you, which is why we strongly recommend securely backing up your recovery phrase and private keys. Contact our support team for guidance on next steps if this occurs.'
-    },
-    {
-      id: 'faq-5',
-      question: 'How are property returns distributed for crypto investors?',
-      answer: 'Returns on property investments are distributed directly to your connected wallet in the same cryptocurrency you used for investment. The distribution occurs automatically through smart contracts based on the property's performance and your ownership percentage. You can track all distributions in your iREVA dashboard and verify them on the blockchain.'
-    },
-    {
-      id: 'faq-6',
-      question: 'Are there additional fees for cryptocurrency transactions?',
-      answer: 'When investing with cryptocurrency, you'll need to pay network gas fees, which vary depending on network congestion and the blockchain you're using. iREVA does not charge additional platform fees for cryptocurrency investments beyond our standard investment fees, which are transparently disclosed before you complete any transaction.'
-    },
-    {
-      id: 'faq-7',
-      question: 'Can I sell my property tokens before the investment term ends?',
-      answer: 'Currently, property tokens on iREVA are designed as long-term investments with a predefined maturity period. However, we're developing a secondary marketplace that will allow investors to trade their property tokens with other iREVA users before the term ends, subject to certain conditions and regulatory requirements.'
-    },
-    {
-      id: 'faq-8',
-      question: 'How does iREVA handle cryptocurrency price volatility?',
-      answer: 'To mitigate the effects of cryptocurrency price volatility, iREVA converts the cryptocurrency value to the local currency (NGN) at the time of investment using real-time exchange rates. Your investment amount and returns are then tracked in the local currency, ensuring that property valuations remain stable regardless of crypto market fluctuations.'
-    },
-  ];
-
-  const filteredResources = resources.filter(resource => {
-    const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          resource.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDifficulty = difficultyFilter === 'all' || resource.difficulty === difficultyFilter;
-    const matchesType = typeFilter === 'all' || resource.type === typeFilter;
-    
-    return matchesSearch && matchesDifficulty && matchesType;
+  const [selectedTab, setSelectedTab] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  
+  const filteredResources = educationalResources.filter(resource => {
+    if (selectedTab !== 'all' && resource.type !== selectedTab) return false;
+    if (selectedDifficulty !== 'all' && resource.difficulty !== selectedDifficulty) return false;
+    return true;
   });
-
-  const getDifficultyBadge = (difficulty: string) => {
-    switch(difficulty) {
-      case 'beginner':
-        return <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Beginner</span>;
-      case 'intermediate':
-        return <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Intermediate</span>;
-      case 'advanced':
-        return <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">Advanced</span>;
-      default:
-        return null;
-    }
-  };
-
-  const getTypeBadge = (type: string) => {
-    switch(type) {
-      case 'guide':
-        return <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Guide</span>;
-      case 'tutorial':
-        return <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Tutorial</span>;
-      case 'faq':
-        return <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">FAQ</span>;
-      case 'article':
-        return <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">Article</span>;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
       <Header />
-      <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center">
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="text-3xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-white"
-              >
-                Crypto Education Center
-              </motion.h1>
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-xl text-gray-600 dark:text-gray-300 mb-10"
-              >
-                Learn everything you need to know about cryptocurrency and blockchain-based real estate investing
-              </motion.p>
-              
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="relative max-w-lg mx-auto"
-              >
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  type="text"
-                  placeholder="Search for guides, tutorials, and more..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 py-6 text-lg rounded-lg w-full"
-                />
-              </motion.div>
-            </div>
+      <main className="flex-grow container mx-auto px-4 py-12">
+        <div className="flex flex-col space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Crypto Education Center</h1>
+            <p className="text-muted-foreground mt-2">
+              Learn about cryptocurrency, blockchain technology, and how to use digital assets for real estate investment
+            </p>
           </div>
-        </section>
-
-        {/* Main Content */}
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <Tabs defaultValue="resources" className="w-full">
-              <div className="flex justify-center mb-8">
-                <TabsList className="grid w-full max-w-md grid-cols-3">
-                  <TabsTrigger value="resources">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Resources
-                  </TabsTrigger>
-                  <TabsTrigger value="faq">
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    FAQ
-                  </TabsTrigger>
-                  <TabsTrigger value="support">
-                    <AlertCircle className="mr-2 h-4 w-4" />
-                    Support
-                  </TabsTrigger>
-                </TabsList>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/40">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg text-blue-700 dark:text-blue-400">New to Crypto?</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-blue-700/80 dark:text-blue-400/80 mb-4">
+                      Start with our beginner guides to understand the basics of cryptocurrency and blockchain technology.
+                    </p>
+                    <Button 
+                      variant="secondary" 
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => {
+                        document.getElementById('intro-crypto')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-purple-50/50 dark:bg-purple-950/20 border-purple-100 dark:border-purple-900/40">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg text-purple-700 dark:text-purple-400">Connect Your Wallet</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-purple-700/80 dark:text-purple-400/80 mb-4">
+                      Learn how to connect your cryptocurrency wallet to iREVA and start investing in properties.
+                    </p>
+                    <Button 
+                      variant="secondary" 
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={() => {
+                        document.getElementById('wallet-connection')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      View Guide <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
-
-              {/* Resources Tab */}
-              <TabsContent value="resources" className="space-y-8">
-                <div className="flex flex-wrap gap-4 justify-center mb-6">
-                  <div>
-                    <label htmlFor="difficulty-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Difficulty Level
-                    </label>
-                    <select
-                      id="difficulty-filter"
-                      value={difficultyFilter}
-                      onChange={(e) => setDifficultyFilter(e.target.value)}
-                      className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm"
+              
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Educational Resources</h2>
+                  <div className="flex space-x-2">
+                    <select 
+                      className="text-sm border rounded-md px-2 py-1 bg-background"
+                      value={selectedTab}
+                      onChange={(e) => setSelectedTab(e.target.value)}
+                    >
+                      <option value="all">All Types</option>
+                      <option value="guide">Guides</option>
+                      <option value="tutorial">Tutorials</option>
+                      <option value="article">Articles</option>
+                      <option value="faq">FAQs</option>
+                    </select>
+                    <select 
+                      className="text-sm border rounded-md px-2 py-1 bg-background"
+                      value={selectedDifficulty}
+                      onChange={(e) => setSelectedDifficulty(e.target.value)}
                     >
                       <option value="all">All Levels</option>
                       <option value="beginner">Beginner</option>
@@ -284,376 +196,536 @@ export default function CryptoEducationPage() {
                       <option value="advanced">Advanced</option>
                     </select>
                   </div>
-                  
-                  <div>
-                    <label htmlFor="type-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Content Type
-                    </label>
-                    <select
-                      id="type-filter"
-                      value={typeFilter}
-                      onChange={(e) => setTypeFilter(e.target.value)}
-                      className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="guide">Guides</option>
-                      <option value="tutorial">Tutorials</option>
-                      <option value="article">Articles</option>
-                    </select>
-                  </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredResources.length > 0 ? (
-                    filteredResources.map((resource) => (
-                      <motion.div
-                        key={resource.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                        whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                      >
-                        <Link href={resource.link || '#'}>
-                          <Card className="h-full cursor-pointer hover:shadow-md transition-shadow duration-300">
-                            <CardHeader>
-                              <div className="flex justify-between items-center mb-2">
-                                <div className="p-2 rounded-full bg-gray-100 dark:bg-gray-800">
+                
+                <div className="space-y-4">
+                  {filteredResources.map((resource) => (
+                    <div key={resource.id} id={resource.id}>
+                      <Card className="group transition-all hover:border-blue-200 dark:hover:border-blue-800">
+                        <CardContent className="p-0">
+                          <div className="p-6">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-4">
+                                <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
                                   {resource.icon}
                                 </div>
-                                <div className="flex space-x-2">
-                                  {getDifficultyBadge(resource.difficulty)}
-                                  {getTypeBadge(resource.type)}
+                                <div>
+                                  <h3 className="font-medium text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {resource.title}
+                                  </h3>
+                                  <p className="text-muted-foreground text-sm">
+                                    {resource.description}
+                                  </p>
+                                  <div className="flex items-center mt-2 space-x-2">
+                                    <Badge variant="outline" className="text-xs capitalize">
+                                      {resource.type}
+                                    </Badge>
+                                    <Badge variant={
+                                      resource.difficulty === 'beginner' 
+                                        ? 'outline' 
+                                        : resource.difficulty === 'intermediate' 
+                                          ? 'secondary' 
+                                          : 'default'
+                                    } className="text-xs capitalize">
+                                      {resource.difficulty}
+                                    </Badge>
+                                  </div>
                                 </div>
                               </div>
-                              <CardTitle>{resource.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-gray-600 dark:text-gray-400 mb-4">{resource.description}</p>
-                              <div className="flex items-center text-blue-600 dark:text-blue-400 font-medium">
-                                Read more
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      </motion.div>
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-10">
-                      <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                        <Search className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <h3 className="text-lg font-medium mb-2">No resources found</h3>
-                      <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                        We couldn't find any resources matching your search criteria. Try adjusting your filters or search term.
-                      </p>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <ArrowRight className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ))}
+                  
+                  {filteredResources.length === 0 && (
+                    <div className="text-center py-10">
+                      <p className="text-muted-foreground">No resources match your selected filters.</p>
+                      <Button 
+                        variant="link" 
+                        onClick={() => {
+                          setSelectedTab('all');
+                          setSelectedDifficulty('all');
+                        }}
+                      >
+                        Reset Filters
+                      </Button>
                     </div>
                   )}
                 </div>
-
-                <div className="text-center mt-12">
-                  <h3 className="text-xl font-semibold mb-4">New to Cryptocurrency?</h3>
-                  <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-6">
-                    Start with our beginner-friendly guides to learn the fundamentals of blockchain technology and cryptocurrency investing.
-                  </p>
-                  <Button 
-                    size="lg" 
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-                  >
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Start Learning
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {/* FAQ Tab */}
-              <TabsContent value="faq" className="space-y-8">
+              </div>
+              
+              <div id="intro-crypto">
+                <h2 className="text-2xl font-bold mb-4">Introduction to Cryptocurrency</h2>
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Frequently Asked Questions</CardTitle>
-                    <CardDescription>
-                      Common questions about cryptocurrency and blockchain-based real estate investing
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Accordion type="single" collapsible className="w-full">
-                      {faqs.map((faq) => (
-                        <AccordionItem key={faq.id} value={faq.id}>
-                          <AccordionTrigger className="text-left">
-                            {faq.question}
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <p className="text-gray-600 dark:text-gray-400">
-                              {faq.answer}
+                  <CardContent className="pt-6">
+                    <p className="mb-4">
+                      Cryptocurrency is a digital or virtual form of currency that uses cryptography for security, making it difficult to counterfeit. Unlike traditional currencies issued by governments (fiat currencies), cryptocurrencies operate on decentralized networks based on blockchain technology—a distributed ledger enforced by a network of computers.
+                    </p>
+                    <h3 className="text-lg font-medium mt-6 mb-2">Key Cryptocurrency Concepts</h3>
+                    <ul className="space-y-3 list-disc pl-5">
+                      <li>
+                        <span className="font-medium">Blockchain Technology:</span> A distributed ledger that records all transactions across a network of computers. Once recorded, the data cannot be altered retroactively.
+                      </li>
+                      <li>
+                        <span className="font-medium">Decentralization:</span> No central authority controls cryptocurrency networks. They operate on a peer-to-peer basis.
+                      </li>
+                      <li>
+                        <span className="font-medium">Digital Wallets:</span> Software programs that store private and public keys, allowing users to send and receive digital currencies and monitor their balance.
+                      </li>
+                      <li>
+                        <span className="font-medium">Mining:</span> The process by which transactions are verified and added to the blockchain, and also the means through which new coins are released.
+                      </li>
+                    </ul>
+                    
+                    <h3 className="text-lg font-medium mt-6 mb-2">Popular Cryptocurrencies</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Bitcoin (BTC)</h4>
+                            <p className="text-xs text-muted-foreground">Original cryptocurrency</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Ethereum (ETH)</h4>
+                            <p className="text-xs text-muted-foreground">Smart contract platform</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 0C5.374 0 0 5.374 0 12s5.374 12 12 12 12-5.374 12-12S18.629 0 12 0ZM5.92 14.604l2.09-2.082 2.075 2.082-2.09 2.082-2.075-2.082Zm5.348-5.348-2.09 2.082-2.075-2.082 2.09-2.082 2.075 2.082Zm0 10.695L9.18 17.866l8.266-8.266 2.09 2.082-8.266 8.266v.003Zm9.181-9.18-2.09 2.082-2.075-2.082 2.09-2.082 2.075 2.082Z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="font-medium">Polygon (MATIC)</h4>
+                            <p className="text-xs text-muted-foreground">Ethereum scaling solution</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div id="wallet-connection">
+                <h2 className="text-2xl font-bold mb-4">Connecting Your Wallet to iREVA</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="mb-6">
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>Before you begin</AlertTitle>
+                        <AlertDescription>
+                          Make sure you have a cryptocurrency wallet like MetaMask installed and set up. If you don't have one yet, check our guide on setting up your first crypto wallet.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                    
+                    <h3 className="text-lg font-medium mb-3">Step-by-Step Guide</h3>
+                    <ol className="space-y-6 list-decimal pl-5">
+                      <li>
+                        <h4 className="font-medium">Navigate to the Wallet Page</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Go to your iREVA dashboard and click on the "Wallet" section in the navigation menu.
+                        </p>
+                        <div className="mt-2 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
+                          <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 text-xs font-medium">
+                            Screenshot: Wallet Page
+                          </div>
+                          <div className="p-4 bg-gray-100 dark:bg-gray-900 text-center">
+                            [Wallet Page Screenshot]
+                          </div>
+                        </div>
+                      </li>
+                      
+                      <li>
+                        <h4 className="font-medium">Click "Connect Wallet"</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          On the wallet page, click the "Connect Wallet" button to initiate the connection process.
+                        </p>
+                      </li>
+                      
+                      <li>
+                        <h4 className="font-medium">Select Your Wallet Provider</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Choose from the available wallet providers. iREVA currently supports MetaMask, WalletConnect, and Coinbase Wallet.
+                        </p>
+                        <div className="grid grid-cols-3 gap-3 mt-3">
+                          <div className="p-3 border rounded-lg flex flex-col items-center justify-center">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mb-2">
+                              <svg className="w-6 h-6 text-orange-600" viewBox="0 0 35 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M32.9582 1L19.8241 10.7183L22.2665 5.09986L32.9582 1Z" fill="#E17726" stroke="#E17726" strokeWidth="0.25" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M2.04834 1L15.0182 10.809L12.7336 5.0999L2.04834 1Z" fill="#E27625" stroke="#E27625" strokeWidth="0.25" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </div>
+                            <span className="text-xs font-medium">MetaMask</span>
+                          </div>
+                          <div className="p-3 border rounded-lg flex flex-col items-center justify-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                              <svg className="w-6 h-6 text-blue-600" viewBox="0 0 96 96" fill="currentColor">
+                                <path d="M48 0C21.5 0 0 21.5 0 48C0 74.5 21.5 96 48 96C74.5 96 96 74.5 96 48C96 21.5 74.5 0 48 0ZM48.1 73.1C34.5 73.1 23.3 61.9 23.3 48.3C23.3 34.7 34.5 23.5 48.1 23.5C61.7 23.5 72.9 34.7 72.9 48.3C72.9 61.9 61.7 73.1 48.1 73.1Z"/>
+                              </svg>
+                            </div>
+                            <span className="text-xs font-medium">WalletConnect</span>
+                          </div>
+                          <div className="p-3 border rounded-lg flex flex-col items-center justify-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                              <svg className="w-6 h-6 text-blue-600" viewBox="0 0 1024 1024" fill="currentColor">
+                                <path d="M512 0C229.2 0 0 229.2 0 512s229.2 512 512 512 512-229.2 512-512S794.8 0 512 0zm0 938.7c-235.6 0-426.7-191-426.7-426.7S276.4 85.3 512 85.3 938.7 276.4 938.7 512 747.6 938.7 512 938.7z"/>
+                                <path d="M512 426.7c-47.1 0-85.3 38.2-85.3 85.3s38.2 85.3 85.3 85.3 85.3-38.2 85.3-85.3-38.2-85.3-85.3-85.3z"/>
+                              </svg>
+                            </div>
+                            <span className="text-xs font-medium">Coinbase Wallet</span>
+                          </div>
+                        </div>
+                      </li>
+                      
+                      <li>
+                        <h4 className="font-medium">Authorize the Connection</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Your selected wallet will prompt you to authorize the connection to iREVA. Review the permissions and click "Connect" or "Approve".
+                        </p>
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-3 flex items-start space-x-3">
+                          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <span className="text-sm font-medium text-yellow-800">Security Note</span>
+                            <p className="text-xs text-yellow-700 mt-1">
+                              Always verify you're on the official iREVA website before connecting your wallet. Check the URL and look for the secure padlock icon in your browser.
                             </p>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
+                          </div>
+                        </div>
+                      </li>
+                      
+                      <li>
+                        <h4 className="font-medium">Confirm Successful Connection</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Once connected, you'll see your wallet address and balance displayed on the page. Your wallet is now ready to be used for cryptocurrency transactions on iREVA.
+                        </p>
+                        <div className="bg-green-50 border border-green-200 rounded-md p-3 mt-3 flex items-start space-x-3">
+                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <span className="text-sm font-medium text-green-800">Success Indicator</span>
+                            <p className="text-xs text-green-700 mt-1">
+                              A "Wallet Connected" confirmation message will appear, and your wallet address will be displayed in a shortened format (e.g., 0x1234...5678).
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                    </ol>
+                    
+                    <h3 className="text-lg font-medium mt-8 mb-3">Troubleshooting Common Issues</h3>
+                    <div className="space-y-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Wallet Not Detecting</h4>
+                        <p className="text-sm text-muted-foreground">
+                          If iREVA can't detect your wallet, try refreshing the page or restarting your browser. Make sure your wallet extension is enabled and up to date.
+                        </p>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Network Mismatch</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Ensure your wallet is connected to the correct blockchain network. iREVA supports Ethereum, Polygon, and Binance Smart Chain.
+                        </p>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Connection Timeout</h4>
+                        <p className="text-sm text-muted-foreground">
+                          If the connection process times out, check your internet connection and try again. If the problem persists, try using a different browser.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-8 flex items-center justify-between">
+                      <Link href="/wallet">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                          <span className="flex items-center">
+                            Connect Your Wallet Now
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </span>
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-muted-foreground"
+                        onClick={() => {
+                          document.getElementById('security')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        <span className="flex items-center">
+                          Read Security Guide
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </span>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
-
-                <div className="bg-blue-50 dark:bg-gray-800 rounded-lg p-6 mt-8">
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-blue-100 dark:bg-gray-700 p-2 rounded-full">
-                      <Lightbulb className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Didn't find what you're looking for?</h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">
-                        Our support team is ready to help with any questions you have about cryptocurrency investments.
-                      </p>
-                      <Button variant="outline" className="mr-4">
-                        Contact Support
-                      </Button>
-                      <Button variant="link" className="text-blue-600 dark:text-blue-400 p-0">
-                        Visit Knowledge Base
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Support Tab */}
-              <TabsContent value="support" className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Contact Support</CardTitle>
-                      <CardDescription>
-                        Get personalized help from our crypto specialists
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
-                            <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Email Us</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">crypto-support@ireva.ng</p>
-                          </div>
+              </div>
+              
+              <div id="security">
+                <h2 className="text-2xl font-bold mb-4">Crypto Security Best Practices</h2>
+                <Card>
+                  <CardContent className="pt-6">
+                    <Alert className="mb-6 bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900/50 dark:text-red-400">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Important Security Information</AlertTitle>
+                      <AlertDescription>
+                        Security is crucial when dealing with cryptocurrencies. Once a transaction is confirmed on the blockchain, it cannot be reversed, and if you lose access to your wallet, you might permanently lose your assets.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <h3 className="text-lg font-medium mb-4">Essential Security Measures</h3>
+                    
+                    <div className="space-y-6">
+                      <div className="flex items-start space-x-4">
+                        <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
+                          <Lock className="h-5 w-5 text-green-600 dark:text-green-400" />
                         </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
-                            <svg className="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Live Chat</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Available 9am-5pm WAT, Mon-Fri</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
-                            <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Phone Support</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">+234 (0) 800-IREVA-CRYPTO</p>
+                        <div>
+                          <h4 className="font-medium">Secure Your Recovery Phrase</h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Your recovery phrase (seed phrase) is the master key to your wallet. Write it down on paper and store it in a secure location. Never store it digitally or share it with anyone.
+                          </p>
+                          <div className="mt-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium">Example (DO NOT USE):</span>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <CopyIcon className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">1. apple</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">2. basket</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">3. camera</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">4. dance</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">5. entry</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">6. fruit</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">7. garden</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">8. house</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">9. island</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">10. jacket</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">11. kitchen</div>
+                              <div className="p-1 bg-gray-100 dark:bg-gray-700 rounded">12. lemon</div>
+                            </div>
                           </div>
                         </div>
                       </div>
                       
-                      <Separator className="my-6" />
+                      <div className="flex items-start space-x-4">
+                        <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
+                          <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Use Strong Authentication</h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Enable two-factor authentication (2FA) wherever possible. Use strong, unique passwords for your exchange accounts and wallet apps. Consider using a hardware wallet for storing large amounts of cryptocurrency.
+                          </p>
+                        </div>
+                      </div>
                       
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">Schedule a Consultation</h4>
-                        <Button className="w-full">Book a Crypto Specialist</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Downloadable Resources</CardTitle>
-                      <CardDescription>
-                        Comprehensive guides you can download and read offline
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
-                              <div className="bg-red-100 dark:bg-red-900 p-2 rounded-full">
-                                <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Beginner's Guide to Crypto</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">PDF • 2.4MB</p>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
+                      <div className="flex items-start space-x-4">
+                        <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-full">
+                          <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                         </div>
-                        
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
-                              <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
-                                <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">MetaMask Setup Tutorial</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">PDF • 3.1MB</p>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
-                              <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
-                                <svg className="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Crypto Security Checklist</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">PDF • 1.8MB</p>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
-                              <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
-                                <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">Crypto Terms Glossary</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">PDF • 5.2MB</p>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
+                        <div>
+                          <h4 className="font-medium">Beware of Phishing Attempts</h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Be vigilant about phishing attempts. Always verify URLs before entering your credentials or connecting your wallet. Never click on suspicious links in emails or messages.
+                          </p>
+                          <div className="mt-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/40 rounded-md p-3 text-xs text-yellow-800 dark:text-yellow-300">
+                            <strong>Tip:</strong> The official iREVA URL is always <span className="font-mono bg-yellow-100 dark:bg-yellow-900/40 px-1 py-0.5 rounded">https://ireva.com</span> - Verify this in your browser's address bar.
                           </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <Card className="mt-8">
-                  <CardHeader>
-                    <CardTitle>External Resources</CardTitle>
-                    <CardDescription>
-                      Trusted third-party resources to expand your cryptocurrency knowledge
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                      
+                      <div className="flex items-start space-x-4">
+                        <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
+                          <Download className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Regularly Update Your Software</h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Keep your wallet software, browser extensions, and operating system up to date with the latest security patches. Outdated software may contain vulnerabilities that hackers can exploit.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Separator className="my-6" />
+                    
+                    <h3 className="text-lg font-medium mb-4">iREVA's Security Measures</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      While you're responsible for the security of your wallet, iREVA implements several measures to protect your investments:
+                    </p>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <a href="https://ethereum.org/en/what-is-ethereum/" target="_blank" rel="noopener noreferrer" className="block">
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <div className="flex items-center space-x-3">
-                            <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
-                              <LinkIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">Ethereum.org</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Official Ethereum Foundation resource</p>
-                            </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full">
+                            <Shield className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium">Smart Contract Audits</h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              All smart contracts used on iREVA undergo rigorous security audits by independent third parties.
+                            </p>
                           </div>
                         </div>
-                      </a>
+                      </div>
                       
-                      <a href="https://academy.binance.com/" target="_blank" rel="noopener noreferrer" className="block">
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <div className="flex items-center space-x-3">
-                            <div className="bg-yellow-100 dark:bg-yellow-900 p-2 rounded-full">
-                              <LinkIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">Binance Academy</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Educational resources from Binance</p>
-                            </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full">
+                            <Lock className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium">Secure Transaction Signing</h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              We use secure transaction signing to ensure only authorized actions are processed on the blockchain.
+                            </p>
                           </div>
                         </div>
-                      </a>
+                      </div>
                       
-                      <a href="https://polygon.technology/blog" target="_blank" rel="noopener noreferrer" className="block">
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <div className="flex items-center space-x-3">
-                            <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
-                              <LinkIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">Polygon Blog</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Updates and guides from Polygon</p>
-                            </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full">
+                            <ExternalLink className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium">Transaction Transparency</h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              All transactions are recorded on the blockchain and can be independently verified through block explorers.
+                            </p>
                           </div>
                         </div>
-                      </a>
+                      </div>
                       
-                      <a href="https://metamask.io/learn/" target="_blank" rel="noopener noreferrer" className="block">
-                        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <div className="flex items-center space-x-3">
-                            <div className="bg-orange-100 dark:bg-orange-900 p-2 rounded-full">
-                              <LinkIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">MetaMask Learn</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Tutorials for using MetaMask wallet</p>
-                            </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-full">
+                            <Video className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium">Transaction Confirmation</h4>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Every transaction requires explicit confirmation in your wallet, giving you full control over your assets.
+                            </p>
                           </div>
                         </div>
-                      </a>
+                      </div>
                     </div>
+                    
+                    <Button variant="outline" className="mt-6 w-full">
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Crypto Security Checklist
+                    </Button>
                   </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </section>
-
-        {/* Newsletter Section */}
-        <section className="py-16 bg-blue-50 dark:bg-gray-800">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-2xl md:text-3xl font-bold mb-4">Stay Updated on Crypto Education</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-8">
-                Subscribe to our newsletter to receive the latest guides, tutorials, and cryptocurrency news relevant to real estate investing.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-                <Input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="flex-grow"
-                />
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Subscribe
-                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Links</CardTitle>
+                  <CardDescription>
+                    Jump to popular resources
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {['wallet-connection', 'intro-crypto', 'security', 'crypto-investment'].map((link) => {
+                    const resource = educationalResources.find(r => r.id === link);
+                    if (!resource) return null;
+                    
+                    return (
+                      <div 
+                        key={link} 
+                        className="flex items-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                        onClick={() => {
+                          document.getElementById(link)?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        <div className="bg-gray-100 dark:bg-gray-800 p-1.5 rounded mr-3">
+                          {resource.icon}
+                        </div>
+                        <span className="text-sm font-medium">{resource.title}</span>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Need Help?</CardTitle>
+                  <CardDescription>
+                    Get assistance with cryptocurrency
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Our crypto experts are available to help you navigate the world of digital assets and blockchain technology.
+                  </p>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full justify-start">
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      Contact Support
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Video className="mr-2 h-4 w-4" />
+                      Schedule a Demo
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Documentation
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <div className="p-6 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-2">Ready to Invest?</h3>
+                <p className="text-sm text-blue-700/80 dark:text-blue-400/80 mb-4">
+                  Apply your crypto knowledge and start investing in high-quality real estate properties today.
+                </p>
+                <Link href="/">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    <span className="flex items-center">
+                      Browse Properties
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </span>
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
-        </section>
+        </div>
       </main>
       <Footer />
     </div>

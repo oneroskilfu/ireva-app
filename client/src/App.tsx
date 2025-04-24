@@ -30,6 +30,7 @@ const WalletPage = lazy(() => import("@/pages/wallet-page"));
 const ProfilePage = lazy(() => import("@/pages/profile-page"));
 const ExplorePage = lazy(() => import("@/pages/explore-page"));
 const MobileHomePage = lazy(() => import("@/pages/mobile-home-page"));
+const CryptoEducationPage = lazy(() => import("@/pages/crypto-education-page"));
 const AdminDashboard = lazy(() => import("@/pages/admin/admin-dashboard"));
 const JwtTestPage = lazy(() => import("@/pages/jwt-test-page"));
 const TestLogin = lazy(() => import("./test-login"));

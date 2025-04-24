@@ -107,10 +107,12 @@ const CryptoEducationCard: React.FC<CryptoEducationCardProps> = ({
       </CardContent>
       <CardFooter>
         <Link href="/crypto-education">
-          <Button variant={isCompact ? "outline" : "default"} className="w-full">
-            {isCompact ? "Education Center" : "View All Resources"}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="w-full">
+            <Button variant={isCompact ? "outline" : "default"} className="w-full">
+              {isCompact ? "Education Center" : "View All Resources"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </Link>
       </CardFooter>
     </Card>
