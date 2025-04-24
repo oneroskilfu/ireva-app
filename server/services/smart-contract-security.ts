@@ -41,9 +41,13 @@ class SmartContractSecurityService {
   private deployedContracts: Map<string, ContractDeployment>;
 
   constructor() {
-    // Set directories relative to project root
-    this.contractsDir = path.join(__dirname, '../../contracts');
-    this.auditReportsDir = path.join(__dirname, '../../audit-reports');
+    // Set directories relative to project root using import.meta.url instead of __dirname
+    const moduleUrl = new URL(import.meta.url);
+    const modulePath = moduleUrl.pathname;
+    const dirPath = path.dirname(modulePath);
+    
+    this.contractsDir = path.join(dirPath, '../../contracts');
+    this.auditReportsDir = path.join(dirPath, '../../audit-reports');
     this.deployedContracts = new Map();
     
     // Ensure audit reports directory exists

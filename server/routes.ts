@@ -33,6 +33,10 @@ import cryptoTransactionRouter from './routes/crypto-transactions';
 import cryptoPaymentRouter from './routes/crypto-payments';
 // Import blockchain routes
 import blockchainRouter from './routes/blockchain-routes';
+// Import security and data protection routes
+import smartContractRoutes from './routes/smart-contract-routes';
+import adminKycSecurityRoutes from './routes/admin-kyc-routes';
+import dataProtectionRoutes from './routes/data-protection-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -270,6 +274,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Blockchain routes
   app.use('/api/blockchain', blockchainRouter);
   console.log("Blockchain routes registered");
+  
+  // Set up Smart Contract Security routes
+  app.use('/api/contracts', smartContractRoutes);
+  console.log("Smart contract security routes registered");
+  
+  // Set up Enhanced KYC/AML routes for admin
+  app.use('/api/admin/kyc-security', adminKycSecurityRoutes);
+  console.log("Enhanced KYC security routes registered");
+  
+  // Set up Data Protection routes
+  app.use('/api/privacy', dataProtectionRoutes);
+  console.log("Data protection routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
