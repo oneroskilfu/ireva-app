@@ -1,302 +1,182 @@
 import { Router, Request, Response } from 'express';
-import { blockchainService } from '../services/blockchain-service';
-import { db } from '../db';
-import { properties } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
 import { authMiddleware, ensureAdmin } from '../auth-jwt';
+import { z } from 'zod';
+import { ethers } from 'ethers';
+import { blockchainService } from '../services/blockchain-service';
 
 const blockchainRouter = Router();
 
-// Get current blockchain integration status for a property
-blockchainRouter.get('/properties/:id/contracts', authMiddleware, async (req: Request, res: Response) => {
+// Schema for verifying an investment on the blockchain
+const verifyInvestmentSchema = z.object({
+  propertyId: z.number(),
+  investmentId: z.string(),
+  transactionHash: z.string()
+});
+
+/**
+ * Get transaction status from the blockchain
+ */
+blockchainRouter.get('/transaction/:txHash', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const propertyId = parseInt(req.params.id);
+    const txHash = req.params.txHash;
     
-    // Get property from the database
-    const [property] = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
-    
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
+    if (!txHash) {
+      return res.status(400).json({ error: 'Transaction hash is required' });
     }
     
-    // Return blockchain integration status
-    // Note: This is a simplified implementation; in a real environment, these would be stored in the database
-    const hasEscrowContract = (property as any).escrowContractAddress ? true : false;
-    const hasTokenContract = (property as any).tokenContractAddress ? true : false;
-    const hasRoiDistributor = (property as any).roiDistributorAddress ? true : false;
+    // Get the transaction status from the blockchain
+    const status = await blockchainService.getTransactionStatus(txHash);
     
-    res.json({
-      propertyId,
-      hasEscrowContract,
-      hasTokenContract,
-      hasRoiDistributor,
-      escrowContractAddress: (property as any).escrowContractAddress || null,
-      tokenContractAddress: (property as any).tokenContractAddress || null,
-      roiDistributorAddress: (property as any).roiDistributorAddress || null
-    });
+    res.json(status);
   } catch (error) {
-    console.error('Error getting blockchain contracts:', error);
-    res.status(500).json({ error: 'Failed to get blockchain contracts' });
+    console.error('Error getting transaction status:', error);
+    res.status(500).json({ error: 'Failed to get transaction status', details: String(error) });
   }
 });
 
-// Create contracts for a property (admin only)
-blockchainRouter.post('/properties/:id/contracts', ensureAdmin, async (req: Request, res: Response) => {
+/**
+ * Verify an investment on the blockchain
+ */
+blockchainRouter.post('/verify-investment', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const propertyId = parseInt(req.params.id);
-    const { developerAddress } = req.body;
+    // Validate request body
+    const validatedData = verifyInvestmentSchema.parse(req.body);
     
-    if (!developerAddress) {
-      return res.status(400).json({ error: 'Developer address is required' });
+    // Get user ID from JWT payload
+    const userId = req.jwtPayload?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
     
-    // Check if property exists
-    const [property] = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
-    
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
-    }
-    
-    // Check if contracts already exist
-    if ((property as any).escrowContractAddress || (property as any).tokenContractAddress) {
-      return res.status(400).json({ error: 'Contracts already exist for this property' });
-    }
-    
-    // Create the contracts
-    const result = await blockchainService.createPropertyContracts(propertyId, developerAddress);
-    
-    // Update property with contract addresses
-    // In a real implementation, you would update the property record with the contract addresses
-    await db.update(properties)
-      .set({
-        // Using type assertion to add the non-existent properties
-        ...(result.escrowAddress && { escrowContractAddress: result.escrowAddress } as any),
-        ...(result.tokenAddress && { tokenContractAddress: result.tokenAddress } as any)
-      })
-      .where(eq(properties.id, propertyId));
-    
-    res.status(201).json({
-      propertyId,
-      escrowContractAddress: result.escrowAddress,
-      tokenContractAddress: result.tokenAddress
-    });
-  } catch (error) {
-    console.error('Error creating blockchain contracts:', error);
-    res.status(500).json({ error: 'Failed to create blockchain contracts' });
-  }
-});
-
-// Invest in a property using the escrow contract
-blockchainRouter.post('/properties/:id/invest', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const propertyId = parseInt(req.params.id);
-    const { investorAddress, amount } = req.body;
-    
-    if (!investorAddress || !amount) {
-      return res.status(400).json({ error: 'Investor address and amount are required' });
-    }
-    
-    // Check if property exists
-    const [property] = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
-    
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
-    }
-    
-    // Check if contracts exist
-    if (!(property as any).escrowContractAddress) {
-      return res.status(400).json({ error: 'No escrow contract exists for this property' });
-    }
-    
-    // Invest in the property
-    const result = await blockchainService.investInProperty(
-      propertyId,
-      investorAddress,
-      amount
+    // Verify the investment on the blockchain
+    const result = await blockchainService.verifyInvestment(
+      validatedData.propertyId,
+      validatedData.investmentId,
+      validatedData.transactionHash,
+      userId.toString()
     );
     
-    res.status(200).json({
-      propertyId,
-      investorAddress,
-      amount,
-      transactionHash: result.transactionHash,
-      success: result.success
-    });
+    res.json(result);
   } catch (error) {
-    console.error('Error investing in property:', error);
-    res.status(500).json({ error: 'Failed to invest in property' });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid request data', details: error.errors });
+    }
+    
+    console.error('Error verifying investment:', error);
+    res.status(500).json({ error: 'Failed to verify investment', details: String(error) });
   }
 });
 
-// Get property investment statistics
-blockchainRouter.get('/properties/:id/investment-stats', authMiddleware, async (req: Request, res: Response) => {
+/**
+ * Get property token details
+ */
+blockchainRouter.get('/property/:propertyId/token', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const propertyId = parseInt(req.params.id);
+    const propertyId = Number(req.params.propertyId);
     
-    // Check if property exists
-    const [property] = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
-    
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
+    if (isNaN(propertyId)) {
+      return res.status(400).json({ error: 'Invalid property ID' });
     }
     
-    // Check if contracts exist
-    if (!(property as any).escrowContractAddress) {
-      return res.status(400).json({ error: 'No escrow contract exists for this property' });
-    }
+    // Get the token details from the blockchain
+    const tokenDetails = await blockchainService.getPropertyTokenDetails(propertyId);
     
-    // Get investment statistics
-    const stats = await blockchainService.getPropertyInvestmentStats(propertyId);
-    
-    res.status(200).json({
-      propertyId,
-      ...stats
-    });
+    res.json(tokenDetails);
   } catch (error) {
-    console.error('Error getting property investment statistics:', error);
-    res.status(500).json({ error: 'Failed to get property investment statistics' });
+    console.error('Error getting property token details:', error);
+    res.status(500).json({ error: 'Failed to get property token details', details: String(error) });
   }
 });
 
-// Distribute ROI to investors (admin only)
-blockchainRouter.post('/properties/:id/distribute-roi', ensureAdmin, async (req: Request, res: Response) => {
+/**
+ * Get investor token balance
+ */
+blockchainRouter.get('/investor/balance/:propertyId', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const propertyId = parseInt(req.params.id);
-    const { amount, description } = req.body;
+    const propertyId = Number(req.params.propertyId);
     
-    if (!amount || !description) {
-      return res.status(400).json({ error: 'Amount and description are required' });
+    if (isNaN(propertyId)) {
+      return res.status(400).json({ error: 'Invalid property ID' });
     }
     
-    // Check if property exists
-    const [property] = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
+    // Get user ID from JWT payload
+    const userId = req.jwtPayload?.id;
     
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
     
-    // Check if contracts exist
-    if (!(property as any).roiDistributorAddress) {
-      return res.status(400).json({ error: 'No ROI distributor contract exists for this property' });
-    }
-    
-    // Distribute ROI
-    const result = await blockchainService.distributeROI(
+    // Get the investor's token balance from the blockchain
+    const balance = await blockchainService.getInvestorTokenBalance(
       propertyId,
-      amount,
-      description
+      userId.toString()
     );
     
-    res.status(200).json({
+    res.json({ balance });
+  } catch (error) {
+    console.error('Error getting investor token balance:', error);
+    res.status(500).json({ error: 'Failed to get investor token balance', details: String(error) });
+  }
+});
+
+/**
+ * Claim ROI for a property
+ */
+blockchainRouter.post('/claim-roi/:propertyId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const propertyId = Number(req.params.propertyId);
+    
+    if (isNaN(propertyId)) {
+      return res.status(400).json({ error: 'Invalid property ID' });
+    }
+    
+    // Get user ID from JWT payload
+    const userId = req.jwtPayload?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Claim ROI for the property
+    const result = await blockchainService.claimRoi(
       propertyId,
-      amount,
-      description,
-      transactionHash: result.transactionHash,
-      success: result.success
-    });
+      userId.toString()
+    );
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error claiming ROI:', error);
+    res.status(500).json({ error: 'Failed to claim ROI', details: String(error) });
+  }
+});
+
+/**
+ * Distribute ROI for a property (admin only)
+ */
+blockchainRouter.post('/distribute-roi/:propertyId', authMiddleware, ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const propertyId = Number(req.params.propertyId);
+    const { amount } = req.body;
+    
+    if (isNaN(propertyId)) {
+      return res.status(400).json({ error: 'Invalid property ID' });
+    }
+    
+    if (!amount || isNaN(Number(amount))) {
+      return res.status(400).json({ error: 'Valid ROI amount is required' });
+    }
+    
+    // Distribute ROI for the property
+    const result = await blockchainService.distributeRoi(
+      propertyId,
+      amount.toString()
+    );
+    
+    res.json(result);
   } catch (error) {
     console.error('Error distributing ROI:', error);
-    res.status(500).json({ error: 'Failed to distribute ROI' });
-  }
-});
-
-// Get investor's pending rewards
-blockchainRouter.get('/properties/:id/rewards', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const propertyId = parseInt(req.params.id);
-    const { investorAddress } = req.query;
-    
-    if (!investorAddress) {
-      return res.status(400).json({ error: 'Investor address is required' });
-    }
-    
-    // Check if property exists
-    const [property] = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
-    
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
-    }
-    
-    // Check if contracts exist
-    if (!(property as any).roiDistributorAddress) {
-      return res.status(400).json({ error: 'No ROI distributor contract exists for this property' });
-    }
-    
-    // Get investor rewards
-    const rewards = await blockchainService.getInvestorRewards(
-      propertyId,
-      investorAddress as string
-    );
-    
-    res.status(200).json({
-      propertyId,
-      investorAddress,
-      ...rewards
-    });
-  } catch (error) {
-    console.error('Error getting investor rewards:', error);
-    res.status(500).json({ error: 'Failed to get investor rewards' });
-  }
-});
-
-// Claim investor's rewards
-blockchainRouter.post('/properties/:id/claim-rewards', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const propertyId = parseInt(req.params.id);
-    const { investorPrivateKey } = req.body;
-    
-    if (!investorPrivateKey) {
-      return res.status(400).json({ error: 'Investor private key is required' });
-    }
-    
-    // Check if property exists
-    const [property] = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, propertyId));
-    
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
-    }
-    
-    // Check if contracts exist
-    if (!(property as any).roiDistributorAddress) {
-      return res.status(400).json({ error: 'No ROI distributor contract exists for this property' });
-    }
-    
-    // Claim rewards
-    const result = await blockchainService.claimRewards(
-      propertyId,
-      investorPrivateKey
-    );
-    
-    res.status(200).json({
-      propertyId,
-      transactionHash: result.transactionHash,
-      success: result.success,
-      amountClaimed: result.amountClaimed
-    });
-  } catch (error) {
-    console.error('Error claiming rewards:', error);
-    res.status(500).json({ error: 'Failed to claim rewards' });
+    res.status(500).json({ error: 'Failed to distribute ROI', details: String(error) });
   }
 });
 
