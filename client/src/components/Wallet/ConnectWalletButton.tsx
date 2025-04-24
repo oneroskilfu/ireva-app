@@ -180,7 +180,7 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
   };
 
   const detectNetwork = (chainId?: string) => {
-    if (!chainId && hasProvider) {
+    if (!chainId && hasProvider && window.ethereum) {
       chainId = window.ethereum.chainId;
     }
     
@@ -211,7 +211,7 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
   };
 
   const getCurrentNetworkName = (): string => {
-    if (!hasProvider) return 'No Provider';
+    if (!hasProvider || !window.ethereum || !window.ethereum.chainId) return 'No Provider';
     return getNetworkName(window.ethereum.chainId);
   };
 
