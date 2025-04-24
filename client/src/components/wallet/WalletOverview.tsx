@@ -320,6 +320,32 @@ const WalletOverview = () => {
                   </div>
                 </div>
 
+                <div className="border rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center">
+                      <svg className="h-6 w-6 mr-2 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
+                      </svg>
+                      <div>
+                        <p className="font-medium">Cryptocurrency Wallet</p>
+                        <p className="text-sm text-muted-foreground">
+                          Alternative payment option
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline">Alternative</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.location.href = '/wallet/crypto'}
+                    >
+                      Manage
+                    </Button>
+                  </div>
+                </div>
+                
                 <div className="border rounded-lg p-4 border-dashed flex justify-center items-center py-8">
                   <Button variant="outline">
                     <CreditCard className="h-4 w-4 mr-2" />
@@ -373,6 +399,19 @@ const WalletOverview = () => {
                   </div>
                   <Button variant="outline" size="sm">
                     Nigerian Naira (₦)
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="flex justify-between items-center p-2 hover:bg-muted/50 rounded">
+                  <div>
+                    <p className="font-medium">Payment Preference</p>
+                    <p className="text-sm text-muted-foreground">
+                      Choose your default payment method type
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Fiat (Default)
                     <ChevronDown className="ml-2 h-4 w-4" />
                   </Button>
                 </div>

@@ -193,7 +193,7 @@ const AddFunds = ({ onSuccess }: AddFundsProps) => {
   return (
     <div className="mt-4">
       <Tabs defaultValue="card" onValueChange={setPaymentMethod}>
-        <TabsList className="grid grid-cols-3 mb-4">
+        <TabsList className="grid grid-cols-4 mb-4">
           <TabsTrigger value="card" className="flex items-center">
             <CreditCard className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Card</span>
@@ -205,6 +205,12 @@ const AddFunds = ({ onSuccess }: AddFundsProps) => {
           <TabsTrigger value="ussd" className="flex items-center">
             <PiggyBank className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">USSD</span>
+          </TabsTrigger>
+          <TabsTrigger value="crypto" className="flex items-center">
+            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
+            </svg>
+            <span className="hidden sm:inline">Crypto</span>
           </TabsTrigger>
         </TabsList>
 
@@ -348,6 +354,61 @@ const AddFunds = ({ onSuccess }: AddFundsProps) => {
                       <li>Follow the prompts to complete your transaction</li>
                       <li>Your wallet will be credited once payment is confirmed</li>
                     </ol>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="crypto" className="space-y-4">
+                  <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Cryptocurrency Payment</h4>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => window.location.href = '/wallet/crypto'}
+                        className="text-xs"
+                      >
+                        Advanced Settings
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-col items-center justify-center p-2 border rounded-lg hover:bg-accent cursor-pointer">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                          <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Bitcoin</span>
+                      </div>
+                      
+                      <div className="flex flex-col items-center justify-center p-2 border rounded-lg hover:bg-accent cursor-pointer">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                          <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Ethereum</span>
+                      </div>
+                      
+                      <div className="flex flex-col items-center justify-center p-2 border rounded-lg hover:bg-accent cursor-pointer">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                          <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12z"/>
+                            <path fill="white" d="M9.171 9.479L6.586 12l2.585 2.521.731-.731L8.02 12l1.882-1.79-.731-.731zm5.658 0l-.731.731L15.98 12l-1.882 1.79.731.731L17.414 12l-2.585-2.521zM10.9 16.012h1.239l1.961-8.024H12.86L10.9 16.012z"/>
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">USDC</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm">
+                      <p className="font-medium mb-2">Note:</p>
+                      <ul className="list-disc pl-5 space-y-1 text-xs text-muted-foreground">
+                        <li>Cryptocurrency payments are processed separately from fiat transactions</li>
+                        <li>For more options and wallet configuration, visit the crypto wallet page</li>
+                        <li>Your wallet will be credited once the blockchain transaction is confirmed</li>
+                      </ul>
+                    </div>
                   </div>
                 </TabsContent>
               </form>
