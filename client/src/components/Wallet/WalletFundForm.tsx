@@ -32,7 +32,7 @@ const fundWalletSchema = z.object({
     .min(1, "Amount is required")
     .refine(val => !isNaN(parseInt(val)), "Amount must be a number")
     .refine(val => parseInt(val) >= 1000, "Minimum amount is ₦1,000"),
-  paymentMethod: z.enum(["credit_card", "bank_transfer", "paystack", "flutterwave"]),
+  paymentMethod: z.enum(["credit_card", "bank_transfer", "paystack", "flutterwave", "crypto"]),
 });
 
 type FundWalletFormValues = z.infer<typeof fundWalletSchema>;
@@ -172,6 +172,20 @@ export default function WalletFundForm({ onSuccess }: WalletFundFormProps) {
                         <span className="text-sm font-medium">Flutterwave</span>
                       </Label>
                     </div>
+                    
+                    <div>
+                      <RadioGroupItem
+                        value="crypto"
+                        id="crypto"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="crypto"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                      >
+                        <span className="text-sm font-medium">Cryptocurrency</span>
+                      </Label>
+                    </div>
                   </RadioGroup>
                 </FormControl>
                 <FormMessage />
@@ -232,6 +246,38 @@ export default function WalletFundForm({ onSuccess }: WalletFundFormProps) {
               <p className="text-sm text-muted-foreground">
                 After making the transfer, please click the button below.
               </p>
+            </CardContent>
+          </Card>
+        )}
+        
+        {selectedMethod === 'crypto' && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Cryptocurrency Payment</CardTitle>
+              <CardDescription>
+                For cryptocurrency transactions, please use our crypto wallet interface
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 border rounded-md bg-muted flex flex-col items-center">
+                <svg className="h-12 w-12 mb-3" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
+                </svg>
+                <p className="font-medium text-center">Our crypto wallet supports USDC and USDT</p>
+                <p className="text-sm text-muted-foreground text-center mt-1">
+                  Click the button below to continue to our crypto wallet interface.
+                </p>
+              </div>
+              
+              <div className="flex justify-center mt-2">
+                <Button 
+                  variant="secondary" 
+                  className="w-full"
+                  onClick={() => window.location.href = '/wallet/crypto'}
+                >
+                  Continue to Crypto Wallet
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

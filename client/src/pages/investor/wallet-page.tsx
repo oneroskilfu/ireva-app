@@ -198,15 +198,44 @@ export default function WalletPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center p-4 border rounded-md">
-                    <CreditCard className="h-8 w-8 mr-4 text-muted-foreground" />
-                    <div>
-                      <h3 className="font-medium">**** **** **** 4242</h3>
-                      <p className="text-sm text-muted-foreground">Expires 12/25</p>
+                  <div className="flex items-center justify-between p-4 border rounded-md">
+                    <div className="flex items-center">
+                      <CreditCard className="h-8 w-8 mr-4 text-muted-foreground" />
+                      <div>
+                        <h3 className="font-medium">**** **** **** 4242</h3>
+                        <p className="text-sm text-muted-foreground">Expires 12/25</p>
+                      </div>
                     </div>
+                    <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-md">
+                      Default
+                    </span>
                   </div>
                   
-                  {/* Additional payment methods would go here */}
+                  <div className="flex items-center justify-between p-4 border rounded-md">
+                    <div className="flex items-center">
+                      <svg className="h-8 w-8 mr-4 text-muted-foreground" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
+                      </svg>
+                      <div>
+                        <h3 className="font-medium">Cryptocurrency Wallet</h3>
+                        <p className="text-sm text-muted-foreground">USDC/USDT Supported</p>
+                      </div>
+                    </div>
+                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-md">
+                      Alternative
+                    </span>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <h3 className="font-medium mb-2">Payment Preference</h3>
+                    <div className="p-3 bg-muted rounded-md">
+                      <p className="text-sm">Current preference: <strong>Fiat (Default)</strong></p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Fiat methods include credit card, bank transfer, and payment gateways.
+                        Cryptocurrency is available as an alternative option.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

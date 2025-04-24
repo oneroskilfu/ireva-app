@@ -46,6 +46,10 @@ export default function WalletCard({ className }: WalletCardProps) {
     });
   };
 
+  const handleCryptoFunding = () => {
+    window.location.href = '/wallet/crypto';
+  };
+
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
@@ -122,26 +126,41 @@ export default function WalletCard({ className }: WalletCardProps) {
                 Withdraw
               </Button>
             </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Withdraw Funds</DialogTitle>
-              <DialogDescription>
-                Withdraw funds from your wallet to your bank account.
-              </DialogDescription>
-            </DialogHeader>
-            <WalletWithdrawForm 
-              onSuccess={() => {
-                setShowWithdrawDialog(false);
-                refetch();
-                toast({
-                  title: "Withdrawal Requested",
-                  description: "Your withdrawal request has been submitted and is being processed.",
-                });
-              }}
-              currentBalance={wallet?.balance || 0}
-            />
-          </DialogContent>
-        </Dialog>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Withdraw Funds</DialogTitle>
+                <DialogDescription>
+                  Withdraw funds from your wallet to your bank account.
+                </DialogDescription>
+              </DialogHeader>
+              <WalletWithdrawForm 
+                onSuccess={() => {
+                  setShowWithdrawDialog(false);
+                  refetch();
+                  toast({
+                    title: "Withdrawal Requested",
+                    description: "Your withdrawal request has been submitted and is being processed.",
+                  });
+                }}
+                currentBalance={wallet?.balance || 0}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        <div className="w-full flex justify-center">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs" 
+            onClick={handleCryptoFunding}
+          >
+            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
+            </svg>
+            Fund with Cryptocurrency (Alternative)
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
