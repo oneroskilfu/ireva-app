@@ -128,6 +128,7 @@ function Router() {
       <Route path="/company/culture" component={CulturePage} />
       <Route path="/company/press" component={PressPage} />
       <Route path="/explore" component={ExplorePage} />
+      <Route path="/crypto-education" component={CryptoEducationPage} />
       
       {/* Legacy Protected Routes - will be deprecated gradually */}
       <Route path="/dashboard">
