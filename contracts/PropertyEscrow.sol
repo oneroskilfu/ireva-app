@@ -1,227 +1,148 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 /**
  * @title PropertyEscrow
- * @dev Smart contract for handling real estate investment escrow on the iREVA platform
- * This contract holds funds from investors until conditions are met for release to developers
+ * @dev Contract for handling property investment funds in escrow
  */
 contract PropertyEscrow {
-    address public admin;
-    address payable public developer;
     uint256 public propertyId;
+    address public developer;
     uint256 public targetAmount;
-    uint256 public investmentPeriod; // in seconds
-    uint256 public startTime;
     uint256 public totalInvested;
+    uint256 public investmentDeadline;
     bool public fundingComplete;
-    bool public projectCancelled;
+    bool public fundsReleased;
     
-    enum InvestmentStatus { Active, Completed, Refunded, Cancelled }
-    
-    struct Investment {
-        address investor;
+    struct Investor {
         uint256 amount;
         uint256 timestamp;
-        InvestmentStatus status;
     }
     
-    mapping(address => Investment[]) public investorToInvestments;
-    address[] public investors;
+    mapping(address => Investor) public investors;
+    address[] public investorList;
     
-    event InvestmentMade(address indexed investor, uint256 amount, uint256 timestamp);
+    event Investment(address indexed investor, uint256 amount, uint256 timestamp);
+    event FundingComplete(uint256 totalAmount, uint256 timestamp);
     event FundsReleased(address indexed developer, uint256 amount, uint256 timestamp);
-    event RefundIssued(address indexed investor, uint256 amount, uint256 timestamp);
-    event ProjectCancelled(uint256 timestamp, string reason);
-    event WithdrawalApproved(uint256 amount, uint256 timestamp);
+    event FundsRefunded(address indexed investor, uint256 amount, uint256 timestamp);
     
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin can call this function");
-        _;
-    }
-    
-    modifier onlyDeveloper() {
-        require(msg.sender == developer, "Only developer can call this function");
-        _;
-    }
-    
-    modifier fundingNotComplete() {
-        require(!fundingComplete, "Funding target already reached");
-        _;
-    }
-    
-    modifier fundingIsComplete() {
-        require(fundingComplete, "Funding target not yet reached");
-        _;
-    }
-    
-    modifier projectNotCancelled() {
-        require(!projectCancelled, "Project has been cancelled");
-        _;
-    }
-    
-    /**
-     * @dev Constructor sets up the escrow contract with property details
-     * @param _developer The address of the property developer
-     * @param _propertyId The ID of the property in the iREVA platform
-     * @param _targetAmount The funding target in wei
-     * @param _investmentPeriodInDays The period for investment in days
-     */
     constructor(
-        address payable _developer,
         uint256 _propertyId,
+        address _developer,
         uint256 _targetAmount,
         uint256 _investmentPeriodInDays
     ) {
-        admin = msg.sender;
-        developer = _developer;
+        require(_developer != address(0), "Invalid developer address");
+        require(_targetAmount > 0, "Target amount must be greater than 0");
+        
         propertyId = _propertyId;
+        developer = _developer;
         targetAmount = _targetAmount;
-        investmentPeriod = _investmentPeriodInDays * 1 days;
-        startTime = block.timestamp;
-        fundingComplete = false;
-        projectCancelled = false;
+        investmentDeadline = block.timestamp + (_investmentPeriodInDays * 1 days);
     }
     
     /**
-     * @dev Function for investors to make investments
+     * @dev Invest in the property
      */
-    function invest() external payable projectNotCancelled fundingNotComplete {
-        require(msg.value > 0, "Investment amount must be greater than 0");
-        require(block.timestamp < startTime + investmentPeriod, "Investment period has ended");
-        require(totalInvested + msg.value <= targetAmount, "Investment would exceed target amount");
+    function invest() external payable {
+        require(!isInvestmentPeriodOver(), "Investment period has ended");
+        require(!fundingComplete, "Funding target already reached");
+        require(msg.value > 0, "Investment must be greater than 0");
         
-        // Record the investment
-        investorToInvestments[msg.sender].push(
-            Investment({
-                investor: msg.sender,
-                amount: msg.value,
-                timestamp: block.timestamp,
-                status: InvestmentStatus.Active
-            })
-        );
-        
-        // Add investor to list if first investment
-        bool isNewInvestor = true;
-        for (uint i = 0; i < investors.length; i++) {
-            if (investors[i] == msg.sender) {
-                isNewInvestor = false;
-                break;
-            }
+        // Update investor record
+        if (investors[msg.sender].amount == 0) {
+            investorList.push(msg.sender);
         }
         
-        if (isNewInvestor) {
-            investors.push(msg.sender);
-        }
+        investors[msg.sender].amount += msg.value;
+        investors[msg.sender].timestamp = block.timestamp;
         
         // Update total invested
         totalInvested += msg.value;
         
-        // Check if funding target reached
+        // Check if target has been reached
         if (totalInvested >= targetAmount) {
             fundingComplete = true;
+            emit FundingComplete(totalInvested, block.timestamp);
         }
         
-        emit InvestmentMade(msg.sender, msg.value, block.timestamp);
+        emit Investment(msg.sender, msg.value, block.timestamp);
     }
     
     /**
-     * @dev Admin can release funds to developer after funding is complete
+     * @dev Release funds to the developer
      */
-    function releaseFundsToDeveloper() external onlyAdmin fundingIsComplete projectNotCancelled {
+    function releaseFunds() external {
+        require(fundingComplete, "Funding target not reached");
+        require(!fundsReleased, "Funds already released");
+        
+        fundsReleased = true;
         uint256 amount = address(this).balance;
-        developer.transfer(amount);
+        
+        (bool success, ) = developer.call{value: amount}("");
+        require(success, "Transfer failed");
         
         emit FundsReleased(developer, amount, block.timestamp);
     }
     
     /**
-     * @dev Admin can approve partial withdrawal to developer
-     * @param amount The amount to be released in wei
+     * @dev Refund investors if funding target is not reached before deadline
      */
-    function approveWithdrawal(uint256 amount) external onlyAdmin fundingIsComplete projectNotCancelled {
-        require(amount <= address(this).balance, "Insufficient funds in contract");
+    function refundInvestors() external {
+        require(isInvestmentPeriodOver(), "Investment period has not ended");
+        require(!fundingComplete, "Funding target already reached");
         
-        developer.transfer(amount);
-        
-        emit WithdrawalApproved(amount, block.timestamp);
-    }
-    
-    /**
-     * @dev Admin can cancel project and enable refunds
-     * @param reason Reason for cancellation
-     */
-    function cancelProject(string memory reason) external onlyAdmin projectNotCancelled {
-        projectCancelled = true;
-        
-        emit ProjectCancelled(block.timestamp, reason);
-    }
-    
-    /**
-     * @dev Investors can claim refund if project is cancelled
-     */
-    function claimRefund() external {
-        require(projectCancelled, "Project has not been cancelled");
-        
-        uint256 totalRefundAmount = 0;
-        Investment[] storage investments = investorToInvestments[msg.sender];
-        
-        for (uint i = 0; i < investments.length; i++) {
-            if (investments[i].status == InvestmentStatus.Active) {
-                totalRefundAmount += investments[i].amount;
-                investments[i].status = InvestmentStatus.Refunded;
+        for (uint256 i = 0; i < investorList.length; i++) {
+            address investor = investorList[i];
+            uint256 amount = investors[investor].amount;
+            
+            if (amount > 0) {
+                investors[investor].amount = 0;
+                
+                (bool success, ) = investor.call{value: amount}("");
+                require(success, "Transfer failed");
+                
+                emit FundsRefunded(investor, amount, block.timestamp);
             }
         }
-        
-        require(totalRefundAmount > 0, "No active investments to refund");
-        require(totalRefundAmount <= address(this).balance, "Insufficient funds in contract");
-        
-        payable(msg.sender).transfer(totalRefundAmount);
-        
-        emit RefundIssued(msg.sender, totalRefundAmount, block.timestamp);
-    }
-    
-    /**
-     * @dev Get investment details for a specific investor
-     * @param investor The address of the investor
-     * @return Investment[] An array of investments made by the investor
-     */
-    function getInvestorInvestments(address investor) external view returns (Investment[] memory) {
-        return investorToInvestments[investor];
-    }
-    
-    /**
-     * @dev Get the total number of unique investors
-     * @return uint256 The number of investors
-     */
-    function getInvestorCount() external view returns (uint256) {
-        return investors.length;
-    }
-    
-    /**
-     * @dev Get the contract balance
-     * @return uint256 The balance in wei
-     */
-    function getContractBalance() external view returns (uint256) {
-        return address(this).balance;
     }
     
     /**
      * @dev Check if investment period is over
-     * @return bool True if investment period is over
      */
-    function isInvestmentPeriodOver() external view returns (bool) {
-        return block.timestamp >= startTime + investmentPeriod;
+    function isInvestmentPeriodOver() public view returns (bool) {
+        return block.timestamp > investmentDeadline;
     }
     
     /**
-     * @dev Get the remaining time in the investment period
-     * @return uint256 The remaining time in seconds
+     * @dev Get the remaining time for investment in seconds
      */
-    function getRemainingTime() external view returns (uint256) {
-        if (block.timestamp >= startTime + investmentPeriod) {
+    function getRemainingTime() public view returns (uint256) {
+        if (isInvestmentPeriodOver()) {
             return 0;
         }
-        return (startTime + investmentPeriod) - block.timestamp;
+        return investmentDeadline - block.timestamp;
+    }
+    
+    /**
+     * @dev Get the investment amount of a specific investor
+     */
+    function getInvestorAmount(address investor) public view returns (uint256) {
+        return investors[investor].amount;
+    }
+    
+    /**
+     * @dev Get the number of investors
+     */
+    function getInvestorCount() public view returns (uint256) {
+        return investorList.length;
+    }
+    
+    /**
+     * @dev Get the list of all investors
+     */
+    function getInvestors() public view returns (address[] memory) {
+        return investorList;
     }
 }

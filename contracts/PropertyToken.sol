@@ -1,210 +1,155 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 /**
  * @title PropertyToken
- * @dev Contract for tokenizing real estate properties on the iREVA platform
- * This contract allows fractional ownership of properties through ERC20-like tokens
+ * @dev ERC20 token representing ownership shares in a property
  */
 contract PropertyToken {
     string public name;
     string public symbol;
     uint8 public decimals;
     uint256 public totalSupply;
-    uint256 public propertyId;
-    address public admin;
+    
     address public developer;
-    uint256 public pricePerToken;
-    bool public saleActive;
+    uint256 public propertyId;
+    uint256 public tokenPrice;
     
     mapping(address => uint256) private balances;
     mapping(address => mapping(address => uint256)) private allowances;
     
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    event SaleStarted(uint256 timestamp);
-    event SaleStopped(uint256 timestamp);
     event TokensPurchased(address indexed buyer, uint256 amount, uint256 cost);
-    event PriceUpdated(uint256 oldPrice, uint256 newPrice);
     
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin can call this function");
-        _;
-    }
-    
-    modifier onlyDeveloper() {
-        require(msg.sender == developer, "Only developer can call this function");
-        _;
-    }
-    
-    modifier onlySaleActive() {
-        require(saleActive, "Token sale is not active");
-        _;
-    }
-    
-    /**
-     * @dev Constructor creates a new property token
-     * @param _name Name of the token
-     * @param _symbol Symbol of the token
-     * @param _decimals Decimals for token precision
-     * @param _propertyId ID of the property in the iREVA platform
-     * @param _initialSupply Initial token supply
-     * @param _developer Address of the property developer
-     * @param _pricePerToken Initial price per token in wei
-     */
     constructor(
+        uint256 _propertyId,
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _propertyId,
         uint256 _initialSupply,
         address _developer,
-        uint256 _pricePerToken
+        uint256 _tokenPrice
     ) {
+        require(_developer != address(0), "Invalid developer address");
+        
+        propertyId = _propertyId;
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        propertyId = _propertyId;
-        admin = msg.sender;
         developer = _developer;
-        pricePerToken = _pricePerToken;
-        saleActive = false;
+        tokenPrice = _tokenPrice;
         
-        totalSupply = _initialSupply * (10**uint256(decimals));
-        balances[developer] = totalSupply;
+        // Mint initial supply to the developer
+        totalSupply = _initialSupply * (10 ** uint256(_decimals));
+        balances[_developer] = totalSupply;
         
-        emit Transfer(address(0), developer, totalSupply);
+        emit Transfer(address(0), _developer, totalSupply);
     }
     
     /**
-     * @dev Get token balance of an account
-     * @param account The account to query
-     * @return uint256 The balance of the account
+     * @dev Get the balance of an account
      */
-    function balanceOf(address account) external view returns (uint256) {
+    function balanceOf(address account) public view returns (uint256) {
         return balances[account];
     }
     
     /**
-     * @dev Get allowance of spender for owner's tokens
-     * @param owner The token owner
-     * @param spender The token spender
-     * @return uint256 The amount of tokens approved
-     */
-    function allowance(address owner, address spender) external view returns (uint256) {
-        return allowances[owner][spender];
-    }
-    
-    /**
      * @dev Transfer tokens to a specified address
-     * @param to The recipient address
-     * @param amount The amount to transfer
-     * @return bool Success indicator
      */
-    function transfer(address to, uint256 amount) external returns (bool) {
-        require(to != address(0), "Cannot transfer to zero address");
-        require(amount <= balances[msg.sender], "Insufficient balance");
-        
-        balances[msg.sender] -= amount;
-        balances[to] += amount;
-        
-        emit Transfer(msg.sender, to, amount);
+    function transfer(address to, uint256 amount) public returns (bool) {
+        address owner = msg.sender;
+        _transfer(owner, to, amount);
         return true;
     }
     
     /**
-     * @dev Approve spender to spend tokens
-     * @param spender The spender address
-     * @param amount The amount to approve
-     * @return bool Success indicator
+     * @dev Check the amount of tokens that an owner allowed to a spender
      */
-    function approve(address spender, uint256 amount) external returns (bool) {
-        require(spender != address(0), "Cannot approve zero address");
-        
-        allowances[msg.sender][spender] = amount;
-        
-        emit Approval(msg.sender, spender, amount);
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return allowances[owner][spender];
+    }
+    
+    /**
+     * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender
+     */
+    function approve(address spender, uint256 amount) public returns (bool) {
+        address owner = msg.sender;
+        _approve(owner, spender, amount);
         return true;
     }
     
     /**
      * @dev Transfer tokens from one address to another
-     * @param from The sender address
-     * @param to The recipient address
-     * @param amount The amount to transfer
-     * @return bool Success indicator
      */
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
-        require(from != address(0), "Cannot transfer from zero address");
-        require(to != address(0), "Cannot transfer to zero address");
-        require(amount <= balances[from], "Insufficient balance");
-        require(amount <= allowances[from][msg.sender], "Insufficient allowance");
-        
-        balances[from] -= amount;
-        balances[to] += amount;
-        allowances[from][msg.sender] -= amount;
-        
-        emit Transfer(from, to, amount);
+    function transferFrom(address from, address to, uint256 amount) public returns (bool) {
+        address spender = msg.sender;
+        _spendAllowance(from, spender, amount);
+        _transfer(from, to, amount);
         return true;
     }
     
     /**
-     * @dev Start token sale
+     * @dev Buy tokens directly with ETH
      */
-    function startSale() external onlyAdmin {
-        saleActive = true;
-        emit SaleStarted(block.timestamp);
+    function buyTokens() public payable returns (uint256) {
+        require(msg.value > 0, "Amount must be greater than 0");
+        
+        // Calculate tokens to buy (considering decimals)
+        uint256 tokensToBuy = (msg.value * (10 ** uint256(decimals))) / tokenPrice;
+        
+        // Check if the developer has enough tokens
+        require(balances[developer] >= tokensToBuy, "Not enough tokens available for sale");
+        
+        // Transfer tokens from developer to buyer
+        _transfer(developer, msg.sender, tokensToBuy);
+        
+        // Transfer ETH to developer
+        (bool success, ) = developer.call{value: msg.value}("");
+        require(success, "Failed to send ETH to developer");
+        
+        emit TokensPurchased(msg.sender, tokensToBuy, msg.value);
+        
+        return tokensToBuy;
     }
     
     /**
-     * @dev Stop token sale
+     * @dev Internal function to transfer tokens
      */
-    function stopSale() external onlyAdmin {
-        saleActive = false;
-        emit SaleStopped(block.timestamp);
+    function _transfer(address from, address to, uint256 amount) internal {
+        require(from != address(0), "Transfer from the zero address");
+        require(to != address(0), "Transfer to the zero address");
+        require(balances[from] >= amount, "Transfer amount exceeds balance");
+        
+        unchecked {
+            balances[from] -= amount;
+            balances[to] += amount;
+        }
+        
+        emit Transfer(from, to, amount);
     }
     
     /**
-     * @dev Update price per token
-     * @param _newPrice New price per token in wei
+     * @dev Internal function to approve
      */
-    function updatePrice(uint256 _newPrice) external onlyAdmin {
-        require(_newPrice > 0, "Price must be greater than 0");
+    function _approve(address owner, address spender, uint256 amount) internal {
+        require(owner != address(0), "Approve from the zero address");
+        require(spender != address(0), "Approve to the zero address");
         
-        uint256 oldPrice = pricePerToken;
-        pricePerToken = _newPrice;
-        
-        emit PriceUpdated(oldPrice, _newPrice);
+        allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
     }
     
     /**
-     * @dev Purchase tokens with ETH
-     * @param minTokens Minimum tokens to receive (slippage protection)
+     * @dev Internal function to update allowance
      */
-    function buyTokens(uint256 minTokens) external payable onlySaleActive {
-        require(msg.value > 0, "Must send ETH to buy tokens");
-        
-        uint256 tokenAmount = (msg.value * (10**uint256(decimals))) / pricePerToken;
-        require(tokenAmount >= minTokens, "Slippage too high");
-        require(tokenAmount <= balances[developer], "Not enough tokens available for sale");
-        
-        balances[developer] -= tokenAmount;
-        balances[msg.sender] += tokenAmount;
-        
-        // Transfer ETH to the developer
-        payable(developer).transfer(msg.value);
-        
-        emit Transfer(developer, msg.sender, tokenAmount);
-        emit TokensPurchased(msg.sender, tokenAmount, msg.value);
-    }
-    
-    /**
-     * @dev Admin can withdraw any accidental ETH sent to contract
-     */
-    function withdraw() external onlyAdmin {
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No ETH to withdraw");
-        
-        payable(admin).transfer(balance);
+    function _spendAllowance(address owner, address spender, uint256 amount) internal {
+        uint256 currentAllowance = allowance(owner, spender);
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "Insufficient allowance");
+            unchecked {
+                _approve(owner, spender, currentAllowance - amount);
+            }
+        }
     }
 }
