@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { Building, Gem, LineChart, Clock } from 'lucide-react';
+import { Building, Gem, LineChart, Clock, Bitcoin, Shield } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -33,10 +33,22 @@ const featureItems = [
     description: "Access premium Nigerian real estate with fractional ownership, revolutionizing how the next generation builds wealth through high-yield properties."
   },
   {
+    icon: Bitcoin,
+    color: "orange",
+    title: "Crypto Payments Integration",
+    description: "Easily invest using cryptocurrency with our secure blockchain integration. Purchase property shares with Bitcoin, Ethereum, and other major cryptocurrencies."
+  },
+  {
     icon: Gem,
     color: "purple",
     title: "Unlock Premium Opportunities",
     description: "Gain access to a diverse range of investment options suitable for both accredited and non-accredited investors, starting with just ₦100,000."
+  },
+  {
+    icon: Shield,
+    color: "indigo",
+    title: "Blockchain-Secured Investments",
+    description: "Smart contracts provide transparent, tamper-proof records of your investments, with instant verification and property tokenization for enhanced security."
   },
   {
     icon: LineChart,
@@ -57,9 +69,11 @@ const getGradient = (color: string) => {
     blue: "from-blue-500 to-blue-600",
     purple: "from-purple-500 to-purple-600",
     green: "from-green-500 to-green-600",
-    amber: "from-amber-500 to-amber-600"
+    amber: "from-amber-500 to-amber-600",
+    orange: "from-orange-500 to-orange-600",
+    indigo: "from-indigo-500 to-indigo-600"
   };
-  return gradients[color as keyof typeof gradients];
+  return gradients[color as keyof typeof gradients] || "from-gray-500 to-gray-600";
 };
 
 const getLighterGradient = (color: string) => {
@@ -67,9 +81,11 @@ const getLighterGradient = (color: string) => {
     blue: "from-blue-500/10 to-blue-600/10",
     purple: "from-purple-500/10 to-purple-600/10",
     green: "from-green-500/10 to-green-600/10",
-    amber: "from-amber-500/10 to-amber-600/10"
+    amber: "from-amber-500/10 to-amber-600/10",
+    orange: "from-orange-500/10 to-orange-600/10",
+    indigo: "from-indigo-500/10 to-indigo-600/10"
   };
-  return gradients[color as keyof typeof gradients];
+  return gradients[color as keyof typeof gradients] || "from-gray-500/10 to-gray-600/10";
 };
 
 export default function AnimatedFeatures() {
