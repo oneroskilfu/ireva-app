@@ -315,7 +315,8 @@ export class CryptoPaymentService {
         }
         
         // Compare the amount (this is simplified)
-        const txAmount = ethers.utils.formatEther(tx.value);
+        // In ethers v6, formatEther is directly on ethers
+        const txAmount = ethers.formatEther(tx.value);
         return parseFloat(txAmount) >= parseFloat(amount);
       } else if (currency === 'USDT' || currency === 'USDC') {
         // For ERC20 tokens, we would need to check the token transfer event

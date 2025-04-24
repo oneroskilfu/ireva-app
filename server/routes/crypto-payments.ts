@@ -5,6 +5,22 @@ import { z } from 'zod';
 
 const cryptoPaymentRouter = Router();
 
+// Supported cryptocurrencies
+const SUPPORTED_CRYPTOCURRENCIES = [
+  'ETH',
+  'USDT',
+  'USDC',
+  'BTC'
+];
+
+// Cryptocurrency networks
+const CRYPTO_NETWORKS = {
+  ETH: 'ethereum',
+  USDT: 'ethereum', // ERC20
+  USDC: 'ethereum', // ERC20
+  BTC: 'bitcoin'
+};
+
 // Schema for creating a payment
 const createPaymentSchema = z.object({
   propertyId: z.number(),
@@ -23,11 +39,11 @@ const processPaymentSchema = z.object({
  */
 cryptoPaymentRouter.get('/supported-currencies', (req: Request, res: Response) => {
   try {
-    const supportedCurrencies = cryptoPaymentService.SUPPORTED_CRYPTOCURRENCIES.map(code => {
+    const supportedCurrencies = SUPPORTED_CRYPTOCURRENCIES.map(code => {
       return {
         code,
         name: getFullCurrencyName(code),
-        network: cryptoPaymentService.CRYPTO_NETWORKS[code as keyof typeof cryptoPaymentService.CRYPTO_NETWORKS]
+        network: CRYPTO_NETWORKS[code as keyof typeof CRYPTO_NETWORKS]
       };
     });
     
