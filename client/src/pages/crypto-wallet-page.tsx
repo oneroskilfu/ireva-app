@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { 
   Container,
-  Grid,
+  Grid as MuiGrid,
   Typography,
   Box,
-  Card,
-  CardContent,
-  Button,
-  Alert,
-  AlertTitle,
+  Card as MuiCard,
+  CardContent as MuiCardContent,
+  Button as MuiButton,
+  Alert as MuiAlert,
+  AlertTitle as MuiAlertTitle,
 } from '@mui/material';
 import WalletProviderChecker from '../components/Wallet/WalletProviderChecker';
 import { apiRequest } from '@/lib/queryClient';

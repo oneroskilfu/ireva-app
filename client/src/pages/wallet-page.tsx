@@ -194,6 +194,16 @@ const WalletPage: React.FC<WalletPageProps> = () => {
                         <CreditCard className="mr-2 h-4 w-4" />
                         Buy Crypto
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        asChild
+                      >
+                        <Link href="/wallet/crypto">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Advanced Crypto Settings
+                        </Link>
+                      </Button>
                     </CardContent>
                   </Card>
                   

@@ -31,6 +31,7 @@ const ProfilePage = lazy(() => import("@/pages/profile-page"));
 const ExplorePage = lazy(() => import("@/pages/explore-page"));
 const MobileHomePage = lazy(() => import("@/pages/mobile-home-page"));
 const CryptoEducationPage = lazy(() => import("@/pages/crypto-education-page"));
+const CryptoWalletPage = lazy(() => import("@/pages/crypto-wallet-page"));
 const AdminDashboard = lazy(() => import("@/pages/admin/admin-dashboard"));
 const JwtTestPage = lazy(() => import("@/pages/jwt-test-page"));
 const TestLogin = lazy(() => import("./test-login"));
@@ -149,6 +150,15 @@ function Router() {
       </Route>
       <Route path="/wallet">
         {() => <WalletPage />}
+      </Route>
+      <Route path="/wallet/crypto">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <CryptoWalletPage />
+            </Suspense>
+          </AuthMiddleware>
+        )}
       </Route>
       <Route path="/profile">
         {() => <ProfilePage />}
