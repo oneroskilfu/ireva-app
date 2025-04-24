@@ -86,41 +86,42 @@ export default function WalletCard({ className }: WalletCardProps) {
         )}
       </CardContent>
       <Separator />
-      <CardFooter className="pt-4 flex gap-2">
-        <Dialog open={showFundDialog} onOpenChange={setShowFundDialog}>
-          <DialogTrigger asChild>
-            <Button className="flex-1 gap-1">
-              <PlusCircle className="h-4 w-4" />
-              Fund Wallet
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Fund Your Wallet</DialogTitle>
-              <DialogDescription>
-                Add funds to your wallet to start investing in properties.
-              </DialogDescription>
-            </DialogHeader>
-            <WalletFundForm 
-              onSuccess={() => {
-                setShowFundDialog(false);
-                refetch();
-                toast({
-                  title: "Wallet Funded",
-                  description: "Your wallet has been funded successfully.",
-                });
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-        
-        <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex-1 gap-1">
-              <ArrowUpRight className="h-4 w-4" />
-              Withdraw
-            </Button>
-          </DialogTrigger>
+      <CardFooter className="pt-4 flex flex-col gap-3">
+        <div className="flex w-full gap-2">
+          <Dialog open={showFundDialog} onOpenChange={setShowFundDialog}>
+            <DialogTrigger asChild>
+              <Button className="flex-1 gap-1">
+                <PlusCircle className="h-4 w-4" />
+                Fund Wallet
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Fund Your Wallet</DialogTitle>
+                <DialogDescription>
+                  Add funds to your wallet to start investing in properties.
+                </DialogDescription>
+              </DialogHeader>
+              <WalletFundForm 
+                onSuccess={() => {
+                  setShowFundDialog(false);
+                  refetch();
+                  toast({
+                    title: "Wallet Funded",
+                    description: "Your wallet has been funded successfully.",
+                  });
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex-1 gap-1">
+                <ArrowUpRight className="h-4 w-4" />
+                Withdraw
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Withdraw Funds</DialogTitle>
