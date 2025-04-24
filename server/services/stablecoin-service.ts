@@ -55,10 +55,26 @@ class StablecoinService {
   private providers: Record<string, ethers.JsonRpcProvider>;
 
   constructor() {
-    // Initialize providers for each network
+    // Initialize providers for each network with proper error handling
     this.providers = {};
+    
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    
     Object.entries(NETWORKS).forEach(([network, config]) => {
-      this.providers[network] = new ethers.JsonRpcProvider(config.rpcUrl);
+      try {
+        // In development without proper API keys, create mock providers
+        if (isDev && config.rpcUrl.includes('demo')) {
+          console.log(`Using mock provider for ${network} in development mode`);
+          // Just initialize but don't actually connect in development
+          this.providers[network] = null;
+        } else {
+          this.providers[network] = new ethers.JsonRpcProvider(config.rpcUrl);
+        }
+      } catch (error) {
+        console.error(`Failed to initialize provider for ${network}:`, error);
+        this.providers[network] = null;
+      }
     });
   }
 
