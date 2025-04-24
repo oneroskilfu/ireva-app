@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import WalletConnection from "@/components/Wallet/WalletConnection";
+import CryptoEducationCard from "@/components/education/CryptoEducationCard";
 import { 
   Tabs, 
   TabsContent, 
