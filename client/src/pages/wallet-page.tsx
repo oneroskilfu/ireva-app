@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from "wouter";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import WalletConnection from "@/components/Wallet/WalletConnection";
@@ -239,10 +240,10 @@ const WalletPage: React.FC<WalletPageProps> = () => {
                         <li>Connect your wallet to iREVA using the "Connect Wallet" button</li>
                       </ul>
                       <Button variant="link" className="p-0 h-auto" asChild>
-                        <a href="#" target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-600">
+                        <Link href="/crypto-education#wallet-setup" className="flex items-center text-blue-600">
                           View detailed guide
                           <ArrowRight className="ml-1 h-4 w-4" />
-                        </a>
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -266,10 +267,10 @@ const WalletPage: React.FC<WalletPageProps> = () => {
                         <li>Receive tokenized property rights in your wallet</li>
                       </ul>
                       <Button variant="link" className="p-0 h-auto" asChild>
-                        <a href="#" target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-600">
+                        <Link href="/crypto-education#investing" className="flex items-center text-blue-600">
                           View detailed guide
                           <ArrowRight className="ml-1 h-4 w-4" />
-                        </a>
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -292,10 +293,10 @@ const WalletPage: React.FC<WalletPageProps> = () => {
                         <li>Verify all transactions on the blockchain</li>
                       </ul>
                       <Button variant="link" className="p-0 h-auto" asChild>
-                        <a href="#" target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-600">
+                        <Link href="/crypto-education#managing-investments" className="flex items-center text-blue-600">
                           View detailed guide
                           <ArrowRight className="ml-1 h-4 w-4" />
-                        </a>
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -343,33 +344,11 @@ const WalletPage: React.FC<WalletPageProps> = () => {
                   <Separator />
                   
                   <div className="space-y-2">
-                    <h3 className="text-base font-medium">What happens if cryptocurrency prices fluctuate?</h3>
+                    <h3 className="text-base font-medium">What are the benefits of investing with cryptocurrency?</h3>
                     <p className="text-sm text-muted-foreground">
-                      When you invest with cryptocurrency, we lock in the property investment amount at the current exchange rate. 
-                      Your investment in the property is denominated in Nigerian Naira (₦), so future cryptocurrency price fluctuations 
-                      won't affect your property ownership percentage.
-                    </p>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-2">
-                    <h3 className="text-base font-medium">How do I receive my returns?</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Property returns are distributed automatically to your connected wallet through smart contracts. 
-                      You can choose to receive returns in either cryptocurrency or have them automatically converted to 
-                      Nigerian Naira in your iREVA account.
-                    </p>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-2">
-                    <h3 className="text-base font-medium">What are gas fees and who pays them?</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Gas fees are transaction costs on the blockchain that go to network validators. When investing, 
-                      you'll need to pay gas fees from your wallet. For ROI distributions, iREVA covers the gas fees 
-                      to ensure you receive your full returns.
+                      Cryptocurrency investments offer several advantages including faster transactions, reduced fees for 
+                      international investments, enhanced security through blockchain technology, and potential tax benefits 
+                      depending on your jurisdiction.
                     </p>
                   </div>
                   
@@ -406,7 +385,9 @@ const WalletPage: React.FC<WalletPageProps> = () => {
                   </p>
                   <div className="flex space-x-3">
                     <Button>Contact Support</Button>
-                    <Button variant="outline">View Documentation</Button>
+                    <Button variant="outline" asChild>
+                      <Link href="/crypto-education">View Documentation</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
