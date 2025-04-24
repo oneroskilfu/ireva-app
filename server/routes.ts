@@ -37,6 +37,8 @@ import blockchainRouter from './routes/blockchain-routes';
 import smartContractRoutes from './routes/smart-contract-routes';
 import adminKycSecurityRoutes from './routes/admin-kyc-routes';
 import dataProtectionRoutes from './routes/data-protection-routes';
+// Import stablecoin routes
+import stablecoinRoutes from './routes/stablecoin-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -286,6 +288,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Data Protection routes
   app.use('/api/privacy', dataProtectionRoutes);
   console.log("Data protection routes registered");
+  
+  // Set up Stablecoin routes
+  app.use('/api/stablecoins', stablecoinRoutes);
+  console.log("Stablecoin routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
