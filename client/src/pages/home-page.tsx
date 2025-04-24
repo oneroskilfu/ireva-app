@@ -2,7 +2,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Property } from "@shared/schema";
+import { Project } from "@shared/schema";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -20,7 +20,7 @@ export default function HomePage() {
     type: "all"
   });
   
-  const { data: properties = [] } = useQuery<Property[]>({
+  const { data: properties = [] } = useQuery<Project[]>({
     queryKey: ["/api/properties"],
   });
   
