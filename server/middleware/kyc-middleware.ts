@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { kycService } from '../services/kyc-verification-service';
-import { cryptoPaymentService } from '../services/crypto-payment-service';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 
@@ -35,7 +34,7 @@ export async function logCryptoActivity(
     details,
     timestamp: new Date(),
     ip: req.ip,
-    country: req.headers['cf-ipcountry'] as string || 'Unknown',
+    country: req.headers['cf-ipcountry'] as string | undefined || 'Unknown',
     userAgent: req.headers['user-agent'] as string
   };
 
