@@ -13,12 +13,18 @@ async function seedCryptoTransactions() {
       return;
     }
     
+    console.log(`Found ${existingUsers.length} users for seeding`);
+    console.log('Sample user:', existingUsers[0]);
+    
     // Get some existing properties
     const existingProperties = await db.select().from(properties).limit(3);
     if (existingProperties.length === 0) {
       console.log('No properties found. Please seed properties first.');
       return;
     }
+    
+    console.log(`Found ${existingProperties.length} properties for seeding`);
+    console.log('Sample property:', existingProperties[0]);
     
     // Delete existing crypto payments for clean seeding
     const deletedCount = await db.delete(cryptoPayments).returning();
@@ -28,7 +34,7 @@ async function seedCryptoTransactions() {
     const sampleTransactions = [
       {
         id: 'txn-1001-bitcoin',
-        userId: existingUsers[0].id,
+        userId: existingUsers[0]?.id || 1,
         amount: '0.0125',
         currency: 'BTC',
         status: 'completed',
@@ -40,11 +46,11 @@ async function seedCryptoTransactions() {
         createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
         updatedAt: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000), // 29 days ago
         expiresAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000), // 28 days ago
-        propertyId: existingProperties[0].id
+        propertyId: existingProperties[0]?.id || 1
       },
       {
         id: 'txn-1002-eth',
-        userId: existingUsers[1].id,
+        userId: existingUsers[1]?.id || 1,
         amount: '0.75',
         currency: 'ETH',
         status: 'completed',
@@ -56,11 +62,11 @@ async function seedCryptoTransactions() {
         createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
         updatedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
         expiresAt: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000), // 13 days ago
-        propertyId: existingProperties[1].id
+        propertyId: existingProperties[1]?.id || 1
       },
       {
         id: 'txn-1003-usdt',
-        userId: existingUsers[2].id,
+        userId: existingUsers[2]?.id || 1,
         amount: '500',
         currency: 'USDT',
         status: 'completed',
@@ -72,11 +78,11 @@ async function seedCryptoTransactions() {
         createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
         updatedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000), // 9 days ago
         expiresAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), // 8 days ago
-        propertyId: existingProperties[2].id
+        propertyId: existingProperties[2]?.id || 1
       },
       {
         id: 'txn-1004-usdc',
-        userId: existingUsers[0].id,
+        userId: existingUsers[0]?.id || 1,
         amount: '750',
         currency: 'USDC',
         status: 'completed',
@@ -88,11 +94,11 @@ async function seedCryptoTransactions() {
         createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
         updatedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
         expiresAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-        propertyId: existingProperties[0].id
+        propertyId: existingProperties[0]?.id || 1
       },
       {
         id: 'txn-1005-matic',
-        userId: existingUsers[3].id,
+        userId: existingUsers[0]?.id || 1,
         amount: '1000',
         currency: 'MATIC',
         status: 'pending',
@@ -103,11 +109,11 @@ async function seedCryptoTransactions() {
         createdAt: new Date(), // Today
         updatedAt: new Date(),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
-        propertyId: existingProperties[1].id
+        propertyId: existingProperties[1]?.id || 1
       },
       {
         id: 'txn-1006-bnb',
-        userId: existingUsers[4].id,
+        userId: existingUsers[0]?.id || 1,
         amount: '2.5',
         currency: 'BNB',
         status: 'failed',
@@ -118,7 +124,7 @@ async function seedCryptoTransactions() {
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
         updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
         expiresAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-        propertyId: existingProperties[2].id
+        propertyId: existingProperties[0]?.id || 1
       }
     ];
     

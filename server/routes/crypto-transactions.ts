@@ -11,21 +11,49 @@ export const cryptoTransactionsRouter = express.Router();
 // GET all crypto transactions (public route for the demo - in production use ensureAdmin)
 cryptoTransactionsRouter.get('/', async (req: Request, res: Response) => {
   try {
-    const transactions = await cryptoPaymentService.getAllTransactions();
-    
-    // Transform the data to match expected format
-    const formattedTransactions = transactions.map(tx => ({
-      _id: tx.id,
-      txnId: tx.orderId || tx.id,
-      amount: Number(tx.amount),
-      currency: tx.currency,
-      status: tx.status,
-      createdAt: tx.createdAt,
-      investorName: tx.user?.username || `User ${tx.userId}`,
-      walletAddress: tx.walletAddress
-    }));
-    
-    res.json(formattedTransactions);
+    try {
+      // First try to get transactions from the database
+      const result = await db.query.cryptoPayments.findMany({
+        with: {
+          user: true,
+          property: true
+        }
+      });
+      
+      // Transform the data to match expected format
+      const formattedTransactions = result.map(tx => ({
+        _id: tx.id,
+        txnId: tx.orderId || tx.id,
+        amount: tx.amount,
+        currency: tx.currency,
+        status: tx.status,
+        createdAt: tx.createdAt,
+        investorName: tx.user?.username || `User ${tx.userId}`,
+        walletAddress: tx.walletAddress,
+        propertyName: tx.property?.name || 'Unknown Property'
+      }));
+      
+      return res.json(formattedTransactions);
+    } catch (dbError) {
+      console.error('Error fetching transactions from database:', dbError);
+      
+      // If database query fails, fall back to service method
+      const transactions = await cryptoPaymentService.getAllTransactions();
+      
+      // Transform the data to match expected format
+      const formattedTransactions = transactions.map(tx => ({
+        _id: tx.id,
+        txnId: tx.orderId || tx.id,
+        amount: tx.amount,
+        currency: tx.currency,
+        status: tx.status,
+        createdAt: tx.createdAt,
+        investorName: tx.user?.username || `User ${tx.userId}`,
+        walletAddress: tx.walletAddress
+      }));
+      
+      res.json(formattedTransactions);
+    }
   } catch (error) {
     console.error('Error fetching all crypto transactions:', error);
     res.status(500).json({ error: 'Failed to fetch transactions' });
