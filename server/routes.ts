@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
+import { setupSocketIO } from "./socketio";
 import { setupAuth } from "./auth";
 import { setupJwtAuth, verifyToken, authMiddleware } from "./auth-jwt";
 import { setupVerificationRoutes } from "./auth/verification";
