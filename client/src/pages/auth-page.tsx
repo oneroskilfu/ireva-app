@@ -428,11 +428,9 @@ export default function AuthPage() {
                 <div className="text-center mb-6">
                   <h2 className="text-3xl font-bold text-[#0c1b46] mb-3">Invest in Premium Real Estate</h2>
                   <p className="text-gray-600 mb-3">Access diverse investment opportunities across Nigeria</p>
-                  <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-4 rounded-lg border border-blue-100 mt-3">
-                    <p className="text-[#0c1b46] font-medium mb-2">iREVA is a crypto-enabled, inclusive real-estate crowdfunding platform</p>
-                    <p className="text-gray-600 text-sm mb-1">Tapping both fiat and blockchain investors</p>
-                    <p className="text-gray-600 text-sm mb-1">Automating trust via smart contracts</p>
-                    <p className="text-gray-600 text-sm">Unlocking global capital for vetted African real-estate opportunities</p>
+                  <div className="bg-gradient-to-r from-blue-50 to-teal-50 p-3 rounded-lg border border-blue-100 mt-3">
+                    <p className="text-[#0c1b46] font-medium">Invest with crypto or traditional currency</p>
+                    <p className="text-gray-600 text-sm">Secure, transparent, blockchain-powered investments</p>
                   </div>
                 </div>
                 
@@ -462,7 +460,7 @@ export default function AuthPage() {
                 
                 <div className="w-full space-y-4">
                   <div className="p-5 rounded-xl bg-gradient-to-br from-[#f8fdfc] to-[#eafffb] border border-[#e0f5f2] shadow-sm">
-                    <h3 className="text-lg font-bold text-[#0c1b46] mb-2">Tiered Investment Opportunities</h3>
+                    <h3 className="text-lg font-bold text-[#0c1b46] mb-2">Key Benefits</h3>
                     <ul className="space-y-2">
                       <li className="flex items-center">
                         <div className="h-6 w-6 rounded-full bg-[#16b5a0] flex items-center justify-center mr-3">
@@ -470,7 +468,7 @@ export default function AuthPage() {
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         </div>
-                        <p className="text-sm text-gray-700">Start with as little as ₦100,000 or equivalent in crypto</p>
+                        <p className="text-sm text-gray-700">Start from ₦100,000 (or crypto equivalent)</p>
                       </li>
                       <li className="flex items-center">
                         <div className="h-6 w-6 rounded-full bg-[#16b5a0] flex items-center justify-center mr-3">
@@ -478,7 +476,7 @@ export default function AuthPage() {
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         </div>
-                        <p className="text-sm text-gray-700">Blockchain-secured investments with smart contracts</p>
+                        <p className="text-sm text-gray-700">Blockchain-secured smart contracts</p>
                       </li>
                       <li className="flex items-center">
                         <div className="h-6 w-6 rounded-full bg-[#16b5a0] flex items-center justify-center mr-3">
@@ -486,15 +484,7 @@ export default function AuthPage() {
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         </div>
-                        <p className="text-sm text-gray-700">Pay with cryptocurrency or traditional methods</p>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="h-6 w-6 rounded-full bg-[#16b5a0] flex items-center justify-center mr-3">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <p className="text-sm text-gray-700">Real-time investment tracking with immutable records</p>
+                        <p className="text-sm text-gray-700">Real-time investment tracking</p>
                       </li>
                     </ul>
                   </div>
