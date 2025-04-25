@@ -27,6 +27,15 @@ const transactionSchema = new mongoose.Schema({
   expiresAt: { type: Date },
   transactionHash: { type: String }, // Blockchain transaction hash
   completedAt: { type: Date },
+  crypto: {
+    provider: { type: String }, // Payment provider (e.g., CoinGate, MetaMask)
+    txHash: { type: String },    // Transaction hash on blockchain
+    status: { type: String },    // Status from the provider
+    walletAddress: { type: String }, // User's wallet address
+    confirmations: { type: Number, default: 0 }, // Number of confirmations
+    receivedAmount: { type: Number }, // Actual amount received after fees
+    exchangeRate: { type: Number }    // Exchange rate at time of transaction
+  },
   createdAt: { type: Date, default: Date.now }
 });
 
