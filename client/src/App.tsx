@@ -69,6 +69,7 @@ function Router() {
   const AdminWalletManagementPage = lazy(() => import('@/pages/admin/wallet-management'));
   const AdminROIDashboardPage = lazy(() => import('@/pages/AdminROIDashboard'));
   const CryptoIntegrationPage = lazy(() => import('@/pages/admin/crypto-integration-page'));
+  const CryptoTransactionsDashboard = lazy(() => import('@/pages/admin/CryptoTransactionsDashboard'));
   const UserEngagementDashboardPage = lazy(() => import('@/pages/metrics/UserEngagementDashboardPage'));
   const InvestorDashboard = lazy(() => import('@/pages/investor/InvestorDashboard'));
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
@@ -233,6 +234,19 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <CryptoIntegrationPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Crypto Transactions Dashboard */}
+      <Route path="/admin/crypto-transactions">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <CryptoTransactionsDashboard />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>

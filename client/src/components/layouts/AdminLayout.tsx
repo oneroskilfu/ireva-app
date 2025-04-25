@@ -62,6 +62,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { path: "/admin/roi-dashboard", label: "ROI Dashboard", icon: <TrendingUp className="w-5 h-5" /> },
     { path: "/admin/wallet-management", label: "Wallet Management", icon: <Wallet className="w-5 h-5" /> },
     { path: "/admin/crypto-integration", label: "Crypto Integration", icon: <Bitcoin className="w-5 h-5" /> },
+    { path: "/admin/crypto-transactions", label: "Crypto Transactions", icon: <PieChart className="w-5 h-5" /> },
     { path: "/admin/transactions", label: "Transactions", icon: <Activity className="w-5 h-5" /> },
     { path: "/admin/payments", label: "Payments", icon: <CreditCard className="w-5 h-5" /> },
     { path: "/admin/documents", label: "Documents", icon: <FileText className="w-5 h-5" /> },
