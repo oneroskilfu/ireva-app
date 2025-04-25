@@ -358,6 +358,34 @@ const CryptoWalletPage: React.FC = () => {
               </li>
             </ul>
           </div>
+          
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md border border-green-100 dark:border-green-800 mt-4">
+            <h4 className="text-sm font-medium text-green-700 dark:text-green-300 mb-1">Escrow Protection</h4>
+            <p className="text-sm text-green-600 dark:text-green-400 mb-2">
+              Our smart contract includes built-in safeguards that protect your investment:
+            </p>
+            <ul className="space-y-1 text-sm text-green-600 dark:text-green-400">
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span><span className="font-medium">Funding Threshold:</span> Your investment is held until the minimum funding goal is reached by the deadline</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span><span className="font-medium">Investor Verification:</span> Requires a minimum number of KYC-verified investors for project approval</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span><span className="font-medium">Admin Approval:</span> Multiple administrators must approve fund releases for added security</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span><span className="font-medium">Fund Pools:</span> Your investment is stored in project-specific pools for enhanced tracking</span>
+              </li>
+            </ul>
+            <p className="text-sm text-green-600 dark:text-green-400 mt-2 italic">
+              If any of these conditions are not met, you can claim a refund of your investment.
+            </p>
+          </div>
         </CardContent>
       </Card>
       
