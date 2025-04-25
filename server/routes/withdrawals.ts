@@ -4,6 +4,7 @@ import { withdrawalRequests, users, withdrawalStatusEnum } from '@shared/schema'
 import { insertWithdrawalRequestSchema } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { authMiddleware, ensureAdmin } from '../auth-jwt';
+import { emailService } from '../services/email-service';
 
 export const withdrawalRouter = express.Router();
 
@@ -42,6 +43,30 @@ withdrawalRouter.post('/request', authMiddleware, async (req: Request, res: Resp
         status: 'pending'
       })
       .returning();
+
+    // Get user information for email
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    
+    if (user && user.length > 0) {
+      // Send confirmation email to investor
+      emailService.sendWithdrawalRequestedEmail(user[0], newRequest)
+        .catch(error => console.error('Failed to send withdrawal request email:', error));
+      
+      // Find admin emails
+      const admins = await db.select({
+        email: users.email
+      })
+      .from(users)
+      .where(eq(users.role, 'admin'));
+      
+      const adminEmails = admins.map(admin => admin.email);
+      
+      // Send notification to admins
+      if (adminEmails.length > 0) {
+        emailService.sendAdminWithdrawalRequestNotification(adminEmails, user[0], newRequest)
+          .catch(error => console.error('Failed to send admin notification emails:', error));
+      }
+    }
 
     // Return success response
     res.status(200).json({
