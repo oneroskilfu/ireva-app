@@ -119,7 +119,7 @@ const CryptoIntegrationValidator: React.FC = () => {
             <Typography variant="h5">Validation Error</Typography>
           </Box>
           <Alert severity="error">
-            Error running validation: {(error as any).message || "Unknown error"}
+            Error running validation: {error instanceof Error ? error.message : "Unknown error"}
           </Alert>
         </CardContent>
       </Card>
