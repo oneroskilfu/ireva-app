@@ -168,12 +168,16 @@ export const cryptoTransactions = pgTable("crypto_transactions", {
 export const cryptoPayments = pgTable("crypto_payments", {
   id: text("id").primaryKey(), // CoinGate payment ID
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: text("amount").notNull(), // Store as text to preserve precision for crypto amounts
   currency: text("currency").notNull(), // BTC, ETH, USDT, etc.
-  status: text("status").notNull(), // pending, paid, confirmed, invalid, expired, canceled, etc.
+  status: text("status").notNull().default("new"), // new, pending, paid, confirmed, invalid, expired, canceled, etc.
   orderId: text("order_id").notNull(),
   paymentUrl: text("payment_url").notNull(),
-  createdAt: timestamp("created_at").notNull(),
+  walletAddress: text("wallet_address"),
+  txHash: text("tx_hash"),
+  network: text("network"), // ethereum, bitcoin, polygon, etc.
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at"),
   expiresAt: timestamp("expires_at"),
   propertyId: integer("property_id").references(() => properties.id),
 });

@@ -339,6 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up Crypto Webhook routes
   app.use('/api/crypto/webhooks', cryptoWebhookRouter);
+  app.use('/api/webhook', cryptoWebhookRouter); // Additional webhook path as requested
   console.log("Crypto webhook routes registered");
   
   // Set up CoinGate crypto payment routes
