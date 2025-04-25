@@ -1,0 +1,62 @@
+import React, { useEffect, useState } from 'react';
+import { Table, TableHead, TableRow, TableCell, TableBody, Button, TextField, Box } from '@mui/material';
+import axios from 'axios';
+
+const WithdrawalManagement = () => {
+  const [requests, setRequests] = useState([]);
+  const [txHashInputs, setTxHashInputs] = useState({});
+
+  useEffect(() => {
+    axios.get('/api/withdrawals/all').then((res) => setRequests(res.data));
+  }, []);
+
+  const updateStatus = async (id, status) => {
+    const txHash = txHashInputs[id] || '';
+    await axios.post(`/api/withdrawals/update/${id}`, { status, txHash });
+    const updated = await axios.get('/api/withdrawals/all');
+    setRequests(updated.data);
+  };
+
+  return (
+    <Box>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Investor</TableCell>
+            <TableCell>Amount</TableCell>
+            <TableCell>Wallet</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Tx Hash</TableCell>
+            <TableCell>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {requests.map((req) => (
+            <TableRow key={req._id}>
+              <TableCell>{req.investorId?.name}</TableCell>
+              <TableCell>{req.amount}</TableCell>
+              <TableCell>{req.walletAddress}</TableCell>
+              <TableCell>{req.status}</TableCell>
+              <TableCell>
+                <TextField
+                  size="small"
+                  placeholder="Tx Hash"
+                  value={txHashInputs[req._id] || ''}
+                  onChange={(e) =>
+                    setTxHashInputs({ ...txHashInputs, [req._id]: e.target.value })
+                  }
+                />
+              </TableCell>
+              <TableCell>
+                <Button onClick={() => updateStatus(req._id, 'approved')} color="success">Approve</Button>
+                <Button onClick={() => updateStatus(req._id, 'rejected')} color="error">Reject</Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Box>
+  );
+};
+
+export default WithdrawalManagement;

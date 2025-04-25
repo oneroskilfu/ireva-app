@@ -12,6 +12,7 @@ export const investmentStatusEnum = pgEnum("investment_status", ["active", "comp
 export const accreditationLevelEnum = pgEnum("accreditation_level", ["non_accredited", "accredited", "qualified_purchaser"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "card", "bank_transfer", "crypto"]);
 export const cryptoNetworkEnum = pgEnum("crypto_network", ["ethereum", "binance", "polygon", "solana", "avalanche"]);
+export const withdrawalStatusEnum = pgEnum("withdrawal_status", ["pending", "approved", "rejected", "processed", "failed"]);
 
 // User schema
 export const users = pgTable("users", {
@@ -182,6 +183,24 @@ export const cryptoPayments = pgTable("crypto_payments", {
   propertyId: integer("property_id").references(() => properties.id),
 });
 
+// Withdrawal Requests schema
+export const withdrawalRequests = pgTable("withdrawal_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  amount: numeric("amount", { precision: 12, scale: 6 }).notNull(),
+  currency: text("currency").notNull(), // BTC, ETH, USDT, etc.
+  network: cryptoNetworkEnum("network").notNull(),
+  walletAddress: text("wallet_address").notNull(),
+  status: withdrawalStatusEnum("status").default("pending"),
+  txHash: text("tx_hash"),
+  processorNotes: text("processor_notes"),
+  processedBy: integer("processed_by").references(() => users.id, { onDelete: "set null" }),
+  requestedAt: timestamp("requested_at").notNull().defaultNow(),
+  processedAt: timestamp("processed_at"),
+  feeAmount: numeric("fee_amount", { precision: 12, scale: 6 }),
+  amountInFiat: numeric("amount_in_fiat", { precision: 12, scale: 2 }),
+});
+
 // Milestone status enum
 export const milestoneStatusEnum = pgEnum("milestone_status", [
   "pending", 
@@ -304,6 +323,8 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
   cryptoWallets: many(cryptoWallets),
   cryptoPayments: many(cryptoPayments),
+  withdrawalRequests: many(withdrawalRequests),
+  processedWithdrawals: many(withdrawalRequests, { relationName: "processedWithdrawals" }),
   notifications: many(notifications),
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
@@ -373,6 +394,18 @@ export const cryptoPaymentsRelations = relations(cryptoPayments, ({ one }) => ({
   property: one(properties, {
     fields: [cryptoPayments.propertyId],
     references: [properties.id]
+  })
+}));
+
+export const withdrawalRequestsRelations = relations(withdrawalRequests, ({ one }) => ({
+  user: one(users, {
+    fields: [withdrawalRequests.userId],
+    references: [users.id]
+  }),
+  processor: one(users, {
+    fields: [withdrawalRequests.processedBy],
+    references: [users.id],
+    relationName: "processedWithdrawals"
   })
 }));
 
@@ -542,6 +575,15 @@ export const insertMilestoneSchema = createInsertSchema(milestones).omit({
   completedAt: true
 });
 
+// Create schema for withdrawal requests
+export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests).omit({
+  id: true,
+  requestedAt: true,
+  processedAt: true,
+  processedBy: true,
+  status: true
+});
+
 // Export the property schema with a new name to match the import in admin-routes.ts
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
@@ -596,3 +638,6 @@ export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
 
 export type CryptoPayment = typeof cryptoPayments.$inferSelect;
 export type InsertCryptoPayment = z.infer<typeof insertCryptoPaymentSchema>;
+
+export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
+export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
