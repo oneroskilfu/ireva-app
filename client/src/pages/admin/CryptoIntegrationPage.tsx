@@ -466,15 +466,15 @@ CRYPTO_PAYMENT_CALLBACK_URL=https://your-domain.com/api/webhook/crypto-payment`}
                   <WebhookIcon sx={{ mr: 1 }} /> Webhook Configuration
                 </Typography>
                 <Box sx={{ mb: 2 }}>
-                  <Alert severity={data?.webhooks.success ? "success" : "warning"}>
-                    {data?.webhooks.message}
+                  <Alert severity={data?.webhooks?.success ? "success" : "warning"}>
+                    {data?.webhooks?.message}
                   </Alert>
                 </Box>
-                {data?.webhooks.webhooks && data.webhooks.webhooks.length > 0 && (
+                {data?.webhooks?.webhooks && data?.webhooks?.webhooks.length > 0 && (
                   <Box>
                     <Typography variant="subtitle2" gutterBottom>Configured Webhooks:</Typography>
                     <List dense>
-                      {data.webhooks.webhooks.map((webhook, index) => (
+                      {data?.webhooks?.webhooks?.map((webhook, index) => (
                         <ListItem key={index}>
                           <ListItemIcon><CheckCircleIcon color="success" /></ListItemIcon>
                           <ListItemText primary={webhook.url} secondary={webhook.events || 'All events'} />
@@ -513,8 +513,8 @@ Secret: Same as your CRYPTO_WEBHOOK_SECRET env variable`}
                   <PaymentIcon sx={{ mr: 1 }} /> Test Transaction
                 </Typography>
                 <Box sx={{ mb: 2 }}>
-                  <Alert severity={data?.testTransaction.success ? "success" : "warning"}>
-                    {data?.testTransaction.message}
+                  <Alert severity={data?.testTransaction?.success ? "success" : "warning"}>
+                    {data?.testTransaction?.message}
                   </Alert>
                 </Box>
                 <Button 
@@ -527,7 +527,7 @@ Secret: Same as your CRYPTO_WEBHOOK_SECRET env variable`}
                   {testIntegrationMutation.isPending ? <CircularProgress size={24} /> : "Run Test Transaction"}
                 </Button>
                 
-                {data?.testTransaction.order && (
+                {data?.testTransaction?.order && (
                   <Box mt={2}>
                     <Typography variant="subtitle2" gutterBottom>Last Test Transaction:</Typography>
                     <Typography variant="body2" component="div">
@@ -537,7 +537,7 @@ Secret: Same as your CRYPTO_WEBHOOK_SECRET env variable`}
                         borderRadius: '4px',
                         overflow: 'auto' 
                       }}>
-                        {JSON.stringify(data.testTransaction.order, null, 2)}
+                        {JSON.stringify(data?.testTransaction?.order, null, 2)}
                       </pre>
                     </Typography>
                   </Box>
@@ -551,8 +551,8 @@ Secret: Same as your CRYPTO_WEBHOOK_SECRET env variable`}
                   <CodeIcon sx={{ mr: 1 }} /> UI Integration
                 </Typography>
                 <Box sx={{ mb: 2 }}>
-                  <Alert severity={data?.uiIntegration.success ? "success" : "warning"}>
-                    {data?.uiIntegration.message}
+                  <Alert severity={data?.uiIntegration?.success ? "success" : "warning"}>
+                    {data?.uiIntegration?.message}
                   </Alert>
                 </Box>
                 <Typography variant="subtitle2" gutterBottom>
