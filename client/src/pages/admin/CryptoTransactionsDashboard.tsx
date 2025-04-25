@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Typography, Box, Card, CardContent, Grid, Button, 
+  Typography, Box, Card, CardContent, Button, 
   Table, TableBody, TableCell, TableContainer, TableHead, 
   TableRow, Paper, Chip, TextField, MenuItem, IconButton,
-  Alert, Tabs, Tab, Divider, CircularProgress
+  Alert, Tabs, Tab, Divider, CircularProgress, Grid as MuiGrid
 } from '@mui/material';
 import { 
   Download, Search, FilterList, Refresh, 
@@ -122,7 +122,7 @@ export default function CryptoTransactionsDashboard() {
       toast({
         title: 'Refund processed',
         description: 'The transaction has been refunded successfully',
-        variant: 'success'
+        variant: 'default'
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/crypto/transactions'] });
     },
@@ -250,48 +250,48 @@ export default function CryptoTransactionsDashboard() {
       </Typography>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={2.4}>
+      <MuiGrid container spacing={3} sx={{ mb: 4 }}>
+        <MuiGrid item xs={12} sm={6} md={2.4}>
           <StatCard
             title="Total Transactions"
             value={stats.totalTransactions.toString()}
             icon={<AccountBalanceWallet fontSize="large" />}
             color="primary"
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
+        </MuiGrid>
+        <MuiGrid item xs={12} sm={6} md={2.4}>
           <StatCard
             title="Total Volume"
             value={`$${stats.totalVolume.toFixed(2)}`}
             icon={<AttachMoney fontSize="large" />}
             color="success"
           />
-        </Grid>
-        <Grid item xs={12} sm={4} md={2.4}>
+        </MuiGrid>
+        <MuiGrid item xs={12} sm={4} md={2.4}>
           <StatCard
             title="Pending"
             value={stats.pendingTransactions.toString()}
             icon={<ShowChart fontSize="large" />}
             color="warning"
           />
-        </Grid>
-        <Grid item xs={12} sm={4} md={2.4}>
+        </MuiGrid>
+        <MuiGrid item xs={12} sm={4} md={2.4}>
           <StatCard
             title="Completed"
             value={stats.completedTransactions.toString()}
             icon={<CheckCircle fontSize="large" />}
             color="success"
           />
-        </Grid>
-        <Grid item xs={12} sm={4} md={2.4}>
+        </MuiGrid>
+        <MuiGrid item xs={12} sm={4} md={2.4}>
           <StatCard
             title="Failed"
             value={stats.failedTransactions.toString()}
             icon={<Cancel fontSize="large" />}
             color="error"
           />
-        </Grid>
-      </Grid>
+        </MuiGrid>
+      </MuiGrid>
 
       {/* Tabs for different views */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
@@ -479,8 +479,8 @@ export default function CryptoTransactionsDashboard() {
                   if (!tx) return <Alert severity="error">Transaction not found</Alert>;
                   
                   return (
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
+                    <MuiGrid container spacing={2}>
+                      <MuiGrid item xs={12} md={6}>
                         <Typography variant="subtitle2">Transaction ID</Typography>
                         <Typography variant="body1" gutterBottom>{tx.id}</Typography>
                         
@@ -501,9 +501,9 @@ export default function CryptoTransactionsDashboard() {
                           color={statusColors[tx.status] as any || 'default'}
                           sx={{ my: 1 }}
                         />
-                      </Grid>
+                      </MuiGrid>
                       
-                      <Grid item xs={12} md={6}>
+                      <MuiGrid item xs={12} md={6}>
                         <Typography variant="subtitle2">Network</Typography>
                         <Typography variant="body1" gutterBottom>{tx.network}</Typography>
                         
@@ -534,9 +534,9 @@ export default function CryptoTransactionsDashboard() {
                             </Typography>
                           </>
                         )}
-                      </Grid>
+                      </MuiGrid>
                       
-                      <Grid item xs={12}>
+                      <MuiGrid item xs={12}>
                         <Divider sx={{ my: 2 }} />
                         
                         {(tx.status === 'completed' || tx.status === 'confirmed') && (
@@ -562,8 +562,8 @@ export default function CryptoTransactionsDashboard() {
                             Cancel Transaction
                           </Button>
                         )}
-                      </Grid>
-                    </Grid>
+                      </MuiGrid>
+                    </MuiGrid>
                   );
                 })()}
               </CardContent>
@@ -588,9 +588,9 @@ export default function CryptoTransactionsDashboard() {
           {!walletBalances?.balances ? (
             <CircularProgress />
           ) : (
-            <Grid container spacing={3}>
+            <MuiGrid container spacing={3}>
               {walletBalances.balances.map((balance: any) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={balance.currency}>
+                <MuiGrid item xs={12} sm={6} md={4} lg={3} key={balance.currency}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
@@ -619,9 +619,9 @@ export default function CryptoTransactionsDashboard() {
                       </Box>
                     </CardContent>
                   </Card>
-                </Grid>
+                </MuiGrid>
               ))}
-            </Grid>
+            </MuiGrid>
           )}
         </>
       )}
@@ -637,8 +637,8 @@ export default function CryptoTransactionsDashboard() {
             <CardContent>
               <Typography variant="h6" gutterBottom>Email Notifications</Typography>
               
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+              <MuiGrid container spacing={3}>
+                <MuiGrid item xs={12} md={6}>
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle1" gutterBottom>
                       High-Value Transactions
@@ -675,9 +675,9 @@ export default function CryptoTransactionsDashboard() {
                       <MenuItem value="daily">Daily Summary</MenuItem>
                     </TextField>
                   </Box>
-                </Grid>
+                </MuiGrid>
                 
-                <Grid item xs={12} md={6}>
+                <MuiGrid item xs={12} md={6}>
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle1" gutterBottom>
                       Notification Recipients
@@ -709,8 +709,8 @@ export default function CryptoTransactionsDashboard() {
                       <MenuItem value="monthly">Monthly</MenuItem>
                     </TextField>
                   </Box>
-                </Grid>
-              </Grid>
+                </MuiGrid>
+              </MuiGrid>
               
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
@@ -720,7 +720,7 @@ export default function CryptoTransactionsDashboard() {
                     toast({
                       title: 'Settings Saved',
                       description: 'Your notification settings have been updated',
-                      variant: 'success'
+                      variant: 'default'
                     });
                   }}
                 >
@@ -736,8 +736,8 @@ export default function CryptoTransactionsDashboard() {
           
           <Card>
             <CardContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+              <MuiGrid container spacing={3}>
+                <MuiGrid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
                     Transaction Reports
                   </Typography>
@@ -759,9 +759,9 @@ export default function CryptoTransactionsDashboard() {
                       Generate PDF Report
                     </Button>
                   </Box>
-                </Grid>
+                </MuiGrid>
                 
-                <Grid item xs={12} md={6}>
+                <MuiGrid item xs={12} md={6}>
                   <Typography variant="subtitle1" gutterBottom>
                     Custom Date Range
                   </Typography>
@@ -791,8 +791,8 @@ export default function CryptoTransactionsDashboard() {
                   >
                     Generate Custom Report
                   </Button>
-                </Grid>
-              </Grid>
+                </MuiGrid>
+              </MuiGrid>
             </CardContent>
           </Card>
         </>
