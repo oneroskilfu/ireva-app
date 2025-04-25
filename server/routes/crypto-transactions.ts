@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { authMiddleware } from '../auth-jwt';
 import { CryptoPaymentService } from '../services/crypto-payment-service';
+import { db } from '../db';
 
 // Initialize services
 const cryptoPaymentService = new CryptoPaymentService();
