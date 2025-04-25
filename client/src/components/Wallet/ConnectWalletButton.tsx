@@ -114,9 +114,15 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
     if (!hasProvider || !window.ethereum) {
       toast({
         title: 'Wallet provider not found',
-        description: 'Please install MetaMask or another Ethereum wallet extension.',
+        description: 'Please install MetaMask or another Ethereum wallet extension to use this feature.',
         variant: 'destructive',
       });
+      
+      // Open installation link in new tab after a short delay
+      setTimeout(() => {
+        window.open('https://metamask.io/download/', '_blank');
+      }, 1500);
+      
       return;
     }
 

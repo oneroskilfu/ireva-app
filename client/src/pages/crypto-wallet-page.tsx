@@ -3,6 +3,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import WalletProviderChecker from '../components/Wallet/WalletProviderChecker';
 import { apiRequest } from '@/lib/queryClient';
+// MockWalletButton is dynamically imported later for development testing only
 import { 
   Wallet, 
   ShieldCheck, 
@@ -164,13 +165,36 @@ const CryptoWalletPage: React.FC = () => {
         </AlertDescription>
       </Alert>
       
-      <div className="flex justify-center mt-4">
+      <div className="flex flex-col sm:flex-row justify-center gap-4 mt-4">
         <ConnectWalletButton 
           onWalletConnected={handleWalletConnected} 
           variant="default"
           size="lg"
           className="w-full sm:w-auto"
         />
+        
+        {/* Mock wallet button for development environments only */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-2 sm:mt-0 w-full sm:w-auto">
+            <div className="py-1 px-2 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded mb-2 text-center">
+              Development Mode
+            </div>
+            <React.Suspense fallback={<Button variant="outline" disabled>Loading...</Button>}>
+              {/* Dynamic import to avoid loading in production */}
+              {(() => {
+                const MockWalletButton = React.lazy(() => import('../components/Wallet/MockWalletButton'));
+                return (
+                  <MockWalletButton
+                    onWalletConnected={handleWalletConnected}
+                    variant="default"
+                    size="lg"
+                    className="w-full"
+                  />
+                );
+              })()}
+            </React.Suspense>
+          </div>
+        )}
       </div>
     </div>
   );
