@@ -50,6 +50,64 @@ const payments = new Map<string, CryptoPayment>();
 export class CryptoPaymentService {
   constructor() {
     console.log('CryptoPaymentService initialized');
+    
+    // Create some sample transactions for demo
+    if (process.env.NODE_ENV === 'development' && payments.size === 0) {
+      // Add some sample payments for the admin dashboard
+      this.createSampleTransactions();
+    }
+  }
+  
+  // Create a set of sample transactions for development
+  private createSampleTransactions() {
+    const statuses = ['pending', 'processing', 'completed', 'confirmed', 'failed', 'expired', 'refunded'];
+    const currencies = ['USDC', 'USDT', 'ETH', 'BTC'];
+    const networks = ['ethereum', 'polygon', 'binance', 'solana'];
+    
+    // Create 20 sample transactions
+    for (let i = 0; i < 20; i++) {
+      const id = uuidv4();
+      const userId = Math.floor(Math.random() * 10) + 1;
+      const propertyId = Math.floor(Math.random() * 5) + 1;
+      const currency = currencies[Math.floor(Math.random() * currencies.length)];
+      const network = networks[Math.floor(Math.random() * networks.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      
+      // Create sample amount based on currency
+      let amount = 0;
+      if (currency === 'USDC' || currency === 'USDT') {
+        amount = Math.floor(Math.random() * 10000) + 100;
+      } else if (currency === 'ETH') {
+        amount = Math.random() * 5 + 0.1;
+      } else if (currency === 'BTC') {
+        amount = Math.random() * 1 + 0.01;
+      }
+      
+      // Create transaction
+      const transaction: CryptoPayment = {
+        id,
+        userId,
+        propertyId,
+        amount,
+        amountInCrypto: amount.toString(),
+        walletAddress: networkWallets[network] || '0xSampleAddress',
+        network,
+        currency,
+        status,
+        createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
+        updatedAt: new Date(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        paymentUrl: `https://example.com/pay/${id}`,
+        paymentAddress: networkWallets[network] || '0xSampleAddress'
+      };
+      
+      // Add txHash for completed transactions
+      if (status === 'completed' || status === 'confirmed') {
+        transaction.txHash = `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+      }
+      
+      payments.set(id, transaction);
+    }
   }
 
   /**

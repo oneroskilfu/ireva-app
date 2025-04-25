@@ -32,6 +32,7 @@ import cryptoWalletRouter from './routes/crypto-wallets';
 import cryptoTransactionRouter from './routes/crypto-transactions';
 import cryptoPaymentRouter from './routes/crypto-payments';
 import cryptoInvestmentsRouter from './routes/crypto-investments';
+import adminCryptoRouter from './routes/admin-crypto-routes';
 // Import blockchain routes
 import blockchainRouter from './routes/blockchain-routes';
 // Import security and data protection routes
@@ -315,6 +316,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin/crypto-integration', cryptoIntegrationRouter);
   app.use('/api/crypto-integration', cryptoIntegrationRouter); // Also register at non-admin path for client code
   console.log("Crypto integration routes registered");
+  
+  // Set up Admin Crypto Dashboard routes
+  app.use('/api/admin/crypto', adminCryptoRouter);
+  console.log("Admin crypto dashboard routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
