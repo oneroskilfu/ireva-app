@@ -62,12 +62,41 @@ const CryptoInvestmentsByProject: React.FC = () => {
   const { toast } = useToast();
 
   // Fetch projects with crypto investment data
-  const { data: projects, isLoading, isError } = useQuery<ProjectCryptoData[]>({
-    queryKey: ['/api/admin/projects/crypto-investments'],
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['/api/admin/crypto/properties/crypto-investments'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/admin/crypto/properties/crypto-investments');
+      return response.json();
+    },
   });
 
+  // Transform the data from API to match our component's format
+  const apiProjects: ProjectCryptoData[] = data?.data?.map((item: any) => {
+    const property = item.property;
+    const cryptoData = item.cryptoData;
+    
+    // Create crypto breakdown from byCurrency
+    const cryptoBreakdown = Object.entries(cryptoData.byCurrency || {}).map(([currency, amount]) => ({
+      currency,
+      amount: Number(amount),
+      amountInFiat: Number(amount) // The amount is already in fiat
+    }));
+    
+    return {
+      id: property.id,
+      name: property.name,
+      totalInvestment: property.totalFunding || 0,
+      cryptoInvestment: cryptoData.totalInvestment || 0,
+      cryptoPercentage: property.totalFunding ? 
+        Math.round((cryptoData.totalInvestment / property.totalFunding) * 100) : 0,
+      cryptoBreakdown,
+      investorCount: property.numberOfInvestors || 0,
+      cryptoInvestorCount: cryptoData.uniqueInvestorCount || 0
+    };
+  }) || [];
+  
   // Filter projects based on search term
-  const filteredProjects = projects?.filter(project => {
+  const filteredProjects = apiProjects?.filter(project => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     return project.name.toLowerCase().includes(term);

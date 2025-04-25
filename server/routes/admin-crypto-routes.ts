@@ -16,9 +16,25 @@ adminCryptoRouter.get('/transactions', ensureAdmin, async (req: Request, res: Re
   try {
     const transactions = await cryptoPaymentService.getAllTransactions();
     
+    // Transform the data to the expected format
+    const formattedTransactions = transactions.map(tx => ({
+      _id: tx.id,
+      txnId: tx.orderId || tx.id,
+      amount: Number(tx.amount),
+      currency: tx.currency,
+      status: tx.status,
+      createdAt: tx.createdAt,
+      investorName: tx.user?.username || `User ${tx.userId}`,
+      propertyName: tx.property?.name,
+      propertyId: tx.propertyId,
+      network: tx.network,
+      walletAddress: tx.walletAddress,
+      txHash: tx.txHash
+    }));
+    
     res.json({
       success: true,
-      transactions
+      transactions: formattedTransactions
     });
   } catch (error) {
     console.error('Error getting all crypto transactions:', error);
