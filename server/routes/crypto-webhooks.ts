@@ -1,56 +1,15 @@
 import express, { Request, Response } from 'express';
 import { authMiddleware, ensureAdmin } from '../auth-jwt';
-import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Transaction from '../models/Transaction.js';
 import Investment from '../models/Investment';
 import { CryptoPaymentService } from '../services/crypto-payment-service.js';
 import { walletService } from '../services/wallet-service.js';
+import { bypassSignatureVerificationInDevelopment } from '../middleware/webhookSignatureVerifier';
+import { rawBodyParser } from '../middleware/rawBodyParser';
 
 const router = express.Router();
 const cryptoPaymentService = new CryptoPaymentService();
-
-/**
- * Utility function to verify the webhook signature
- * This ensures the webhook is genuinely from CoinGate and not a malicious request
- */
-function verifySignature(req: Request, res: Response, next: Function) {
-  try {
-    // Skip verification in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Skipping signature verification');
-      return next();
-    }
-
-    const signature = req.headers['coingate-signature'] as string;
-    if (!signature) {
-      console.error('Missing signature header');
-      return res.status(401).json({ error: 'Missing signature' });
-    }
-
-    const secret = process.env.COINGATE_WEBHOOK_SECRET;
-    if (!secret) {
-      console.error('Missing webhook secret environment variable');
-      return res.status(500).json({ error: 'Webhook configuration error' });
-    }
-
-    // Create the expected signature
-    const payload = JSON.stringify(req.body);
-    const hmac = crypto.createHmac('sha256', secret);
-    const expectedSignature = hmac.update(payload).digest('hex');
-
-    // Use timing-safe comparison to avoid timing attacks
-    if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-      next();
-    } else {
-      console.error('Invalid signature');
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
-  } catch (error) {
-    console.error('Signature verification error:', error);
-    return res.status(500).json({ error: 'Signature verification failed' });
-  }
-}
 
 /**
  * Main webhook handler function to process cryptocurrency payments
@@ -137,7 +96,7 @@ async function updateCryptoTransactionStatus(req: Request, res: Response) {
 
     // Always return a 200 OK to the webhook provider
     res.status(200).json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     await session.abortTransaction();
     session.endSession();
     
@@ -152,7 +111,8 @@ async function updateCryptoTransactionStatus(req: Request, res: Response) {
 }
 
 // Register the webhook routes
-router.post('/coingate/webhook', verifySignature, updateCryptoTransactionStatus);
+// Apply the raw body parser and signature verification middleware
+router.post('/coingate/webhook', rawBodyParser, bypassSignatureVerificationInDevelopment, updateCryptoTransactionStatus);
 
 // Test endpoint to simulate webhooks (only in development)
 router.post('/test/webhook', async (req: Request, res: Response) => {
@@ -185,7 +145,7 @@ router.post('/test/webhook', async (req: Request, res: Response) => {
     
     // Process the webhook
     await updateCryptoTransactionStatus(testReq as Request, res);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Test webhook error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
@@ -228,7 +188,7 @@ router.post('/resync/:paymentId', authMiddleware, ensureAdmin, async (req: Reque
     
     // Process as if it were a webhook
     await updateCryptoTransactionStatus(simulatedReq as Request, res);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Manual resync error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
