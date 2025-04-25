@@ -244,6 +244,56 @@ export class WalletService {
   }
 
   /**
+   * Update crypto balance for a wallet
+   * @param userId - User ID who owns the wallet
+   * @param currency - Cryptocurrency code (e.g., BTC, ETH, USDC)
+   * @param amount - Amount to update (positive for addition, negative for subtraction)
+   * @param isAbsolute - If true, sets the balance to the exact amount instead of adding/subtracting
+   */
+  public async updateCryptoBalance(
+    userId: string | mongoose.Types.ObjectId,
+    currency: string,
+    amount: number,
+    isAbsolute: boolean = false
+  ): Promise<boolean> {
+    try {
+      // Find or create the user's wallet
+      let wallet = await Wallet.findOne({ userId });
+      if (!wallet) {
+        wallet = new Wallet({ userId });
+      }
+
+      // Initialize crypto balances if needed
+      if (!wallet.cryptoBalances) {
+        wallet.cryptoBalances = new Map();
+      }
+
+      // Normalize the currency code
+      const normalizedCurrency = currency.toUpperCase();
+      
+      // Update the balance
+      if (isAbsolute) {
+        // Set the balance to exact amount
+        wallet.cryptoBalances.set(normalizedCurrency, amount);
+      } else {
+        // Add/subtract from current balance
+        const currentBalance = wallet.cryptoBalances.get(normalizedCurrency) || 0;
+        const newBalance = Math.max(0, currentBalance + amount); // Prevent negative balances
+        wallet.cryptoBalances.set(normalizedCurrency, newBalance);
+      }
+
+      wallet.lastUpdated = new Date();
+      await wallet.save();
+      
+      console.log(`Updated crypto balance for user ${userId}: ${normalizedCurrency} ${isAbsolute ? 'set to' : 'adjusted by'} ${amount}`);
+      return true;
+    } catch (error) {
+      console.error('Error updating crypto balance:', error);
+      return false;
+    }
+  }
+
+  /**
    * Update user's wallet when a crypto payment is confirmed
    * @param paymentId - ID of the payment from crypto provider
    */
