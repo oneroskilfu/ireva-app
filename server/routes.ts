@@ -41,6 +41,8 @@ import dataProtectionRoutes from './routes/data-protection-routes';
 import stablecoinRoutes from './routes/stablecoin-routes';
 // Import milestone escrow routes
 import milestoneEscrowRoutes from './routes/milestone-escrow-routes';
+// Import crypto integration routes
+import { cryptoIntegrationRouter } from './crypto-integration-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -298,6 +300,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Milestone Escrow routes
   app.use('/api/milestone-escrow', milestoneEscrowRoutes);
   console.log("Milestone escrow routes registered");
+  
+  // Set up Crypto Integration routes
+  app.use('/api/admin/crypto-integration', cryptoIntegrationRouter);
+  console.log("Crypto integration routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);

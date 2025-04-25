@@ -12,7 +12,6 @@ import {
   paymentMethodEnum
 } from "@shared/schema";
 import { ensureAdmin, ensureSuperAdmin } from "./auth-jwt";
-import { getCryptoIntegrationStatus, testCryptoIntegration } from "./services/crypto-integration-service";
 
 const adminRouter = Router();
 
@@ -520,9 +519,31 @@ adminRouter.get('/notifications/unread', ensureAdmin, async (req: Request, res: 
 });
 
 // Crypto Integration Status
-adminRouter.get('/crypto-integration/status', ensureAdmin, getCryptoIntegrationStatus);
+adminRouter.get('/crypto-integration/status', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    // This route has been moved to crypto-integration-routes.ts
+    return res.status(307).json({ 
+      message: 'This endpoint has been moved to /api/admin/crypto-integration/status',
+      redirectTo: '/api/admin/crypto-integration/status'
+    });
+  } catch (error) {
+    console.error('Error in crypto integration status:', error);
+    return res.status(500).json({ error: 'Failed to check crypto integration status' });
+  }
+});
 
 // Test Crypto Integration
-adminRouter.post('/crypto-integration/test', ensureAdmin, testCryptoIntegration);
+adminRouter.post('/crypto-integration/test', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    // This route has been moved to crypto-integration-routes.ts
+    return res.status(307).json({ 
+      message: 'This endpoint has been moved to /api/admin/crypto-integration/test',
+      redirectTo: '/api/admin/crypto-integration/test' 
+    });
+  } catch (error) {
+    console.error('Error testing crypto integration:', error);
+    return res.status(500).json({ error: 'Failed to test crypto integration' });
+  }
+});
 
 export { adminRouter };
