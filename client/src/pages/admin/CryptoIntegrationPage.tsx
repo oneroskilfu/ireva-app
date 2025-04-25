@@ -166,7 +166,7 @@ const CryptoIntegrationPage: React.FC = () => {
             <Box position="relative" display="inline-flex" mr={2}>
               <CircularProgress 
                 variant="determinate" 
-                value={data ? (data.completedSteps.length / 4) * 100 : 0} 
+                value={data && data.completedSteps ? (data.completedSteps.length / 4) * 100 : 0} 
                 color={data?.isComplete ? "success" : "primary"}
                 size={60}
               />
@@ -181,14 +181,14 @@ const CryptoIntegrationPage: React.FC = () => {
                 right={0}
               >
                 <Typography variant="caption" component="div" color="text.secondary">
-                  {data ? Math.round((data.completedSteps.length / 4) * 100) : 0}%
+                  {data && data.completedSteps ? Math.round((data.completedSteps.length / 4) * 100) : 0}%
                 </Typography>
               </Box>
             </Box>
             <Typography>
               {data?.isComplete 
                 ? "All integration steps completed successfully!" 
-                : `${data?.completedSteps.length || 0} of 4 steps completed`}
+                : `${data?.completedSteps ? data.completedSteps.length : 0} of 4 steps completed`}
             </Typography>
           </Box>
           

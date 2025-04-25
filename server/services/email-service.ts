@@ -65,7 +65,7 @@ export class EmailService {
         to: params.to,
         from: params.from || this.from,
         subject: params.subject,
-        text: params.text,
+        text: params.text || '',
         html: params.html,
       });
       console.log(`Email sent via SendGrid to ${params.to}: ${params.subject}`);
@@ -115,7 +115,7 @@ export class EmailService {
     user: User,
     withdrawalRequest: WithdrawalRequest
   ): Promise<boolean> {
-    const amount = formatCurrency(withdrawalRequest.amount, withdrawalRequest.currency);
+    const amount = formatCurrency(Number(withdrawalRequest.amount), withdrawalRequest.currency);
     
     const subject = 'iREVA Withdrawal Request Submitted';
     const html = `
@@ -166,7 +166,7 @@ export class EmailService {
     user: User,
     withdrawalRequest: WithdrawalRequest
   ): Promise<boolean> {
-    const amount = formatCurrency(withdrawalRequest.amount, withdrawalRequest.currency);
+    const amount = formatCurrency(Number(withdrawalRequest.amount), withdrawalRequest.currency);
     
     const subject = 'iREVA Withdrawal Approved';
     const html = `
@@ -214,7 +214,7 @@ export class EmailService {
     user: User,
     withdrawalRequest: WithdrawalRequest
   ): Promise<boolean> {
-    const amount = formatCurrency(withdrawalRequest.amount, withdrawalRequest.currency);
+    const amount = formatCurrency(Number(withdrawalRequest.amount), withdrawalRequest.currency);
     
     const subject = 'iREVA Withdrawal Request Update';
     const html = `
@@ -264,7 +264,7 @@ export class EmailService {
     user: User,
     withdrawalRequest: WithdrawalRequest
   ): Promise<boolean> {
-    const amount = formatCurrency(withdrawalRequest.amount, withdrawalRequest.currency);
+    const amount = formatCurrency(Number(withdrawalRequest.amount), withdrawalRequest.currency);
     
     const subject = 'iREVA Withdrawal Completed';
     const html = `
@@ -326,7 +326,7 @@ export class EmailService {
       return false;
     }
     
-    const amount = formatCurrency(withdrawalRequest.amount, withdrawalRequest.currency);
+    const amount = formatCurrency(Number(withdrawalRequest.amount), withdrawalRequest.currency);
     
     const subject = 'iREVA: New Withdrawal Request';
     const html = `

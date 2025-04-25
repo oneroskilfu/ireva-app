@@ -174,6 +174,16 @@ withdrawalRouter.post('/update/:id', ensureAdmin, async (req: Request, res: Resp
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
+    // Get the withdrawal request before updating to check previous status
+    const existingRequest = await db.select()
+      .from(withdrawalRequests)
+      .where(eq(withdrawalRequests.id, id))
+      .limit(1);
+
+    if (!existingRequest || existingRequest.length === 0) {
+      return res.status(404).json({ message: 'Withdrawal request not found' });
+    }
+
     // Update the withdrawal request
     const [updatedRequest] = await db.update(withdrawalRequests)
       .set({
@@ -187,7 +197,37 @@ withdrawalRouter.post('/update/:id', ensureAdmin, async (req: Request, res: Resp
       .returning();
 
     if (!updatedRequest) {
-      return res.status(404).json({ message: 'Withdrawal request not found' });
+      return res.status(404).json({ message: 'Withdrawal request not found after update' });
+    }
+
+    // Get user information for email notifications
+    const user = await db.select()
+      .from(users)
+      .where(eq(users.id, updatedRequest.userId))
+      .limit(1);
+
+    if (user && user.length > 0) {
+      // Send appropriate email based on the updated status
+      switch (status) {
+        case 'approved':
+          emailService.sendWithdrawalApprovedEmail(user[0], updatedRequest)
+            .catch(error => console.error('Failed to send withdrawal approved email:', error));
+          break;
+        
+        case 'rejected':
+          emailService.sendWithdrawalRejectedEmail(user[0], updatedRequest)
+            .catch(error => console.error('Failed to send withdrawal rejected email:', error));
+          break;
+        
+        case 'completed':
+          emailService.sendWithdrawalProcessedEmail(user[0], updatedRequest)
+            .catch(error => console.error('Failed to send withdrawal processed email:', error));
+          break;
+          
+        default:
+          // No email for other status changes
+          break;
+      }
     }
 
     res.json(updatedRequest);
