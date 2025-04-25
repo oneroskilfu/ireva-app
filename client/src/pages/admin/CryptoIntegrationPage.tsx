@@ -25,6 +25,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import PaymentIcon from '@mui/icons-material/Payment';
 import WebhookIcon from '@mui/icons-material/Webhook';
 import SettingsIcon from '@mui/icons-material/Settings';
+import PieChart from '@mui/icons-material/PieChart';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../../lib/queryClient';
 import { useToast } from '../../hooks/use-toast';
@@ -131,9 +132,21 @@ const CryptoIntegrationPage: React.FC = () => {
 
   return (
     <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        Crypto Integration Setup
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h4">
+          Crypto Integration Setup
+        </Typography>
+        
+        <Button 
+          variant="contained" 
+          color="primary"
+          startIcon={<PieChart />}
+          component="a"
+          href="/admin/crypto-transactions"
+        >
+          View Crypto Transactions
+        </Button>
+      </Box>
       
       <Box mb={4}>
         <Typography variant="body1" paragraph>

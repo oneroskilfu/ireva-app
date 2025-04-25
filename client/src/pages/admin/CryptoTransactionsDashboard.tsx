@@ -8,7 +8,8 @@ import {
 import { 
   Download, Search, FilterList, Refresh, 
   AttachMoney, ShowChart, AccountBalanceWallet,
-  WarningAmber, CheckCircle, Cancel
+  WarningAmber, CheckCircle, Cancel, 
+  Bitcoin
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -245,9 +246,21 @@ export default function CryptoTransactionsDashboard() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Crypto Transactions Dashboard
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h4">
+          Crypto Transactions Dashboard
+        </Typography>
+        
+        <Button 
+          variant="outlined" 
+          color="primary"
+          startIcon={<Bitcoin />}
+          component="a"
+          href="/admin/crypto-integration"
+        >
+          Crypto Integration Setup
+        </Button>
+      </Box>
 
       {/* Stats Cards */}
       <MuiGrid container spacing={3} sx={{ mb: 4 }}>
