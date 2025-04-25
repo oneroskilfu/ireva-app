@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Copy, Check, ExternalLink } from 'lucide-react';
+import { Loader2, Copy, Check, ExternalLink, LayoutTemplate, QrCode } from 'lucide-react';
 import {
   Tabs,
   TabsContent,
@@ -49,6 +49,7 @@ interface Payment {
   status: string;
   expiresAt: string;
   createdAt: string;
+  hostedUrl?: string; // URL for CoinGate hosted payment page
 }
 
 interface PaymentStatus {
@@ -293,11 +294,45 @@ export default function CryptoPayment({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="qr">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="qr">QR Code</TabsTrigger>
-            <TabsTrigger value="manual">Manual</TabsTrigger>
+        <Tabs defaultValue={payment.hostedUrl ? "hosted" : "qr"}>
+          <TabsList className="grid w-full grid-cols-3">
+            {payment.hostedUrl && (
+              <TabsTrigger value="hosted">
+                <LayoutTemplate className="h-4 w-4 mr-2" /> 
+                Hosted Page
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="qr">
+              <QrCode className="h-4 w-4 mr-2" />
+              QR Code
+            </TabsTrigger>
+            <TabsTrigger value="manual">
+              <Copy className="h-4 w-4 mr-2" />
+              Manual
+            </TabsTrigger>
           </TabsList>
+          
+          {payment.hostedUrl && (
+            <TabsContent value="hosted" className="space-y-4">
+              <div className="flex justify-center py-4 border rounded-md overflow-hidden" style={{ height: "400px" }}>
+                <iframe 
+                  src={payment.hostedUrl} 
+                  title="Crypto Payment" 
+                  width="100%" 
+                  height="100%" 
+                  style={{ border: "none" }}
+                />
+              </div>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Important</AlertTitle>
+                <AlertDescription>
+                  Complete your payment on the secure payment page above
+                </AlertDescription>
+              </Alert>
+            </TabsContent>
+          )}
+          
           <TabsContent value="qr" className="space-y-4">
             <div className="flex justify-center py-4">
               <div className="p-4 bg-white rounded-lg">
@@ -316,6 +351,7 @@ export default function CryptoPayment({
               </AlertDescription>
             </Alert>
           </TabsContent>
+          
           <TabsContent value="manual" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="address">Wallet Address</Label>
