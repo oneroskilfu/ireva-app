@@ -21,6 +21,7 @@ import emailCampaignRoutes from './routes/email-campaign';
 import feedbackRoutes from './routes/feedback';
 import adminLogsRoutes from './routes/adminLogs';
 import issuesRoutes from './routes/issues';
+import { withdrawalRouter } from './routes/withdrawals';
 // Import ROI distribution routes using require instead of import
 // Skip transactions import for now while we work on other fixes
 // Import the new routes
@@ -284,6 +285,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Issues routes
   app.use('/api/issues', issuesRoutes);
   console.log("Issues routes registered");
+  
+  // Set up Withdrawal request routes
+  app.use('/api/withdrawals', withdrawalRouter);
+  console.log("Withdrawal routes registered");
   
   // Set up Crypto Wallet routes
   app.use('/api/crypto-wallets', cryptoWalletRouter);
