@@ -272,6 +272,97 @@ const CryptoWalletPage: React.FC = () => {
       
       <Card className="mt-4">
         <CardHeader>
+          <CardTitle className="text-base">Deposit Process</CardTitle>
+          <CardDescription>How to deposit cryptocurrency into your iREVA investment</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="mt-1">
+                <div className="bg-primary/10 h-6 w-6 rounded-full flex items-center justify-center">
+                  <span className="text-primary text-xs font-bold">1</span>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium">Connect Your Wallet</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Connect your MetaMask or other compatible wallet to the iREVA platform when prompted.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="mt-1">
+                <div className="bg-primary/10 h-6 w-6 rounded-full flex items-center justify-center">
+                  <span className="text-primary text-xs font-bold">2</span>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium">Approve Token Transfer</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Authorize the iREVA Escrow Smart Contract to access your tokens. This is a one-time security step required by the blockchain.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="mt-1">
+                <div className="bg-primary/10 h-6 w-6 rounded-full flex items-center justify-center">
+                  <span className="text-primary text-xs font-bold">3</span>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium">Complete Deposit</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Confirm the deposit transaction to transfer your stablecoin (USDC/USDT) or ETH into the escrow smart contract.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <div className="mt-1">
+                <div className="bg-primary/10 h-6 w-6 rounded-full flex items-center justify-center">
+                  <span className="text-primary text-xs font-bold">4</span>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium">Verify Transaction</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  The smart contract automatically records your wallet address, the project ID, and the investment amount.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md border border-blue-100 dark:border-blue-800 mt-6">
+            <h4 className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">What happens behind the scenes?</h4>
+            <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+              When you deposit funds, our secure blockchain escrow system:
+            </p>
+            <ul className="space-y-1 text-sm text-blue-600 dark:text-blue-400">
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Records your wallet address for future returns</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Links your investment to the specific property's ID</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Securely holds your funds until project milestones are met</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                <span>Provides a blockchain-verified record of your investment</span>
+              </li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="mt-4">
+        <CardHeader>
           <CardTitle className="text-base">Direct Property Investment</CardTitle>
           <CardDescription>Pay directly on the blockchain for property investments</CardDescription>
         </CardHeader>
@@ -318,6 +409,16 @@ const CryptoWalletPage: React.FC = () => {
                 </p>
               </div>
             </div>
+          </div>
+          
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-md border border-amber-100 dark:border-amber-800 mt-6">
+            <h4 className="text-sm font-medium text-amber-700 dark:text-amber-300 mb-1 flex items-center">
+              <AlertTriangle className="h-4 w-4 mr-1" />
+              Important Notice
+            </h4>
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              Make sure you have enough funds in your wallet to cover both the investment amount and the gas fees (transaction costs) required by the blockchain network.
+            </p>
           </div>
         </CardContent>
       </Card>
