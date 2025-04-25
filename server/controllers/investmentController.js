@@ -4,6 +4,10 @@ const Transaction = require('../models/Transaction');
 const Wallet = require('../models/Wallet');
 const Project = require('../models/Project');
 const { generateInvestmentReference } = require('../utils/referenceGenerator');
+const { CryptoPaymentService } = require('../services/crypto-payment-service');
+
+// Initialize the crypto payment service
+const cryptoPaymentService = new CryptoPaymentService();
 
 /**
  * Create a new investment
@@ -109,6 +113,288 @@ const investInProject = async (req, res) => {
 };
 
 /**
+ * Handle crypto investment in a project
+ * This function:
+ * 1. Validates the amount and currency
+ * 2. Generates a payment session or wallet address via CoinGate/internal system
+ * 3. Saves the transaction with a 'pending' status
+ * 4. Sets up for webhook notification or polling for confirmation
+ */
+const handleCryptoInvestment = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { userId, projectId, amount, currency, network } = req.body;
+    
+    // Validate input parameters
+    if (!userId || !projectId || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters: userId, projectId, amount'
+      });
+    }
+    
+    // Validate currency (must be a supported crypto currency)
+    const supportedCurrencies = cryptoPaymentService.getSupportedCurrencies();
+    if (currency && !supportedCurrencies.includes(currency)) {
+      return res.status(400).json({
+        success: false,
+        message: `Unsupported currency. Please use one of: ${supportedCurrencies.join(', ')}`
+      });
+    }
+    
+    // Validate network (must be a supported blockchain network)
+    const supportedNetworks = cryptoPaymentService.getSupportedNetworks();
+    if (network && !supportedNetworks.includes(network)) {
+      return res.status(400).json({
+        success: false,
+        message: `Unsupported network. Please use one of: ${supportedNetworks.join(', ')}`
+      });
+    }
+    
+    // Verify project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+    
+    // Check minimum investment amount
+    if (amount < project.minimumInvestment) {
+      return res.status(400).json({
+        success: false,
+        message: `Minimum investment amount is ${project.minimumInvestment}`
+      });
+    }
+    
+    // Generate a unique reference
+    const reference = generateInvestmentReference();
+    
+    // Create investment record with 'pending' status
+    const investment = await Investment.create({
+      userId,
+      projectId,
+      amount,
+      investmentDate: new Date(),
+      status: 'pending', // Start with pending until payment confirmed
+      reference,
+      paymentMethod: 'crypto',
+      currency: currency || 'USDC',
+      network: network || 'ethereum'
+    });
+    
+    // Create transaction record with 'pending' status
+    const transaction = await Transaction.create({
+      userId,
+      amount,
+      type: 'crypto_investment',
+      reference,
+      projectId,
+      status: 'pending',
+      description: `Crypto investment in ${project.name}`,
+      paymentMethod: 'crypto',
+      currency: currency || 'USDC',
+      network: network || 'ethereum'
+    });
+    
+    // Generate a crypto payment session using the payment service
+    const cryptoPayment = await cryptoPaymentService.createPayment({
+      userId: parseInt(userId),
+      propertyId: parseInt(projectId),
+      amount,
+      currency: currency || 'USDC',
+      network: network || 'ethereum'
+    });
+    
+    // Update the transaction with the crypto payment details
+    transaction.paymentId = cryptoPayment.id;
+    transaction.paymentAddress = cryptoPayment.paymentAddress;
+    transaction.paymentUrl = cryptoPayment.paymentUrl;
+    transaction.expiresAt = cryptoPayment.expiresAt;
+    await transaction.save();
+    
+    // Save a reference to the transaction in the investment
+    investment.transactionId = transaction._id;
+    investment.paymentId = cryptoPayment.id;
+    await investment.save();
+    
+    // Commit all database changes
+    await session.commitTransaction();
+    session.endSession();
+    
+    // Return success with payment details
+    res.status(201).json({
+      success: true,
+      investment,
+      transaction,
+      cryptoPayment: {
+        id: cryptoPayment.id,
+        amount: cryptoPayment.amount,
+        amountInCrypto: cryptoPayment.amountInCrypto,
+        currency: cryptoPayment.currency,
+        network: cryptoPayment.network,
+        paymentAddress: cryptoPayment.paymentAddress,
+        paymentUrl: cryptoPayment.paymentUrl,
+        expiresAt: cryptoPayment.expiresAt,
+        status: cryptoPayment.status
+      }
+    });
+    
+    // Set up asynchronous monitoring of the payment status
+    // This would typically be handled by webhooks, but we'll start a polling process as backup
+    if (process.env.NODE_ENV === 'development') {
+      // In development, simulate a payment confirmation after a short delay
+      setTimeout(async () => {
+        try {
+          // Get 20% chance of success in development for testing
+          if (Math.random() < 0.2) {
+            const mockTxHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+            await confirmCryptoPayment(cryptoPayment.id, mockTxHash);
+            console.log(`Development: Auto-confirmed crypto payment ${cryptoPayment.id}`);
+          }
+        } catch (error) {
+          console.error('Error in development auto-confirmation:', error);
+        }
+      }, 15000); // 15 seconds
+    }
+  } catch (error) {
+    // Abort transaction on error
+    await session.abortTransaction();
+    session.endSession();
+    
+    console.error('Crypto investment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process crypto investment',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Confirm a crypto payment and update investment status
+ * This is called by the webhook handler or polling mechanism
+ */
+const confirmCryptoPayment = async (paymentId, txHash) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
+  try {
+    // Update the crypto payment status
+    await cryptoPaymentService.updateTransactionStatus(paymentId, {
+      status: 'confirmed',
+      txHash
+    });
+    
+    // Find the transaction associated with this payment
+    const transaction = await Transaction.findOne({ paymentId });
+    if (!transaction) {
+      throw new Error(`Transaction not found for payment ID: ${paymentId}`);
+    }
+    
+    // Update transaction status
+    transaction.status = 'completed';
+    transaction.transactionHash = txHash;
+    transaction.completedAt = new Date();
+    await transaction.save();
+    
+    // Find and update the investment
+    const investment = await Investment.findOne({ paymentId });
+    if (!investment) {
+      throw new Error(`Investment not found for payment ID: ${paymentId}`);
+    }
+    
+    // Update investment status
+    investment.status = 'active';
+    investment.paymentConfirmedAt = new Date();
+    await investment.save();
+    
+    // Update project funding
+    const project = await Project.findById(investment.projectId);
+    if (project) {
+      project.currentFunding += investment.amount;
+      project.numberOfInvestors = await Investment.countDocuments({
+        projectId: project._id,
+        status: { $ne: 'cancelled', $ne: 'pending' }
+      });
+      await project.save();
+    }
+    
+    await session.commitTransaction();
+    session.endSession();
+    
+    return true;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error confirming crypto payment:', error);
+    return false;
+  }
+};
+
+/**
+ * Check crypto payment status and update if needed
+ */
+const checkCryptoPaymentStatus = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    
+    if (!paymentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment ID is required'
+      });
+    }
+    
+    // Get the payment status from the crypto payment service
+    const payment = await cryptoPaymentService.getPayment(paymentId);
+    
+    if (!payment) {
+      return res.status(404).json({
+        success: false, 
+        message: 'Payment not found'
+      });
+    }
+    
+    // If payment is confirmed but not yet updated in our system, update it
+    if (payment.status === 'confirmed' || payment.status === 'completed') {
+      const transaction = await Transaction.findOne({ paymentId });
+      
+      if (transaction && transaction.status === 'pending') {
+        // Confirm the payment
+        await confirmCryptoPayment(paymentId, payment.txHash);
+      }
+    }
+    
+    // Return the current status
+    res.json({
+      success: true,
+      payment: {
+        id: payment.id,
+        status: payment.status,
+        amount: payment.amount,
+        amountInCrypto: payment.amountInCrypto,
+        currency: payment.currency,
+        network: payment.network,
+        txHash: payment.txHash,
+        updatedAt: payment.updatedAt,
+        expiresAt: payment.expiresAt
+      }
+    });
+  } catch (error) {
+    console.error('Error checking crypto payment status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check payment status',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Get user investments
  */
 const getUserInvestments = async (req, res) => {
@@ -156,12 +442,34 @@ const getInvestmentDetails = async (req, res) => {
     const transactions = await Transaction.find({ 
       userId: investment.userId,
       projectId: investment.projectId,
-      type: { $in: ['investment', 'return'] }
+      type: { $in: ['investment', 'return', 'crypto_investment'] }
     }).sort({ createdAt: -1 });
+    
+    // If this is a crypto investment, get the crypto payment details
+    let cryptoPayment = null;
+    if (investment.paymentMethod === 'crypto' && investment.paymentId) {
+      cryptoPayment = await cryptoPaymentService.getPayment(investment.paymentId);
+    }
     
     res.status(200).json({ 
       success: true, 
-      data: { investment, transactions }
+      data: { 
+        investment, 
+        transactions,
+        cryptoPayment: cryptoPayment ? {
+          id: cryptoPayment.id,
+          status: cryptoPayment.status,
+          amount: cryptoPayment.amount,
+          amountInCrypto: cryptoPayment.amountInCrypto,
+          currency: cryptoPayment.currency,
+          network: cryptoPayment.network,
+          txHash: cryptoPayment.txHash,
+          updatedAt: cryptoPayment.updatedAt,
+          expiresAt: cryptoPayment.expiresAt,
+          paymentAddress: cryptoPayment.paymentAddress,
+          paymentUrl: cryptoPayment.paymentUrl
+        } : null
+      }
     });
   } catch (error) {
     console.error('Error fetching investment details:', error);
@@ -280,6 +588,14 @@ const cancelInvestment = async (req, res) => {
     investment.cancellationDate = new Date();
     await investment.save();
     
+    // For crypto investments, cancel the payment if it's still pending
+    if (investment.paymentMethod === 'crypto' && investment.paymentId) {
+      const payment = await cryptoPaymentService.getPayment(investment.paymentId);
+      if (payment && payment.status === 'pending') {
+        await cryptoPaymentService.cancelPayment(investment.paymentId);
+      }
+    }
+    
     // Refund to wallet if active
     if (investment.status === 'active') {
       // Create refund transaction
@@ -338,5 +654,7 @@ module.exports = {
   getUserInvestments,
   getInvestmentDetails,
   updateInvestmentReturns,
-  cancelInvestment
+  cancelInvestment,
+  handleCryptoInvestment,
+  checkCryptoPaymentStatus
 };
