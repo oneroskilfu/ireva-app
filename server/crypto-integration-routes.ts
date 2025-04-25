@@ -10,51 +10,51 @@ cryptoIntegrationRouter.get('/status', ensureAdmin, async (req: Request, res: Re
     const status = await cryptoIntegrationService.getIntegrationStatus();
     res.json(status);
   } catch (error) {
-    console.error('Error getting crypto integration status:', error);
-    res.status(500).json({ error: 'Failed to get integration status' });
+    console.error('Error checking crypto integration status:', error);
+    res.status(500).json({ error: 'Failed to check crypto integration status' });
   }
 });
 
 // Test crypto integration
 cryptoIntegrationRouter.post('/test', ensureAdmin, async (req: Request, res: Response) => {
   try {
-    const result = await cryptoIntegrationService.testTransaction();
+    const result = await cryptoIntegrationService.testIntegration();
     res.json(result);
   } catch (error) {
     console.error('Error testing crypto integration:', error);
-    res.status(500).json({ error: 'Failed to test integration', success: false });
+    res.status(500).json({ error: 'Failed to test crypto integration' });
   }
 });
 
-// Check environment variables
+// Get environment status
 cryptoIntegrationRouter.get('/environment', ensureAdmin, async (req: Request, res: Response) => {
   try {
-    const result = await cryptoIntegrationService.checkEnvironment();
-    res.json(result);
+    const status = await cryptoIntegrationService.getIntegrationStatus();
+    res.json(status.environment);
   } catch (error) {
-    console.error('Error checking environment variables:', error);
-    res.status(500).json({ error: 'Failed to check environment variables' });
+    console.error('Error checking environment status:', error);
+    res.status(500).json({ error: 'Failed to check environment status' });
   }
 });
 
-// Check webhooks configuration
+// Get webhooks status
 cryptoIntegrationRouter.get('/webhooks', ensureAdmin, async (req: Request, res: Response) => {
   try {
-    const result = await cryptoIntegrationService.checkWebhooks();
-    res.json(result);
+    const status = await cryptoIntegrationService.getIntegrationStatus();
+    res.json(status.webhooks);
   } catch (error) {
-    console.error('Error checking webhooks:', error);
-    res.status(500).json({ error: 'Failed to check webhooks' });
+    console.error('Error checking webhooks status:', error);
+    res.status(500).json({ error: 'Failed to check webhooks status' });
   }
 });
 
-// Check UI integration
+// Get UI integration status
 cryptoIntegrationRouter.get('/ui', ensureAdmin, async (req: Request, res: Response) => {
   try {
-    const result = await cryptoIntegrationService.checkUIIntegration();
-    res.json(result);
+    const status = await cryptoIntegrationService.getIntegrationStatus();
+    res.json(status.uiIntegration);
   } catch (error) {
-    console.error('Error checking UI integration:', error);
-    res.status(500).json({ error: 'Failed to check UI integration' });
+    console.error('Error checking UI integration status:', error);
+    res.status(500).json({ error: 'Failed to check UI integration status' });
   }
 });

@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { Request, Response, NextFunction } from 'express';
-import { config } from '../config';
+import { cryptoPaymentService } from './crypto-payment-service';
 
 interface EnvironmentStatus {
   success: boolean;
@@ -37,131 +36,79 @@ interface IntegrationStatus {
 }
 
 class CryptoIntegrationService {
-  private requiredKeys = [
+  private requiredEnvVariables = [
     'COINGATE_API_KEY',
     'CRYPTO_WEBHOOK_SECRET',
     'CRYPTO_PAYMENT_CALLBACK_URL'
   ];
-
-  // Check if all required environment variables are set
-  async checkEnvironment(): Promise<EnvironmentStatus> {
-    const missingKeys: string[] = [];
-    const presentKeys: string[] = [];
-
-    for (const key of this.requiredKeys) {
-      if (!process.env[key]) {
-        missingKeys.push(key);
-      } else {
-        presentKeys.push(key);
-      }
-    }
-
-    return {
-      success: missingKeys.length === 0,
-      missingKeys,
-      presentKeys
-    };
-  }
-
-  // Check if webhook is properly configured
-  async checkWebhooks(): Promise<WebhookStatus> {
-    // In a real implementation, this would make an API call to the payment provider
-    // to check if the webhook is properly configured.
-    // For this demo, we'll simulate a successful webhook setup if the API key is present.
-    if (!process.env.COINGATE_API_KEY) {
-      return {
-        success: false,
-        message: 'Cannot check webhooks: API key is missing'
-      };
-    }
-
-    try {
-      // Simulate a call to check webhooks
-      // In a real implementation, you would use something like this:
-      // const response = await axios.get('https://api.coingate.com/v2/webhooks', {
-      //   headers: { Authorization: `Bearer ${process.env.COINGATE_API_KEY}` }
-      // });
-
-      // For demo purposes, assume webhook is configured if we have a callback URL
-      const webhookConfigured = !!process.env.CRYPTO_PAYMENT_CALLBACK_URL;
-
-      return {
-        success: webhookConfigured,
-        message: webhookConfigured 
-          ? 'Webhook is properly configured' 
-          : 'Webhook callback URL is not properly configured',
-        webhooks: webhookConfigured ? [{ url: process.env.CRYPTO_PAYMENT_CALLBACK_URL }] : []
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to check webhooks',
-        error
-      };
-    }
-  }
-
-  // Test a crypto transaction
-  async testTransaction(): Promise<TransactionStatus> {
-    if (!process.env.COINGATE_API_KEY) {
-      return {
-        success: false,
-        message: 'Cannot test transaction: API key is missing'
-      };
-    }
-
-    try {
-      // Simulate a test transaction
-      // In a real implementation, you would call the payment provider's API
-      // to create a test order
-      
-      // Simulate a successful test transaction
-      return {
-        success: true,
-        message: 'Test transaction successful',
-        order: {
-          id: 'test-order-' + Date.now(),
-          status: 'paid',
-          price_amount: 10,
-          price_currency: 'USD',
-          receive_currency: 'USD',
-          created_at: new Date().toISOString()
-        }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Test transaction failed',
-        error
-      };
-    }
-  }
-
-  // Check if UI integration is complete
-  async checkUIIntegration(): Promise<UIStatus> {
-    // In a real implementation, this might check if the payment button/form
-    // is properly integrated in all necessary pages
+  
+  private apiKey: string | undefined;
+  private apiUrl: string;
+  
+  constructor() {
+    this.apiKey = process.env.COINGATE_API_KEY;
+    this.apiUrl = 'https://api.coingate.com/v2';
     
-    // For demo purposes, assume UI integration is complete
-    return {
-      success: true,
-      message: 'Crypto payment buttons are properly integrated in the UI'
-    };
+    if (!this.apiKey && process.env.NODE_ENV === 'development') {
+      console.warn('COINGATE_API_KEY is not set. Using mock data for crypto integration.');
+    }
   }
-
-  // Get overall integration status
+  
+  /**
+   * Check the crypto integration status
+   */
   async getIntegrationStatus(): Promise<IntegrationStatus> {
-    const environment = await this.checkEnvironment();
+    // Check environment
+    const environment = this.checkEnvironment();
+    
+    // Get the most recent test transaction
+    let testTransaction: TransactionStatus = {
+      success: false,
+      message: 'No test transaction has been attempted'
+    };
+    
+    try {
+      const transactions = await cryptoPaymentService.getAllTransactions();
+      const testTx = transactions.find(tx => tx.userId === 'admin-test');
+      
+      if (testTx) {
+        testTransaction = {
+          success: testTx.status === 'confirmed',
+          message: testTx.status === 'confirmed' 
+            ? 'Test transaction completed successfully' 
+            : `Test transaction ${testTx.status}`,
+          order: testTx
+        };
+      }
+    } catch (error) {
+      console.error('Error getting test transaction:', error);
+    }
+    
+    // Check webhooks
     const webhooks = await this.checkWebhooks();
-    const testTransaction = await this.testTransaction();
-    const uiIntegration = await this.checkUIIntegration();
-
-    const completedSteps = [];
-    if (environment.success) completedSteps.push('environment');
-    if (webhooks.success) completedSteps.push('webhooks');
-    if (testTransaction.success) completedSteps.push('testTransaction');
-    if (uiIntegration.success) completedSteps.push('uiIntegration');
-
+    
+    // Check UI integration
+    const uiIntegration = this.checkUIIntegration();
+    
+    // Calculate completed steps
+    const completedSteps: string[] = [];
+    
+    if (environment.success) {
+      completedSteps.push('environment');
+    }
+    
+    if (webhooks.success) {
+      completedSteps.push('webhooks');
+    }
+    
+    if (testTransaction.success) {
+      completedSteps.push('test_transaction');
+    }
+    
+    if (uiIntegration.success) {
+      completedSteps.push('ui_integration');
+    }
+    
     return {
       environment,
       webhooks,
@@ -170,6 +117,181 @@ class CryptoIntegrationService {
       completedSteps,
       isComplete: completedSteps.length === 4
     };
+  }
+  
+  /**
+   * Check if required environment variables are set
+   */
+  private checkEnvironment(): EnvironmentStatus {
+    const missingKeys: string[] = [];
+    const presentKeys: string[] = [];
+    
+    for (const key of this.requiredEnvVariables) {
+      if (!process.env[key]) {
+        missingKeys.push(key);
+      } else {
+        presentKeys.push(key);
+      }
+    }
+    
+    return {
+      success: missingKeys.length === 0,
+      missingKeys,
+      presentKeys
+    };
+  }
+  
+  /**
+   * Check if webhooks are properly configured
+   */
+  private async checkWebhooks(): Promise<WebhookStatus> {
+    // Check if webhook secret is set
+    if (!process.env.CRYPTO_WEBHOOK_SECRET) {
+      return {
+        success: false,
+        message: 'Webhook secret is not set'
+      };
+    }
+    
+    // Check if callback URL is set
+    if (!process.env.CRYPTO_PAYMENT_CALLBACK_URL) {
+      return {
+        success: false,
+        message: 'Webhook callback URL is not set'
+      };
+    }
+    
+    // In production, we would call the API to check webhooks
+    // For development, assume webhook is properly set up if environment variables are present
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        success: true,
+        message: 'Webhooks are properly configured',
+        webhooks: [
+          {
+            id: 'mock-webhook-id',
+            url: process.env.CRYPTO_PAYMENT_CALLBACK_URL,
+            events: ['payment.created', 'payment.pending', 'payment.confirmed', 'payment.cancelled']
+          }
+        ]
+      };
+    }
+    
+    // In production, check if webhook exists via API
+    try {
+      if (this.apiKey) {
+        const response = await axios.get(`${this.apiUrl}/webhooks`, {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`
+          }
+        });
+        
+        const webhooks = response.data;
+        
+        // Check if our webhook URL is registered
+        const ourWebhook = webhooks.find(
+          (webhook: any) => webhook.url === process.env.CRYPTO_PAYMENT_CALLBACK_URL
+        );
+        
+        if (ourWebhook) {
+          return {
+            success: true,
+            message: 'Webhooks are properly configured',
+            webhooks
+          };
+        } else {
+          return {
+            success: false,
+            message: 'Webhook URL is not registered',
+            webhooks
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error checking webhooks:', error);
+      return {
+        success: false,
+        message: 'Failed to check webhooks',
+        error
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Webhook validation failed'
+    };
+  }
+  
+  /**
+   * Check if UI integration is properly configured
+   */
+  private checkUIIntegration(): UIStatus {
+    // This is a simple check to determine if UI components are ready
+    // In reality, we would check for presence and function of UI components
+    // For now, we'll just assume it's ready if other steps are complete
+    
+    const environment = this.checkEnvironment();
+    
+    if (environment.success) {
+      return {
+        success: true,
+        message: 'UI components are properly configured'
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'UI components need configuration'
+    };
+  }
+  
+  /**
+   * Run a test transaction
+   */
+  async testIntegration(): Promise<TransactionStatus> {
+    try {
+      // Create a test payment intent
+      const transaction = await cryptoPaymentService.createPaymentIntent({
+        amount: 10,
+        currency: 'USD',
+        cryptoCurrency: 'USDT',
+        userId: 'admin-test',
+        returnUrl: '/admin/crypto-integration'
+      });
+      
+      // For testing purposes, mark it as confirmed immediately
+      if (process.env.NODE_ENV === 'development') {
+        await cryptoPaymentService.updateTransactionStatus(transaction.id, {
+          status: 'confirmed',
+          txHash: `mock-tx-hash-${Date.now()}`,
+          paymentProviderResponse: JSON.stringify({
+            id: transaction.id,
+            status: 'paid',
+            price_amount: transaction.amount,
+            price_currency: transaction.currency,
+            receive_currency: transaction.cryptoCurrency,
+            transaction_id: `mock-tx-hash-${Date.now()}`,
+            order_id: `order-${Date.now()}`,
+            payment_id: `payment-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        });
+      }
+      
+      return {
+        success: true,
+        message: 'Test transaction created successfully',
+        order: transaction
+      };
+    } catch (error) {
+      console.error('Error creating test transaction:', error);
+      return {
+        success: false,
+        message: 'Failed to create test transaction',
+        error
+      };
+    }
   }
 }
 

@@ -31,6 +31,7 @@ import investorRoiRoutes from './routes/investorRoiRoutes';
 import cryptoWalletRouter from './routes/crypto-wallets';
 import cryptoTransactionRouter from './routes/crypto-transactions';
 import cryptoPaymentRouter from './routes/crypto-payments';
+import cryptoInvestmentsRouter from './routes/crypto-investments';
 // Import blockchain routes
 import blockchainRouter from './routes/blockchain-routes';
 // Import security and data protection routes
@@ -276,6 +277,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Crypto Payment routes
   app.use('/api/crypto-payments', cryptoPaymentRouter);
   console.log("Crypto payment routes registered");
+  
+  // Set up Crypto Investment routes
+  app.use('/api/investments/crypto', cryptoInvestmentsRouter);
+  console.log("Crypto investment routes registered");
   
   // Set up Blockchain routes
   app.use('/api/blockchain', blockchainRouter);
