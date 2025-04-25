@@ -1,4 +1,4 @@
-import CoinGate from 'coingate-v2';
+import coingate from 'coingate-v2';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -10,9 +10,8 @@ if (!process.env.COINGATE_API_KEY) {
 }
 
 // Initialize CoinGate client with API key
-const client = new CoinGate({
-  apiKey: process.env.COINGATE_API_KEY || 'missing-api-key',
-  environment: process.env.NODE_ENV === 'production' ? 'live' : 'sandbox'
-});
+const cgClient = process.env.NODE_ENV === 'production' 
+  ? coingate.client(process.env.COINGATE_API_KEY || 'missing-api-key')
+  : coingate.testClient(process.env.COINGATE_API_KEY || 'missing-api-key');
 
-export default client;
+export default cgClient;

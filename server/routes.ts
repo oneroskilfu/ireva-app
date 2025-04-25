@@ -51,6 +51,9 @@ import { adminCryptoValidateRouter } from './routes/admin-crypto-validate';
 import { cryptoWebhookRouter } from './routes/crypto-webhooks';
 // Import wallet transactions routes
 import { walletTransactionsRouter } from './routes/wallet-transactions';
+// Import CoinGate integration routes
+import { cryptoRoutes } from './coingate/cryptoRoutes';
+import { webhookRouter } from './coingate/webhookHandler';
 import fs from 'fs';
 import path from 'path';
 
@@ -332,6 +335,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Crypto Webhook routes
   app.use('/api/crypto/webhooks', cryptoWebhookRouter);
   console.log("Crypto webhook routes registered");
+  
+  // Set up CoinGate crypto payment routes
+  app.use('/api/crypto', cryptoRoutes);
+  console.log("CoinGate payment routes registered");
+  
+  // Set up CoinGate webhook handler
+  app.use('/api/crypto', webhookRouter);
+  console.log("CoinGate webhook handler registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
