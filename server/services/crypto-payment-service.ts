@@ -153,6 +153,96 @@ export class CryptoPaymentService {
       throw new Error('Failed to fetch user payments');
     }
   }
+  
+  async getAllTransactions(): Promise<any[]> {
+    try {
+      // Get all crypto payments with user and property details
+      const payments = await db.query.cryptoPayments.findMany({
+        with: {
+          user: true,
+          property: true
+        }
+      });
+      
+      return payments;
+    } catch (error) {
+      console.error('Error fetching all transactions:', error);
+      throw new Error('Failed to fetch all transactions');
+    }
+  }
+  
+  async getPropertyCryptoInvestments(propertyId: number): Promise<any> {
+    try {
+      // Get all crypto payments for a specific property
+      const payments = await db.select().from(cryptoPayments)
+        .where(eq(cryptoPayments.propertyId, propertyId));
+      
+      // Calculate total investment amount
+      const totalInvestment = payments.reduce((sum, payment) => {
+        // Only count confirmed/paid payments
+        if (['paid', 'confirmed'].includes(payment.status)) {
+          return sum + Number(payment.amount);
+        }
+        return sum;
+      }, 0);
+      
+      // Group by currency
+      const byCurrency = payments.reduce((acc: Record<string, number>, payment) => {
+        if (!['paid', 'confirmed'].includes(payment.status)) return acc;
+        
+        const currency = payment.currency;
+        if (!acc[currency]) {
+          acc[currency] = 0;
+        }
+        acc[currency] += Number(payment.amount);
+        return acc;
+      }, {});
+      
+      // Count unique investors
+      const uniqueInvestors = new Set(payments
+        .filter(p => ['paid', 'confirmed'].includes(p.status))
+        .map(p => p.userId)
+      );
+      
+      return {
+        propertyId,
+        totalInvestment,
+        byCurrency,
+        uniqueInvestorCount: uniqueInvestors.size,
+        payments
+      };
+    } catch (error) {
+      console.error('Error fetching property crypto investments:', error);
+      throw new Error('Failed to fetch property crypto investments');
+    }
+  }
+  
+  async getAllPropertiesCryptoInvestments(): Promise<any[]> {
+    try {
+      // Get all properties with crypto investments
+      const properties = await db.query.properties.findMany({
+        with: {
+          cryptoPayments: true
+        }
+      });
+      
+      // Process each property's crypto investments
+      const result = await Promise.all(properties
+        .filter(p => p.cryptoPayments.length > 0)
+        .map(async (property) => {
+          const cryptoData = await this.getPropertyCryptoInvestments(property.id);
+          return {
+            property,
+            cryptoData
+          };
+        }));
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching all properties crypto investments:', error);
+      throw new Error('Failed to fetch all properties crypto investments');
+    }
+  }
 
   async updatePaymentStatus(paymentId: string, status: string): Promise<void> {
     try {

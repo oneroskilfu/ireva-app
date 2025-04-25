@@ -29,6 +29,50 @@ adminCryptoRouter.get('/transactions', ensureAdmin, async (req: Request, res: Re
   }
 });
 
+// Get crypto investments for a specific property
+adminCryptoRouter.get('/properties/:propertyId/crypto-investments', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const propertyId = parseInt(req.params.propertyId);
+    if (isNaN(propertyId)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid property ID' 
+      });
+    }
+    
+    const investments = await cryptoPaymentService.getPropertyCryptoInvestments(propertyId);
+    
+    res.json({
+      success: true,
+      data: investments
+    });
+  } catch (error) {
+    console.error('Error getting property crypto investments:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to get property crypto investments' 
+    });
+  }
+});
+
+// Get crypto investments across all properties
+adminCryptoRouter.get('/properties/crypto-investments', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const investments = await cryptoPaymentService.getAllPropertiesCryptoInvestments();
+    
+    res.json({
+      success: true,
+      data: investments
+    });
+  } catch (error) {
+    console.error('Error getting all properties crypto investments:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to get all properties crypto investments' 
+    });
+  }
+});
+
 // Get system wallet balances
 adminCryptoRouter.get('/balances', ensureAdmin, async (req: Request, res: Response) => {
   try {
