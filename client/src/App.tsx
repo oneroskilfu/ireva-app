@@ -161,6 +161,15 @@ function Router() {
           </AuthMiddleware>
         )}
       </Route>
+      <Route path="/crypto-wallet">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <CryptoWalletPage />
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
       <Route path="/profile">
         {() => <ProfilePage />}
       </Route>
