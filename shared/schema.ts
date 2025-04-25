@@ -115,6 +115,9 @@ export const wallets = pgTable("wallets", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
   balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
+  availableBalance: numeric("available_balance", { precision: 12, scale: 2 }).default("0"),
+  pendingDeposits: numeric("pending_deposits", { precision: 12, scale: 2 }).default("0"),
+  pendingWithdrawals: numeric("pending_withdrawals", { precision: 12, scale: 2 }).default("0"),
   lastUpdated: timestamp("last_updated").defaultNow()
 });
 
@@ -136,9 +139,12 @@ export const cryptoWallets = pgTable("crypto_wallets", {
 export const transactions = pgTable("transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   walletId: uuid("wallet_id").notNull().references(() => wallets.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   amount: numeric("amount", { precision: 12, scale: 2 }),
   type: text("type"), // deposit, withdrawal, investment, roi_credit
   reference: text("reference"),
+  referenceId: text("reference_id"),
+  description: text("description"),
   status: text("status").default("completed"),
   createdAt: timestamp("created_at").defaultNow()
 });
@@ -156,6 +162,20 @@ export const cryptoTransactions = pgTable("crypto_transactions", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   confirmedAt: timestamp("confirmed_at")
+});
+
+// CoinGate Crypto Payments schema
+export const cryptoPayments = pgTable("crypto_payments", {
+  id: text("id").primaryKey(), // CoinGate payment ID
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: text("currency").notNull(), // BTC, ETH, USDT, etc.
+  status: text("status").notNull(), // pending, paid, confirmed, invalid, expired, canceled, etc.
+  orderId: text("order_id").notNull(),
+  paymentUrl: text("payment_url").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  expiresAt: timestamp("expires_at"),
+  propertyId: integer("property_id").references(() => properties.id),
 });
 
 // Milestone status enum
@@ -279,6 +299,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [wallets.userId]
   }),
   cryptoWallets: many(cryptoWallets),
+  cryptoPayments: many(cryptoPayments),
   notifications: many(notifications),
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
@@ -337,6 +358,17 @@ export const cryptoTransactionsRelations = relations(cryptoTransactions, ({ one 
   wallet: one(cryptoWallets, {
     fields: [cryptoTransactions.cryptoWalletId],
     references: [cryptoWallets.id]
+  })
+}));
+
+export const cryptoPaymentsRelations = relations(cryptoPayments, ({ one }) => ({
+  user: one(users, {
+    fields: [cryptoPayments.userId],
+    references: [users.id]
+  }),
+  property: one(properties, {
+    fields: [cryptoPayments.propertyId],
+    references: [properties.id]
   })
 }));
 
@@ -494,6 +526,11 @@ export const insertCryptoTransactionSchema = createInsertSchema(cryptoTransactio
   confirmedAt: true
 });
 
+export const insertCryptoPaymentSchema = createInsertSchema(cryptoPayments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Create schema for milestones
 export const insertMilestoneSchema = createInsertSchema(milestones).omit({
   id: true,
@@ -552,3 +589,6 @@ export type InsertCryptoTransaction = z.infer<typeof insertCryptoTransactionSche
 
 export type Milestone = typeof milestones.$inferSelect;
 export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
+
+export type CryptoPayment = typeof cryptoPayments.$inferSelect;
+export type InsertCryptoPayment = z.infer<typeof insertCryptoPaymentSchema>;

@@ -1,438 +1,246 @@
-import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
+import { db } from '../db';
+import { wallets, transactions, cryptoPayments, InsertCryptoPayment } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
-// Mock wallet addresses for different networks
-const networkWallets: Record<string, string> = {
-  'ethereum': '0xD5c0D17cCb9071D27a4F7eD8255F59989b9ea461',
-  'polygon': '0x7a14Ac0E62BA57D8789E53DD1d8c2B29Bd91D0D2',
-  'binance': '0xB8D1F9C2C85219a4F2B7B3C406AF0AE699a0a210',
-  'solana': '6zxWB7Jz9JqvJanpFSBDdRKzj8GQ8EtyUJf84nXnQRkd',
-  'avalanche': '0x3F25C4a1f162e9D9a8a2746f5d127556b1D7F796'
+// Mock data for when COINGATE_API_KEY is not set
+const MOCK_CURRENCIES = ['BTC', 'ETH', 'USDT', 'USDC', 'LTC', 'XRP'];
+const MOCK_PAYMENT = {
+  id: 'mock-payment-' + Date.now(),
+  status: 'pending',
+  price_amount: 100,
+  price_currency: 'USDT',
+  receive_amount: 100,
+  receive_currency: 'USDT',
+  payment_url: 'https://example.com/pay',
+  payment_address: '0x1234567890abcdef',
+  created_at: new Date().toISOString(),
+  expires_at: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+  order_id: 'ORDER-' + Date.now(),
 };
 
-// Mock exchange rates for crypto currencies
-const exchangeRates: Record<string, number> = {
-  'USDC': 1.00, // 1 USDC = 1 USD
-  'USDT': 1.00, // 1 USDT = 1 USD
-  'ETH': 4000.0, // 1 ETH = 4000 USD
-  'BTC': 60000.0 // 1 BTC = 60000 USD
-};
-
-// Type definitions
-interface CreatePaymentRequest {
-  userId: number;
-  propertyId: number;
+interface CreatePaymentParams {
   amount: number;
-  currency: string;
-  network?: string;
-}
-
-interface CryptoPayment {
-  id: string;
   userId: number;
-  propertyId: number;
-  amount: number;
-  amountInCrypto: string;
-  walletAddress: string;
-  network: string;
   currency: string;
-  status: string; // pending, processing, completed, failed, expired
-  txHash?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  expiresAt: Date;
-  paymentUrl?: string;
-  paymentAddress?: string;
+  description: string;
+  orderId: string;
+  returnUrl: string;
+  callbackUrl: string;
+  propertyId?: number;
 }
-
-// In-memory store for payments (would be a database in production)
-const payments = new Map<string, CryptoPayment>();
 
 export class CryptoPaymentService {
+  private apiKey: string | undefined;
+  private apiUrl: string;
+  private useMockData: boolean;
+
   constructor() {
     console.log('CryptoPaymentService initialized');
+    this.apiKey = process.env.COINGATE_API_KEY;
+    this.apiUrl = 'https://api.coingate.com/v2';
+    this.useMockData = !this.apiKey;
     
-    // Create some sample transactions for demo
-    if (process.env.NODE_ENV === 'development' && payments.size === 0) {
-      // Add some sample payments for the admin dashboard
-      this.createSampleTransactions();
-    }
-  }
-  
-  // Create a set of sample transactions for development
-  private createSampleTransactions() {
-    const statuses = ['pending', 'processing', 'completed', 'confirmed', 'failed', 'expired', 'refunded'];
-    const currencies = ['USDC', 'USDT', 'ETH', 'BTC'];
-    const networks = ['ethereum', 'polygon', 'binance', 'solana'];
-    
-    // Create 20 sample transactions
-    for (let i = 0; i < 20; i++) {
-      const id = uuidv4();
-      const userId = Math.floor(Math.random() * 10) + 1;
-      const propertyId = Math.floor(Math.random() * 5) + 1;
-      const currency = currencies[Math.floor(Math.random() * currencies.length)];
-      const network = networks[Math.floor(Math.random() * networks.length)];
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      
-      // Create sample amount based on currency
-      let amount = 0;
-      if (currency === 'USDC' || currency === 'USDT') {
-        amount = Math.floor(Math.random() * 10000) + 100;
-      } else if (currency === 'ETH') {
-        amount = Math.random() * 5 + 0.1;
-      } else if (currency === 'BTC') {
-        amount = Math.random() * 1 + 0.01;
-      }
-      
-      // Create transaction
-      const transaction: CryptoPayment = {
-        id,
-        userId,
-        propertyId,
-        amount,
-        amountInCrypto: amount.toString(),
-        walletAddress: networkWallets[network] || '0xSampleAddress',
-        network,
-        currency,
-        status,
-        createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
-        updatedAt: new Date(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        paymentUrl: `https://example.com/pay/${id}`,
-        paymentAddress: networkWallets[network] || '0xSampleAddress'
-      };
-      
-      // Add txHash for completed transactions
-      if (status === 'completed' || status === 'confirmed') {
-        transaction.txHash = `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
-      }
-      
-      payments.set(id, transaction);
+    if (this.useMockData) {
+      console.log('COINGATE_API_KEY is not set. Using mock data for crypto integration.');
     }
   }
 
-  /**
-   * Create a new crypto payment request
-   */
-  async createPayment(request: CreatePaymentRequest): Promise<CryptoPayment> {
-    const { userId, propertyId, amount, currency = 'USDC', network = 'ethereum' } = request;
-    
-    // Convert amount to crypto based on exchange rate
-    const rate = exchangeRates[currency] || 1;
-    const amountInCrypto = (amount / rate).toFixed(6);
-    
-    // Get wallet address for the network
-    const walletAddress = networkWallets[network] || networkWallets.ethereum;
-    
-    // Create payment with 1 hour expiry
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
-    
-    const payment: CryptoPayment = {
-      id: uuidv4(),
-      userId,
-      propertyId,
-      amount,
-      amountInCrypto,
-      walletAddress,
-      network,
-      currency,
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now,
-      expiresAt,
-      paymentUrl: `https://pay.crypto.example/${network}/${walletAddress}?amount=${amountInCrypto}&currency=${currency}`, // Mock URL
-      paymentAddress: walletAddress,
-    };
-    
-    // Store the payment
-    payments.set(payment.id, payment);
-    
-    // In production, you'd integrate with a crypto payment provider here
-    // and receive a payment URL/invoice ID that would be returned to the client
-    
-    return payment;
-  }
-
-  /**
-   * Get a payment by ID
-   */
-  async getPayment(id: string): Promise<CryptoPayment | null> {
-    const payment = payments.get(id);
-    
-    // Check if payment has expired
-    if (payment && payment.status === 'pending') {
-      const now = new Date();
-      if (now > payment.expiresAt) {
-        payment.status = 'expired';
-        payment.updatedAt = now;
-        payments.set(id, payment);
-      }
+  async getSupportedCurrencies(): Promise<string[]> {
+    if (this.useMockData) {
+      return MOCK_CURRENCIES;
     }
-    
-    return payment || null;
-  }
 
-  /**
-   * Get payment status
-   */
-  async getPaymentStatus(id: string): Promise<string> {
-    const payment = await this.getPayment(id);
-    return payment ? payment.status : 'not_found';
-  }
-
-  /**
-   * Update payment status
-   */
-  async updatePaymentStatus(id: string, status: string, txHash?: string): Promise<boolean> {
-    const payment = payments.get(id);
-    
-    if (!payment) {
-      return false;
-    }
-    
-    payment.status = status;
-    payment.updatedAt = new Date();
-    
-    if (txHash) {
-      payment.txHash = txHash;
-    }
-    
-    payments.set(id, payment);
-    return true;
-  }
-
-  /**
-   * Update transaction status (comprehensive)
-   */
-  async updateTransactionStatus(id: string, data: { 
-    status: string; 
-    txHash?: string; 
-    paymentProviderReference?: string;
-    paymentProviderResponse?: string;
-  }): Promise<boolean> {
-    const payment = payments.get(id);
-    
-    if (!payment) {
-      return false;
-    }
-    
-    payment.status = data.status;
-    payment.updatedAt = new Date();
-    
-    if (data.txHash) {
-      payment.txHash = data.txHash;
-    }
-    
-    // Store additional metadata as needed
-    
-    payments.set(id, payment);
-    return true;
-  }
-
-  /**
-   * Cancel a payment
-   */
-  async cancelPayment(id: string): Promise<boolean> {
-    const payment = payments.get(id);
-    
-    if (!payment || payment.status !== 'pending') {
-      return false;
-    }
-    
-    payment.status = 'cancelled';
-    payment.updatedAt = new Date();
-    payments.set(id, payment);
-    
-    return true;
-  }
-
-  /**
-   * Get all payments for a user
-   */
-  async getUserPayments(userId: number): Promise<CryptoPayment[]> {
-    return Array.from(payments.values())
-      .filter(payment => payment.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-  
-  /**
-   * Get all transactions for a user (alias for getUserPayments)
-   */
-  async getTransactionsByUser(userId: string): Promise<CryptoPayment[]> {
-    return this.getUserPayments(parseInt(userId));
-  }
-  
-  /**
-   * Get a transaction by ID
-   */
-  async getTransaction(transactionId: string): Promise<CryptoPayment | null> {
-    return this.getPayment(transactionId);
-  }
-  
-  /**
-   * Get all transactions
-   */
-  async getAllTransactions(): Promise<CryptoPayment[]> {
-    return Array.from(payments.values())
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-  
-  /**
-   * Create a payment intent
-   */
-  async createPaymentIntent(data: any): Promise<CryptoPayment> {
-    return this.createPayment({
-      userId: parseInt(data.userId),
-      propertyId: parseInt(data.propertyId || '0'),
-      amount: data.amount,
-      currency: data.cryptoCurrency || 'USDC',
-      network: data.network || 'ethereum'
-    });
-  }
-  
-  /**
-   * Get wallet balances for a user
-   */
-  async getWalletBalances(userId: string): Promise<any[]> {
-    // Mock wallet balances for demo
-    return [
-      { currency: 'USDC', balance: 1000.0, pendingBalance: 0 },
-      { currency: 'USDT', balance: 500.0, pendingBalance: 100 },
-      { currency: 'ETH', balance: 0.5, pendingBalance: 0 }
-    ];
-  }
-  
-  /**
-   * Process a refund request
-   */
-  async requestRefund(data: { transactionId: string, reason?: string }): Promise<CryptoPayment | null> {
-    const payment = await this.getPayment(data.transactionId);
-    if (!payment) return null;
-    
-    payment.status = 'refunded';
-    payment.updatedAt = new Date();
-    payments.set(payment.id, payment);
-    
-    return payment;
-  }
-  
-  /**
-   * Process a webhook event
-   */
-  async processWebhookEvent(event: string, data: any): Promise<boolean> {
-    console.log(`Processing webhook event: ${event}`, data);
-    
-    if (event === 'payment.update' && data.payment_id) {
-      const payment = await this.getPayment(data.payment_id);
-      if (payment) {
-        const status = data.status.toLowerCase();
-        if (status === 'confirmed' || status === 'completed') {
-          payment.status = 'completed';
-          payment.txHash = data.transaction_id || payment.txHash;
-        } else if (status === 'failed') {
-          payment.status = 'failed';
-        }
-        
-        payment.updatedAt = new Date();
-        payments.set(payment.id, payment);
-        return true;
-      }
-    }
-    
-    return false;
-  }
-
-  /**
-   * Check for payment confirmations
-   * In a real implementation, this would listen to blockchain events
-   * or poll a payment provider's API
-   */
-  async checkForPaymentConfirmations(): Promise<void> {
-    // This is a mock implementation
-    // In production, you'd integrate with a blockchain node or payment provider API
-    
-    // Mock random confirmations for demo purposes
-    const pendingPayments = Array.from(payments.values())
-      .filter(payment => payment.status === 'pending');
-    
-    for (const payment of pendingPayments) {
-      // Randomly confirm some payments (about 20% chance)
-      if (Math.random() < 0.2) {
-        payment.status = 'processing';
-        payment.updatedAt = new Date();
-        payments.set(payment.id, payment);
-        
-        // Then after a brief delay, mark as completed
-        setTimeout(() => {
-          payment.status = 'completed';
-          payment.txHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-          payment.updatedAt = new Date();
-          payments.set(payment.id, payment);
-        }, 30000); // 30 seconds later
-      }
-    }
-  }
-
-  /**
-   * Get supported networks
-   */
-  getSupportedNetworks(): string[] {
-    return Object.keys(networkWallets);
-  }
-
-  /**
-   * Get supported currencies
-   */
-  getSupportedCurrencies(): string[] {
-    return Object.keys(exchangeRates);
-  }
-  
-  /**
-   * Test connection to payment provider API
-   * This is used to validate if the API key and credentials are properly configured
-   */
-  async testConnection(): Promise<{success: boolean, message: string}> {
     try {
-      // Check if API key is configured
-      if (!process.env.COINGATE_API_KEY) {
-        return { 
-          success: false, 
-          message: 'API key is not configured' 
-        };
-      }
+      const response = await axios.get(`${this.apiUrl}/currencies/merchant`, {
+        headers: this.getHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching supported currencies:', error);
+      return MOCK_CURRENCIES; // Fallback to mock data if API call fails
+    }
+  }
+
+  async createPayment(params: CreatePaymentParams): Promise<any> {
+    if (this.useMockData) {
+      // Create a record in our database for mock payment
+      await this.savePaymentToDatabase({
+        id: MOCK_PAYMENT.id,
+        userId: params.userId,
+        amount: params.amount,
+        currency: params.currency,
+        status: 'pending',
+        orderId: params.orderId,
+        paymentUrl: MOCK_PAYMENT.payment_url,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+        propertyId: params.propertyId,
+      });
       
-      // In a real implementation, this would make a test API call
-      // to the payment provider to verify credentials
-      
-      // For demo purposes, we simulate a successful API test
-      if (process.env.NODE_ENV === 'development') {
-        // Mock successful response in development
-        return { 
-          success: true, 
-          message: 'Connection successful' 
-        };
-      }
-      
-      // This would actually make an HTTP request to the payment provider
-      // Example pseudocode:
-      // const response = await fetch('https://api.coingate.com/v2/ping', {
-      //   headers: {
-      //     'Authorization': `Bearer ${process.env.COINGATE_API_KEY}`
-      //   }
-      // });
-      // const result = await response.json();
-      // return { success: response.ok, message: response.ok ? 'Connection successful' : result.message };
-      
-      // For now, return success for testing
-      return { 
-        success: true, 
-        message: 'Connection successful' 
-      };
-    } catch (error: any) {
-      return { 
-        success: false, 
-        message: `API connection error: ${error.message}` 
+      return {
+        ...MOCK_PAYMENT,
+        price_amount: params.amount,
+        price_currency: params.currency,
+        receive_amount: params.amount,
+        receive_currency: params.currency,
+        order_id: params.orderId,
       };
     }
+
+    try {
+      const payload = {
+        price_amount: params.amount,
+        price_currency: params.currency,
+        receive_currency: params.currency, // Can be different if preferred
+        title: 'iREVA Investment Platform',
+        description: params.description,
+        callback_url: params.callbackUrl,
+        cancel_url: params.returnUrl + '?status=canceled',
+        success_url: params.returnUrl + '?status=success',
+        order_id: params.orderId,
+      };
+
+      const response = await axios.post(`${this.apiUrl}/orders`, payload, {
+        headers: this.getHeaders(),
+      });
+
+      // Save payment to database
+      await this.savePaymentToDatabase({
+        id: response.data.id,
+        userId: params.userId,
+        amount: params.amount,
+        currency: params.currency,
+        status: response.data.status,
+        orderId: params.orderId,
+        paymentUrl: response.data.payment_url,
+        createdAt: new Date(response.data.created_at),
+        expiresAt: response.data.expires_at ? new Date(response.data.expires_at) : null,
+        propertyId: params.propertyId,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating payment:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to create payment');
+    }
+  }
+
+  async getPaymentStatus(paymentId: string): Promise<string> {
+    if (this.useMockData) {
+      // Randomly return different statuses for demo purposes
+      const statuses = ['pending', 'confirming', 'paid', 'expired', 'canceled'];
+      return statuses[Math.floor(Math.random() * statuses.length)];
+    }
+
+    try {
+      const response = await axios.get(`${this.apiUrl}/orders/${paymentId}`, {
+        headers: this.getHeaders(),
+      });
+      return response.data.status;
+    } catch (error) {
+      console.error('Error fetching payment status:', error);
+      throw new Error('Failed to fetch payment status');
+    }
+  }
+
+  async getUserPayments(userId: number): Promise<any[]> {
+    try {
+      const payments = await db.select().from(cryptoPayments).where(eq(cryptoPayments.userId, userId));
+      return payments;
+    } catch (error) {
+      console.error('Error fetching user payments:', error);
+      throw new Error('Failed to fetch user payments');
+    }
+  }
+
+  async updatePaymentStatus(paymentId: string, status: string): Promise<void> {
+    try {
+      await db.update(cryptoPayments)
+        .set({ status })
+        .where(eq(cryptoPayments.id, paymentId));
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      throw new Error('Failed to update payment status');
+    }
+  }
+
+  async processSuccessfulPayment(paymentId: string, userId: number, amount: number): Promise<void> {
+    try {
+      // 1. Update wallet balance
+      const [wallet] = await db.select().from(wallets).where(eq(wallets.userId, userId.toString()));
+      
+      if (wallet) {
+        const newBalance = Number(wallet.balance || 0) + amount;
+        const newAvailableBalance = Number(wallet.availableBalance || 0) + amount;
+        
+        await db.update(wallets)
+          .set({ 
+            balance: newBalance.toString(),
+            availableBalance: newAvailableBalance.toString()
+          })
+          .where(eq(wallets.id, wallet.id));
+      } else {
+        // Create wallet if it doesn't exist
+        await db.insert(wallets).values([{
+          userId: userId.toString(),
+          balance: amount.toString(),
+          availableBalance: amount.toString(),
+          pendingDeposits: "0",
+          pendingWithdrawals: "0"
+        }]);
+      }
+      
+      // Fetch the wallet again to get its ID
+      const [updatedWallet] = await db.select().from(wallets).where(eq(wallets.userId, userId.toString()));
+      
+      if (!updatedWallet) {
+        throw new Error('Failed to create or update wallet');
+      }
+      
+      // 2. Create transaction record
+      await db.insert(transactions).values([{
+        walletId: updatedWallet.id,
+        userId: userId.toString(),
+        type: 'deposit',
+        amount: amount.toString(),
+        status: 'completed',
+        description: `Crypto deposit (${paymentId})`,
+        referenceId: paymentId
+      }]);
+      
+      // 3. Mark crypto payment as completed
+      await this.updatePaymentStatus(paymentId, 'completed');
+    } catch (error) {
+      console.error('Error processing successful payment:', error);
+      throw new Error('Failed to process successful payment');
+    }
+  }
+
+  private async savePaymentToDatabase(payment: {
+    id: string;
+    userId: number;
+    amount: number;
+    currency: string;
+    status: string;
+    orderId: string;
+    paymentUrl: string;
+    createdAt: Date;
+    expiresAt: Date | null;
+    propertyId?: number;
+  }): Promise<void> {
+    try {
+      await db.insert(cryptoPayments).values(payment);
+    } catch (error) {
+      console.error('Error saving payment to database:', error);
+      // Continue even if database save fails
+    }
+  }
+
+  private getHeaders() {
+    return {
+      Authorization: `Token ${this.apiKey}`,
+      'Content-Type': 'application/json',
+    };
   }
 }

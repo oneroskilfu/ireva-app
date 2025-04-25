@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Download,
   Loader2,
+  Bitcoin,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +30,7 @@ import {
 import AddFunds from './AddFunds';
 import WithdrawFunds from './WithdrawFunds';
 import TransactionHistory from './TransactionHistory';
+import CryptoPayment from './CryptoPayment';
 
 interface WalletData {
   balance: number;
@@ -61,6 +63,7 @@ const WalletOverview = () => {
   const { toast } = useToast();
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showCryptoPayment, setShowCryptoPayment] = useState(false);
 
   const {
     data: walletData,
@@ -208,11 +211,9 @@ const WalletOverview = () => {
                 variant="default" 
                 size="sm" 
                 className="rounded-l-none px-2 h-9" 
-                onClick={() => window.location.href = '/wallet/crypto'}
+                onClick={() => setShowCryptoPayment(true)}
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
-                </svg>
+                <Bitcoin className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -353,9 +354,9 @@ const WalletOverview = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => window.location.href = '/wallet/crypto'}
+                      onClick={() => setShowCryptoPayment(true)}
                     >
-                      Manage
+                      Pay with Crypto
                     </Button>
                   </div>
                 </div>
@@ -434,6 +435,19 @@ const WalletOverview = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Crypto Payment Dialog */}
+      <CryptoPayment
+        isOpen={showCryptoPayment}
+        onClose={() => setShowCryptoPayment(false)}
+        onSuccess={(paymentId) => {
+          toast({
+            title: 'Crypto Payment Successful',
+            description: `Your payment (ID: ${paymentId}) has been processed successfully.`,
+          });
+          refetch();
+        }}
+      />
     </div>
   );
 };
