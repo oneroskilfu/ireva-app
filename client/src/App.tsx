@@ -88,6 +88,7 @@ function Router() {
   const SettingsPage = lazy(() => import('@/pages/investor/SettingsPage'));
   const UserSettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
   const InvestorROIDashboardPage = lazy(() => import('@/pages/InvestorROIDashboard'));
+  const TransactionsPage = lazy(() => import('@/pages/wallet/TransactionsPage'));
   // Issue Tracker Pages
   const IssuesPage = lazy(() => import('@/pages/issues/IssuesPage'));
   const IssueDetailPage = lazy(() => import('@/pages/issues/IssueDetailPage'));
@@ -151,6 +152,15 @@ function Router() {
       </Route>
       <Route path="/wallet">
         {() => <WalletPage />}
+      </Route>
+      <Route path="/wallet/transactions">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <TransactionsPage />
+            </Suspense>
+          </AuthMiddleware>
+        )}
       </Route>
       <Route path="/wallet/crypto">
         {() => (

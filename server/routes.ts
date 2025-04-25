@@ -44,6 +44,8 @@ import stablecoinRoutes from './routes/stablecoin-routes';
 import milestoneEscrowRoutes from './routes/milestone-escrow-routes';
 // Import crypto integration routes
 import { cryptoIntegrationRouter } from './crypto-integration-routes';
+// Import wallet transactions routes
+import { walletTransactionsRouter } from './routes/wallet-transactions';
 import fs from 'fs';
 import path from 'path';
 
@@ -100,6 +102,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up our new Wallet routes
   app.use('/api/wallet', walletRouter);
+  
+  // Register wallet transactions routes
+  app.use('/api/wallet/transactions', walletTransactionsRouter);
   console.log("Wallet routes registered");
   
   // Set up Notification routes (legacy routes)
