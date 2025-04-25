@@ -1,9 +1,29 @@
-import React from 'react';
-import { Box, Container, Typography, Grid, Paper } from '@mui/material';
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  Grid, 
+  Paper, 
+  Tabs, 
+  Tab, 
+  Divider 
+} from '@mui/material';
 import InvestorWalletOverview from './InvestorWalletOverview';
 import CryptoWalletOverview from './CryptoWalletOverview';
+import CryptoDepositFlow from './CryptoDepositFlow';
+import AdminWalletControlPanel from '../admin/AdminWalletControlPanel';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const WalletDemo = () => {
+  const [activeTab, setActiveTab] = useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   // Sample props for testing
   const wallet = {
     balance: '0.5821',
@@ -40,37 +60,79 @@ const WalletDemo = () => {
         Wallet Components Demo
       </Typography>
       
-      <Grid container spacing={4}>
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h5" gutterBottom>Standard Wallet Component</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Displaying the standard wallet component with Bitcoin balance.
-            </Typography>
-            <InvestorWalletOverview wallet={wallet} />
-          </Paper>
+      <Paper sx={{ mb: 4 }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={handleTabChange} 
+          variant="fullWidth"
+          textColor="primary"
+          indicatorColor="primary"
+        >
+          <Tab icon={<AccountBalanceWalletIcon />} label="Wallet Components" />
+          <Tab icon={<AddCircleOutlineIcon />} label="Deposit Flow" />
+          <Tab icon={<AdminPanelSettingsIcon />} label="Admin Control Panel" />
+        </Tabs>
+      </Paper>
+      
+      {activeTab === 0 && (
+        <Grid container spacing={4}>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h5" gutterBottom>Standard Wallet Component</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Displaying the standard wallet component with Bitcoin balance.
+              </Typography>
+              <InvestorWalletOverview wallet={wallet} />
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h5" gutterBottom>Fiat Wallet View</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Displaying the standard wallet component with Nigerian Naira balance.
+              </Typography>
+              <InvestorWalletOverview wallet={fiatWallet} />
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h5" gutterBottom>Enhanced Crypto Wallet Component</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Displaying the enhanced crypto wallet component with tabbed interface.
+              </Typography>
+              <CryptoWalletOverview wallet={fiatWallet} cryptoWallets={cryptoWallets} />
+            </Paper>
+          </Grid>
         </Grid>
-        
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h5" gutterBottom>Fiat Wallet View</Typography>
+      )}
+      
+      {activeTab === 1 && (
+        <Box>
+          <Paper sx={{ p: 2, mb: 4 }}>
+            <Typography variant="h5" gutterBottom>Crypto Deposit Flow</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Displaying the standard wallet component with Nigerian Naira balance.
+              Complete user journey for crypto deposits with step-by-step process.
             </Typography>
-            <InvestorWalletOverview wallet={fiatWallet} />
+            <Divider sx={{ mb: 3 }} />
+            <CryptoDepositFlow />
           </Paper>
-        </Grid>
-        
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h5" gutterBottom>Enhanced Crypto Wallet Component</Typography>
+        </Box>
+      )}
+      
+      {activeTab === 2 && (
+        <Box>
+          <Paper sx={{ p: 2, mb: 4 }}>
+            <Typography variant="h5" gutterBottom>Admin Wallet Control Panel</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Displaying the enhanced crypto wallet component with tabbed interface.
+              Interface for administrators to manage platform wallets and handle withdrawals.
             </Typography>
-            <CryptoWalletOverview wallet={fiatWallet} cryptoWallets={cryptoWallets} />
+            <Divider sx={{ mb: 3 }} />
+            <AdminWalletControlPanel />
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      )}
     </Container>
   );
 };
