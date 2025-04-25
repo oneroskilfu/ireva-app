@@ -230,7 +230,21 @@ export class CryptoPaymentService {
     propertyId?: number;
   }): Promise<void> {
     try {
-      await db.insert(cryptoPayments).values(payment);
+      // Convert numeric values to strings for database compatibility
+      const dbPayment = {
+        id: payment.id,
+        userId: payment.userId,
+        amount: payment.amount.toString(),
+        currency: payment.currency,
+        status: payment.status,
+        orderId: payment.orderId,
+        paymentUrl: payment.paymentUrl,
+        createdAt: payment.createdAt,
+        expiresAt: payment.expiresAt,
+        propertyId: payment.propertyId ? payment.propertyId : undefined
+      };
+      
+      await db.insert(cryptoPayments).values([dbPayment]);
     } catch (error) {
       console.error('Error saving payment to database:', error);
       // Continue even if database save fails

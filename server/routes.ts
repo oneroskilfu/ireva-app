@@ -52,7 +52,7 @@ import { cryptoWebhookRouter } from './routes/crypto-webhooks';
 // Import wallet transactions routes
 import { walletTransactionsRouter } from './routes/wallet-transactions';
 // Import CoinGate integration routes
-import { cryptoRoutes } from './coingate/cryptoRoutes';
+import cryptoRoutes from './routes/crypto-routes';
 import { webhookRouter } from './coingate/webhookHandler';
 import fs from 'fs';
 import path from 'path';

@@ -1,35 +1,39 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet-async';
-import {
-  Wallet,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  CreditCard,
-  AlertCircle,
-  Clock,
-  ChevronDown,
-  RefreshCw,
-  Download,
-  Loader2,
-  Bitcoin,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import AddFunds from './AddFunds';
-import WithdrawFunds from './WithdrawFunds';
-import TransactionHistory from './TransactionHistory';
+import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  BarChart, 
+  CreditCard, 
+  ExternalLink, 
+  Wallet, 
+  DollarSign,
+  Bitcoin
+} from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import CryptoPayment from './CryptoPayment';
 
 interface WalletData {
@@ -49,406 +53,198 @@ interface WalletData {
   }[];
 }
 
-// Helper function to format currency
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: 'NGN',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const WalletOverview = () => {
-  const { toast } = useToast();
-  const [showAddFunds, setShowAddFunds] = useState(false);
-  const [showWithdraw, setShowWithdraw] = useState(false);
+const WalletOverview: React.FC = () => {
+  const [showDepositDialog, setShowDepositDialog] = useState(false);
   const [showCryptoPayment, setShowCryptoPayment] = useState(false);
-
-  const {
-    data: walletData,
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery<WalletData>({
-    queryKey: ['/api/wallet/balance'],
-    retry: 1,
+  
+  const { data: walletData, isLoading } = useQuery<WalletData>({
+    queryKey: ['/api/wallet'],
   });
 
-  const handleRefreshBalance = () => {
-    refetch();
-    toast({
-      title: 'Wallet refreshed',
-      description: 'Your wallet balance has been updated.',
-    });
+  // Mock wallet data while loading or if API returns null
+  const wallet = walletData || {
+    balance: 0,
+    pendingDeposits: 0,
+    pendingWithdrawals: 0,
+    availableBalance: 0,
+    totalInvested: 0,
+    totalReturns: 0,
+    recentTransactions: []
   };
 
-  const handleDownloadStatement = () => {
-    toast({
-      title: 'Statement download initiated',
-      description: 'Your wallet statement will be downloaded shortly.',
-    });
-    // In a real application, this would trigger an API call to generate and download a statement
+  const handleOpenDepositDialog = () => {
+    setShowDepositDialog(true);
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Wallet</h1>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-2">
-                <div className="h-4 bg-muted rounded w-1/3 mb-1"></div>
-                <div className="h-6 bg-muted rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card className="animate-pulse mb-6">
-          <CardHeader>
-            <div className="h-4 bg-muted rounded w-1/3 mb-1"></div>
-            <div className="h-6 bg-muted rounded w-1/2"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-24 bg-muted rounded"></div>
-          </CardContent>
-        </Card>
-        <Card className="animate-pulse">
-          <CardHeader>
-            <div className="h-4 bg-muted rounded w-1/3 mb-1"></div>
-            <div className="h-6 bg-muted rounded w-1/2"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-10 bg-muted rounded"></div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleOpenCryptoPayment = () => {
+    setShowCryptoPayment(true);
+  };
 
-  // Error state
-  if (isError || !walletData) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Wallet</h1>
-        </div>
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Failed to load wallet data</h2>
-          <p className="text-muted-foreground mb-4">
-            There was an error loading your wallet information. Please try again.
-          </p>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </div>
-      </div>
-    );
-  }
+  const handleCryptoPaymentSuccess = (paymentId: string) => {
+    console.log(`Crypto payment successful: ${paymentId}`);
+    // Refetch wallet data
+    // queryClient.invalidateQueries(['/api/wallet']);
+  };
 
   return (
-    <div className="flex flex-col h-full">
-      <Helmet>
-        <title>My Wallet | iREVA</title>
-      </Helmet>
-
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">My Wallet</h1>
-          <p className="text-muted-foreground">
-            Manage your funds, deposits, and withdrawals
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshBalance}
-            className="h-9"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadStatement}
-            className="h-9"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download Statement
-          </Button>
-          <div className="flex gap-0.5">
-            <Sheet open={showAddFunds} onOpenChange={setShowAddFunds}>
-              <SheetTrigger asChild>
-                <Button size="sm" className="h-9 rounded-r-none">
-                  <ArrowDownCircle className="h-4 w-4 mr-2" />
-                  Add Funds
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Add Funds to Wallet</SheetTitle>
-                  <SheetDescription>
-                    Add funds to your wallet to invest in properties
-                  </SheetDescription>
-                </SheetHeader>
-                <AddFunds onSuccess={() => { setShowAddFunds(false); refetch(); }} />
-              </SheetContent>
-            </Sheet>
-            <div className="inline-flex h-9 divide-x">
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="rounded-l-none px-2 h-9" 
-                onClick={() => setShowCryptoPayment(true)}
-              >
-                <Bitcoin className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <Sheet open={showWithdraw} onOpenChange={setShowWithdraw}>
-            <SheetTrigger asChild>
-              <Button variant="secondary" size="sm" className="h-9">
-                <ArrowUpCircle className="h-4 w-4 mr-2" />
-                Withdraw
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Withdraw Funds</SheetTitle>
-                <SheetDescription>
-                  Withdraw funds from your wallet to your bank account
-                </SheetDescription>
-              </SheetHeader>
-              <WithdrawFunds 
-                availableBalance={walletData.availableBalance}
-                onSuccess={() => { setShowWithdraw(false); refetch(); }} 
-              />
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Available Balance</CardDescription>
-            <CardTitle className="text-2xl flex items-center">
-              {formatCurrency(walletData.availableBalance)}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Wallet Balance
             </CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground flex items-center">
-              <Wallet className="h-3 w-3 mr-1" /> 
-              Total balance: {formatCurrency(walletData.balance)}
+            <div className="text-2xl font-bold">{formatCurrency(wallet.balance)}</div>
+            <p className="text-xs text-muted-foreground">
+              Available: {formatCurrency(wallet.availableBalance)}
             </p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Pending Transactions</CardDescription>
-            <CardTitle className="text-2xl flex items-center">
-              {formatCurrency(walletData.pendingDeposits + walletData.pendingWithdrawals)}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Invested
             </CardTitle>
+            <BarChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span className="flex items-center">
-                <ArrowDownCircle className="h-3 w-3 mr-1 text-green-500" />
-                Deposits: {formatCurrency(walletData.pendingDeposits)}
-              </span>
-              <span className="flex items-center">
-                <ArrowUpCircle className="h-3 w-3 mr-1 text-orange-500" />
-                Withdrawals: {formatCurrency(walletData.pendingWithdrawals)}
-              </span>
-            </div>
+            <div className="text-2xl font-bold">{formatCurrency(wallet.totalInvested)}</div>
+            <p className="text-xs text-muted-foreground">
+              Returns: {formatCurrency(wallet.totalReturns)}
+            </p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Investment Overview</CardDescription>
-            <CardTitle className="text-2xl flex items-center">
-              {formatCurrency(walletData.totalInvested)}
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Pending Transactions
             </CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Total Invested</span>
-              <span className="flex items-center font-medium text-green-600">
-                +{formatCurrency(walletData.totalReturns)} Returns
-              </span>
-            </div>
+            <div className="text-2xl font-bold">{formatCurrency(wallet.pendingDeposits + wallet.pendingWithdrawals)}</div>
+            <p className="text-xs text-muted-foreground">
+              Deposits: {formatCurrency(wallet.pendingDeposits)} • Withdrawals: {formatCurrency(wallet.pendingWithdrawals)}
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="transactions" className="flex-1">
-        <TabsList>
-          <TabsTrigger value="transactions">Transaction History</TabsTrigger>
-          <TabsTrigger value="payment-methods">Payment Methods</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
-        <TabsContent value="transactions" className="flex-1">
-          <TransactionHistory />
-        </TabsContent>
-        <TabsContent value="payment-methods">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Methods</CardTitle>
-              <CardDescription>
-                Manage your payment methods for deposits and withdrawals
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center">
-                      <CreditCard className="h-6 w-6 mr-2 text-primary" />
-                      <div>
-                        <p className="font-medium">Credit/Debit Card</p>
-                        <p className="text-sm text-muted-foreground">
-                          VISA •••• 4242
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">Default</Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive">
-                      Remove
-                    </Button>
-                  </div>
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Fund Your Wallet</CardTitle>
+            <CardDescription>
+              Add funds to your wallet to start investing in properties
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="fiat" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="fiat">Fiat Currency</TabsTrigger>
+                <TabsTrigger value="crypto">Cryptocurrency</TabsTrigger>
+              </TabsList>
+              <TabsContent value="fiat" className="space-y-4 pt-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Button onClick={handleOpenDepositDialog} className="w-full">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Bank Transfer / Card
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Payment Instructions
+                  </Button>
                 </div>
+              </TabsContent>
+              <TabsContent value="crypto" className="space-y-4 pt-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Button onClick={handleOpenCryptoPayment} className="w-full">
+                    <Bitcoin className="mr-2 h-4 w-4" />
+                    Pay with Crypto
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Crypto Guide
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
 
-                <div className="border rounded-lg p-4 mb-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center">
-                      <svg className="h-6 w-6 mr-2 text-primary" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.548v-.002z" />
-                      </svg>
-                      <div>
-                        <p className="font-medium">Cryptocurrency Wallet</p>
-                        <p className="text-sm text-muted-foreground">
-                          Alternative payment option
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="outline">Alternative</Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowCryptoPayment(true)}
-                    >
-                      Pay with Crypto
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="border rounded-lg p-4 border-dashed flex justify-center items-center py-8">
-                  <Button variant="outline">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Add New Payment Method
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Wallet Settings</CardTitle>
-              <CardDescription>
-                Configure your wallet preferences and notification settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-2 hover:bg-muted/50 rounded">
-                  <div>
-                    <p className="font-medium">Transaction Notifications</p>
-                    <p className="text-sm text-muted-foreground">
-                      Receive notifications for all wallet transactions
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Enabled
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex justify-between items-center p-2 hover:bg-muted/50 rounded">
-                  <div>
-                    <p className="font-medium">Auto Top-up</p>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically add funds when balance is low
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Disabled
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex justify-between items-center p-2 hover:bg-muted/50 rounded">
-                  <div>
-                    <p className="font-medium">Default Currency</p>
-                    <p className="text-sm text-muted-foreground">
-                      Select your preferred currency for wallet operations
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Nigerian Naira (₦)
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="flex justify-between items-center p-2 hover:bg-muted/50 rounded">
-                  <div>
-                    <p className="font-medium">Payment Preference</p>
-                    <p className="text-sm text-muted-foreground">
-                      Choose your default payment method type
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Fiat (Default)
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Transactions</CardTitle>
+            <CardDescription>
+              Your recent wallet activity
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {wallet.recentTransactions.length > 0 ? (
+                  wallet.recentTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium capitalize">{transaction.type}</TableCell>
+                      <TableCell>
+                        {transaction.type === 'deposit' || transaction.type === 'return' ? '+' : '-'}
+                        {formatCurrency(transaction.amount)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          transaction.status === 'completed' ? 'default' :
+                          transaction.status === 'pending' ? 'outline' : 'destructive'
+                        }>
+                          {transaction.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{transaction.description}</TableCell>
+                      <TableCell className="text-right">
+                        {new Date(transaction.createdAt).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                      No transactions yet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+          <CardFooter>
+            <Button variant="outline" className="w-full">
+              View All Transactions
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
       {/* Crypto Payment Dialog */}
-      <CryptoPayment
+      <CryptoPayment 
         isOpen={showCryptoPayment}
         onClose={() => setShowCryptoPayment(false)}
-        onSuccess={(paymentId) => {
-          toast({
-            title: 'Crypto Payment Successful',
-            description: `Your payment (ID: ${paymentId}) has been processed successfully.`,
-          });
-          refetch();
-        }}
+        onSuccess={handleCryptoPaymentSuccess}
       />
-    </div>
+    </>
   );
 };
 

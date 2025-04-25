@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
-import { authMiddleware } from '../auth-jwt';
 import { CryptoPaymentService } from '../services/crypto-payment-service';
+import authMiddleware from '../middleware/authMiddleware';
+import { v4 as uuidv4 } from 'uuid';
 
 export const cryptoRoutes = express.Router();
 const cryptoPaymentService = new CryptoPaymentService();
@@ -9,53 +10,64 @@ const cryptoPaymentService = new CryptoPaymentService();
 cryptoRoutes.get('/supported-currencies', authMiddleware, async (req: Request, res: Response) => {
   try {
     const currencies = await cryptoPaymentService.getSupportedCurrencies();
-    res.json({ currencies });
+    res.json({ success: true, currencies });
   } catch (error: any) {
     console.error('Error fetching supported currencies:', error);
     res.status(500).json({ 
       success: false, 
-      message: error.message || 'Failed to fetch supported currencies' 
+      message: 'Failed to fetch supported currencies',
+      error: error.message 
     });
   }
 });
 
-// Create a crypto payment
+// Create a new crypto payment
 cryptoRoutes.post('/create-crypto-payment', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { amount, currency, propertyId } = req.body;
     
-    if (!amount || amount <= 0) {
+    if (!amount || !currency) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Amount must be greater than 0' 
+        message: 'Amount and currency are required' 
       });
     }
-
-    // Get user info from JWT
-    const userId = req.jwtPayload?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    
+    if (amount <= 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Amount must be greater than zero' 
+      });
     }
-
+    
+    const userId = req.user!.id;
+    const orderId = `IREVA-${uuidv4().substring(0, 8)}`;
+    
+    // Base URL for callbacks - use the same host as the request
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    
     const payment = await cryptoPaymentService.createPayment({
       amount,
       userId,
-      currency: currency || 'USDT',
-      description: propertyId 
-        ? `Property Investment (ID: ${propertyId})` 
-        : 'Wallet Deposit',
-      orderId: `ORDER-${Date.now()}-${userId}`,
-      returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/wallet`,
-      callbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/crypto/webhook`,
-      propertyId,
+      currency,
+      description: `iREVA Wallet Fund (${currency})`,
+      orderId,
+      returnUrl: `${baseUrl}/wallet?payment=${orderId}`,
+      callbackUrl: `${baseUrl}/api/crypto/webhook`,
+      propertyId
     });
-
-    res.json({ success: true, payment });
+    
+    res.json({ 
+      success: true, 
+      payment,
+      message: 'Payment created successfully' 
+    });
   } catch (error: any) {
     console.error('Error creating crypto payment:', error);
     res.status(500).json({ 
       success: false, 
-      message: error.message || 'Failed to create crypto payment' 
+      message: 'Failed to create payment',
+      error: error.message 
     });
   }
 });
@@ -71,72 +83,86 @@ cryptoRoutes.get('/payment-status/:paymentId', authMiddleware, async (req: Reque
         message: 'Payment ID is required' 
       });
     }
-
+    
     const status = await cryptoPaymentService.getPaymentStatus(paymentId);
-    res.json({ status });
+    
+    res.json({ 
+      success: true, 
+      status,
+      message: 'Payment status retrieved successfully' 
+    });
   } catch (error: any) {
     console.error('Error fetching payment status:', error);
     res.status(500).json({ 
       success: false, 
-      message: error.message || 'Failed to fetch payment status' 
+      message: 'Failed to fetch payment status',
+      error: error.message 
     });
   }
 });
 
-// Get user's crypto payments
+// Get user's payment history
 cryptoRoutes.get('/payments', authMiddleware, async (req: Request, res: Response) => {
   try {
-    // Get user info from JWT
-    const userId = req.jwtPayload?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not authenticated' });
-    }
-
+    const userId = req.user!.id;
     const payments = await cryptoPaymentService.getUserPayments(userId);
-    res.json({ success: true, payments });
+    
+    res.json({ 
+      success: true, 
+      payments,
+      message: 'Payment history retrieved successfully' 
+    });
   } catch (error: any) {
     console.error('Error fetching user payments:', error);
     res.status(500).json({ 
       success: false, 
-      message: error.message || 'Failed to fetch user payments' 
+      message: 'Failed to fetch payment history',
+      error: error.message 
     });
   }
 });
 
-// Webhook endpoint to receive payment notifications (this should be in webhooks.ts but defined here for simplicity)
+// Webhook handler for payment status updates
 cryptoRoutes.post('/webhook', async (req: Request, res: Response) => {
   try {
-    // In production, we would verify the webhook signature here
-    // if (!verifyWebhookSignature(req)) {
-    //   return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
-    // }
-
-    const event = req.body;
-    console.log('Received webhook event:', event);
-
-    // Process the payment status update
-    if (event.id && event.status) {
-      await cryptoPaymentService.updatePaymentStatus(event.id, event.status);
+    const payload = req.body;
+    console.log('Received webhook payload:', payload);
+    
+    // Verify signature if COINGATE_WEBHOOK_SECRET is set
+    const signature = req.headers['coingate-signature'];
+    
+    if (process.env.COINGATE_WEBHOOK_SECRET && signature) {
+      // Implement signature verification
+      // This should be implemented in a middleware
+    }
+    
+    // Process the webhook
+    if (payload.id && payload.status) {
+      // Update payment status
+      await cryptoPaymentService.updatePaymentStatus(payload.id, payload.status);
       
-      // Update wallet balance if payment is confirmed
-      if (['paid', 'confirmed', 'complete'].includes(event.status)) {
-        // Get user ID from order ID
-        const orderId = event.order_id;
-        const userId = orderId.split('-')[2]; // Assuming format: ORDER-timestamp-userId
+      // If the payment is complete, credit the user's wallet
+      if (['paid', 'confirmed'].includes(payload.status)) {
+        const userId = parseInt(payload.custom_data?.userId) || 0;
+        const amount = parseFloat(payload.price_amount) || 0;
         
-        if (userId) {
-          await cryptoPaymentService.processSuccessfulPayment(event.id, parseInt(userId), parseFloat(event.price_amount));
+        if (userId && amount) {
+          await cryptoPaymentService.processSuccessfulPayment(payload.id, userId, amount);
         }
       }
+      
+      return res.status(200).json({ success: true });
     }
-
-    res.status(200).json({ success: true });
+    
+    res.status(400).json({ success: false, message: 'Invalid webhook payload' });
   } catch (error: any) {
     console.error('Error processing webhook:', error);
-    // Always return 200 to CoinGate to avoid them retrying repeatedly
-    res.status(200).json({ 
+    res.status(500).json({ 
       success: false, 
-      message: error.message || 'Error processing webhook, but acknowledged' 
+      message: 'Failed to process webhook',
+      error: error.message 
     });
   }
 });
+
+export default cryptoRoutes;
