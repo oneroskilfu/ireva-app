@@ -205,6 +205,19 @@ function Router() {
         )}
       </Route>
       
+      {/* Admin Crypto Integration Route */}
+      <Route path="/admin/crypto-integration">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <CryptoIntegrationPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
       {/* Admin Dashboard Route */}
       <Route path="/admin/dashboard">
         {() => (
