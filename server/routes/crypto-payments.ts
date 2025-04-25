@@ -1,147 +1,98 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { authMiddleware } from '../auth-jwt';
+import { storage } from '../storage';
 import { cryptoPaymentService } from '../services/crypto-payment-service';
-import { z } from 'zod';
 
-const cryptoPaymentRouter = Router();
+const router = express.Router();
 
-// Supported cryptocurrencies
-const SUPPORTED_CRYPTOCURRENCIES = [
-  'ETH',
-  'USDT',
-  'USDC',
-  'BTC'
-];
-
-// Cryptocurrency networks
-const CRYPTO_NETWORKS = {
-  ETH: 'ethereum',
-  USDT: 'ethereum', // ERC20
-  USDC: 'ethereum', // ERC20
-  BTC: 'bitcoin'
-};
-
-// Schema for creating a payment
-const createPaymentSchema = z.object({
-  propertyId: z.number(),
-  amount: z.string(), // Amount in USD
-  currency: z.string(), // Cryptocurrency code
-  units: z.number() // Number of investment units
-});
-
-// Schema for processing a payment
-const processPaymentSchema = z.object({
-  txHash: z.string() // Transaction hash
-});
-
-/**
- * Route to get supported cryptocurrencies
- */
-cryptoPaymentRouter.get('/supported-currencies', (req: Request, res: Response) => {
+// Create a new crypto payment
+router.post('/create', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const supportedCurrencies = SUPPORTED_CRYPTOCURRENCIES.map(code => {
-      return {
-        code,
-        name: getFullCurrencyName(code),
-        network: CRYPTO_NETWORKS[code as keyof typeof CRYPTO_NETWORKS]
-      };
-    });
+    const { propertyId, amount, currency = 'USDC' } = req.body;
     
-    res.json(supportedCurrencies);
-  } catch (error) {
-    console.error('Error fetching supported currencies:', error);
-    res.status(500).json({ error: 'Failed to get supported currencies' });
-  }
-});
-
-/**
- * Route to create a new crypto payment for property investment
- */
-cryptoPaymentRouter.post('/', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    // Validate request body
-    const validatedData = createPaymentSchema.parse(req.body);
+    // Validate input
+    if (!propertyId || !amount) {
+      return res.status(400).json({ message: 'Property ID and amount are required' });
+    }
     
-    // Get user ID from authentication
+    // Get user ID from authenticated user
     const userId = req.jwtPayload?.id;
-    
     if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
     
-    // Create the payment
+    // Get property details to make sure it exists
+    const property = await storage.getProperty(propertyId);
+    if (!property) {
+      return res.status(404).json({ message: 'Property not found' });
+    }
+
+    // Create payment using the crypto payment service
     const payment = await cryptoPaymentService.createPayment({
-      userId: userId.toString(),
-      propertyId: validatedData.propertyId,
-      amount: validatedData.amount,
-      currency: validatedData.currency,
-      units: validatedData.units
+      propertyId,
+      userId,
+      amount,
+      currency
     });
     
-    res.status(201).json(payment);
+    // Return payment details to client
+    res.status(201).json({
+      id: payment.id,
+      status: payment.status,
+      address: payment.address,
+      cryptoAmount: payment.cryptoAmount,
+      currency: payment.currency,
+      qrCode: payment.qrCode,
+      explorerUrl: payment.explorerUrl,
+      expiresAt: payment.expiresAt,
+      rate: payment.rate
+    });
+    
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: 'Invalid request data', details: error.errors });
-    } else {
-      console.error('Error creating crypto payment:', error);
-      res.status(500).json({ error: 'Failed to create payment' });
-    }
+    console.error('Error creating crypto payment:', error);
+    res.status(500).json({ message: 'Failed to create payment' });
   }
 });
 
-/**
- * Route to get the status of a payment
- */
-cryptoPaymentRouter.get('/:paymentId', authMiddleware, async (req: Request, res: Response) => {
+// Get payment status
+router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const paymentId = req.params.paymentId;
+    const paymentId = req.params.id;
     
-    // Get payment status
-    const status = await cryptoPaymentService.getPaymentStatus(paymentId);
+    // Get user ID from authenticated user
+    const userId = req.jwtPayload?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     
-    res.json(status);
+    // Get all transactions for the current user
+    const userTransactions = await cryptoPaymentService.getTransactionsByUser(userId.toString());
+    
+    // Find the payment that matches the ID
+    const payment = userTransactions.find(tx => tx.id === paymentId);
+    
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    
+    // Return payment details
+    res.json({
+      id: payment.id,
+      status: payment.status,
+      address: payment.paymentAddress || payment.address,
+      cryptoAmount: payment.cryptoAmount,
+      currency: payment.cryptoCurrency || payment.currency,
+      network: payment.network || 'Ethereum',
+      qrCode: payment.qrCodeUrl || payment.qrCode,
+      explorerUrl: payment.explorerUrl,
+      expiresAt: payment.expiresAt,
+      rate: payment.rate
+    });
+    
   } catch (error) {
     console.error('Error getting payment status:', error);
-    res.status(500).json({ error: 'Failed to get payment status' });
+    res.status(500).json({ message: 'Failed to get payment status' });
   }
 });
 
-/**
- * Route to process a payment with transaction hash
- */
-cryptoPaymentRouter.post('/:paymentId/process', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const paymentId = req.params.paymentId;
-    
-    // Validate request body
-    const validatedData = processPaymentSchema.parse(req.body);
-    
-    // Process the payment
-    const result = await cryptoPaymentService.processPayment(paymentId, validatedData.txHash);
-    
-    res.json(result);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: 'Invalid request data', details: error.errors });
-    } else {
-      console.error('Error processing payment:', error);
-      res.status(500).json({ error: 'Failed to process payment' });
-    }
-  }
-});
-
-/**
- * Get the full name for a cryptocurrency code
- */
-function getFullCurrencyName(code: string): string {
-  const names: Record<string, string> = {
-    'ETH': 'Ethereum',
-    'USDT': 'Tether USD',
-    'USDC': 'USD Coin',
-    'BTC': 'Bitcoin'
-  };
-  
-  return names[code] || code;
-}
-
-export default cryptoPaymentRouter;
+export default router;

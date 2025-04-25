@@ -1,386 +1,316 @@
-import axios from 'axios';
-import { CryptoPaymentIntent, CryptoTransaction, InsertCryptoTransaction, UpdateCryptoTransaction, CryptoRefundRequest } from '@shared/crypto-schema';
-import { db } from '../db';
-import { cryptoTransactions, cryptoWalletBalances } from '@shared/crypto-schema';
-import { eq, and } from 'drizzle-orm';
-import { storage } from '../storage';
+// This service would typically interact with a cryptocurrency payment processor API
+// like CoinGate, BTCPay, or a custom blockchain integration
+import { v4 as uuidv4 } from 'uuid';
+import QRCode from 'qrcode';
+import {
+  CryptoPaymentIntent,
+  CryptoRefundRequest,
+  CryptoTransaction,
+  CryptoWalletBalance,
+  cryptoTransactionStatusEnum
+} from '@shared/crypto-schema';
 
-class CryptoPaymentService {
-  private apiKey: string | undefined;
-  private apiUrl: string;
-  
-  constructor() {
-    this.apiKey = process.env.COINGATE_API_KEY;
-    this.apiUrl = 'https://api.coingate.com/v2';
+// Mock exchange rates (NGN per unit of cryptocurrency)
+const cryptoRates = {
+  'USDC': 1600, // 1 USDC = ₦1,600
+  'USDT': 1600, // 1 USDT = ₦1,600
+  'ETH': 6200000, // 1 ETH = ₦6,200,000
+  'BTC': 68000000, // 1 BTC = ₦68,000,000
+};
+
+// Mock storage for transactions and wallet balances
+const mockTransactions = new Map<string, any>();
+const mockWalletBalances = new Map<string, any>();
+
+// Utility functions for crypto conversions
+const getExchangeRate = (currency: string): number => {
+  if (currency in cryptoRates) {
+    return cryptoRates[currency as keyof typeof cryptoRates];
+  }
+  return 1600; // Default fallback rate
+};
+
+const convertNgnToCrypto = (ngnAmount: number, currency: string): string => {
+  const rate = getExchangeRate(currency);
+  // Calculate with 6 decimal precision (standard for most crypto)
+  return (ngnAmount / rate).toFixed(6);
+};
+
+const convertCryptoToNgn = (cryptoAmount: number, currency: string): number => {
+  const rate = getExchangeRate(currency);
+  return Math.round(cryptoAmount * rate);
+};
+
+// Create a service object to export methods in the format required by crypto-investments.ts
+export const cryptoPaymentService = {
+  // Create a payment intent
+  async createPaymentIntent(data: CryptoPaymentIntent): Promise<any> {
+    console.log('Creating payment intent with data:', data);
     
-    if (!this.apiKey && process.env.NODE_ENV === 'development') {
-      console.warn('COINGATE_API_KEY is not set. Using mock data for development.');
-    }
-  }
+    // Generate wallet address based on cryptocurrency
+    const addresses = {
+      'USDC': '0xeEf39B2D7Be395A11CDa26709D9b4F95F61CE2F4',
+      'USDT': '0xBA47CfAa8Dd34882294822AA1c4e58E6122a6AdF',
+      'ETH': '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+      'BTC': 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    };
+    
+    // Calculate crypto amount based on exchange rate
+    const cryptoCurrency = data.cryptoCurrency;
+    const rate = cryptoRates[cryptoCurrency as keyof typeof cryptoRates] || 1000;
+    const cryptoAmount = parseFloat((data.amount / rate).toFixed(6));
+    
+    // Get address for the selected currency
+    const paymentAddress = addresses[cryptoCurrency as keyof typeof addresses] || addresses.USDC;
+    
+    // Generate QR code with payment info
+    const qrCodeData = `${cryptoCurrency.toLowerCase()}:${paymentAddress}?amount=${cryptoAmount}`;
+    const qrCodeUrl = await QRCode.toDataURL(qrCodeData);
+    
+    // Create transaction record
+    const transactionId = uuidv4();
+    const transaction = {
+      id: transactionId,
+      userId: data.userId,
+      propertyId: data.propertyId,
+      investmentId: data.investmentId,
+      amount: data.amount,
+      cryptoAmount: cryptoAmount,
+      currency: data.currency,
+      cryptoCurrency: data.cryptoCurrency,
+      status: 'pending',
+      paymentAddress,
+      qrCodeUrl,
+      paymentUrl: `https://app.ireva.com/payments/crypto/${transactionId}`,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      walletUpdated: false
+    };
+    
+    // Store transaction record
+    mockTransactions.set(transactionId, transaction);
+    
+    return {
+      ...transaction,
+      paymentAddress: transaction.paymentAddress,
+      qrCode: transaction.qrCodeUrl,
+    };
+  },
   
-  /**
-   * Create a crypto payment intent
-   */
-  async createPaymentIntent(paymentIntent: CryptoPaymentIntent): Promise<CryptoTransaction> {
-    try {
-      // In production, we would call the payment provider API
-      // For development, we'll create a mock payment intent
-      let paymentProviderResponse: any;
-      
-      if (this.apiKey && process.env.NODE_ENV !== 'development') {
-        // This would be real API call in production
-        const response = await axios.post(`${this.apiUrl}/orders`, {
-          price_amount: paymentIntent.amount,
-          price_currency: paymentIntent.currency,
-          receive_currency: paymentIntent.cryptoCurrency,
-          title: 'iREVA Property Investment',
-          description: `Investment ${paymentIntent.propertyId ? `in property ${paymentIntent.propertyId}` : ''}`,
-          callback_url: process.env.CRYPTO_PAYMENT_CALLBACK_URL,
-          cancel_url: `${process.env.FRONTEND_URL}/payment/cancel`,
-          success_url: paymentIntent.returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
-          token: this.apiKey
-        });
-        
-        paymentProviderResponse = response.data;
-      } else {
-        // Mock response for development
-        paymentProviderResponse = {
-          id: `mock-order-${Date.now()}`,
-          status: 'pending',
-          price_amount: paymentIntent.amount,
-          price_currency: paymentIntent.currency,
-          receive_currency: paymentIntent.cryptoCurrency,
-          payment_address: `mock-address-${paymentIntent.cryptoCurrency.toLowerCase()}-${Date.now()}`,
-          payment_url: `https://mock-payment-provider.com/pay/${Date.now()}`,
-          token: 'mock-token',
-          created_at: new Date().toISOString(),
-          order_id: `order-${Date.now()}`,
-          token_id: `token-${Date.now()}`,
-          expire_at: new Date(Date.now() + 3600000).toISOString()
-        };
-      }
-      
-      // Create transaction record in database
-      const transactionData: InsertCryptoTransaction = {
-        userId: paymentIntent.userId,
-        amount: paymentIntent.amount.toString(),
-        currency: paymentIntent.currency,
-        cryptoCurrency: paymentIntent.cryptoCurrency,
-        status: 'pending',
-        paymentProviderReference: paymentProviderResponse.id,
-        paymentAddress: paymentProviderResponse.payment_address,
-        paymentUrl: paymentProviderResponse.payment_url,
-        expiresAt: new Date(paymentProviderResponse.expire_at || Date.now() + 3600000),
-        paymentProviderResponse: JSON.stringify(paymentProviderResponse),
-        cryptoAmount: paymentProviderResponse.crypto_amount?.toString() || null
-      };
-      
-      if (paymentIntent.investmentId) {
-        transactionData.investmentId = paymentIntent.investmentId;
-      }
-      
-      if (paymentIntent.propertyId) {
-        transactionData.propertyId = paymentIntent.propertyId;
-      }
-      
-      // Insert transaction into database
-      const [transaction] = await db
-        .insert(cryptoTransactions)
-        .values(transactionData)
-        .returning();
-      
-      return transaction;
-    } catch (error) {
-      console.error('Error creating crypto payment intent:', error);
-      throw new Error('Failed to create crypto payment intent');
+  // Get a transaction by ID
+  async getTransaction(id: string): Promise<any> {
+    console.log('Getting transaction:', id);
+    
+    // Get transaction from storage
+    const transaction = mockTransactions.get(id);
+    
+    if (!transaction) {
+      return null;
     }
-  }
-  
-  /**
-   * Get a transaction by ID
-   */
-  async getTransaction(id: string): Promise<CryptoTransaction | undefined> {
-    try {
-      const [transaction] = await db
-        .select()
-        .from(cryptoTransactions)
-        .where(eq(cryptoTransactions.id, id));
+    
+    // Auto-confirm transaction in development after 30 seconds
+    if (process.env.NODE_ENV === 'development' && transaction.status === 'pending') {
+      const createdAt = new Date(transaction.createdAt).getTime();
+      const currentTime = Date.now();
       
-      return transaction;
-    } catch (error) {
-      console.error('Error getting crypto transaction:', error);
-      throw new Error('Failed to get crypto transaction');
+      if (currentTime - createdAt > 30000) {
+        transaction.status = 'confirmed';
+        transaction.confirmedAt = new Date();
+        transaction.txHash = `0x${Math.random().toString(16).substring(2, 42)}`;
+        mockTransactions.set(id, transaction);
+      }
     }
-  }
-  
-  /**
-   * Get transactions by user ID
-   */
-  async getTransactionsByUser(userId: string): Promise<CryptoTransaction[]> {
-    try {
-      const transactions = await db
-        .select()
-        .from(cryptoTransactions)
-        .where(eq(cryptoTransactions.userId, userId))
-        .orderBy(cryptoTransactions.createdAt);
-      
-      return transactions;
-    } catch (error) {
-      console.error('Error getting user crypto transactions:', error);
-      throw new Error('Failed to get user crypto transactions');
+    
+    // Check if transaction is expired
+    if (transaction.status === 'pending' && new Date() > new Date(transaction.expiresAt)) {
+      transaction.status = 'expired';
+      mockTransactions.set(id, transaction);
     }
-  }
+    
+    return transaction;
+  },
   
-  /**
-   * Get all transactions
-   */
-  async getAllTransactions(): Promise<CryptoTransaction[]> {
-    try {
-      const transactions = await db
-        .select()
-        .from(cryptoTransactions)
-        .orderBy(cryptoTransactions.createdAt);
-      
-      return transactions;
-    } catch (error) {
-      console.error('Error getting all crypto transactions:', error);
-      throw new Error('Failed to get all crypto transactions');
-    }
-  }
+  // Get all transactions for a user
+  async getTransactionsByUser(userId: string): Promise<any[]> {
+    console.log('Getting transactions for user:', userId);
+    
+    // Filter transactions by user ID
+    const userTransactions = Array.from(mockTransactions.values())
+      .filter(tx => tx.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    return userTransactions;
+  },
   
-  /**
-   * Update a transaction status
-   */
-  async updateTransactionStatus(id: string, updateData: UpdateCryptoTransaction): Promise<CryptoTransaction | undefined> {
-    try {
-      const data: any = {
-        status: updateData.status,
-        updatedAt: new Date()
-      };
-      
-      if (updateData.txHash) {
-        data.txHash = updateData.txHash;
-      }
-      
-      if (updateData.paymentProviderReference) {
-        data.paymentProviderReference = updateData.paymentProviderReference;
-      }
-      
-      if (updateData.paymentProviderResponse) {
-        data.paymentProviderResponse = updateData.paymentProviderResponse;
-      }
-      
-      if (updateData.status === 'confirmed') {
-        data.confirmedAt = new Date();
-      } else if (updateData.status === 'refunded') {
-        data.refundedAt = new Date();
-      }
-      
-      const [transaction] = await db
-        .update(cryptoTransactions)
-        .set(data)
-        .where(eq(cryptoTransactions.id, id))
-        .returning();
-      
-      // If transaction is confirmed, update wallet balance
-      if (transaction && updateData.status === 'confirmed' && !transaction.walletUpdated) {
-        await this.updateWalletBalance(transaction);
-      }
-      
-      return transaction;
-    } catch (error) {
-      console.error('Error updating crypto transaction:', error);
-      throw new Error('Failed to update crypto transaction');
-    }
-  }
-  
-  /**
-   * Update wallet balance after successful transaction
-   */
-  private async updateWalletBalance(transaction: CryptoTransaction): Promise<void> {
-    try {
-      // Check if wallet balance exists
-      const [existingBalance] = await db
-        .select()
-        .from(cryptoWalletBalances)
-        .where(
-          and(
-            eq(cryptoWalletBalances.userId, transaction.userId),
-            eq(cryptoWalletBalances.currency, transaction.currency)
-          )
-        );
-      
-      const amount = parseFloat(transaction.amount.toString());
-      
-      if (existingBalance) {
-        // Update existing balance
-        await db
-          .update(cryptoWalletBalances)
-          .set({
-            balance: (parseFloat(existingBalance.balance.toString()) + amount).toString(),
-            updatedAt: new Date()
-          })
-          .where(eq(cryptoWalletBalances.id, existingBalance.id));
-      } else {
-        // Create new balance record
-        await db
-          .insert(cryptoWalletBalances)
-          .values({
-            userId: transaction.userId,
-            currency: transaction.currency,
-            balance: amount.toString(),
-            updatedAt: new Date()
-          });
-      }
-      
-      // Mark transaction as wallet updated
-      await db
-        .update(cryptoTransactions)
-        .set({ walletUpdated: true })
-        .where(eq(cryptoTransactions.id, transaction.id));
-      
-      // Create a notification for the user
-      await storage.createNotification({
-        userId: transaction.userId,
-        type: 'payment',
-        title: 'Crypto Payment Confirmed',
-        message: `Your payment of ${amount} ${transaction.currency} has been confirmed and added to your wallet.`,
-        isRead: false,
-        createdAt: new Date()
+  // Get wallet balances for a user
+  async getWalletBalances(userId: string): Promise<any> {
+    console.log('Getting wallet balances for user:', userId);
+    
+    // Create mock wallet balances if they don't exist
+    if (!mockWalletBalances.has(userId)) {
+      mockWalletBalances.set(userId, {
+        'USDC': { balance: 100, pendingBalance: 0 },
+        'USDT': { balance: 50, pendingBalance: 0 },
+        'ETH': { balance: 0.5, pendingBalance: 0 },
+        'BTC': { balance: 0.01, pendingBalance: 0 }
       });
-    } catch (error) {
-      console.error('Error updating wallet balance:', error);
-      throw new Error('Failed to update wallet balance');
     }
-  }
+    
+    return mockWalletBalances.get(userId);
+  },
   
-  /**
-   * Process a refund request
-   */
-  async requestRefund(refundRequest: CryptoRefundRequest): Promise<CryptoTransaction | undefined> {
-    try {
-      // Get the transaction
-      const transaction = await this.getTransaction(refundRequest.transactionId);
-      
-      if (!transaction) {
-        throw new Error('Transaction not found');
-      }
-      
-      if (transaction.status !== 'confirmed') {
-        throw new Error('Only confirmed transactions can be refunded');
-      }
-      
-      if (this.apiKey && process.env.NODE_ENV !== 'development') {
-        // This would be a real API call in production
-        // For now, we'll just update the transaction status
-        /*
-        await axios.post(`${this.apiUrl}/orders/${transaction.paymentProviderReference}/refund`, {
-          token: this.apiKey
-        });
-        */
-        console.log(`Would refund transaction ${transaction.id} in production`);
-      }
-      
-      // Update transaction status to refunded
-      return await this.updateTransactionStatus(transaction.id, {
-        status: 'refunded',
-        paymentProviderResponse: JSON.stringify({
-          refunded: true,
-          refundReason: refundRequest.reason || 'Refund requested by admin',
-          refundedAt: new Date().toISOString()
-        })
-      });
-    } catch (error) {
-      console.error('Error processing refund request:', error);
-      throw new Error('Failed to process refund request');
-    }
-  }
+  // Get all transactions (admin only)
+  async getAllTransactions(): Promise<any[]> {
+    console.log('Getting all transactions');
+    
+    // Return all transactions sorted by creation date (newest first)
+    return Array.from(mockTransactions.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
   
-  /**
-   * Process webhook event from payment provider
-   */
-  async processWebhookEvent(event: string, data: any): Promise<CryptoTransaction | undefined> {
-    try {
-      // Find transaction by payment provider reference
-      const [transaction] = await db
-        .select()
-        .from(cryptoTransactions)
-        .where(eq(cryptoTransactions.paymentProviderReference, data.id));
-      
-      if (!transaction) {
-        console.error('No transaction found for webhook event:', data);
-        return undefined;
-      }
-      
-      // Map provider status to our status
-      let status = transaction.status;
-      switch (data.status) {
-        case 'paid':
-        case 'confirmed':
-          status = 'confirmed';
-          break;
-        case 'invalid':
-        case 'canceled':
-        case 'expired':
-          status = 'failed';
-          break;
-        case 'refunded':
-          status = 'refunded';
-          break;
-        default:
-          status = 'pending';
-      }
-      
-      // Update transaction status
-      return await this.updateTransactionStatus(transaction.id, {
-        status,
-        txHash: data.transaction_id || transaction.txHash,
-        paymentProviderResponse: JSON.stringify(data)
-      });
-    } catch (error) {
-      console.error('Error processing webhook event:', error);
-      throw new Error('Failed to process webhook event');
+  // Process a refund request
+  async requestRefund(data: CryptoRefundRequest): Promise<any> {
+    console.log('Processing refund request:', data);
+    
+    const transaction = mockTransactions.get(data.transactionId);
+    
+    if (!transaction) {
+      throw new Error('Transaction not found');
     }
-  }
+    
+    if (transaction.status !== 'confirmed') {
+      throw new Error('Only confirmed transactions can be refunded');
+    }
+    
+    // Update transaction status to refunded
+    transaction.status = 'refunded';
+    transaction.refundedAt = new Date();
+    mockTransactions.set(data.transactionId, transaction);
+    
+    return transaction;
+  },
   
-  /**
-   * Get wallet balances for a user
-   */
-  async getWalletBalances(userId: string): Promise<any[]> {
-    try {
-      const balances = await db
-        .select()
-        .from(cryptoWalletBalances)
-        .where(eq(cryptoWalletBalances.userId, userId));
-      
-      return balances;
-    } catch (error) {
-      console.error('Error getting wallet balances:', error);
-      throw new Error('Failed to get wallet balances');
+  // Process a webhook event
+  async processWebhookEvent(event: string, data: any): Promise<void> {
+    console.log('Processing webhook event:', event, data);
+    
+    // Find the transaction by reference
+    const transactionId = data.order_id || data.payment_id;
+    
+    if (!transactionId) {
+      console.error('No transaction ID found in webhook data');
+      return;
     }
-  }
+    
+    const transaction = Array.from(mockTransactions.values())
+      .find(tx => tx.id === transactionId);
+    
+    if (!transaction) {
+      console.error('Transaction not found:', transactionId);
+      return;
+    }
+    
+    // Update transaction status based on event
+    switch (event) {
+      case 'payment_confirmed':
+      case 'order_completed':
+        transaction.status = 'confirmed';
+        transaction.confirmedAt = new Date();
+        if (data.transaction_id) {
+          transaction.txHash = data.transaction_id;
+        }
+        break;
+      case 'payment_failed':
+      case 'order_failed':
+        transaction.status = 'failed';
+        break;
+      case 'payment_expired':
+      case 'order_expired':
+        transaction.status = 'expired';
+        break;
+      default:
+        console.log('Unhandled webhook event:', event);
+    }
+    
+    // Update transaction in storage
+    mockTransactions.set(transaction.id, transaction);
+  },
   
-  /**
-   * Get wallet balance for a specific currency
-   */
-  async getWalletBalance(userId: string, currency: string): Promise<string> {
-    try {
-      const [balance] = await db
-        .select()
-        .from(cryptoWalletBalances)
-        .where(
-          and(
-            eq(cryptoWalletBalances.userId, userId),
-            eq(cryptoWalletBalances.currency, currency)
-          )
-        );
-      
-      return balance?.balance.toString() || '0';
-    } catch (error) {
-      console.error('Error getting wallet balance:', error);
-      return '0';
+  // Create payment for our simpler routes
+  async createPayment(params: { propertyId: number; userId: number; amount: number; currency: string }): Promise<any> {
+    const { propertyId, userId, amount, currency } = params;
+    
+    // Calculate crypto amount based on exchange rate
+    const rate = getExchangeRate(currency);
+    const cryptoAmount = parseFloat((amount / rate).toFixed(6));
+    
+    // Generate wallet address based on currency
+    const addresses = {
+      'USDC': '0xeEf39B2D7Be395A11CDa26709D9b4F95F61CE2F4',
+      'USDT': '0xBA47CfAa8Dd34882294822AA1c4e58E6122a6AdF',
+      'ETH': '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+    };
+    
+    const address = addresses[currency as keyof typeof addresses] || addresses.USDC;
+    
+    // Generate QR code with payment info
+    const qrCodeData = `ethereum:${address}?value=${cryptoAmount}&currency=${currency}`;
+    const qrCode = await QRCode.toDataURL(qrCodeData);
+    
+    // Create transaction record
+    const paymentId = uuidv4();
+    const payment = {
+      id: paymentId,
+      userId,
+      propertyId,
+      amount,
+      currency,
+      cryptoAmount,
+      address,
+      network: 'Ethereum',
+      status: 'pending',
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
+      qrCode,
+      explorerUrl: `https://etherscan.io/address/${address}`,
+      rate
+    };
+    
+    // Store payment in our mock storage
+    mockTransactions.set(paymentId, payment);
+    
+    return payment;
+  },
+  
+  // Get payment status for our simpler routes
+  async getPaymentStatus(paymentId: string): Promise<{ status: string }> {
+    const payment = mockTransactions.get(paymentId);
+    
+    if (!payment) {
+      return { status: 'not_found' };
     }
+    
+    // Auto-confirm payment in development after 30 seconds
+    if (process.env.NODE_ENV === 'development' && payment.status === 'pending') {
+      const createdAt = new Date(payment.createdAt).getTime();
+      const currentTime = Date.now();
+      
+      if (currentTime - createdAt > 30000) {
+        payment.status = 'confirmed';
+        mockTransactions.set(paymentId, payment);
+      }
+    }
+    
+    // Check if payment is expired
+    if (payment.status === 'pending' && new Date() > new Date(payment.expiresAt)) {
+      payment.status = 'expired';
+      mockTransactions.set(paymentId, payment);
+    }
+    
+    return { status: payment.status };
   }
-}
+};
 
-export const cryptoPaymentService = new CryptoPaymentService();
+// Export the rates for use in other modules
+export { cryptoRates };

@@ -1,7 +1,4 @@
 import { z } from 'zod';
-import { sql } from 'drizzle-orm';
-import { pgTable, text, uuid, timestamp, numeric, boolean } from 'drizzle-orm/pg-core';
-import { createInsertSchema } from 'drizzle-zod';
 
 // Define crypto transaction status enum
 export const cryptoTransactionStatusEnum = z.enum([
@@ -9,7 +6,8 @@ export const cryptoTransactionStatusEnum = z.enum([
   'processing',
   'confirmed',
   'failed',
-  'refunded'
+  'refunded',
+  'expired'
 ]);
 
 // Define supported crypto currencies
@@ -20,61 +18,10 @@ export const cryptoCurrencyEnum = z.enum([
   'USDT'
 ]);
 
-// Define the crypto transaction table
-export const cryptoTransactions = pgTable('crypto_transactions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: text('user_id').notNull(),
-  investmentId: uuid('investment_id'),
-  propertyId: text('property_id'),
-  amount: numeric('amount').notNull(),
-  cryptoAmount: numeric('crypto_amount'),
-  currency: text('currency').default('USD').notNull(),
-  cryptoCurrency: text('crypto_currency').notNull(),
-  status: text('status').default('pending').notNull(),
-  txHash: text('tx_hash'),
-  paymentProviderReference: text('payment_provider_reference'),
-  paymentAddress: text('payment_address'),
-  qrCodeUrl: text('qr_code_url'),
-  paymentUrl: text('payment_url'),
-  expiresAt: timestamp('expires_at'),
-  confirmedAt: timestamp('confirmed_at'),
-  refundedAt: timestamp('refunded_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  paymentProviderResponse: text('payment_provider_response'),
-  walletUpdated: boolean('wallet_updated').default(false)
-});
-
-// Define the crypto wallet balance table
-export const cryptoWalletBalances = pgTable('crypto_wallet_balances', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: text('user_id').notNull(),
-  currency: text('currency').default('USD').notNull(),
-  balance: numeric('balance').default('0').notNull(),
-  pendingBalance: numeric('pending_balance').default('0'),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// Define the schemas using drizzle-zod
-export const insertCryptoTransactionSchema = createInsertSchema(cryptoTransactions, {
-  status: cryptoTransactionStatusEnum,
-  cryptoCurrency: cryptoCurrencyEnum
-}).omit({ id: true, confirmedAt: true, refundedAt: true, createdAt: true, updatedAt: true });
-
-export const insertCryptoWalletBalanceSchema = createInsertSchema(cryptoWalletBalances)
-  .omit({ id: true, updatedAt: true });
-
-// Define the types
-export type CryptoTransaction = typeof cryptoTransactions.$inferSelect;
-export type InsertCryptoTransaction = z.infer<typeof insertCryptoTransactionSchema>;
-
-export type CryptoWalletBalance = typeof cryptoWalletBalances.$inferSelect;
-export type InsertCryptoWalletBalance = z.infer<typeof insertCryptoWalletBalanceSchema>;
-
 // Define a schema for crypto payment intents
 export const cryptoPaymentIntentSchema = z.object({
   amount: z.number().positive(),
-  currency: z.string().default('USD'),
+  currency: z.string().default('NGN'),
   cryptoCurrency: cryptoCurrencyEnum,
   userId: z.string(),
   investmentId: z.string().optional(),
@@ -121,3 +68,31 @@ export const cryptoPaymentWebhookSchema = z.object({
 });
 
 export type CryptoPaymentWebhook = z.infer<typeof cryptoPaymentWebhookSchema>;
+
+// Simple interfaces for our mock data
+export interface CryptoTransaction {
+  id: string;
+  userId: string;
+  propertyId?: string;
+  investmentId?: string;
+  amount: number;
+  cryptoAmount: number;
+  currency: string;
+  cryptoCurrency: string;
+  status: string;
+  txHash?: string;
+  paymentAddress: string;
+  qrCodeUrl?: string;
+  paymentUrl?: string;
+  expiresAt: Date;
+  confirmedAt?: Date;
+  refundedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CryptoWalletBalance {
+  currency: string;
+  balance: number;
+  pendingBalance: number;
+}

@@ -10,7 +10,7 @@ interface StepsContextValue {
 const StepsContext = createContext<StepsContextValue | null>(null);
 
 export interface StepsProps extends React.HTMLAttributes<HTMLDivElement> {
-  currentStep: number;
+  activeStep: number;
   children: React.ReactNode;
 }
 
@@ -20,34 +20,26 @@ export interface StepProps extends React.HTMLAttributes<HTMLDivElement> {
   stepNumber?: number;
 }
 
-export function Steps({ currentStep, children, className, ...props }: StepsProps) {
-  const childrenArray = React.Children.toArray(children).filter(
-    (child) => React.isValidElement(child) && child.type === Step
-  ) as React.ReactElement[];
+// Additional components needed for the verification page
+export interface StepIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
+  step: number;
+  children?: React.ReactNode;
+}
 
-  const totalSteps = childrenArray.length;
+export interface StepTitleProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  children: React.ReactNode;
+}
 
+export interface StepDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  children: React.ReactNode;
+}
+
+export function Steps({ activeStep, children, className, ...props }: StepsProps) {
   return (
-    <StepsContext.Provider value={{ activeStep: currentStep, totalSteps }}>
+    <StepsContext.Provider value={{ activeStep, totalSteps: React.Children.count(children) }}>
       <div className={cn("space-y-6", className)} {...props}>
-        <div className="relative">
-          <div className="relative flex items-center justify-between">
-            {childrenArray.map((child, index) => {
-              return React.cloneElement(child, {
-                ...child.props,
-                stepNumber: index + 1,
-                key: index,
-              });
-            })}
-          </div>
-          <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted">
-            <div
-              className="absolute top-0 left-0 h-0.5 bg-primary transition-all duration-500 ease-in-out"
-              style={{
-                width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`,
-              }}
-            />
-          </div>
+        <div className="flex items-center w-full">
+          {children}
         </div>
       </div>
     </StepsContext.Provider>
@@ -111,5 +103,56 @@ export function Step({ title, description, stepNumber, className, ...props }: St
         )}
       </div>
     </div>
+  );
+}
+
+// Additional components needed for the verification page
+export function StepIndicator({ step, children, className, ...props }: StepIndicatorProps) {
+  const context = useContext(StepsContext);
+  const isActive = context && step === context.activeStep;
+  const isCompleted = context && step < context.activeStep;
+
+  return (
+    <div
+      className={cn(
+        "w-10 h-10 flex items-center justify-center rounded-full relative",
+        isCompleted ? "bg-primary text-primary-foreground" : 
+        isActive ? "border-2 border-primary text-primary" :
+        "border-2 border-muted-foreground text-muted-foreground",
+        className
+      )}
+      {...props}
+    >
+      {isCompleted ? (
+        <Check className="h-5 w-5" />
+      ) : (
+        children
+      )}
+    </div>
+  );
+}
+
+export function StepTitle({ children, className, ...props }: StepTitleProps) {
+  return (
+    <p className={cn("text-sm font-medium", className)} {...props}>
+      {children}
+    </p>
+  );
+}
+
+export function StepDescription({ children, className, ...props }: StepDescriptionProps) {
+  return (
+    <p className={cn("text-sm text-muted-foreground", className)} {...props}>
+      {children}
+    </p>
+  );
+}
+
+export function StepSeparator({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div 
+      className={cn("flex-1 h-[2px] bg-muted mx-2", className)} 
+      {...props}
+    />
   );
 }
