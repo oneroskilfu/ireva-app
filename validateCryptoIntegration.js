@@ -30,7 +30,7 @@ console.log('- Test Connection:', checkFileContains('server/services/crypto-paym
 
 // 3. Webhook route and handlers
 checkFileExists('server/routes/crypto-webhooks.ts', 'Crypto Webhook Route');
-console.log('- Webhook Handler:', checkFileContains('server/routes/crypto-webhooks.ts', ['/webhook', 'processWebhookEvent']) ? '✅ Present' : '❌ Not found');
+console.log('- Webhook Handler:', checkFileContains('server/routes/crypto-webhooks.ts', ['coingate/webhook', 'updateCryptoTransactionStatus']) ? '✅ Present' : '❌ Not found');
 
 // 4. Webhook security middleware
 checkFileExists('server/middleware/webhookSignatureVerifier.ts', 'Webhook Signature Verifier');
@@ -48,11 +48,11 @@ checkFileExists('server/models/Wallet.js', 'Wallet Schema');
 console.log('- Balance Management:', checkFileContains('server/models/Wallet.js', ['balance', 'crypto']) ? '✅ Present' : '❌ Not found');
 
 checkFileExists('server/services/wallet-service.ts', 'Wallet Service');
-console.log('- Crypto Balance Updates:', checkFileContains('server/services/wallet-service.ts', ['updateBalance', 'crypto']) ? '✅ Present' : '❌ Not found');
+console.log('- Crypto Balance Updates:', checkFileContains('server/services/wallet-service.ts', ['updateCryptoBalance', 'wallet']) ? '✅ Present' : '❌ Not found');
 
 // 7. Admin routes for crypto validation and management
 checkFileExists('server/routes/admin-crypto-routes.ts', 'Admin Crypto Routes');
-console.log('- Admin Dashboard:', checkFileContains('server/routes/admin-crypto-routes.ts', ['transactions', 'getTransactions']) ? '✅ Present' : '❌ Not found');
+console.log('- Admin Dashboard:', checkFileContains('server/routes/admin-crypto-routes.ts', ['adminCryptoRouter', '/transactions']) ? '✅ Present' : '❌ Not found');
 
 checkFileExists('server/routes/admin-crypto-validate.ts', 'Admin Crypto Validation');
 console.log('- Validation Endpoint:', checkFileContains('server/routes/admin-crypto-validate.ts', ['validate', 'testConnection']) ? '✅ Present' : '❌ Not found');
