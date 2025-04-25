@@ -25,7 +25,8 @@ import {
   Home,
   Wallet,
   TrendingUp,
-  PieChart
+  PieChart,
+  Bitcoin
 } from "lucide-react";
 import { 
   DropdownMenu,

@@ -12,6 +12,7 @@ import {
   paymentMethodEnum
 } from "@shared/schema";
 import { ensureAdmin, ensureSuperAdmin } from "./auth-jwt";
+import { getCryptoIntegrationStatus, testCryptoIntegration } from "./services/crypto-integration-service";
 
 const adminRouter = Router();
 
@@ -517,5 +518,11 @@ adminRouter.get('/notifications/unread', ensureAdmin, async (req: Request, res: 
     return res.status(500).json({ error: 'Failed to fetch unread notifications' });
   }
 });
+
+// Crypto Integration Status
+adminRouter.get('/crypto-integration/status', ensureAdmin, getCryptoIntegrationStatus);
+
+// Test Crypto Integration
+adminRouter.post('/crypto-integration/test', ensureAdmin, testCryptoIntegration);
 
 export { adminRouter };
