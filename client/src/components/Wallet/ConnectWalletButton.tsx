@@ -274,13 +274,117 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
+    <>
+      {walletAddress ? (
+        // If wallet is connected, show popover with wallet info
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant={variant}
+              size={size}
+              className={`${className} pl-3 pr-3`}
+              disabled={isConnecting}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="connected"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center"
+                  aria-label={`Connected wallet ${truncateAddress(walletAddress)} on ${getCurrentNetworkName()}`}
+                >
+                  {getNetworkIcon(network)}
+                  <span className="mr-1">{truncateAddress(walletAddress)}</span>
+                  <ChevronDown className="h-4 w-4 ml-1" aria-hidden="true" />
+                </motion.div>
+              </AnimatePresence>
+            </Button>
+          </PopoverTrigger>
+          
+          <PopoverContent className="w-80 p-4" role="dialog" aria-label="Wallet Information">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  {getNetworkIcon(network)}
+                  <span className="font-semibold">{getCurrentNetworkName()}</span>
+                </div>
+                
+                <div className="flex items-center" aria-live="polite">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" aria-hidden="true" />
+                  <span className="text-xs text-green-600">Connected</span>
+                </div>
+              </div>
+              
+              <div className="bg-muted/50 p-3 rounded-md">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm text-muted-foreground" id="wallet-address-label">Wallet Address</span>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => walletAddress && copyToClipboard(walletAddress)}
+                      aria-label="Copy wallet address to clipboard"
+                      title="Copy to clipboard"
+                    >
+                      <Copy className="h-3 w-3" aria-hidden="true" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={openWalletExplorer}
+                      aria-label="View on blockchain explorer"
+                      title="View on blockchain explorer"
+                    >
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+                <div 
+                  className="text-sm font-mono break-all" 
+                  aria-labelledby="wallet-address-label"
+                >
+                  {walletAddress}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Balance</span>
+                <div className="flex items-center" aria-live="polite">
+                  {balance ? (
+                    <span className="font-medium">{balance} {network === 'ethereum' ? 'ETH' : network === 'polygon' ? 'MATIC' : 'BNB'}</span>
+                  ) : (
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground text-sm mr-2">Loading</span>
+                      <div className="h-3 w-3 rounded-full border-2 border-t-transparent border-muted-foreground animate-spin"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="pt-2">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Connected to iREVA</h4>
+                  <p className="text-xs text-muted-foreground">
+                    This wallet is now connected to iREVA platform. You can use it for property investments, payments, and receiving returns.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : (
+        // If wallet is not connected, show connect button
         <Button
           variant={variant}
           size={size}
-          className={`${className} ${walletAddress ? 'pl-3 pr-3' : ''}`}
+          className={className}
           disabled={isConnecting}
+          onClick={connectWallet}
         >
           <AnimatePresence mode="wait">
             {isConnecting ? (
@@ -300,19 +404,6 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
                 <span>Connecting...</span>
                 <span className="sr-only">Connecting wallet, please wait</span>
               </motion.div>
-            ) : walletAddress ? (
-              <motion.div
-                key="connected"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center"
-                aria-label={`Connected wallet ${truncateAddress(walletAddress)} on ${getCurrentNetworkName()}`}
-              >
-                {getNetworkIcon(network)}
-                <span className="mr-1">{truncateAddress(walletAddress)}</span>
-                <ChevronDown className="h-4 w-4 ml-1" aria-hidden="true" />
-              </motion.div>
             ) : (
               <motion.div
                 key="connect"
@@ -327,85 +418,8 @@ const ConnectWalletButton: React.FC<ConnectWalletButtonProps> = ({
             )}
           </AnimatePresence>
         </Button>
-      </PopoverTrigger>
-      
-      {walletAddress && (
-        <PopoverContent className="w-80 p-4" role="dialog" aria-label="Wallet Information">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                {getNetworkIcon(network)}
-                <span className="font-semibold">{getCurrentNetworkName()}</span>
-              </div>
-              
-              <div className="flex items-center" aria-live="polite">
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" aria-hidden="true" />
-                <span className="text-xs text-green-600">Connected</span>
-              </div>
-            </div>
-            
-            <div className="bg-muted/50 p-3 rounded-md">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm text-muted-foreground" id="wallet-address-label">Wallet Address</span>
-                <div className="flex space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => walletAddress && copyToClipboard(walletAddress)}
-                    aria-label="Copy wallet address to clipboard"
-                    title="Copy to clipboard"
-                  >
-                    <Copy className="h-3 w-3" aria-hidden="true" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={openWalletExplorer}
-                    aria-label="View on blockchain explorer"
-                    title="View on blockchain explorer"
-                  >
-                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                  </Button>
-                </div>
-              </div>
-              <div 
-                className="text-sm font-mono break-all" 
-                aria-labelledby="wallet-address-label"
-              >
-                {walletAddress}
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Balance</span>
-              <div className="flex items-center" aria-live="polite">
-                {balance ? (
-                  <span className="font-medium">{balance} {network === 'ethereum' ? 'ETH' : network === 'polygon' ? 'MATIC' : 'BNB'}</span>
-                ) : (
-                  <div className="flex items-center">
-                    <span className="text-muted-foreground text-sm mr-2">Loading</span>
-                    <div className="h-3 w-3 rounded-full border-2 border-t-transparent border-muted-foreground animate-spin"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="pt-2">
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Connected to iREVA</h4>
-                <p className="text-xs text-muted-foreground">
-                  This wallet is now connected to iREVA platform. You can use it for property investments, payments, and receiving returns.
-                </p>
-              </div>
-            </div>
-          </div>
-        </PopoverContent>
       )}
-    </Popover>
+    </>
   );
 };
 
