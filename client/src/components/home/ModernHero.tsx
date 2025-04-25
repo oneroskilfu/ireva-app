@@ -98,7 +98,14 @@ export default function ModernHero() {
               variants={fadeIn} 
               className="mt-6 text-lg text-gray-300 max-w-lg"
             >
-              iREVA lets the next generation of investors build wealth through fractional ownership of high-yield properties with blockchain security — starting with just ₦100,000 or equivalent in crypto.
+              iREVA is a crypto-enabled, inclusive real-estate crowdfunding platform—tapping both fiat and blockchain investors, automating trust via smart contracts, and unlocking global capital for vetted African real-estate opportunities.
+            </motion.p>
+            
+            <motion.p 
+              variants={fadeIn} 
+              className="mt-4 text-lg text-gray-400 max-w-lg"
+            >
+              Start building wealth through fractional ownership of high-yield properties with blockchain security — with as little as ₦100,000 or equivalent in crypto.
             </motion.p>
             
             <motion.div 

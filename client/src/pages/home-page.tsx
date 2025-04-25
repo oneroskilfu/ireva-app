@@ -188,9 +188,11 @@ export default function HomePage() {
                 Begin Your Investment Journey<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-300 to-yellow-300">With Crypto</span>
               </h2>
-              <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-10">
-                Join thousands of investors building wealth through blockchain-secured real estate with iREVA's easy-to-use platform. 
-                Invest with cryptocurrency or traditional payment methods.
+              <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-4">
+                Join our crypto-enabled, inclusive real-estate crowdfunding platform that connects global capital to vetted African real-estate opportunities.
+              </p>
+              <p className="text-base text-gray-400 max-w-2xl mx-auto mb-10">
+                Experience automated trust via smart contracts and invest with either fiat currency or cryptocurrency—all on one seamless platform.
               </p>
               <div className="flex justify-center mb-10 space-x-4">
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 flex items-center">
