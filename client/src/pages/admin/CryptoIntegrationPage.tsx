@@ -26,6 +26,8 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import WebhookIcon from '@mui/icons-material/Webhook';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PieChart from '@mui/icons-material/PieChart';
+import CryptoIntegrationValidator from '../../components/admin/CryptoIntegrationValidator';
+import CryptoWebhookSecurityGuide from '../../components/admin/CryptoWebhookSecurityGuide';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../../lib/queryClient';
 import { useToast } from '../../hooks/use-toast';
@@ -380,6 +382,20 @@ const CryptoIntegrationPage: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             Technical Integration Details
           </Typography>
+          
+          {/* Integration Validator */}
+          <CryptoIntegrationValidator />
+          
+          {/* Webhook Security Guide */}
+          <CryptoWebhookSecurityGuide 
+            webhookSecret={process.env.COINGATE_WEBHOOK_SECRET || undefined}
+            onGenerateSecret={() => {
+              toast({
+                title: "Secret Key Generation",
+                description: "Please set the COINGATE_WEBHOOK_SECRET environment variable with a secure random string.",
+              });
+            }}
+          />
           
           <Grid container spacing={3}>
             <Grid item xs={12}>

@@ -1,188 +1,175 @@
 import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Alert,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Card,
-  CardContent,
-  TextField,
-  Button
-} from '@mui/material';
+import { Card, CardContent, Typography, Box, Alert, Button, Paper, Divider } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LockIcon from '@mui/icons-material/Lock';
-import WarningIcon from '@mui/icons-material/Warning';
-import InfoIcon from '@mui/icons-material/Info';
-import HttpsIcon from '@mui/icons-material/Https';
-import CodeIcon from '@mui/icons-material/Code';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import { useToast } from '@/hooks/use-toast';
 
 interface CryptoWebhookSecurityGuideProps {
   webhookSecret?: string;
-  onGenerateSecret?: () => void;
+  onGenerateSecret: () => void;
 }
 
 const CryptoWebhookSecurityGuide: React.FC<CryptoWebhookSecurityGuideProps> = ({
   webhookSecret,
   onGenerateSecret
 }) => {
-  // Generate a sample HMAC signature calculation snippet
-  const hmacSnippet = `
-// Example implementation in Node.js
-const crypto = require('crypto');
+  const { toast } = useToast();
 
-function verifyWebhookSignature(payload, signature, secret) {
-  const hmac = crypto.createHmac('sha256', secret);
-  const computedSignature = hmac.update(payload).digest('hex');
-  
-  // Use timing-safe comparison
-  return crypto.timingSafeEqual(
-    Buffer.from(computedSignature),
-    Buffer.from(signature)
-  );
-}`;
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast({
+          title: "Copied to clipboard",
+          description: "The code has been copied to your clipboard",
+        });
+      },
+      (err) => {
+        toast({
+          title: "Copy failed",
+          description: "Could not copy text: " + err,
+          variant: "destructive",
+        });
+      }
+    );
+  };
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-        <SecurityIcon sx={{ mr: 1 }} /> Webhook Security
-      </Typography>
-      
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body1" paragraph>
-          Webhook security is critical for protecting your cryptocurrency payment system. 
-          This guide explains how to implement and verify webhook signatures to prevent fraud.
-        </Typography>
+    <Card sx={{ mb: 4 }}>
+      <CardContent>
+        <Box display="flex" alignItems="center" mb={2}>
+          <SecurityIcon fontSize="large" color="primary" sx={{ mr: 2 }} />
+          <Typography variant="h5">Webhook Security Implementation Guide</Typography>
+        </Box>
         
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="subtitle2">Security Warning</Typography>
-          <Typography variant="body2">
-            Without proper webhook verification, attackers could forge payment notifications and
-            manipulate transaction statuses in your system.
-          </Typography>
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Securing your webhook endpoints is critical to prevent unauthorized payment confirmations.
+          This guide will help you implement proper webhook security measures.
         </Alert>
-      </Box>
-      
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-          <VerifiedUserIcon sx={{ mr: 1 }} /> How Webhook Signatures Work
-        </Typography>
-        
-        <List dense>
-          <ListItem>
-            <ListItemIcon><LockIcon fontSize="small" /></ListItemIcon>
-            <ListItemText 
-              primary="Shared Secret" 
-              secondary="Both your server and the payment provider know a shared secret key" 
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon><InfoIcon fontSize="small" /></ListItemIcon>
-            <ListItemText 
-              primary="Signature Generation" 
-              secondary="The payment provider signs each webhook payload with this secret using HMAC-SHA256" 
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon><VerifiedUserIcon fontSize="small" /></ListItemIcon>
-            <ListItemText 
-              primary="Verification" 
-              secondary="Your server computes the same signature and verifies it matches what was provided" 
-            />
-          </ListItem>
-        </List>
-      </Paper>
-      
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            <HttpsIcon sx={{ mr: 1, verticalAlign: 'middle' }} /> 
-            Webhook Secret Configuration
+
+        <Box mb={3}>
+          <Typography variant="h6" gutterBottom display="flex" alignItems="center">
+            <VpnKeyIcon sx={{ mr: 1 }} /> Webhook Secret Key
           </Typography>
-          
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Set this secret in your environment variables and in your CoinGate account's webhook settings.
-            </Typography>
-            
-            <TextField
-              fullWidth
-              label="Webhook Secret"
-              variant="outlined"
-              value={webhookSecret || 'Not configured'}
-              disabled
-              sx={{ mb: 2 }}
-              InputProps={{
-                startAdornment: <LockIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-              }}
-            />
-            
-            {onGenerateSecret && (
-              <Button 
-                variant="outlined" 
-                color="primary" 
-                onClick={onGenerateSecret}
-              >
-                Generate New Secret
-              </Button>
+          <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
+            {webhookSecret ? (
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography variant="body2" sx={{ fontFamily: 'monospace', backgroundColor: '#f5f5f5', p: 1, borderRadius: 1, overflow: 'auto', flexGrow: 1 }}>
+                  {webhookSecret}
+                </Typography>
+                <Button 
+                  startIcon={<ContentCopyIcon />}
+                  onClick={() => copyToClipboard(webhookSecret)}
+                  size="small"
+                  sx={{ ml: 1 }}
+                >
+                  Copy
+                </Button>
+              </Box>
+            ) : (
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Typography color="textSecondary">
+                  No webhook secret configured yet.
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  color="primary"
+                  onClick={onGenerateSecret}
+                  size="small"
+                >
+                  Generate Secret
+                </Button>
+              </Box>
             )}
-          </Box>
-          
-          <Divider sx={{ my: 2 }} />
-          
-          <Typography variant="subtitle2" gutterBottom>
-            Environment Variable Setup
+          </Paper>
+          <Typography variant="body2">
+            This secret key is used to verify that incoming webhook requests are legitimate and coming from your payment provider.
+            Store this key securely in your environment variables.
           </Typography>
-          <Box 
-            component="pre" 
-            sx={{ 
-              backgroundColor: 'grey.100',
-              p: 2,
-              borderRadius: 1,
-              overflow: 'auto'
-            }}
-          >
-            <code>COINGATE_WEBHOOK_SECRET=your_webhook_secret</code>
-          </Box>
-        </CardContent>
-      </Card>
-      
-      <Paper elevation={2} sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          <CodeIcon sx={{ mr: 1, verticalAlign: 'middle' }} /> 
-          Implementation Sample
-        </Typography>
-        <Typography variant="body2" paragraph>
-          This shows how webhook signature verification works in the code:
-        </Typography>
-        <Box 
-          component="pre" 
-          sx={{ 
-            backgroundColor: 'grey.100',
-            p: 2,
-            borderRadius: 1,
-            overflow: 'auto',
-            fontSize: '0.8rem'
-          }}
-        >
-          <code>{hmacSnippet}</code>
         </Box>
         
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Headers to Look For:
+        <Divider sx={{ my: 3 }} />
+        
+        <Box mb={3}>
+          <Typography variant="h6" gutterBottom display="flex" alignItems="center">
+            <LockIcon sx={{ mr: 1 }} /> Signature Verification Implementation
           </Typography>
-          <Box sx={{ backgroundColor: 'grey.100', p: 2, borderRadius: 1 }}>
-            <code>x-coingate-signature</code>
-          </Box>
+          <Typography variant="body2" paragraph>
+            Below is an example of how webhook signature verification works:
+          </Typography>
+          
+          <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.85rem' }}>
+{`// The payment provider sends a signature in the request headers
+// This signature is a hash of the request body + your webhook secret
+
+// 1. Extract the signature from headers
+const signature = req.headers['x-webhook-signature'];
+
+// 2. Get the raw body (must be preserved as raw string)
+const rawBody = req.rawBody;
+
+// 3. Create your own signature using the same algorithm
+const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET);
+hmac.update(rawBody);
+const computedSignature = hmac.digest('hex');
+
+// 4. Compare signatures to verify authenticity
+const isValid = crypto.timingSafeEqual(
+  Buffer.from(signature),
+  Buffer.from(computedSignature)
+);
+
+if (!isValid) {
+  return res.status(401).json({ error: 'Invalid signature' });
+}`}
+            </Typography>
+            <Button 
+              startIcon={<ContentCopyIcon />}
+              onClick={() => copyToClipboard(`// The payment provider sends a signature in the request headers
+// This signature is a hash of the request body + your webhook secret
+
+// 1. Extract the signature from headers
+const signature = req.headers['x-webhook-signature'];
+
+// 2. Get the raw body (must be preserved as raw string)
+const rawBody = req.rawBody;
+
+// 3. Create your own signature using the same algorithm
+const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET);
+hmac.update(rawBody);
+const computedSignature = hmac.digest('hex');
+
+// 4. Compare signatures to verify authenticity
+const isValid = crypto.timingSafeEqual(
+  Buffer.from(signature),
+  Buffer.from(computedSignature)
+);
+
+if (!isValid) {
+  return res.status(401).json({ error: 'Invalid signature' });
+}`)}
+              size="small"
+              sx={{ mt: 1 }}
+            >
+              Copy Code
+            </Button>
+          </Paper>
         </Box>
-      </Paper>
-    </Box>
+        
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="subtitle2">Important Security Notes:</Typography>
+          <ul>
+            <li>Keep your webhook secret out of your code repository</li>
+            <li>Verify signatures on every webhook request</li>
+            <li>Use constant-time comparison (like crypto.timingSafeEqual) to prevent timing attacks</li>
+            <li>Configure IP restrictions in production if supported by your provider</li>
+            <li>Implement idempotency to prevent duplicate transaction processing</li>
+          </ul>
+        </Alert>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -45,6 +45,8 @@ import stablecoinRoutes from './routes/stablecoin-routes';
 import milestoneEscrowRoutes from './routes/milestone-escrow-routes';
 // Import crypto integration routes
 import { cryptoIntegrationRouter } from './crypto-integration-routes';
+// Import admin crypto validation routes
+import { adminCryptoValidateRouter } from './routes/admin-crypto-validate';
 // Import wallet transactions routes
 import { walletTransactionsRouter } from './routes/wallet-transactions';
 import fs from 'fs';
@@ -320,6 +322,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Admin Crypto Dashboard routes
   app.use('/api/admin/crypto', adminCryptoRouter);
   console.log("Admin crypto dashboard routes registered");
+  
+  // Set up Admin Crypto Validation routes
+  app.use('/api/admin/crypto-validate', adminCryptoValidateRouter);
+  console.log("Crypto validation routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);

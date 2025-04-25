@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { ensureAdmin } from '../auth-jwt';
 import fs from 'fs';
 import path from 'path';
-import { cryptoPaymentService } from '../services/crypto-payment-service';
+import { CryptoPaymentService } from '../services/crypto-payment-service';
 
 export const adminCryptoValidateRouter = express.Router();
 
@@ -37,6 +37,9 @@ adminCryptoValidateRouter.get('/validate', ensureAdmin, async (req: Request, res
     let apiConnectionValid = false;
     try {
       if (apiKeyConfigured) {
+        // Create a new instance of the service
+        const cryptoPaymentService = new CryptoPaymentService();
+        // Test the connection
         const testConnection = await cryptoPaymentService.testConnection();
         apiConnectionValid = testConnection.success;
       }

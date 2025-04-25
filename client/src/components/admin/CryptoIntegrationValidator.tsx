@@ -1,33 +1,16 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  CircularProgress,
-  Alert,
-  Divider,
-  Card,
-  CardContent,
-  Chip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Card, CardContent, Typography, Box, CircularProgress, Alert } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import SecurityIcon from '@mui/icons-material/Security';
+import PendingIcon from '@mui/icons-material/Pending';
 import CodeIcon from '@mui/icons-material/Code';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import WebhookIcon from '@mui/icons-material/Webhook';
+import SecurityIcon from '@mui/icons-material/Security';
 import StorageIcon from '@mui/icons-material/Storage';
-import axios from 'axios';
+import WebhookIcon from '@mui/icons-material/Webhook';
 
+// Define types for validation response
 interface ValidationItem {
   name: string;
   status: 'success' | 'error' | 'pending';
@@ -37,243 +20,184 @@ interface ValidationItem {
 interface ValidationSection {
   title: string;
   items: ValidationItem[];
-  icon: React.ReactNode;
+  icon: string;
+}
+
+interface ValidationResult {
+  sections: ValidationSection[];
 }
 
 const CryptoIntegrationValidator: React.FC = () => {
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationResults, setValidationResults] = useState<ValidationSection[]>([]);
-  const [overallStatus, setOverallStatus] = useState<'success' | 'error' | 'pending' | null>(null);
-  const [testWebhookResult, setTestWebhookResult] = useState<{ status: string; message: string } | null>(null);
+  const [expanded, setExpanded] = useState(true);
 
-  const runValidation = async () => {
-    setIsValidating(true);
-    setOverallStatus('pending');
+  // Fetch validation status
+  const { data, isLoading, error } = useQuery<ValidationResult>({
+    queryKey: ['/api/admin/crypto-validate/validate'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/admin/crypto-validate/validate');
+      return response.json();
+    },
+    refetchInterval: 0, // Only fetch on demand
+  });
+
+  // Render icon based on status
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircleIcon color="success" />;
+      case 'error':
+        return <ErrorIcon color="error" />;
+      case 'pending':
+      default:
+        return <PendingIcon color="warning" />;
+    }
+  };
+
+  // Get icon component based on icon name string
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'CodeIcon':
+        return <CodeIcon color="primary" />;
+      case 'SecurityIcon':
+        return <SecurityIcon color="primary" />;
+      case 'StorageIcon':
+        return <StorageIcon color="primary" />;
+      case 'WebhookIcon':
+        return <WebhookIcon color="primary" />;
+      default:
+        return <CodeIcon color="primary" />;
+    }
+  };
+
+  // Calculate overall status for a section
+  const getSectionStatus = (items: ValidationItem[]) => {
+    if (items.every(item => item.status === 'success')) {
+      return 'success';
+    } else if (items.some(item => item.status === 'error')) {
+      return 'error';
+    } else {
+      return 'pending';
+    }
+  };
+
+  // Calculate overall validation status
+  const getOverallStatus = () => {
+    if (!data) return 'pending';
     
-    try {
-      // Initialize with pending status
-      setValidationResults([
-        {
-          title: 'API Configuration',
-          icon: <CodeIcon />,
-          items: [
-            { name: 'CoinGate API Key', status: 'pending' },
-            { name: 'API Environment', status: 'pending' },
-            { name: 'API Connection', status: 'pending' },
-          ]
-        },
-        {
-          title: 'Webhook Security',
-          icon: <SecurityIcon />,
-          items: [
-            { name: 'Webhook Secret', status: 'pending' },
-            { name: 'Signature Verification', status: 'pending' },
-            { name: 'Raw Body Parser', status: 'pending' },
-          ]
-        },
-        {
-          title: 'Database Models',
-          icon: <StorageIcon />,
-          items: [
-            { name: 'Transaction Schema', status: 'pending' },
-            { name: 'Wallet Schema', status: 'pending' },
-          ]
-        },
-        {
-          title: 'Endpoints',
-          icon: <WebhookIcon />,
-          items: [
-            { name: 'Payment Creation', status: 'pending' },
-            { name: 'Webhook Receiver', status: 'pending' },
-            { name: 'Admin Routes', status: 'pending' },
-          ]
-        },
-      ]);
-      
-      // Fetch validation results from the server
-      const response = await axios.get('/api/admin/crypto-integration/validate');
-      
-      if (response.data && response.data.sections) {
-        setValidationResults(response.data.sections);
-        
-        // Determine overall status
-        const allSuccess = response.data.sections.every((section: ValidationSection) => 
-          section.items.every(item => item.status === 'success')
-        );
-        
-        setOverallStatus(allSuccess ? 'success' : 'error');
-      } else {
-        throw new Error('Invalid response format');
-      }
-    } catch (error) {
-      console.error('Validation error:', error);
-      setOverallStatus('error');
-    } finally {
-      setIsValidating(false);
+    const allSections = data.sections || [];
+    if (allSections.every(section => getSectionStatus(section.items) === 'success')) {
+      return 'success';
+    } else if (allSections.some(section => getSectionStatus(section.items) === 'error')) {
+      return 'error';
+    } else {
+      return 'pending';
     }
   };
-  
-  const testWebhook = async () => {
-    try {
-      setTestWebhookResult({ status: 'pending', message: 'Sending test webhook...' });
-      
-      const response = await axios.post('/api/crypto/webhooks/test/webhook', {
-        status: 'confirmed',
-        payment_id: 'test_' + Date.now(),
-        order_id: 'order_' + Date.now(),
-        amount: '50.00',
-        currency: 'USDC',
-        crypto_amount: '50.00',
-        network: 'ethereum'
-      });
-      
-      setTestWebhookResult({ 
-        status: response.data.success ? 'success' : 'error',
-        message: response.data.success 
-          ? 'Test webhook processed successfully!' 
-          : `Error: ${response.data.error || 'Unknown error'}`
-      });
-    } catch (error) {
-      console.error('Test webhook error:', error);
-      setTestWebhookResult({ 
-        status: 'error', 
-        message: `Error: ${error.response?.data?.error || error.message || 'Unknown error'}`
-      });
-    }
-  };
+
+  if (isLoading) {
+    return (
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Box display="flex" alignItems="center" mb={2}>
+            <CodeIcon fontSize="large" color="primary" sx={{ mr: 2 }} />
+            <Typography variant="h5">Crypto Integration Validator</Typography>
+          </Box>
+          <Box display="flex" justifyContent="center" alignItems="center" padding={4}>
+            <CircularProgress />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Box display="flex" alignItems="center" mb={2}>
+            <ErrorIcon fontSize="large" color="error" sx={{ mr: 2 }} />
+            <Typography variant="h5">Validation Error</Typography>
+          </Box>
+          <Alert severity="error">
+            Error running validation: {(error as any).message || "Unknown error"}
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const overallStatus = getOverallStatus();
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" gutterBottom sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <AttachMoneyIcon sx={{ mr: 1 }} /> Crypto Integration Validator
-      </Typography>
-      
-      <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="body1" paragraph>
-            This utility checks if all components of the cryptocurrency payment system are properly configured and working together.
-          </Typography>
-          
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={runValidation}
-              disabled={isValidating}
-              startIcon={isValidating ? <CircularProgress size={20} color="inherit" /> : undefined}
-            >
-              {isValidating ? 'Validating...' : 'Run Validation'}
-            </Button>
-            
-            <Button 
-              variant="outlined" 
-              color="secondary" 
-              onClick={testWebhook}
-              disabled={isValidating}
-              startIcon={<WebhookIcon />}
-            >
-              Test Webhook
-            </Button>
-          </Box>
+    <Card sx={{ mb: 4 }}>
+      <CardContent>
+        <Box display="flex" alignItems="center" mb={2}>
+          <CodeIcon fontSize="large" color="primary" sx={{ mr: 2 }} />
+          <Typography variant="h5">Crypto Integration Validator</Typography>
+          <Box flexGrow={1} />
+          {getStatusIcon(overallStatus)}
         </Box>
         
-        {testWebhookResult && (
-          <Alert 
-            severity={testWebhookResult.status === 'success' ? 'success' : 
-                    testWebhookResult.status === 'pending' ? 'info' : 'error'}
-            sx={{ mb: 3 }}
-          >
-            {testWebhookResult.message}
-          </Alert>
-        )}
+        <Alert 
+          severity={
+            overallStatus === 'success' ? 'success' : 
+            overallStatus === 'error' ? 'error' : 'info'
+          }
+          sx={{ mb: 3 }}
+        >
+          {overallStatus === 'success' ? 
+            'All integration components are properly configured!' : 
+            overallStatus === 'error' ? 
+            'There are issues with your crypto integration that need to be resolved.' :
+            'Validation is in progress...'
+          }
+        </Alert>
         
-        {overallStatus && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Validation Summary
-            </Typography>
+        {data && data.sections && data.sections.map((section, sectionIndex) => (
+          <Box key={sectionIndex} mb={3}>
+            <Box 
+              display="flex" 
+              alignItems="center" 
+              bgcolor={getSectionStatus(section.items) === 'success' ? '#f0f7f0' : '#f5f5f5'} 
+              p={2} 
+              borderRadius={1}
+              mb={2}
+            >
+              {getIconComponent(section.icon)}
+              <Typography variant="h6" ml={1}>
+                {section.title}
+              </Typography>
+              <Box flexGrow={1} />
+              {getStatusIcon(getSectionStatus(section.items))}
+            </Box>
             
-            <Card variant="outlined" sx={{ mb: 2 }}>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {overallStatus === 'success' ? (
-                    <CheckCircleIcon color="success" sx={{ mr: 1, fontSize: 28 }} />
-                  ) : overallStatus === 'error' ? (
-                    <ErrorIcon color="error" sx={{ mr: 1, fontSize: 28 }} />
-                  ) : (
-                    <CircularProgress size={28} sx={{ mr: 1 }} />
-                  )}
-                  
-                  <Typography variant="h6">
-                    {overallStatus === 'success' 
-                      ? 'All systems operational' 
-                      : overallStatus === 'error'
-                        ? 'Issues detected'
-                        : 'Validating...'}
-                  </Typography>
-                </Box>
-                
-                <Chip 
-                  label={overallStatus === 'success' ? 'READY' : overallStatus === 'error' ? 'NEEDS ATTENTION' : 'CHECKING'}
-                  color={overallStatus === 'success' ? 'success' : overallStatus === 'error' ? 'error' : 'default'}
-                />
-              </CardContent>
-            </Card>
-          </Box>
-        )}
-        
-        {validationResults.length > 0 && (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Detailed Results
-            </Typography>
-            
-            {validationResults.map((section, index) => (
-              <Accordion key={index} defaultExpanded={true} sx={{ mb: 1 }}>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls={`panel${index}-content`}
-                  id={`panel${index}-header`}
+            <Box pl={2}>
+              {section.items.map((item, itemIndex) => (
+                <Box 
+                  key={itemIndex} 
+                  display="flex" 
+                  alignItems="center" 
+                  py={1}
+                  borderBottom={itemIndex < section.items.length - 1 ? '1px solid #eee' : 'none'}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <Box sx={{ mr: 1 }}>{section.icon}</Box>
-                    <Typography variant="subtitle1">{section.title}</Typography>
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Chip
-                      size="small"
-                      label={`${section.items.filter(item => item.status === 'success').length}/${section.items.length}`}
-                      color={section.items.every(item => item.status === 'success') ? 'success' : 'warning'}
-                      sx={{ ml: 1 }}
-                    />
+                  <Box width={24} mr={1}>
+                    {getStatusIcon(item.status)}
                   </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <List dense>
-                    {section.items.map((item, itemIndex) => (
-                      <ListItem key={itemIndex}>
-                        <ListItemIcon>
-                          {item.status === 'success' ? (
-                            <CheckCircleIcon color="success" />
-                          ) : item.status === 'error' ? (
-                            <ErrorIcon color="error" />
-                          ) : (
-                            <CircularProgress size={20} />
-                          )}
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary={item.name} 
-                          secondary={item.details}
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                </AccordionDetails>
-              </Accordion>
-            ))}
+                  <Box flexGrow={1}>
+                    <Typography variant="body1">{item.name}</Typography>
+                    {item.details && (
+                      <Typography variant="body2" color="textSecondary">
+                        {item.details}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
           </Box>
-        )}
-      </Paper>
-    </Box>
+        ))}
+      </CardContent>
+    </Card>
   );
 };
 
