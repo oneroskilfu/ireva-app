@@ -70,14 +70,18 @@ const CryptoIntegrationPage: React.FC = () => {
 
   // Fetch integration status
   const { data, isLoading, error, refetch } = useQuery<IntegrationStatus>({
-    queryKey: ['/api/admin/crypto-integration/status'],
+    queryKey: ['/api/crypto-integration/status'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/crypto-integration/status');
+      return response.json();
+    },
     refetchInterval: 0, // Only fetch on demand
   });
 
   // Test integration mutation
   const testIntegrationMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/admin/crypto-integration/test");
+      const response = await apiRequest("POST", "/api/crypto-integration/test");
       return await response.json();
     },
     onSuccess: () => {
@@ -85,7 +89,8 @@ const CryptoIntegrationPage: React.FC = () => {
         title: "Test successful",
         description: "Crypto payment test was successful",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/crypto-integration/status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/crypto-integration/status'] });
+      refetch(); // Refresh the status data
     },
     onError: (error: Error) => {
       toast({

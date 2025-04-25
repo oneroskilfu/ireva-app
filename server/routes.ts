@@ -308,6 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up Crypto Integration routes
   app.use('/api/admin/crypto-integration', cryptoIntegrationRouter);
+  app.use('/api/crypto-integration', cryptoIntegrationRouter); // Also register at non-admin path for client code
   console.log("Crypto integration routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
