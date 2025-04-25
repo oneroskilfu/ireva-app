@@ -30,11 +30,29 @@ import {
   ExternalLink, 
   Wallet, 
   DollarSign,
-  Bitcoin
+  Bitcoin,
+  CircleDollarSign,
+  Link as LinkIcon,
+  RefreshCw
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CryptoPayment from './CryptoPayment';
+
+interface Transaction {
+  id: number;
+  type: 'deposit' | 'withdrawal' | 'investment' | 'return';
+  amount: number;
+  status: 'pending' | 'completed' | 'failed';
+  description: string;
+  createdAt: string;
+  // Fields for crypto transactions
+  isCrypto?: boolean;
+  currency?: string;
+  txHash?: string;
+  network?: string;
+}
 
 interface WalletData {
   balance: number;
@@ -43,14 +61,15 @@ interface WalletData {
   availableBalance: number;
   totalInvested: number;
   totalReturns: number;
-  recentTransactions: {
-    id: number;
-    type: 'deposit' | 'withdrawal' | 'investment' | 'return';
-    amount: number;
-    status: 'pending' | 'completed' | 'failed';
-    description: string;
-    createdAt: string;
-  }[];
+  cryptoBalance?: {
+    total: number;
+    byAsset: Array<{
+      currency: string;
+      amount: number;
+      amountInFiat: number;
+    }>;
+  };
+  recentTransactions: Transaction[];
 }
 
 const WalletOverview: React.FC = () => {
@@ -63,13 +82,81 @@ const WalletOverview: React.FC = () => {
 
   // Mock wallet data while loading or if API returns null
   const wallet = walletData || {
-    balance: 0,
-    pendingDeposits: 0,
+    balance: 5000,
+    pendingDeposits: 250,
     pendingWithdrawals: 0,
-    availableBalance: 0,
-    totalInvested: 0,
-    totalReturns: 0,
-    recentTransactions: []
+    availableBalance: 4750,
+    totalInvested: 15000,
+    totalReturns: 1200,
+    cryptoBalance: {
+      total: 1750,
+      byAsset: [
+        { currency: 'BTC', amount: 0.021, amountInFiat: 850 },
+        { currency: 'ETH', amount: 0.45, amountInFiat: 650 },
+        { currency: 'USDT', amount: 250, amountInFiat: 250 },
+      ]
+    },
+    recentTransactions: [
+      {
+        id: 1,
+        type: 'deposit',
+        amount: 2000,
+        status: 'completed',
+        description: 'Bank transfer deposit',
+        createdAt: '2025-04-20T12:00:00Z'
+      },
+      {
+        id: 2,
+        type: 'deposit',
+        amount: 850,
+        status: 'completed',
+        description: 'Bitcoin deposit',
+        createdAt: '2025-04-21T14:30:00Z',
+        isCrypto: true,
+        currency: 'BTC',
+        txHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+        network: 'Bitcoin'
+      },
+      {
+        id: 3,
+        type: 'investment',
+        amount: 1500,
+        status: 'completed',
+        description: 'Investment in Lagos Heights',
+        createdAt: '2025-04-22T09:15:00Z'
+      },
+      {
+        id: 4,
+        type: 'deposit',
+        amount: 650,
+        status: 'completed',
+        description: 'Ethereum deposit',
+        createdAt: '2025-04-23T16:45:00Z',
+        isCrypto: true,
+        currency: 'ETH',
+        txHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        network: 'Ethereum'
+      },
+      {
+        id: 5,
+        type: 'return',
+        amount: 120,
+        status: 'completed',
+        description: 'ROI from Westfield Retail Center',
+        createdAt: '2025-04-24T10:30:00Z'
+      },
+      {
+        id: 6,
+        type: 'deposit',
+        amount: 250,
+        status: 'pending',
+        description: 'USDT deposit',
+        createdAt: '2025-04-25T08:00:00Z',
+        isCrypto: true,
+        currency: 'USDT',
+        network: 'Ethereum'
+      }
+    ]
   };
 
   const handleOpenDepositDialog = () => {
@@ -88,7 +175,7 @@ const WalletOverview: React.FC = () => {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -101,6 +188,34 @@ const WalletOverview: React.FC = () => {
             <p className="text-xs text-muted-foreground">
               Available: {formatCurrency(wallet.availableBalance)}
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Crypto Balance
+            </CardTitle>
+            <Bitcoin className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {wallet.cryptoBalance 
+                ? formatCurrency(wallet.cryptoBalance.total) 
+                : formatCurrency(0)}
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              {wallet.cryptoBalance?.byAsset && wallet.cryptoBalance.byAsset.length > 0 ? (
+                wallet.cryptoBalance.byAsset.map((asset, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>{asset.currency}:</span>
+                    <span>{asset.amount} ({formatCurrency(asset.amountInFiat)})</span>
+                  </div>
+                ))
+              ) : (
+                <p>No crypto assets</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -200,11 +315,40 @@ const WalletOverview: React.FC = () => {
               <TableBody>
                 {wallet.recentTransactions.length > 0 ? (
                   wallet.recentTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell className="font-medium capitalize">{transaction.type}</TableCell>
+                    <TableRow key={transaction.id} className={transaction.isCrypto ? "bg-muted/30" : ""}>
+                      <TableCell className="font-medium capitalize">
+                        <div className="flex items-center">
+                          {transaction.isCrypto ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center">
+                                    <Bitcoin className="h-3 w-3 mr-1 text-muted-foreground" />
+                                    {transaction.type}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Crypto Transaction</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            transaction.type
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
-                        {transaction.type === 'deposit' || transaction.type === 'return' ? '+' : '-'}
-                        {formatCurrency(transaction.amount)}
+                        <div className="flex flex-col">
+                          <span>
+                            {transaction.type === 'deposit' || transaction.type === 'return' ? '+' : '-'}
+                            {formatCurrency(transaction.amount)}
+                          </span>
+                          {transaction.isCrypto && transaction.currency && (
+                            <span className="text-xs text-muted-foreground">
+                              {transaction.currency}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={
@@ -214,7 +358,22 @@ const WalletOverview: React.FC = () => {
                           {transaction.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{transaction.description}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{transaction.description}</span>
+                          {transaction.isCrypto && transaction.txHash && (
+                            <a 
+                              href={`https://etherscan.io/tx/${transaction.txHash}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs flex items-center text-primary hover:underline"
+                            >
+                              <LinkIcon className="h-3 w-3 mr-1" />
+                              View on {transaction.network || 'blockchain'}
+                            </a>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         {new Date(transaction.createdAt).toLocaleDateString()}
                       </TableCell>
