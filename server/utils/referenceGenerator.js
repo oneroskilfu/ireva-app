@@ -3,7 +3,7 @@
  * @param {string} prefix - Prefix for the reference (e.g., 'INV', 'TXN', 'ROI')
  * @returns {string} - A unique reference ID
  */
-function generateReference(prefix = 'TXN') {
+export function generateReference(prefix = 'TXN') {
   // Get current date components
   const now = new Date();
   const year = now.getFullYear().toString().slice(-2); // Last 2 digits of year
@@ -20,6 +20,5 @@ function generateReference(prefix = 'TXN') {
   return `${prefix}-${year}${month}${day}-${hours}${minutes}${seconds}-${randomChars}`;
 }
 
-module.exports = {
-  generateReference
-};
+// For backward compatibility with JS controller
+export const generateInvestmentReference = (prefix = 'INV') => generateReference(prefix);

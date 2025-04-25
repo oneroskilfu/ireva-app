@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
-const Investment = require('../models/Investment');
-const Transaction = require('../models/Transaction');
-const Wallet = require('../models/Wallet');
-const Project = require('../models/Project');
-const { generateInvestmentReference } = require('../utils/referenceGenerator');
-const { CryptoPaymentService } = require('../services/crypto-payment-service');
+import mongoose from 'mongoose';
+import Investment from '../models/Investment';
+import Transaction from '../models/Transaction.js';
+import Wallet from '../models/Wallet.js';
+import Project from '../models/Project';
+import { generateInvestmentReference } from '../utils/referenceGenerator.js';
+import { CryptoPaymentService } from '../services/crypto-payment-service.js';
 
 // Initialize the crypto payment service
 const cryptoPaymentService = new CryptoPaymentService();
@@ -175,10 +175,10 @@ const handleCryptoInvestment = async (req, res) => {
     
     // Create investment record with 'pending' status
     const investment = await Investment.create({
-      userId,
-      projectId,
+      investor: userId,
+      property: projectId,
       amount,
-      investmentDate: new Date(),
+      startDate: new Date(),
       status: 'pending', // Start with pending until payment confirmed
       reference,
       paymentMethod: 'crypto',
@@ -313,12 +313,12 @@ const confirmCryptoPayment = async (paymentId, txHash) => {
     await investment.save();
     
     // Update project funding
-    const project = await Project.findById(investment.projectId);
+    const project = await Project.findById(investment.property);
     if (project) {
       project.currentFunding += investment.amount;
       project.numberOfInvestors = await Investment.countDocuments({
-        projectId: project._id,
-        status: { $ne: 'cancelled', $ne: 'pending' }
+        property: project._id,
+        status: { $nin: ['cancelled', 'pending'] }
       });
       await project.save();
     }
@@ -649,7 +649,8 @@ const cancelInvestment = async (req, res) => {
   }
 };
 
-module.exports = {
+// Export the functions
+export {
   investInProject,
   getUserInvestments,
   getInvestmentDetails,

@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   amount: { type: Number, required: true },
   type: { 
     type: String, 
-    enum: ['investment', 'deposit', 'withdrawal', 'divestment', 'return', 'fee', 'transfer', 'referral_bonus'],
+    enum: ['investment', 'deposit', 'withdrawal', 'divestment', 'return', 'fee', 'transfer', 'referral_bonus', 'crypto_investment'],
     required: true
   },
   reference: { type: String, required: true, unique: true },
@@ -18,6 +18,15 @@ const transactionSchema = new mongoose.Schema({
   description: { type: String },
   receipt: { type: String }, // URL to receipt PDF if generated
   metadata: { type: mongoose.Schema.Types.Mixed }, // For additional data specific to transaction types
+  paymentMethod: { type: String, enum: ['fiat', 'crypto'] },
+  currency: { type: String },
+  network: { type: String },
+  paymentId: { type: String },
+  paymentAddress: { type: String }, 
+  paymentUrl: { type: String },
+  expiresAt: { type: Date },
+  transactionHash: { type: String }, // Blockchain transaction hash
+  completedAt: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -30,4 +39,9 @@ transactionSchema.index({ type: 1 });
 // Create index on status for transaction monitoring
 transactionSchema.index({ status: 1 });
 
-module.exports = mongoose.model('Transaction', transactionSchema);
+// Create index on paymentId for faster payment lookups
+transactionSchema.index({ paymentId: 1 });
+
+const Transaction = mongoose.model('Transaction', transactionSchema);
+
+export default Transaction;

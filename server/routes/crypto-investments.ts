@@ -7,6 +7,16 @@ import {
 } from '@shared/crypto-schema';
 import { CryptoPaymentService } from '../services/crypto-payment-service';
 import { z } from 'zod';
+// Import the investment controller with dynamic import
+// Use 'any' type to satisfy TypeScript
+let investmentController: any;
+
+// Immediately invoke async function
+(async () => {
+  const controllerPath = new URL('../controllers/investmentController.js', import.meta.url).href;
+  const module = await import(controllerPath);
+  investmentController = module;
+})();
 
 // Initialize the crypto payment service
 const cryptoPaymentService = new CryptoPaymentService();
@@ -219,6 +229,45 @@ router.post('/webhook', async (req: Request, res: Response) => {
     res.status(200).json({ 
       success: false,
       message: 'Webhook processing failed but acknowledged' 
+    });
+  }
+});
+
+// Handle crypto investment in a project
+router.post('/invest', authMiddleware, async (req: Request, res: Response) => {
+  // Add user ID from JWT payload if not provided
+  if (!req.body.userId && req.jwtPayload?.id) {
+    req.body.userId = req.jwtPayload.id;
+  }
+  
+  try {
+    if (investmentController) {
+      await investmentController.handleCryptoInvestment(req, res);
+    } else {
+      throw new Error('Investment controller not loaded yet');
+    }
+  } catch (error) {
+    console.error('Error in crypto investment handler:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error in crypto investment handler' 
+    });
+  }
+});
+
+// Check crypto payment status
+router.get('/payment-status/:paymentId', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    if (investmentController) {
+      await investmentController.checkCryptoPaymentStatus(req, res);
+    } else {
+      throw new Error('Investment controller not loaded yet');
+    }
+  } catch (error) {
+    console.error('Error in payment status check handler:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error in payment status check' 
     });
   }
 });

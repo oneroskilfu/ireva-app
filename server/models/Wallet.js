@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const walletSchema = new mongoose.Schema({
   userId: { 
@@ -41,6 +41,17 @@ const walletSchema = new mongoose.Schema({
     type: String,
     default: 'NGN'
   },
+  // Crypto-related fields
+  cryptoBalances: {
+    type: Map,
+    of: Number,
+    default: new Map()
+  },
+  cryptoAddresses: {
+    type: Map,
+    of: String,
+    default: new Map()
+  },
   lastUpdated: {
     type: Date,
     default: Date.now
@@ -56,4 +67,6 @@ walletSchema.pre('save', function(next) {
 // Create index for efficient user lookup
 walletSchema.index({ userId: 1 });
 
-module.exports = mongoose.model('Wallet', walletSchema);
+const Wallet = mongoose.model('Wallet', walletSchema);
+
+export default Wallet;
