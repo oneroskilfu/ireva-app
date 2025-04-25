@@ -226,17 +226,17 @@ const CryptoIntegrationPage: React.FC = () => {
                   Step 1: API Key Configuration
                 </Typography>
                 <Box display="flex" alignItems="center" mb={2}>
-                  {getStatusIcon(data?.environment.success || false)}
+                  {getStatusIcon(data?.environment?.success || false)}
                   <Typography variant="subtitle1" ml={1}>
-                    {data?.environment.success ? "API Keys Configured" : "API Keys Missing"}
+                    {data?.environment?.success ? "API Keys Configured" : "API Keys Missing"}
                   </Typography>
                 </Box>
                 <Typography paragraph>
                   API keys are required to connect with cryptocurrency payment providers. These keys authenticate your platform and allow secure transactions.
                 </Typography>
-                {!data?.environment.success && (
+                {!data?.environment?.success && data?.environment?.missingKeys && (
                   <Alert severity="warning" sx={{ mb: 2 }}>
-                    The following API keys are missing: {data?.environment.missingKeys.join(', ')}
+                    The following API keys are missing: {data?.environment?.missingKeys.join(', ')}
                   </Alert>
                 )}
                 <Typography variant="subtitle2" gutterBottom>
@@ -265,9 +265,9 @@ const CryptoIntegrationPage: React.FC = () => {
                   Step 2: Webhook Configuration
                 </Typography>
                 <Box display="flex" alignItems="center" mb={2}>
-                  {getStatusIcon(data?.webhooks.success || false)}
+                  {getStatusIcon(data?.webhooks?.success || false)}
                   <Typography variant="subtitle1" ml={1}>
-                    {data?.webhooks.success ? "Webhooks Configured" : "Webhooks Unconfigured"}
+                    {data?.webhooks?.success ? "Webhooks Configured" : "Webhooks Unconfigured"}
                   </Typography>
                 </Box>
                 <Typography paragraph>
@@ -404,8 +404,8 @@ const CryptoIntegrationPage: React.FC = () => {
                   <SettingsIcon sx={{ mr: 1 }} /> Environment Configuration
                 </Typography>
                 <Box sx={{ mb: 2 }}>
-                  <Alert severity={data?.environment.success ? "success" : "warning"}>
-                    {data?.environment.success 
+                  <Alert severity={data?.environment?.success ? "success" : "warning"}>
+                    {data?.environment?.success 
                       ? "All required environment variables are configured properly." 
                       : "Some required environment variables are missing."}
                   </Alert>
@@ -414,7 +414,7 @@ const CryptoIntegrationPage: React.FC = () => {
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" gutterBottom>Present Keys:</Typography>
                     <List dense>
-                      {data?.environment.presentKeys.map((key) => (
+                      {data?.environment?.presentKeys?.map((key) => (
                         <ListItem key={key}>
                           <ListItemIcon><CheckCircleIcon color="success" /></ListItemIcon>
                           <ListItemText primary={key} />
@@ -425,13 +425,13 @@ const CryptoIntegrationPage: React.FC = () => {
                   <Grid item xs={12} md={6}>
                     <Typography variant="subtitle2" gutterBottom>Missing Keys:</Typography>
                     <List dense>
-                      {data?.environment.missingKeys.map((key) => (
+                      {data?.environment?.missingKeys?.map((key) => (
                         <ListItem key={key}>
                           <ListItemIcon><ErrorIcon color="error" /></ListItemIcon>
                           <ListItemText primary={key} />
                         </ListItem>
                       ))}
-                      {data?.environment.missingKeys.length === 0 && (
+                      {data?.environment?.missingKeys?.length === 0 && (
                         <ListItem>
                           <ListItemIcon><CheckCircleIcon color="success" /></ListItemIcon>
                           <ListItemText primary="No missing keys" />
