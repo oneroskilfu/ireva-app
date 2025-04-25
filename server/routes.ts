@@ -30,6 +30,7 @@ import investorRoiRoutes from './routes/investorRoiRoutes';
 // Import crypto routes
 import cryptoWalletRouter from './routes/crypto-wallets';
 import cryptoTransactionRouter from './routes/crypto-transactions';
+import { cryptoTransactionsRouter } from './routes/crypto-transactions';
 import cryptoPaymentRouter from './routes/crypto-payments';
 import cryptoInvestmentsRouter from './routes/crypto-investments';
 import adminCryptoRouter from './routes/admin-crypto-routes';
@@ -44,7 +45,7 @@ import stablecoinRoutes from './routes/stablecoin-routes';
 // Import milestone escrow routes
 import milestoneEscrowRoutes from './routes/milestone-escrow-routes';
 // Import crypto integration routes
-import { cryptoIntegrationRouter } from './crypto-integration-routes';
+import { cryptoIntegrationRouter } from './routes/crypto-integration-routes';
 // Import admin crypto validation routes
 import { adminCryptoValidateRouter } from './routes/admin-crypto-validate';
 // Import crypto webhook routes
@@ -125,6 +126,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Transaction routes
   app.use('/api/investor/transactions', transactionRouter);
   console.log("Transaction routes registered");
+  
+  // Set up Crypto Transaction routes
+  app.use('/api/crypto/transactions', cryptoTransactionsRouter);
+  console.log("Crypto transaction routes registered");
   
   // Set up Settings routes
   app.use('/api/settings', settingsRoutes);
