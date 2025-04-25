@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -34,11 +34,23 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon } from 'lucide-react';
+import { Loader2, CalendarIcon, Upload, Image as ImageIcon, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Custom validator for image URLs or data URLs
+const isValidImageUrl = (value: string) => {
+  // Check if it's a valid URL
+  const urlRegex = /^(https?:\/\/[^\s]+)$/;
+  
+  // Check if it's a data URL for an image
+  const dataUrlRegex = /^data:image\/(jpeg|jpg|png|gif|webp|svg\+xml);base64,[a-zA-Z0-9+/=]+$/;
+  
+  return urlRegex.test(value) || dataUrlRegex.test(value);
+};
 
 // Property form schema
 const propertyFormSchema = z.object({
@@ -46,8 +58,16 @@ const propertyFormSchema = z.object({
   location: z.string().min(2, "Location is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   type: z.enum(["residential", "commercial", "industrial", "mixed_use", "land"]),
-  imageUrl: z.string().url("Must be a valid URL"),
-  imageGallery: z.array(z.string().url("Must be a valid URL")).optional(),
+  imageUrl: z.string().refine(
+    isValidImageUrl, 
+    { message: "Must be a valid URL or image data URL" }
+  ),
+  imageGallery: z.array(
+    z.string().refine(
+      isValidImageUrl, 
+      { message: "Must be a valid URL or image data URL" }
+    )
+  ).optional(),
   videoUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   developer: z.string().min(2, "Developer name is required"),
   developerProfile: z.string().optional().or(z.literal('')),
@@ -285,11 +305,76 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ isOpen, onClose }) =>
                   name="imageUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Main Image URL*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/image.jpg" {...field} />
-                      </FormControl>
-                      <FormDescription>URL to the main property image</FormDescription>
+                      <FormLabel>Main Property Image*</FormLabel>
+                      <Tabs defaultValue="url" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="url">URL</TabsTrigger>
+                          <TabsTrigger value="upload">Upload</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="url" className="space-y-4">
+                          <FormControl>
+                            <Input 
+                              placeholder="https://example.com/image.jpg" 
+                              {...field} 
+                            />
+                          </FormControl>
+                        </TabsContent>
+                        
+                        <TabsContent value="upload" className="space-y-4">
+                          <div className="flex flex-col space-y-2">
+                            <div 
+                              className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center bg-muted cursor-pointer"
+                              onClick={() => document.getElementById('main-image-upload')?.click()}
+                            >
+                              {field.value && field.value.startsWith('data:image/') ? (
+                                <div className="relative w-full h-40 mb-2">
+                                  <img 
+                                    src={field.value}
+                                    alt="Main property"
+                                    className="absolute inset-0 w-full h-full object-contain"
+                                  />
+                                </div>
+                              ) : (
+                                <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                              )}
+                              <p className="text-sm text-muted-foreground mb-1">
+                                {field.value && field.value.startsWith('data:image/') 
+                                  ? "Click to change main property image" 
+                                  : "Click to upload main property image"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                PNG, JPG, WEBP up to 5MB
+                              </p>
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                id="main-image-upload"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    // Convert file to data URL
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                      if (event.target?.result && typeof event.target.result === 'string') {
+                                        field.onChange(event.target.result);
+                                      }
+                                    };
+                                    reader.readAsDataURL(file);
+                                    // Clear the input
+                                    e.target.value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                      
+                      <FormDescription>
+                        Main image for the property listing
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -297,29 +382,105 @@ const AddPropertyForm: React.FC<AddPropertyFormProps> = ({ isOpen, onClose }) =>
 
                 <div className="space-y-2">
                   <FormLabel>Image Gallery</FormLabel>
-                  <div className="flex space-x-2">
-                    <Input 
-                      placeholder="https://example.com/gallery1.jpg" 
-                      value={imageUrlInput}
-                      onChange={(e) => setImageUrlInput(e.target.value)}
-                    />
-                    <Button type="button" onClick={addImageToGallery} variant="outline">Add</Button>
-                  </div>
-                  {imageGallery.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {imageGallery.map((url, index) => (
-                        <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
-                          <span className="text-sm truncate flex-1">{url}</span>
+                  
+                  <Tabs defaultValue="url" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="url">URL</TabsTrigger>
+                      <TabsTrigger value="upload">Upload Files</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="url" className="space-y-4">
+                      <div className="flex space-x-2">
+                        <Input 
+                          placeholder="https://example.com/gallery1.jpg" 
+                          value={imageUrlInput}
+                          onChange={(e) => setImageUrlInput(e.target.value)}
+                        />
+                        <Button 
+                          type="button" 
+                          onClick={addImageToGallery} 
+                          variant="outline"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="upload" className="space-y-4">
+                      <div className="flex flex-col space-y-2">
+                        <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center bg-muted">
+                          <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Drag and drop image files here, or click to select files
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            PNG, JPG, WEBP up to 5MB
+                          </p>
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            id="image-upload"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              const files = e.target.files;
+                              if (files) {
+                                Array.from(files).forEach(file => {
+                                  // Convert file to data URL
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    if (event.target?.result && typeof event.target.result === 'string') {
+                                      if (!imageGallery.includes(event.target.result)) {
+                                        setImageGallery([...imageGallery, event.target.result]);
+                                      }
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
+                                // Clear the input
+                                e.target.value = '';
+                              }
+                            }}
+                          />
                           <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => removeImageFromGallery(url)}
+                            type="button"
+                            variant="secondary"
+                            className="mt-4"
+                            onClick={() => document.getElementById('image-upload')?.click()}
                           >
-                            Remove
+                            <Upload className="h-4 w-4 mr-2" />
+                            Select Files
                           </Button>
                         </div>
-                      ))}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                  
+                  {imageGallery.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Gallery Preview</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {imageGallery.map((url, index) => (
+                          <div key={index} className="relative group aspect-square rounded-md overflow-hidden bg-muted">
+                            <img 
+                              src={url} 
+                              alt={`Gallery image ${index + 1}`}
+                              className="absolute inset-0 w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button 
+                                type="button" 
+                                variant="destructive" 
+                                size="sm" 
+                                className="rounded-full w-8 h-8 p-0"
+                                onClick={() => removeImageFromGallery(url)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
