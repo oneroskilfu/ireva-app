@@ -9,7 +9,7 @@ import {
   Download, Search, FilterList, Refresh, 
   AttachMoney, ShowChart, AccountBalanceWallet,
   WarningAmber, CheckCircle, Cancel, 
-  Bitcoin
+  CurrencyBitcoin
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -254,7 +254,7 @@ export default function CryptoTransactionsDashboard() {
         <Button 
           variant="outlined" 
           color="primary"
-          startIcon={<Bitcoin />}
+          startIcon={<CurrencyBitcoin />}
           component="a"
           href="/admin/crypto-integration"
         >
