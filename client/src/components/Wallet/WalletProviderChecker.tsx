@@ -159,11 +159,38 @@ const WalletProviderChecker: React.FC<WalletProviderCheckerProps> = ({ onSubmitK
       </CardHeader>
       <CardContent className="space-y-6">
         {!allNetworksAvailable && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" id="api-keys-section">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Connection Issues Detected</AlertTitle>
-            <AlertDescription>
-              We're having trouble connecting to some blockchain networks. This may affect your ability to view balances or make transactions.
+            <AlertTitle>Blockchain Connection Required</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>
+                To enable crypto transactions, you need to connect to blockchain networks by providing API keys from providers like Alchemy or Infura.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="bg-white text-destructive border-destructive hover:bg-destructive/10"
+                  onClick={() => document.querySelector('.bg-card')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Set Up API Keys
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  asChild
+                >
+                  <a 
+                    href="https://docs.alchemy.com/reference/api-overview" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-1"
+                  >
+                    <span>Learn More</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -192,7 +219,7 @@ const WalletProviderChecker: React.FC<WalletProviderCheckerProps> = ({ onSubmitK
         </div>
 
         {showApiKeyForm && (
-          <div className="border rounded-lg p-4 space-y-4 mt-6">
+          <div className="border rounded-lg p-6 space-y-5 mt-6 bg-card">
             <div className="flex items-center space-x-2">
               <KeyRound className="h-5 w-5 text-amber-500" />
               <h3 className="font-medium">Add Your API Keys</h3>
@@ -202,25 +229,125 @@ const WalletProviderChecker: React.FC<WalletProviderCheckerProps> = ({ onSubmitK
               To connect to blockchain networks, we need API keys from providers like Alchemy or Infura. These keys stay in your browser and are never stored on our servers.
             </p>
             
-            <div className="space-y-4 mt-4">
-              {Object.keys(apiKeys).map(key => (
-                <div key={key} className="space-y-2">
-                  <label htmlFor={key} className="text-sm font-medium">{key}</label>
-                  <Input
-                    id={key}
-                    type="text"
-                    placeholder={`Enter your ${key}`}
-                    value={apiKeys[key]}
-                    onChange={(e) => handleApiKeyChange(key, e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">{getHelperText(key)}</p>
-                </div>
-              ))}
+            <Tabs defaultValue="alchemy" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="alchemy">Alchemy</TabsTrigger>
+                <TabsTrigger value="infura">Infura</TabsTrigger>
+                <TabsTrigger value="custom">Custom</TabsTrigger>
+              </TabsList>
               
-              <Button onClick={handleSubmitKeys} className="w-full">
-                Save API Keys
-              </Button>
-            </div>
+              <TabsContent value="alchemy" className="mt-4 space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md border border-blue-100 dark:border-blue-800 text-sm">
+                  <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-1">Getting Alchemy API Keys</h4>
+                  <ol className="list-decimal pl-4 space-y-2 text-blue-600 dark:text-blue-400">
+                    <li>Go to <a href="https://dashboard.alchemy.com/signup" target="_blank" rel="noopener noreferrer" className="font-medium underline">Alchemy Dashboard</a> and create a free account</li>
+                    <li>Click on "Create App" and fill in your app details</li>
+                    <li>Select the networks you need (Ethereum, Polygon, etc.)</li>
+                    <li>Copy the HTTP URL from each app to use below</li>
+                  </ol>
+                </div>
+                
+                <div className="space-y-4">
+                  {Object.keys(apiKeys).map(key => {
+                    const networkName = key === 'ETH_RPC_URL' ? 'Ethereum' : 
+                                       key === 'POLYGON_RPC_URL' ? 'Polygon' : 
+                                       'Binance Smart Chain';
+                    return (
+                      <div key={key} className="space-y-2 bg-muted/40 p-3 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <label htmlFor={`alchemy-${key}`} className="text-sm font-medium">{networkName} HTTP URL</label>
+                          {key === 'BSC_RPC_URL' && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20">Not available on Alchemy</Badge>
+                          )}
+                        </div>
+                        <Input
+                          id={`alchemy-${key}`}
+                          type="text"
+                          placeholder={key === 'BSC_RPC_URL' ? 'Not available on Alchemy' : `https://${networkName.toLowerCase()}-mainnet.g.alchemy.com/v2/YOUR_API_KEY`}
+                          value={apiKeys[key]}
+                          onChange={(e) => handleApiKeyChange(key, e.target.value)}
+                          disabled={key === 'BSC_RPC_URL'}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="infura" className="mt-4 space-y-4">
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-md border border-purple-100 dark:border-purple-800 text-sm">
+                  <h4 className="font-medium text-purple-700 dark:text-purple-300 mb-1">Getting Infura API Keys</h4>
+                  <ol className="list-decimal pl-4 space-y-2 text-purple-600 dark:text-purple-400">
+                    <li>Go to <a href="https://app.infura.io/register" target="_blank" rel="noopener noreferrer" className="font-medium underline">Infura Dashboard</a> and create a free account</li>
+                    <li>Click on "Create New API Key" and select "Web3 API"</li>
+                    <li>Give your project a name and click "Create"</li>
+                    <li>Find your API key in the project settings</li>
+                    <li>Select each network and copy the endpoint URLs</li>
+                  </ol>
+                </div>
+                
+                <div className="space-y-4">
+                  {Object.keys(apiKeys).map(key => {
+                    const networkName = key === 'ETH_RPC_URL' ? 'Ethereum' : 
+                                       key === 'POLYGON_RPC_URL' ? 'Polygon' : 
+                                       'Binance Smart Chain';
+                    const isSupported = key !== 'BSC_RPC_URL';
+                    return (
+                      <div key={key} className="space-y-2 bg-muted/40 p-3 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <label htmlFor={`infura-${key}`} className="text-sm font-medium">{networkName} HTTP URL</label>
+                          {!isSupported && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20">Not available on Infura</Badge>
+                          )}
+                        </div>
+                        <Input
+                          id={`infura-${key}`}
+                          type="text"
+                          placeholder={!isSupported ? 'Not available on Infura' : `https://${networkName.toLowerCase()}.infura.io/v3/YOUR_API_KEY`}
+                          value={apiKeys[key]}
+                          onChange={(e) => handleApiKeyChange(key, e.target.value)}
+                          disabled={!isSupported}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="custom" className="mt-4 space-y-4">
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md border border-green-100 dark:border-green-800 text-sm">
+                  <h4 className="font-medium text-green-700 dark:text-green-300 mb-1">Using Custom RPC URLs</h4>
+                  <p className="text-green-600 dark:text-green-400 mb-2">
+                    You can use any RPC URL provider that supports the following networks:
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1 text-green-600 dark:text-green-400">
+                    <li>Ethereum: QuickNode, GetBlock, Ankr, or your own node</li>
+                    <li>Polygon: QuickNode, GetBlock, or Polygon's public RPC</li>
+                    <li>Binance Smart Chain: BSC public RPC endpoints</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-4">
+                  {Object.keys(apiKeys).map(key => (
+                    <div key={key} className="space-y-2">
+                      <label htmlFor={`custom-${key}`} className="text-sm font-medium">{key}</label>
+                      <Input
+                        id={`custom-${key}`}
+                        type="text"
+                        placeholder={`Enter your ${key}`}
+                        value={apiKeys[key]}
+                        onChange={(e) => handleApiKeyChange(key, e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">{getHelperText(key)}</p>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <Button onClick={handleSubmitKeys} className="w-full mt-6">
+              Save API Keys
+            </Button>
           </div>
         )}
       </CardContent>
