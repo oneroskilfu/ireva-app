@@ -561,7 +561,7 @@ Secret: Same as your CRYPTO_WEBHOOK_SECRET env variable`}
                 <List dense>
                   <ListItem>
                     <ListItemIcon>
-                      <CheckCircleIcon color={data?.uiIntegration.success ? "success" : "disabled"} />
+                      <CheckCircleIcon color={data?.uiIntegration?.success ? "success" : "disabled"} />
                     </ListItemIcon>
                     <ListItemText 
                       primary="Crypto payment option visible in payment methods" 
@@ -569,7 +569,7 @@ Secret: Same as your CRYPTO_WEBHOOK_SECRET env variable`}
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
-                      <CheckCircleIcon color={data?.uiIntegration.success ? "success" : "disabled"} />
+                      <CheckCircleIcon color={data?.uiIntegration?.success ? "success" : "disabled"} />
                     </ListItemIcon>
                     <ListItemText 
                       primary="QR code generation working" 
@@ -577,7 +577,7 @@ Secret: Same as your CRYPTO_WEBHOOK_SECRET env variable`}
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
-                      <CheckCircleIcon color={data?.uiIntegration.success ? "success" : "disabled"} />
+                      <CheckCircleIcon color={data?.uiIntegration?.success ? "success" : "disabled"} />
                     </ListItemIcon>
                     <ListItemText 
                       primary="Payment status updates displaying correctly" 
