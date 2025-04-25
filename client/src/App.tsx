@@ -37,6 +37,8 @@ const AdminDashboard = lazy(() => import("@/pages/admin/admin-dashboard"));
 const JwtTestPage = lazy(() => import("@/pages/jwt-test-page"));
 const TestLogin = lazy(() => import("./test-login"));
 const DebugLoginPage = lazy(() => import("@/pages/DebugLoginPage"));
+// Add the WalletDemo component
+const WalletDemo = lazy(() => import("@/components/wallet/WalletDemo"));
 
 // Configure React Query with proper suspense handling
 const queryClient = new QueryClient({
@@ -135,6 +137,7 @@ function Router() {
       <Route path="/company/press" component={PressPage} />
       <Route path="/explore" component={ExplorePage} />
       <Route path="/crypto-education" component={CryptoEducationPage} />
+      <Route path="/wallet-demo" component={WalletDemo} />
       
       {/* Legacy Protected Routes - will be deprecated gradually */}
       <Route path="/dashboard">
