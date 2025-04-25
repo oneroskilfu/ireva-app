@@ -623,5 +623,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Set up Socket.io
+  const io = setupSocketIO(httpServer);
+  console.log("Socket.io initialized successfully");
+  
+  // Make socket.io instance available to application
+  app.set('io', io);
+  
   return httpServer;
 }
