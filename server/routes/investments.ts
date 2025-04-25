@@ -1,7 +1,10 @@
 import express, { Request, Response } from 'express';
 import { authMiddleware } from '../auth-jwt';
 import { storage } from '../storage';
-import { cryptoPaymentService } from '../services/crypto-payment-service';
+import { CryptoPaymentService } from '../services/crypto-payment-service';
+
+// Initialize the crypto payment service
+const cryptoPaymentService = new CryptoPaymentService();
 
 const router = express.Router();
 

@@ -1,158 +1,110 @@
-import React, { createContext, useContext } from 'react';
-import { Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React from "react"
+import { cn } from "@/lib/utils"
 
-interface StepsContextValue {
-  activeStep: number;
-  totalSteps: number;
+interface StepsProps {
+  activeStep: number
+  children: React.ReactNode
+  className?: string
 }
 
-const StepsContext = createContext<StepsContextValue | null>(null);
-
-export interface StepsProps extends React.HTMLAttributes<HTMLDivElement> {
-  activeStep: number;
-  children: React.ReactNode;
+interface StepProps {
+  title: string
+  description?: string
 }
 
-export interface StepProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  description?: string;
-  stepNumber?: number;
-}
-
-// Additional components needed for the verification page
-export interface StepIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
-  step: number;
-  children?: React.ReactNode;
-}
-
-export interface StepTitleProps extends React.HTMLAttributes<HTMLParagraphElement> {
-  children: React.ReactNode;
-}
-
-export interface StepDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
-  children: React.ReactNode;
-}
-
-export function Steps({ activeStep, children, className, ...props }: StepsProps) {
-  return (
-    <StepsContext.Provider value={{ activeStep, totalSteps: React.Children.count(children) }}>
-      <div className={cn("space-y-6", className)} {...props}>
-        <div className="flex items-center w-full">
-          {children}
-        </div>
-      </div>
-    </StepsContext.Provider>
-  );
-}
-
-export function Step({ title, description, stepNumber, className, ...props }: StepProps) {
-  const context = useContext(StepsContext);
-
-  if (!context) {
-    throw new Error('Step must be used within a Steps component');
-  }
-
-  const { activeStep } = context;
-  
-  // Calculate status based on active step 
-  const status = 
-    stepNumber && activeStep > stepNumber 
-      ? "complete" 
-      : stepNumber === activeStep 
-        ? "active" 
-        : "inactive";
+export const Steps = ({ activeStep, children, className }: StepsProps) => {
+  // Convert children to array to enable mapping
+  const stepsArray = React.Children.toArray(children)
+  const totalSteps = stepsArray.length
 
   return (
-    <div
-      className={cn("z-10 flex-1 text-center flex flex-col items-center", className)}
-      {...props}
-    >
-      <div 
-        className={cn(
-          "w-10 h-10 flex items-center justify-center rounded-full relative",
-          status === "complete" ? "bg-primary text-primary-foreground" : 
-          status === "active" ? "bg-primary text-primary-foreground" :
-          "bg-muted text-muted-foreground"
-        )}
-      >
-        {status === "complete" ? (
-          <Check className="h-5 w-5" />
-        ) : (
-          <span>{stepNumber}</span>
-        )}
-      </div>
-      <div className="mt-2 space-y-1">
-        <div 
-          className={cn(
-            "text-sm font-medium",
-            status === "inactive" ? "text-muted-foreground" : ""
-          )}
-        >
-          {title}
-        </div>
-        {description && (
-          <div 
-            className={cn(
-              "text-xs",
-              status === "inactive" ? "text-muted-foreground/70" : "text-muted-foreground"
-            )}
-          >
-            {description}
-          </div>
-        )}
+    <div className={cn("w-full", className)}>
+      <div className="flex items-center">
+        {stepsArray.map((step, index) => {
+          const isActive = index + 1 <= activeStep
+          const isLast = index === totalSteps - 1
+
+          return (
+            <React.Fragment key={index}>
+              <div className="flex flex-col items-center relative">
+                <StepIndicator isActive={isActive} stepNumber={index + 1} />
+                <div className="mt-2 text-center">
+                  <StepTitle isActive={isActive}>{(step as React.ReactElement<StepProps>).props.title}</StepTitle>
+                  {(step as React.ReactElement<StepProps>).props.description && (
+                    <StepDescription>{(step as React.ReactElement<StepProps>).props.description}</StepDescription>
+                  )}
+                </div>
+              </div>
+              {!isLast && (
+                <StepSeparator isActive={index + 1 < activeStep} />
+              )}
+            </React.Fragment>
+          )
+        })}
       </div>
     </div>
-  );
+  )
 }
 
-// Additional components needed for the verification page
-export function StepIndicator({ step, children, className, ...props }: StepIndicatorProps) {
-  const context = useContext(StepsContext);
-  const isActive = context && step === context.activeStep;
-  const isCompleted = context && step < context.activeStep;
-
-  return (
-    <div
-      className={cn(
-        "w-10 h-10 flex items-center justify-center rounded-full relative",
-        isCompleted ? "bg-primary text-primary-foreground" : 
-        isActive ? "border-2 border-primary text-primary" :
-        "border-2 border-muted-foreground text-muted-foreground",
-        className
-      )}
-      {...props}
-    >
-      {isCompleted ? (
-        <Check className="h-5 w-5" />
-      ) : (
-        children
-      )}
-    </div>
-  );
-}
-
-export function StepTitle({ children, className, ...props }: StepTitleProps) {
-  return (
-    <p className={cn("text-sm font-medium", className)} {...props}>
-      {children}
-    </p>
-  );
-}
-
-export function StepDescription({ children, className, ...props }: StepDescriptionProps) {
-  return (
-    <p className={cn("text-sm text-muted-foreground", className)} {...props}>
-      {children}
-    </p>
-  );
-}
-
-export function StepSeparator({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export const StepIndicator = ({ 
+  isActive, 
+  stepNumber 
+}: { 
+  isActive: boolean 
+  stepNumber: number 
+}) => {
   return (
     <div 
-      className={cn("flex-1 h-[2px] bg-muted mx-2", className)} 
-      {...props}
+      className={cn(
+        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors",
+        isActive 
+          ? "bg-primary text-primary-foreground" 
+          : "bg-muted text-muted-foreground"
+      )}
+    >
+      {stepNumber}
+    </div>
+  )
+}
+
+export const StepSeparator = ({ isActive }: { isActive: boolean }) => {
+  return (
+    <div 
+      className={cn(
+        "flex-1 h-[2px] mx-2 transition-colors min-w-[3rem]",
+        isActive ? "bg-primary" : "bg-muted"
+      )}
     />
-  );
+  )
+}
+
+export const StepTitle = ({ 
+  children, 
+  isActive 
+}: { 
+  children: React.ReactNode
+  isActive: boolean
+}) => {
+  return (
+    <p 
+      className={cn(
+        "text-sm font-medium",
+        isActive ? "text-foreground" : "text-muted-foreground"
+      )}
+    >
+      {children}
+    </p>
+  )
+}
+
+export const StepDescription = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <p className="text-xs text-muted-foreground max-w-[8rem]">
+      {children}
+    </p>
+  )
+}
+
+export const Step = ({ title, description }: StepProps) => {
+  return null // This component is just for typing, its children are rendered by the Steps component
 }

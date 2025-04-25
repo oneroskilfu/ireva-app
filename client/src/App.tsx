@@ -15,6 +15,7 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const HomePage = lazy(() => import("@/pages/home-page"));
 const PropertyPage = lazy(() => import("@/pages/property-page"));
 const PropertiesPage = lazy(() => import("@/pages/properties-page"));
+const PropertyInvestment = lazy(() => import("@/pages/properties/PropertyInvestment"));
 const AuthPage = lazy(() => import("@/pages/auth-page"));
 const DashboardPage = lazy(() => import("@/pages/dashboard-page"));
 const AnalyticsPage = lazy(() => import("@/pages/analytics-page"));
@@ -115,6 +116,7 @@ function Router() {
       {/* Public Routes */}
       <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
       <Route path="/property/:id" component={PropertyPage} />
+      <Route path="/property/:id/invest" component={PropertyInvestment} />
       <Route path="/properties" component={PropertiesPage} />
       <Route path="/properties/residential" component={PropertiesPage} />
       <Route path="/properties/commercial" component={PropertiesPage} />

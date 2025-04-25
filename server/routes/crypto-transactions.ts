@@ -1,400 +1,199 @@
-import { Router, Request, Response } from 'express';
-import { db } from '../db';
-import { 
-  cryptoWallets, 
-  cryptoTransactions, 
-  insertCryptoTransactionSchema,
-  notifications
-} from '../../shared/schema';
-import { verifyToken } from '../auth-jwt';
-import { and, eq, desc } from 'drizzle-orm';
-import { ZodError } from 'zod';
+import express, { Request, Response } from 'express';
+import { authMiddleware } from '../auth-jwt';
+import { v4 as uuidv4 } from 'uuid';
 
-const cryptoTransactionRouter = Router();
+const router = express.Router();
 
-/**
- * @route GET /api/crypto-transactions
- * @desc Get all user's crypto transactions across all wallets
- * @access Private
- */
-cryptoTransactionRouter.get('/', verifyToken, async (req: Request, res: Response) => {
+// Mock transaction data store (would be a database in production)
+const transactions = new Map<string, {
+  id: string;
+  userId: number;
+  amount: number;
+  type: 'deposit' | 'withdrawal' | 'investment';
+  status: 'pending' | 'completed' | 'failed';
+  hash: string;
+  network: string;
+  currency: string;
+  createdAt: Date;
+}>();
+
+// Sample networks and currencies
+const networks = ['ethereum', 'polygon', 'binance', 'solana'];
+const currencies = ['USDC', 'USDT', 'ETH', 'MATIC', 'BNB', 'SOL'];
+
+// Helper to generate mock transaction
+const generateMockTransaction = (userId: number, type: 'deposit' | 'withdrawal' | 'investment') => {
+  const id = uuidv4();
+  const network = networks[Math.floor(Math.random() * networks.length)];
+  const currency = currencies[Math.floor(Math.random() * currencies.length)];
+  const amount = type === 'investment' 
+    ? Math.floor(Math.random() * 10000) + 1000 
+    : Math.floor(Math.random() * 1000) + 100;
+  
+  const transaction = {
+    id,
+    userId,
+    amount,
+    type,
+    status: Math.random() > 0.2 ? 'completed' : 'pending',
+    hash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+    network,
+    currency,
+    createdAt: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)), // Random date within the last 30 days
+  };
+  
+  transactions.set(id, transaction);
+  return transaction;
+};
+
+// Seed some transactions for demo
+const seedTransactions = (userId: number) => {
+  if (Array.from(transactions.values()).some(tx => tx.userId === userId)) {
+    return; // Already seeded for this user
+  }
+  
+  // Generate 5 random transactions
+  for (let i = 0; i < 5; i++) {
+    const type = Math.random() > 0.5 ? 'deposit' : (Math.random() > 0.5 ? 'withdrawal' : 'investment');
+    generateMockTransaction(userId, type);
+  }
+};
+
+// Get user's transactions
+router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.jwtPayload?.id;
     
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
-
-    // Get all user wallet IDs
-    const userWallets = await db
-      .select()
-      .from(cryptoWallets)
-      .where(eq(cryptoWallets.userId, userId.toString()));
-
-    const walletIds = userWallets.map(wallet => wallet.id);
-
-    if (walletIds.length === 0) {
-      return res.json([]);
-    }
-
-    // Get all transactions from all user wallets
-    const transactions = await db
-      .select({
-        transaction: cryptoTransactions,
-        wallet: {
-          id: cryptoWallets.id,
-          address: cryptoWallets.address,
-          network: cryptoWallets.network,
-          label: cryptoWallets.label
-        }
-      })
-      .from(cryptoTransactions)
-      .innerJoin(
-        cryptoWallets,
-        eq(cryptoTransactions.cryptoWalletId, cryptoWallets.id)
-      )
-      .where(
-        walletIds.map(id => eq(cryptoTransactions.cryptoWalletId, id)).reduce(
-          (prev, curr) => prev || curr
-        )
-      )
-      .orderBy(desc(cryptoTransactions.createdAt));
-
-    // Format the response
-    const formattedTransactions = transactions.map(({ transaction, wallet }) => ({
-      ...transaction,
-      wallet
-    }));
-
-    res.json(formattedTransactions);
-  } catch (error) {
-    console.error("Error fetching crypto transactions:", error);
-    res.status(500).json({ 
-      message: "Failed to fetch crypto transactions", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
-  }
-});
-
-/**
- * @route POST /api/crypto-transactions/deposit
- * @desc Record a new crypto deposit
- * @access Private
- */
-cryptoTransactionRouter.post('/deposit', verifyToken, async (req: Request, res: Response) => {
-  try {
-    const userId = req.jwtPayload?.id;
     
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const { walletId, txHash, amount, network, amountInFiat } = req.body;
-
-    // Verify wallet belongs to user
-    const [wallet] = await db
-      .select()
-      .from(cryptoWallets)
-      .where(
-        and(
-          eq(cryptoWallets.id, walletId),
-          eq(cryptoWallets.userId, userId.toString())
-        )
-      );
-
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
-    }
-
-    // Create transaction record
-    const [transaction] = await db
-      .insert(cryptoTransactions)
-      .values({
-        cryptoWalletId: walletId,
-        txHash,
-        network,
-        amount,
-        amountInFiat: amountInFiat?.toString(),
-        type: "deposit",
-        status: "pending",
-        metadata: req.body.metadata || null
-      })
-      .returning();
-
-    // Update wallet last used timestamp
-    await db
-      .update(cryptoWallets)
-      .set({ 
-        lastUsed: new Date()
-      })
-      .where(eq(cryptoWallets.id, walletId));
-
-    // Create notification
-    await db
-      .insert(notifications)
-      .values({
-        userId: userId.toString(),
-        title: "Crypto Deposit Initiated",
-        message: `Your deposit of ${amount} on ${network} network has been initiated and is pending confirmation.`,
-        type: "transaction",
-        link: `/wallet/crypto/${walletId}/transactions`
-      });
-
-    res.status(201).json({
-      message: "Deposit initiated successfully",
-      transaction
-    });
-  } catch (error) {
-    console.error("Error initiating deposit:", error);
-    if (error instanceof ZodError) {
-      return res.status(400).json({ 
-        message: "Invalid transaction data", 
-        errors: error.errors 
-      });
-    }
-    res.status(500).json({ 
-      message: "Failed to initiate deposit", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
-  }
-});
-
-/**
- * @route POST /api/crypto-transactions/withdrawal
- * @desc Record a new crypto withdrawal
- * @access Private
- */
-cryptoTransactionRouter.post('/withdrawal', verifyToken, async (req: Request, res: Response) => {
-  try {
-    const userId = req.jwtPayload?.id;
+    // Seed transactions for demo if needed
+    seedTransactions(userId);
     
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const { walletId, txHash, amount, network, amountInFiat, destinationAddress } = req.body;
-
-    // Verify wallet belongs to user
-    const [wallet] = await db
-      .select()
-      .from(cryptoWallets)
-      .where(
-        and(
-          eq(cryptoWallets.id, walletId),
-          eq(cryptoWallets.userId, userId.toString())
-        )
-      );
-
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
-    }
-
-    // Create transaction record
-    const [transaction] = await db
-      .insert(cryptoTransactions)
-      .values({
-        cryptoWalletId: walletId,
-        txHash,
-        network,
-        amount,
-        amountInFiat: amountInFiat?.toString(),
-        type: "withdrawal",
-        status: "pending",
-        metadata: JSON.stringify({
-          destinationAddress,
-          ...req.body.metadata
-        })
-      })
-      .returning();
-
-    // Update wallet last used timestamp
-    await db
-      .update(cryptoWallets)
-      .set({ 
-        lastUsed: new Date()
-      })
-      .where(eq(cryptoWallets.id, walletId));
-
-    // Create notification
-    await db
-      .insert(notifications)
-      .values({
-        userId: userId.toString(),
-        title: "Crypto Withdrawal Initiated",
-        message: `Your withdrawal of ${amount} on ${network} network has been initiated and is pending confirmation.`,
-        type: "transaction",
-        link: `/wallet/crypto/${walletId}/transactions`
-      });
-
-    res.status(201).json({
-      message: "Withdrawal initiated successfully",
-      transaction
-    });
+    // Get all transactions for the user
+    const userTransactions = Array.from(transactions.values())
+      .filter(tx => tx.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    res.json(userTransactions);
   } catch (error) {
-    console.error("Error initiating withdrawal:", error);
-    if (error instanceof ZodError) {
-      return res.status(400).json({ 
-        message: "Invalid transaction data", 
-        errors: error.errors 
-      });
-    }
-    res.status(500).json({ 
-      message: "Failed to initiate withdrawal", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ message: 'Failed to fetch transactions' });
   }
 });
 
-/**
- * @route PUT /api/crypto-transactions/:id/confirm
- * @desc Confirm a pending transaction (admin only)
- * @access Private/Admin
- */
-cryptoTransactionRouter.put('/:id/confirm', verifyToken, async (req: Request, res: Response) => {
+// Get a specific transaction
+router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.jwtPayload?.id;
     const transactionId = req.params.id;
-    
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // Check if user is admin
-    if (req.jwtPayload?.role !== 'admin' && req.jwtPayload?.role !== 'super_admin') {
-      return res.status(403).json({ message: "Forbidden: Admin access required" });
-    }
-
-    // Get transaction
-    const [transaction] = await db
-      .select({
-        transaction: cryptoTransactions,
-        wallet: cryptoWallets
-      })
-      .from(cryptoTransactions)
-      .innerJoin(
-        cryptoWallets,
-        eq(cryptoTransactions.cryptoWalletId, cryptoWallets.id)
-      )
-      .where(eq(cryptoTransactions.id, transactionId));
-
-    if (!transaction) {
-      return res.status(404).json({ message: "Transaction not found" });
-    }
-
-    if (transaction.transaction.status !== 'pending') {
-      return res.status(400).json({ message: "Transaction is not in pending state" });
-    }
-
-    // Update transaction status
-    const [updatedTransaction] = await db
-      .update(cryptoTransactions)
-      .set({ 
-        status: "completed",
-        confirmedAt: new Date()
-      })
-      .where(eq(cryptoTransactions.id, transactionId))
-      .returning();
-
-    // Create notification
-    await db
-      .insert(notifications)
-      .values({
-        userId: transaction.wallet.userId,
-        title: `Crypto ${transaction.transaction.type.charAt(0).toUpperCase() + transaction.transaction.type.slice(1)} Confirmed`,
-        message: `Your ${transaction.transaction.type} of ${transaction.transaction.amount} on ${transaction.transaction.network} network has been confirmed.`,
-        type: "transaction",
-        link: `/wallet/crypto/${transaction.wallet.id}/transactions`
-      });
-
-    res.json({
-      message: "Transaction confirmed successfully",
-      transaction: updatedTransaction
-    });
-  } catch (error) {
-    console.error("Error confirming transaction:", error);
-    res.status(500).json({ 
-      message: "Failed to confirm transaction", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
-  }
-});
-
-/**
- * @route PUT /api/crypto-transactions/:id/reject
- * @desc Reject a pending transaction (admin only)
- * @access Private/Admin
- */
-cryptoTransactionRouter.put('/:id/reject', verifyToken, async (req: Request, res: Response) => {
-  try {
     const userId = req.jwtPayload?.id;
-    const transactionId = req.params.id;
-    const reason = req.body.reason || "Transaction rejected by administrator";
     
     if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
-
-    // Check if user is admin
-    if (req.jwtPayload?.role !== 'admin' && req.jwtPayload?.role !== 'super_admin') {
-      return res.status(403).json({ message: "Forbidden: Admin access required" });
-    }
-
-    // Get transaction
-    const [transaction] = await db
-      .select({
-        transaction: cryptoTransactions,
-        wallet: cryptoWallets
-      })
-      .from(cryptoTransactions)
-      .innerJoin(
-        cryptoWallets,
-        eq(cryptoTransactions.cryptoWalletId, cryptoWallets.id)
-      )
-      .where(eq(cryptoTransactions.id, transactionId));
-
+    
+    const transaction = transactions.get(transactionId);
+    
     if (!transaction) {
-      return res.status(404).json({ message: "Transaction not found" });
+      return res.status(404).json({ message: 'Transaction not found' });
     }
-
-    if (transaction.transaction.status !== 'pending') {
-      return res.status(400).json({ message: "Transaction is not in pending state" });
+    
+    if (transaction.userId !== userId) {
+      return res.status(403).json({ message: 'Forbidden' });
     }
-
-    // Update transaction status
-    const [updatedTransaction] = await db
-      .update(cryptoTransactions)
-      .set({ 
-        status: "failed",
-        metadata: JSON.stringify({
-          ...JSON.parse(transaction.transaction.metadata?.toString() || "{}"),
-          rejectionReason: reason
-        })
-      })
-      .where(eq(cryptoTransactions.id, transactionId))
-      .returning();
-
-    // Create notification
-    await db
-      .insert(notifications)
-      .values({
-        userId: transaction.wallet.userId,
-        title: `Crypto ${transaction.transaction.type.charAt(0).toUpperCase() + transaction.transaction.type.slice(1)} Rejected`,
-        message: `Your ${transaction.transaction.type} of ${transaction.transaction.amount} on ${transaction.transaction.network} network has been rejected: ${reason}`,
-        type: "transaction",
-        link: `/wallet/crypto/${transaction.wallet.id}/transactions`
-      });
-
-    res.json({
-      message: "Transaction rejected successfully",
-      transaction: updatedTransaction
-    });
+    
+    res.json(transaction);
   } catch (error) {
-    console.error("Error rejecting transaction:", error);
-    res.status(500).json({ 
-      message: "Failed to reject transaction", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
+    console.error('Error fetching transaction:', error);
+    res.status(500).json({ message: 'Failed to fetch transaction' });
   }
 });
 
-export default cryptoTransactionRouter;
+// Create a new deposit transaction
+router.post('/deposit', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { amount, currency = 'USDC', network = 'ethereum' } = req.body;
+    const userId = req.jwtPayload?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: 'Valid amount is required' });
+    }
+    
+    const id = uuidv4();
+    const transaction = {
+      id,
+      userId,
+      amount,
+      type: 'deposit' as const,
+      status: 'pending' as const,
+      hash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      network,
+      currency,
+      createdAt: new Date(),
+    };
+    
+    transactions.set(id, transaction);
+    
+    res.status(201).json(transaction);
+  } catch (error) {
+    console.error('Error creating deposit transaction:', error);
+    res.status(500).json({ message: 'Failed to create deposit transaction' });
+  }
+});
+
+// Create a new withdrawal transaction
+router.post('/withdrawal', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { amount, address, currency = 'USDC', network = 'ethereum' } = req.body;
+    const userId = req.jwtPayload?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: 'Valid amount is required' });
+    }
+    
+    if (!address) {
+      return res.status(400).json({ message: 'Withdrawal address is required' });
+    }
+    
+    const id = uuidv4();
+    const transaction = {
+      id,
+      userId,
+      amount,
+      type: 'withdrawal' as const,
+      status: 'pending' as const,
+      hash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      network,
+      currency,
+      createdAt: new Date(),
+    };
+    
+    transactions.set(id, transaction);
+    
+    // Simulate async processing
+    setTimeout(() => {
+      if (Math.random() > 0.2) { // 80% success rate for demo
+        transaction.status = 'completed';
+      } else {
+        transaction.status = 'failed';
+      }
+      transactions.set(id, transaction);
+    }, 30000); // 30 seconds later
+    
+    res.status(201).json(transaction);
+  } catch (error) {
+    console.error('Error creating withdrawal transaction:', error);
+    res.status(500).json({ message: 'Failed to create withdrawal transaction' });
+  }
+});
+
+export default router;

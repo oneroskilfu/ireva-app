@@ -1,454 +1,360 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { 
-  Loader2, 
-  Check, 
-  AlertCircle, 
-  Clock, 
-  Info, 
-  ExternalLink, 
-  Copy,
-  RefreshCw, 
-  QrCode,
-  Wallet
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-enum PaymentStatus {
-  CREATING = 'creating',
-  PENDING = 'pending',
-  CONFIRMING = 'confirming',
-  CONFIRMED = 'confirmed',
-  FAILED = 'failed',
-  EXPIRED = 'expired'
-}
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Check, Copy, AlertCircle, RefreshCw, ExternalLink } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import QRCode from 'react-qr-code';
+import { Steps, Step, StepIndicator, StepSeparator, StepTitle, StepDescription } from "@/components/ui/steps";
 
 interface CryptoPaymentProps {
-  propertyId: number;
-  investmentAmount: number;
+  paymentData: {
+    id: string;
+    walletAddress: string;
+    amount: number;
+    amountInCrypto: string;
+    network: string;
+    currency: string;
+    status: string;
+    expiresAt: string;
+  };
+  property: {
+    id: number;
+    name: string;
+  };
+  amount: number;
   onSuccess: () => void;
-  onCancel: () => void;
 }
 
-const CryptoPayment: React.FC<CryptoPaymentProps> = ({ 
-  propertyId, 
-  investmentAmount, 
-  onSuccess, 
-  onCancel 
-}) => {
+const CryptoPayment: React.FC<CryptoPaymentProps> = ({ paymentData, property, amount, onSuccess }) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.CREATING);
-  const [activeTab, setActiveTab] = useState<string>('usdc');
-  const [timeLeft, setTimeLeft] = useState<number>(900); // 15 minutes in seconds
-  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [activeStep, setActiveStep] = useState(1);
+  const [paymentStatus, setPaymentStatus] = useState(paymentData.status || 'pending');
+  const [isPolling, setIsPolling] = useState(false);
+  const [selectedNetwork, setSelectedNetwork] = useState(paymentData.network);
+  const [countdown, setCountdown] = useState('');
   
-  // Create a payment
-  const createPaymentMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/crypto-payments/create', {
-        propertyId,
-        amount: investmentAmount,
-        currency: activeTab.toUpperCase(),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create payment');
-      }
-      
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setTransactionId(data.id);
-      setPaymentStatus(PaymentStatus.PENDING);
-      toast({
-        title: "Payment created",
-        description: "Please complete the payment by sending crypto to the provided address",
-      });
-    },
-    onError: (error: Error) => {
-      setPaymentStatus(PaymentStatus.FAILED);
-      toast({
-        title: "Failed to create payment",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Fetch payment details
-  const { data: paymentDetails, refetch: refetchPayment } = useQuery({
-    queryKey: ['/api/crypto-payments', transactionId],
-    queryFn: async () => {
-      if (!transactionId) return null;
-      
-      const response = await apiRequest('GET', `/api/crypto-payments/${transactionId}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch payment details');
-      }
-      
-      return response.json();
-    },
-    enabled: !!transactionId,
-    refetchInterval: paymentStatus !== PaymentStatus.CONFIRMED && paymentStatus !== PaymentStatus.FAILED ? 5000 : false,
-  });
-
-  // Create the payment when the component mounts
-  useEffect(() => {
-    if (paymentStatus === PaymentStatus.CREATING) {
-      createPaymentMutation.mutate();
-    }
-  }, []);
-
-  // Update payment status based on the payment details
-  useEffect(() => {
-    if (paymentDetails) {
-      if (paymentDetails.status === 'confirmed' || paymentDetails.status === 'completed') {
-        setPaymentStatus(PaymentStatus.CONFIRMED);
-        // Create the investment
-        createInvestmentFromPayment();
-      } else if (paymentDetails.status === 'pending' || paymentDetails.status === 'waiting') {
-        setPaymentStatus(PaymentStatus.PENDING);
-      } else if (paymentDetails.status === 'expired') {
-        setPaymentStatus(PaymentStatus.EXPIRED);
-      } else if (paymentDetails.status === 'failed') {
-        setPaymentStatus(PaymentStatus.FAILED);
-      }
-    }
-  }, [paymentDetails]);
-
-  // Set up a countdown timer
-  useEffect(() => {
-    if (paymentStatus === PaymentStatus.PENDING && timeLeft > 0) {
-      const timer = setTimeout(() => {
-        setTimeLeft(prevTime => prevTime - 1);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && paymentStatus === PaymentStatus.PENDING) {
-      setPaymentStatus(PaymentStatus.EXPIRED);
-    }
-  }, [timeLeft, paymentStatus]);
-
-  // Create investment after successful payment
-  const createInvestmentFromPayment = async () => {
-    try {
-      if (!transactionId) return;
-      
-      const response = await apiRequest('POST', '/api/investments/crypto', {
-        paymentId: transactionId,
-        propertyId,
-        amount: investmentAmount
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create investment');
-      }
-      
-      // Invalidate investments query to refresh the user's investments
-      queryClient.invalidateQueries({ queryKey: ['/api/investments'] });
-      
-      toast({
-        title: "Investment successful",
-        description: "Your investment has been processed successfully!",
-      });
-      
-      // Call the onSuccess callback
-      onSuccess();
-    } catch (error) {
-      toast({
-        title: "Failed to process investment",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive",
-      });
-    }
+  // Format the wallet address for display (first 6 chars + ... + last 4 chars)
+  const formatWalletAddress = (address: string) => {
+    if (!address) return '';
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
-
-  // Format the time left for display
-  const formatTimeLeft = () => {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Handle copy to clipboard
+  
+  // Copy wallet address to clipboard
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast({
-        title: "Copied",
-        description: "Address copied to clipboard",
-      });
-    }).catch(() => {
-      toast({
-        title: "Failed to copy",
-        description: "Please copy the address manually",
-        variant: "destructive",
-      });
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Address Copied",
+      description: "Wallet address copied to clipboard",
     });
   };
-
-  // Render appropriate UI based on payment status
-  const renderPaymentUI = () => {
-    if (paymentStatus === PaymentStatus.CREATING || !paymentDetails) {
-      return (
-        <div className="flex flex-col items-center justify-center py-8">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p className="text-lg font-medium">Creating payment...</p>
-          <p className="text-sm text-muted-foreground">Please wait while we set up your payment</p>
-        </div>
-      );
+  
+  // Start polling for payment status updates
+  useEffect(() => {
+    if (paymentStatus === 'pending' && paymentData.id && !isPolling) {
+      setIsPolling(true);
+      const intervalId = setInterval(async () => {
+        try {
+          const response = await apiRequest('GET', `/api/crypto-payments/${paymentData.id}/status`);
+          const data = await response.json();
+          
+          setPaymentStatus(data.status);
+          
+          if (data.status === 'completed') {
+            clearInterval(intervalId);
+            setActiveStep(3);
+            toast({
+              title: "Payment Confirmed",
+              description: "Your cryptocurrency payment has been confirmed!",
+            });
+            setTimeout(() => {
+              onSuccess();
+            }, 2000);
+          } else if (data.status === 'failed') {
+            clearInterval(intervalId);
+            toast({
+              title: "Payment Failed",
+              description: "Your cryptocurrency payment has failed. Please try again.",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('Error checking payment status:', error);
+        }
+      }, 10000); // Poll every 10 seconds
+      
+      return () => clearInterval(intervalId);
     }
-
-    if (paymentStatus === PaymentStatus.CONFIRMED) {
-      return (
-        <div className="flex flex-col items-center justify-center py-8">
-          <div className="bg-green-100 p-3 rounded-full mb-4">
-            <Check className="h-12 w-12 text-green-600" />
-          </div>
-          <h3 className="text-xl font-bold mb-2">Payment Confirmed!</h3>
-          <p className="text-center text-muted-foreground mb-6">
-            Your payment has been confirmed and your investment is being processed.
-          </p>
-          <Button onClick={onSuccess}>
-            View My Investments
-          </Button>
-        </div>
-      );
+  }, [paymentData.id, paymentStatus, isPolling, onSuccess, toast]);
+  
+  // Calculate and update countdown timer
+  useEffect(() => {
+    if (!paymentData.expiresAt) return;
+    
+    const updateCountdown = () => {
+      const now = new Date();
+      const expiryTime = new Date(paymentData.expiresAt);
+      const diff = expiryTime.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        setCountdown('Expired');
+        setPaymentStatus('expired');
+        return;
+      }
+      
+      const minutes = Math.floor(diff / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setCountdown(`${minutes}m ${seconds}s`);
+    };
+    
+    updateCountdown();
+    const intervalId = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [paymentData.expiresAt]);
+  
+  // When the user selects a different network, update the wallet address
+  const handleNetworkChange = (network: string) => {
+    setSelectedNetwork(network);
+    // In a real implementation, you might need to fetch a new wallet address for the selected network
+    // For now, we'll just simulate the change
+    toast({
+      title: "Network Changed",
+      description: `Switched to ${network.toUpperCase()} network`,
+    });
+  };
+  
+  // Get explorer URL based on network and transaction hash
+  const getExplorerUrl = (network: string, txHash: string) => {
+    if (!txHash) return '#';
+    
+    switch (network.toLowerCase()) {
+      case 'ethereum':
+        return `https://etherscan.io/tx/${txHash}`;
+      case 'polygon':
+        return `https://polygonscan.com/tx/${txHash}`;
+      case 'binance':
+        return `https://bscscan.com/tx/${txHash}`;
+      case 'solana':
+        return `https://solscan.io/tx/${txHash}`;
+      case 'avalanche':
+        return `https://snowtrace.io/tx/${txHash}`;
+      default:
+        return '#';
     }
-
-    if (paymentStatus === PaymentStatus.FAILED) {
-      return (
-        <div className="flex flex-col items-center justify-center py-8">
-          <div className="bg-red-100 p-3 rounded-full mb-4">
-            <AlertCircle className="h-12 w-12 text-red-600" />
-          </div>
-          <h3 className="text-xl font-bold mb-2">Payment Failed</h3>
-          <p className="text-center text-muted-foreground mb-6">
-            There was an issue processing your payment. Please try again or contact support.
-          </p>
-          <div className="flex gap-4">
-            <Button variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              setPaymentStatus(PaymentStatus.CREATING);
-              createPaymentMutation.mutate();
-            }}>
-              Try Again
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    if (paymentStatus === PaymentStatus.EXPIRED) {
-      return (
-        <div className="flex flex-col items-center justify-center py-8">
-          <div className="bg-amber-100 p-3 rounded-full mb-4">
-            <Clock className="h-12 w-12 text-amber-600" />
-          </div>
-          <h3 className="text-xl font-bold mb-2">Payment Time Expired</h3>
-          <p className="text-center text-muted-foreground mb-6">
-            The payment time has expired. Please try again with a new payment.
-          </p>
-          <div className="flex gap-4">
-            <Button variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              setTimeLeft(900);
-              setPaymentStatus(PaymentStatus.CREATING);
-              createPaymentMutation.mutate();
-            }}>
-              Try Again
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    // Pending payment UI
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col items-center">
-          <div className="mb-4 border border-yellow-300 bg-yellow-50 p-3 rounded-lg w-full">
-            <div className="flex items-start">
-              <Info className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-yellow-800">Time remaining: {formatTimeLeft()}</p>
-                <p className="text-xs text-yellow-700">
-                  Please complete the payment before the timer expires.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-1/2">
-            <div className="border rounded-lg p-4 space-y-4">
-              <h3 className="text-lg font-medium">Send {activeTab.toUpperCase()}</h3>
-              
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Amount:</span>
-                  <span className="font-medium">{paymentDetails.cryptoAmount} {activeTab.toUpperCase()}</span>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Network:</span>
-                  <span className="font-medium">{paymentDetails.network || "Ethereum"}</span>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Rate:</span>
-                  <span className="font-medium">1 {activeTab.toUpperCase()} = ₦{paymentDetails.rate}</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Payment Address:</label>
-                <div className="flex items-center gap-2">
-                  <div className="bg-muted px-3 py-2 rounded-lg text-sm font-mono flex-1 truncate">
-                    {paymentDetails.address}
+  };
+  
+  return (
+    <div className="max-w-4xl mx-auto">
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-2xl">Pay with Cryptocurrency</CardTitle>
+          <CardDescription>
+            Invest in {property.name} using cryptocurrency
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Steps activeStep={activeStep} className="mb-8">
+            <Step title="Create Payment" description="Payment request generated" />
+            <Step title="Send Funds" description="Transfer cryptocurrency to the provided address" />
+            <Step title="Confirm Payment" description="Wait for blockchain confirmation" />
+            <Step title="Complete Investment" description="Investment will be recorded once confirmed" />
+          </Steps>
+          
+          {paymentStatus === 'pending' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="bg-secondary/30 p-4 rounded-lg">
+                  <h3 className="text-lg font-medium mb-2">Payment Details</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Amount:</span>
+                      <span className="font-medium">${amount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Crypto Amount:</span>
+                      <span className="font-medium">{paymentData.amountInCrypto} {paymentData.currency}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Network:</span>
+                      <span className="font-medium">{selectedNetwork}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Time Remaining:</span>
+                      <span className="font-medium">{countdown}</span>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => copyToClipboard(paymentDetails.address)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Select Network</h3>
+                  <Tabs defaultValue={selectedNetwork} onValueChange={handleNetworkChange}>
+                    <TabsList className="grid grid-cols-3 mb-4">
+                      <TabsTrigger value="ethereum">Ethereum</TabsTrigger>
+                      <TabsTrigger value="polygon">Polygon</TabsTrigger>
+                      <TabsTrigger value="binance">Binance</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Send {paymentData.currency} to this address:</h3>
+                  <div className="flex items-center justify-between bg-secondary/30 p-3 rounded-lg">
+                    <code className="text-sm font-mono">{paymentData.walletAddress}</code>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => copyToClipboard(paymentData.walletAddress)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="text-sm text-amber-500 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Only send {paymentData.currency} on the {selectedNetwork} network!
+                  </div>
                 </div>
               </div>
               
-              {paymentDetails.explorerUrl && (
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="bg-white p-4 rounded-lg">
+                  <QRCode
+                    value={paymentData.walletAddress}
+                    size={200}
+                    level="M"
+                    fgColor="#000000"
+                    bgColor="#FFFFFF"
+                  />
+                </div>
+                <p className="text-sm text-center text-muted-foreground">
+                  Scan this QR code with your wallet app to make the payment
+                </p>
                 <Button 
                   variant="outline" 
-                  className="w-full" 
-                  onClick={() => window.open(paymentDetails.explorerUrl, '_blank')}
+                  className="mt-4"
+                  onClick={() => {
+                    setIsPolling(false); // Reset polling so it starts again
+                    toast({
+                      title: "Checking payment status",
+                      description: "Please wait while we check for your transaction...",
+                    });
+                  }}
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View on Blockchain Explorer
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Check Payment Status
                 </Button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
           
-          <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-              {paymentDetails.qrCode ? (
-                <img 
-                  src={paymentDetails.qrCode} 
-                  alt="Payment QR Code" 
-                  className="w-48 h-48 object-contain"
-                />
-              ) : (
-                <div className="w-48 h-48 bg-muted flex items-center justify-center">
-                  <QrCode className="h-12 w-12 text-muted-foreground" />
-                </div>
-              )}
+          {paymentStatus === 'processing' && (
+            <div className="text-center py-8">
+              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+              <h3 className="text-xl font-medium mb-2">Processing Your Payment</h3>
+              <p className="text-muted-foreground mb-4">
+                We've detected your transaction and are waiting for blockchain confirmation.
+                This typically takes 1-2 minutes.
+              </p>
+              <div className="flex justify-center">
+                <Button variant="outline" className="mr-2">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Check Status
+                </Button>
+                <Button variant="outline">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View on Explorer
+                </Button>
+              </div>
             </div>
-            <p className="text-sm text-center text-muted-foreground">
-              Scan with your wallet app to make payment
+          )}
+          
+          {paymentStatus === 'completed' && (
+            <div className="text-center py-8">
+              <div className="bg-green-100 dark:bg-green-900/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="h-10 w-10 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="text-xl font-medium mb-2">Payment Successful!</h3>
+              <p className="text-muted-foreground mb-4">
+                Your investment of ${amount.toFixed(2)} in {property.name} has been confirmed.
+              </p>
+              <Button onClick={onSuccess}>View My Investments</Button>
+            </div>
+          )}
+          
+          {paymentStatus === 'expired' && (
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-amber-500" />
+              <h3 className="text-xl font-medium mb-2">Payment Time Expired</h3>
+              <p className="text-muted-foreground mb-4">
+                The payment window has expired. Please start a new payment request.
+              </p>
+              <Button variant="default">
+                Try Again
+              </Button>
+            </div>
+          )}
+          
+          {paymentStatus === 'failed' && (
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+              <h3 className="text-xl font-medium mb-2">Payment Failed</h3>
+              <p className="text-muted-foreground mb-4">
+                We couldn't process your payment. This might be due to network congestion or insufficient funds.
+              </p>
+              <Button variant="default">
+                Try Again
+              </Button>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex flex-col">
+          <div className="w-full border-t pt-4 text-sm text-muted-foreground space-y-2">
+            <p>
+              <strong>Important:</strong> Only send {paymentData.currency} on the {selectedNetwork} network to this address.
+            </p>
+            <p>
+              Sending any other token or using a different network may result in permanent loss of funds.
             </p>
           </div>
-        </div>
-        
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>Payment Instructions</AlertTitle>
-          <AlertDescription>
-            <ol className="mt-2 space-y-1 text-sm list-decimal list-inside">
-              <li>Send exactly {paymentDetails.cryptoAmount} {activeTab.toUpperCase()} to the address above</li>
-              <li>Make sure to use the {paymentDetails.network || "Ethereum"} network</li>
-              <li>Wait for the blockchain to confirm your transaction</li>
-              <li>Do not close this page until payment is complete</li>
-            </ol>
-          </AlertDescription>
-        </Alert>
-        
-        <div className="flex flex-col xs:flex-row gap-4 justify-between">
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => refetchPayment()}
-            className="flex items-center"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Check Payment Status
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>Pay with Cryptocurrency</CardTitle>
-        <CardDescription>
-          Complete your investment using cryptocurrency
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        {paymentStatus === PaymentStatus.CREATING || paymentStatus === PaymentStatus.CONFIRMED || 
-         paymentStatus === PaymentStatus.FAILED || paymentStatus === PaymentStatus.EXPIRED ? (
-          renderPaymentUI()
-        ) : (
-          <div className="space-y-6">
-            <Tabs 
-              defaultValue="usdc" 
-              value={activeTab}
-              onValueChange={(value) => {
-                setActiveTab(value);
-                setPaymentStatus(PaymentStatus.CREATING);
-                setTimeout(() => createPaymentMutation.mutate(), 100);
-              }}
-            >
-              <TabsList className="grid grid-cols-3">
-                <TabsTrigger value="usdc">USDC</TabsTrigger>
-                <TabsTrigger value="usdt">USDT</TabsTrigger>
-                <TabsTrigger value="eth">ETH</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="usdc" className="pt-4">
-                {renderPaymentUI()}
-              </TabsContent>
-              
-              <TabsContent value="usdt" className="pt-4">
-                {renderPaymentUI()}
-              </TabsContent>
-              
-              <TabsContent value="eth" className="pt-4">
-                {renderPaymentUI()}
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
-      </CardContent>
-      
-      {paymentStatus !== PaymentStatus.CONFIRMED && (
-        <CardFooter className="flex-col space-y-2 items-start">
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Wallet className="w-3 h-3 mr-1" />
-            <span>Secured by iREVA Crypto Payment Processor</span>
-          </div>
         </CardFooter>
-      )}
-    </Card>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">FAQ - Cryptocurrency Payments</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h4 className="font-medium">How long does it take to confirm my payment?</h4>
+            <p className="text-sm text-muted-foreground">
+              Confirmation times vary by network. Ethereum typically takes 1-5 minutes, Polygon 30-60 seconds, and Binance Smart Chain 15-60 seconds.
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium">What happens if I send the wrong amount?</h4>
+            <p className="text-sm text-muted-foreground">
+              If you send less than the required amount, your payment will not be processed. If you send more, the excess will be used to increase your investment amount.
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium">Is there a transaction fee?</h4>
+            <p className="text-sm text-muted-foreground">
+              The platform does not charge additional fees for crypto payments, but you'll need to pay network gas fees when sending your transaction.
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <h4 className="font-medium">I sent my payment but it's not showing up. What should I do?</h4>
+            <p className="text-sm text-muted-foreground">
+              Blockchain transactions can sometimes take longer during periods of network congestion. Click "Check Payment Status" to refresh. If your payment doesn't appear after 30 minutes, please contact support.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

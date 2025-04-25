@@ -1,658 +1,364 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocation, useRoute, useRouter } from 'wouter';
-import { apiRequest } from '@/lib/queryClient';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import CryptoPayment from '@/components/Payment/CryptoPayment';
-import { 
-  ArrowLeft, 
-  CreditCard, 
-  Landmark, 
-  Wallet, 
-  Bitcoin,
-  Loader2,
-  Building, 
-  Info,
-  BadgeCheck,
-  Eye,
-  AlertCircle
-} from 'lucide-react';
+import { useParams, useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Check, AlertCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/hooks/use-auth";
+import CryptoPayment from "@/components/Payment/CryptoPayment";
+import { apiRequest } from "@/lib/queryClient";
 
-enum InvestmentStep {
-  AMOUNT = 'amount',
-  PAYMENT_METHOD = 'payment_method',
-  PAYMENT_PROCESSING = 'payment_processing',
-  CONFIRMATION = 'confirmation'
+interface PropertyInvestmentProps {}
+
+interface Property {
+  id: number;
+  name: string;
+  location: string;
+  description: string;
+  imageUrl: string;
+  minimumInvestment: number;
+  targetReturn: string;
+  totalFunding: number;
+  currentFunding: number;
+  term: number;
+  type: string;
 }
 
-const PropertyInvestment = () => {
-  const [, params] = useRoute('/properties/:id/invest');
-  const [, navigate] = useRouter();
-  const propertyId = params?.id ? parseInt(params.id) : null;
+const PropertyInvestment: React.FC<PropertyInvestmentProps> = () => {
+  const { id } = useParams();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  
   const [investmentAmount, setInvestmentAmount] = useState<number>(0);
-  const [currentStep, setCurrentStep] = useState<InvestmentStep>(InvestmentStep.AMOUNT);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bank' | 'wallet' | 'crypto'>('wallet');
-  
-  // Fetch property details
-  const { data: property, isLoading: isLoadingProperty, error: propertyError } = useQuery({
-    queryKey: [`/api/properties/${propertyId}`],
-    queryFn: async () => {
-      if (!propertyId) return null;
-      const res = await apiRequest('GET', `/api/properties/${propertyId}`);
-      return res.json();
-    },
-    enabled: !!propertyId,
+  const [paymentMethod, setPaymentMethod] = useState<string>('wallet');
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [cryptoPaymentData, setCryptoPaymentData] = useState<any>(null);
+
+  // Fetch property data
+  const { data: property, isLoading, error } = useQuery<Property>({
+    queryKey: [`/api/properties/${id}`],
+    enabled: !!id,
   });
 
-  // Fetch user wallet balance
-  const { data: wallet, isLoading: isLoadingWallet } = useQuery({
-    queryKey: ['/api/wallet/balance'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/wallet/balance');
-      return res.json();
-    },
-  });
-
-  // Handle investment submission
-  const investMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/investments', {
-        propertyId,
-        amount: investmentAmount,
-        paymentMethod,
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to process investment');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/investments'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
-      
-      toast({
-        title: 'Investment Successful',
-        description: 'Your investment has been processed successfully.',
-      });
-      
-      setCurrentStep(InvestmentStep.CONFIRMATION);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Investment Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Handle investment amount validation
-  const validateAmount = (): boolean => {
-    if (!property) return false;
-    
-    if (investmentAmount < property.minimumInvestment) {
-      toast({
-        title: 'Invalid Amount',
-        description: `Minimum investment amount is ₦${property.minimumInvestment.toLocaleString()}`,
-        variant: 'destructive',
-      });
-      return false;
-    }
-    
-    if (paymentMethod === 'wallet' && wallet && investmentAmount > wallet.balance) {
-      toast({
-        title: 'Insufficient Balance',
-        description: 'Your wallet balance is lower than the investment amount',
-        variant: 'destructive',
-      });
-      return false;
-    }
-    
-    return true;
-  };
-
-  // Navigate to previous step
-  const goToPreviousStep = () => {
-    if (currentStep === InvestmentStep.PAYMENT_METHOD) {
-      setCurrentStep(InvestmentStep.AMOUNT);
-    } else if (currentStep === InvestmentStep.PAYMENT_PROCESSING) {
-      setCurrentStep(InvestmentStep.PAYMENT_METHOD);
-    }
-  };
-
-  // Navigate to next step
-  const goToNextStep = () => {
-    if (currentStep === InvestmentStep.AMOUNT) {
-      if (validateAmount()) {
-        setCurrentStep(InvestmentStep.PAYMENT_METHOD);
-      }
-    } else if (currentStep === InvestmentStep.PAYMENT_METHOD) {
-      if (paymentMethod === 'crypto') {
-        setCurrentStep(InvestmentStep.PAYMENT_PROCESSING);
-      } else {
-        // For non-crypto payment methods, proceed with investment
-        investMutation.mutate();
-      }
-    }
-  };
-
-  // Calculate funding percentage
-  const calculateFundingPercentage = () => {
-    if (!property) return 0;
-    return Math.min(100, Math.round((property.currentFunding / property.totalFunding) * 100));
-  };
-
-  // Handle crypto payment completion
-  const handleCryptoPaymentSuccess = () => {
-    setCurrentStep(InvestmentStep.CONFIRMATION);
-    queryClient.invalidateQueries({ queryKey: ['/api/investments'] });
-  };
-
-  // Format number as currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-  
-  // Check if user is authenticated
   useEffect(() => {
-    if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You need to be logged in to invest in properties',
-        variant: 'destructive',
-      });
-      navigate('/auth');
-    }
-  }, [user]);
-
-  // Check if property is available for investment
-  useEffect(() => {
-    if (property && (property.currentFunding >= property.totalFunding || property.daysLeft <= 0)) {
-      toast({
-        title: 'Investment Not Available',
-        description: 'This property is no longer available for investment',
-        variant: 'destructive',
-      });
-      navigate(`/properties/${propertyId}`);
+    if (property) {
+      setInvestmentAmount(property.minimumInvestment);
     }
   }, [property]);
 
-  // Loading state
-  if (isLoadingProperty || isLoadingWallet) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg font-medium">Loading investment details...</p>
-      </div>
-    );
-  }
+  const handleInvestmentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setInvestmentAmount(isNaN(value) ? 0 : value);
+  };
 
-  // Error state
-  if (propertyError || !property) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh]">
-        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-        <p className="text-lg font-medium">Error loading property</p>
-        <p className="text-sm text-muted-foreground mb-4">
-          Unable to load the property details. Please try again.
-        </p>
-        <Button onClick={() => navigate('/properties')}>
-          Browse Properties
-        </Button>
-      </div>
-    );
-  }
+  const handlePaymentMethodChange = (value: string) => {
+    setPaymentMethod(value);
+  };
 
-  // Render content based on current step
-  const renderContent = () => {
-    switch (currentStep) {
-      case InvestmentStep.AMOUNT:
-        return (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="w-full md:w-1/2 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Investment Amount</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">Amount (₦)</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        value={investmentAmount || ''}
-                        onChange={(e) => setInvestmentAmount(Number(e.target.value))}
-                        placeholder="Enter investment amount"
-                        min={property.minimumInvestment}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Minimum investment: {formatCurrency(property.minimumInvestment)}
-                      </p>
-                    </div>
+  const handleInvestment = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to continue with your investment.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
 
-                    <div className="pt-4">
-                      <p className="text-sm font-medium mb-2">Your wallet balance:</p>
-                      <div className="flex items-center justify-between bg-muted p-3 rounded-lg">
-                        <span className="flex items-center gap-2">
-                          <Wallet className="h-4 w-4 text-muted-foreground" />
-                          <span>Available balance</span>
-                        </span>
-                        <span className="font-medium">
-                          {wallet ? formatCurrency(wallet.balance) : 'Loading...'}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+    if (!property) return;
 
-                <div className="flex justify-end">
-                  <Button 
-                    onClick={goToNextStep} 
-                    disabled={investmentAmount < property.minimumInvestment}
-                  >
-                    Continue to Payment
-                  </Button>
-                </div>
-              </div>
+    if (investmentAmount < property.minimumInvestment) {
+      toast({
+        title: "Investment amount too low",
+        description: `The minimum investment for this property is ${property.minimumInvestment.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`,
+        variant: "destructive",
+      });
+      return;
+    }
 
-              <div className="w-full md:w-1/2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Property Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      {property.imageUrl && (
-                        <div className="w-24 h-24 relative rounded-md overflow-hidden flex-shrink-0">
-                          <img
-                            src={property.imageUrl}
-                            alt={property.name}
-                            className="absolute object-cover inset-0 w-full h-full"
-                          />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="text-lg font-semibold">{property.name}</h3>
-                        <p className="text-sm text-muted-foreground">{property.location}</p>
-                        <p className="text-sm mt-1">
-                          <span className="font-medium">{property.targetReturn}%</span>{" "}
-                          <span className="text-muted-foreground">Expected ROI</span>
-                        </p>
-                      </div>
-                    </div>
+    // If crypto payment method is selected, initialize crypto payment
+    if (paymentMethod === 'crypto') {
+      try {
+        setPaymentStatus('processing');
+        const response = await apiRequest('POST', '/api/crypto-payments/create', {
+          propertyId: property.id,
+          amount: investmentAmount,
+          userId: user.id
+        });
 
-                    <Separator />
+        if (!response.ok) {
+          throw new Error('Failed to create crypto payment');
+        }
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Type:</span>
-                        <span className="text-sm font-medium capitalize">
-                          {property.type.replace('_', ' ')}
-                        </span>
-                      </div>
+        const paymentData = await response.json();
+        setCryptoPaymentData(paymentData);
+        setPaymentStatus('success');
+      } catch (error) {
+        console.error('Error creating crypto payment:', error);
+        setPaymentStatus('failed');
+        toast({
+          title: "Payment Failed",
+          description: "There was an error processing your crypto payment. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Handle traditional payment methods
+      try {
+        setPaymentStatus('processing');
+        const response = await apiRequest('POST', '/api/investments', {
+          propertyId: property.id,
+          amount: investmentAmount,
+          paymentMethod,
+        });
 
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Term:</span>
-                        <span className="text-sm font-medium">
-                          {property.term} months
-                        </span>
-                      </div>
+        if (!response.ok) {
+          throw new Error('Failed to create investment');
+        }
 
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Risk Level:</span>
-                        <span className="text-sm font-medium capitalize">
-                          {property.riskLevel}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Days Left:</span>
-                        <span className="text-sm font-medium">
-                          {property.daysLeft}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-1">
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium">Funding Progress</span>
-                        <span className="text-sm font-medium">
-                          {calculateFundingPercentage()}%
-                        </span>
-                      </div>
-                      <Progress value={calculateFundingPercentage()} className="h-2" />
-                      <div className="flex justify-between mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          {formatCurrency(property.currentFunding)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatCurrency(property.totalFunding)}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        );
-
-      case InvestmentStep.PAYMENT_METHOD:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Select Payment Method</h2>
-            
-            <Tabs 
-              defaultValue="wallet" 
-              value={paymentMethod}
-              onValueChange={(value) => setPaymentMethod(value as any)}
-              className="w-full"
-            >
-              <TabsList className="grid grid-cols-4 h-auto">
-                <TabsTrigger 
-                  value="wallet"
-                  className="flex flex-col py-3 h-auto"
-                >
-                  <Wallet className="h-5 w-5 mb-1" />
-                  <span>Wallet</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="card"
-                  className="flex flex-col py-3 h-auto"
-                >
-                  <CreditCard className="h-5 w-5 mb-1" />
-                  <span>Card</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="bank"
-                  className="flex flex-col py-3 h-auto"
-                >
-                  <Landmark className="h-5 w-5 mb-1" />
-                  <span>Bank</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="crypto"
-                  className="flex flex-col py-3 h-auto"
-                >
-                  <Bitcoin className="h-5 w-5 mb-1" />
-                  <span>Crypto</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <div className="mt-6 p-6 border rounded-lg">
-                <TabsContent value="wallet" className="mt-0 space-y-4">
-                  <div className="flex gap-3 items-center">
-                    <Wallet className="h-8 w-8 text-primary" />
-                    <div>
-                      <h3 className="font-medium">Pay with Wallet Balance</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Use your available wallet balance for this investment
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 pt-4">
-                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                      <span className="text-sm">Your wallet balance:</span>
-                      <span className="font-medium">
-                        {wallet ? formatCurrency(wallet.balance) : 'Loading...'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                      <span className="text-sm">Investment amount:</span>
-                      <span className="font-medium">
-                        {formatCurrency(investmentAmount)}
-                      </span>
-                    </div>
-                    
-                    {wallet && wallet.balance < investmentAmount && (
-                      <div className="flex items-start gap-2 p-3 border border-yellow-200 bg-yellow-50 rounded-lg">
-                        <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-yellow-800">
-                            Insufficient wallet balance
-                          </p>
-                          <p className="text-xs text-yellow-700">
-                            Please fund your wallet or choose another payment method.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="card" className="mt-0 space-y-4">
-                  <div className="flex gap-3 items-center">
-                    <CreditCard className="h-8 w-8 text-primary" />
-                    <div>
-                      <h3 className="font-medium">Pay with Card</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Use your debit or credit card for this investment
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 pt-4">
-                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                      <span className="text-sm">Payment amount:</span>
-                      <span className="font-medium">
-                        {formatCurrency(investmentAmount)}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-start gap-2 p-3 border border-blue-200 bg-blue-50 rounded-lg">
-                      <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-blue-800">
-                          Secure Payment
-                        </p>
-                        <p className="text-xs text-blue-700">
-                          Your card details are encrypted and processed securely.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="bank" className="mt-0 space-y-4">
-                  <div className="flex gap-3 items-center">
-                    <Landmark className="h-8 w-8 text-primary" />
-                    <div>
-                      <h3 className="font-medium">Pay with Bank Transfer</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Make a bank transfer to complete your investment
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 pt-4">
-                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                      <span className="text-sm">Transfer amount:</span>
-                      <span className="font-medium">
-                        {formatCurrency(investmentAmount)}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-start gap-2 p-3 border border-blue-200 bg-blue-50 rounded-lg">
-                      <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-blue-800">
-                          Bank Transfer Details
-                        </p>
-                        <p className="text-xs text-blue-700">
-                          You will receive the bank details after confirming your investment.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="crypto" className="mt-0 space-y-4">
-                  <div className="flex gap-3 items-center">
-                    <Bitcoin className="h-8 w-8 text-primary" />
-                    <div>
-                      <h3 className="font-medium">Pay with Cryptocurrency</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Use USDC, USDT, or ETH for this investment
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 pt-4">
-                    <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                      <span className="text-sm">Investment amount:</span>
-                      <span className="font-medium">
-                        {formatCurrency(investmentAmount)}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-start gap-2 p-3 border border-green-200 bg-green-50 rounded-lg">
-                      <Info className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-green-800">
-                          Cryptocurrency Payment
-                        </p>
-                        <p className="text-xs text-green-700">
-                          After clicking "Continue", you'll be able to send crypto to complete your investment.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </div>
-            </Tabs>
-            
-            <div className="flex justify-between pt-4">
-              <Button variant="outline" onClick={goToPreviousStep}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back
-              </Button>
-              <Button 
-                onClick={goToNextStep} 
-                disabled={paymentMethod === 'wallet' && wallet && wallet.balance < investmentAmount}
-              >
-                Continue
-              </Button>
-            </div>
-          </div>
-        );
-
-      case InvestmentStep.PAYMENT_PROCESSING:
-        return (
-          <div className="space-y-6">
-            <div className="flex justify-start">
-              <Button variant="outline" onClick={goToPreviousStep}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Payment Methods
-              </Button>
-            </div>
-            
-            <CryptoPayment
-              propertyId={propertyId || 0}
-              investmentAmount={investmentAmount}
-              onSuccess={handleCryptoPaymentSuccess}
-              onCancel={() => setCurrentStep(InvestmentStep.PAYMENT_METHOD)}
-            />
-          </div>
-        );
-
-      case InvestmentStep.CONFIRMATION:
-        return (
-          <div className="flex flex-col items-center justify-center py-10 space-y-6">
-            <div className="bg-green-100 p-4 rounded-full">
-              <BadgeCheck className="h-12 w-12 text-green-600" />
-            </div>
-            
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Investment Successful!</h2>
-              <p className="text-muted-foreground">
-                Your investment of {formatCurrency(investmentAmount)} in {property.name} has been processed successfully.
-              </p>
-            </div>
-            
-            <div className="border rounded-lg p-6 w-full max-w-md space-y-4">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Property:</span>
-                <span className="font-medium">{property.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Amount:</span>
-                <span className="font-medium">{formatCurrency(investmentAmount)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Expected ROI:</span>
-                <span className="font-medium">{property.targetReturn}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Term:</span>
-                <span className="font-medium">{property.term} months</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Payment Method:</span>
-                <span className="font-medium capitalize">{paymentMethod}</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate(`/properties/${propertyId}`)}
-              >
-                <Building className="h-4 w-4 mr-1" />
-                View Property
-              </Button>
-              <Button 
-                onClick={() => navigate('/dashboard/investments')}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                View My Investments
-              </Button>
-            </div>
-          </div>
-        );
+        const investment = await response.json();
+        setPaymentStatus('success');
+        toast({
+          title: "Investment Successful",
+          description: "Your investment has been processed successfully.",
+        });
+        
+        // Redirect to dashboard after successful investment
+        setTimeout(() => {
+          navigate("/investor");
+        }, 2000);
+      } catch (error) {
+        console.error('Error creating investment:', error);
+        setPaymentStatus('failed');
+        toast({
+          title: "Investment Failed",
+          description: "There was an error processing your investment. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  return (
-    <div className="container py-8 max-w-6xl">
-      <div className="mb-6">
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !property) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Property Not Found</h1>
+        <p className="text-muted-foreground mb-4">The property you're looking for doesn't exist or there was an error.</p>
+        <Button onClick={() => navigate("/properties")}>Browse Properties</Button>
+      </div>
+    );
+  }
+
+  // If crypto payment data is available, show the crypto payment component
+  if (paymentMethod === 'crypto' && cryptoPaymentData) {
+    return (
+      <div className="container mx-auto py-10 px-4 md:px-6">
         <Button 
           variant="outline" 
-          onClick={() => navigate(`/properties/${propertyId}`)}
+          onClick={() => {
+            setCryptoPaymentData(null);
+            setPaymentStatus('idle');
+          }}
+          className="mb-6"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Property
+          ← Back to Investment Options
         </Button>
+        
+        <CryptoPayment 
+          paymentData={cryptoPaymentData} 
+          property={property} 
+          amount={investmentAmount}
+          onSuccess={() => {
+            toast({
+              title: "Investment Successful",
+              description: "Your crypto payment has been processed successfully.",
+            });
+            setTimeout(() => navigate("/investor"), 2000);
+          }}
+        />
       </div>
+    );
+  }
+
+  const fundingPercentage = (property.currentFunding / property.totalFunding) * 100;
+
+  return (
+    <div className="container mx-auto py-10 px-4 md:px-6">
+      <Button 
+        variant="outline" 
+        onClick={() => navigate(`/property/${property.id}`)}
+        className="mb-6"
+      >
+        ← Back to Property Details
+      </Button>
       
-      <h1 className="text-2xl font-bold mb-8">Invest in {property.name}</h1>
-      
-      {renderContent()}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Invest in {property.name}</CardTitle>
+              <CardDescription>{property.location} | {property.type}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col space-y-1">
+                <span className="text-sm font-medium">Funding Progress</span>
+                <Progress value={fundingPercentage} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{Math.round(fundingPercentage)}% Funded</span>
+                  <span>{property.currentFunding.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} of {property.totalFunding.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-secondary/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Target Return</p>
+                  <p className="text-xl font-semibold">{property.targetReturn}%</p>
+                </div>
+                <div className="bg-secondary/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Term Length</p>
+                  <p className="text-xl font-semibold">{property.term} months</p>
+                </div>
+                <div className="bg-secondary/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Minimum Investment</p>
+                  <p className="text-xl font-semibold">{property.minimumInvestment.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4 pt-6">
+                <div className="space-y-2">
+                  <label htmlFor="investment-amount" className="text-sm font-medium">
+                    Investment Amount
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500">$</span>
+                    </div>
+                    <Input
+                      id="investment-amount"
+                      type="number"
+                      value={investmentAmount}
+                      onChange={handleInvestmentAmountChange}
+                      className="pl-7"
+                      min={property.minimumInvestment}
+                    />
+                  </div>
+                  {investmentAmount < property.minimumInvestment && (
+                    <p className="text-sm text-destructive">
+                      Minimum investment is {property.minimumInvestment.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Method</CardTitle>
+              <CardDescription>Select how you'd like to invest</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="wallet" onValueChange={handlePaymentMethodChange}>
+                <TabsList className="grid grid-cols-2 mb-4">
+                  <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                  <TabsTrigger value="crypto">Crypto</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="wallet" className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Pay using your platform wallet balance. Make sure you have sufficient funds before proceeding.
+                  </p>
+                </TabsContent>
+                
+                <TabsContent value="crypto" className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Pay using cryptocurrency. We accept USDC and USDT on multiple networks.
+                  </p>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-4">
+              <div className="w-full pt-4 border-t">
+                <p className="flex justify-between mb-2">
+                  <span className="text-muted-foreground">Investment</span>
+                  <span>{investmentAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                </p>
+                <p className="flex justify-between mb-2">
+                  <span className="text-muted-foreground">Platform Fee</span>
+                  <span>{(investmentAmount * 0.01).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                </p>
+                <p className="flex justify-between font-medium text-lg">
+                  <span>Total</span>
+                  <span>{(investmentAmount * 1.01).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
+                </p>
+              </div>
+              
+              <Button 
+                className="w-full" 
+                size="lg" 
+                onClick={handleInvestment}
+                disabled={
+                  paymentStatus === 'processing' || 
+                  investmentAmount < property.minimumInvestment
+                }
+              >
+                {paymentStatus === 'processing' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : paymentStatus === 'success' ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Success!
+                  </>
+                ) : (
+                  `Invest ${(investmentAmount * 1.01).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`
+                )}
+              </Button>
+              
+              {!user && (
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  You'll need to log in before completing your investment.
+                </p>
+              )}
+            </CardFooter>
+          </Card>
+          
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-sm">Investment Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                <strong>Expected Return:</strong> {property.targetReturn}% annually
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <strong>Investment Term:</strong> {property.term} months
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <strong>Estimated Total Return:</strong> {((parseFloat(property.targetReturn) / 100) * (property.term / 12) * investmentAmount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

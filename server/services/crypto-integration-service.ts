@@ -1,5 +1,8 @@
 import axios from 'axios';
-import { cryptoPaymentService } from './crypto-payment-service';
+import { CryptoPaymentService } from './crypto-payment-service';
+
+// Initialize the crypto payment service
+const cryptoPaymentService = new CryptoPaymentService();
 
 interface EnvironmentStatus {
   success: boolean;
@@ -69,7 +72,8 @@ class CryptoIntegrationService {
     
     try {
       const transactions = await cryptoPaymentService.getAllTransactions();
-      const testTx = transactions.find(tx => tx.userId === 'admin-test');
+      // Use a special ID for test transactions
+      const testTx = transactions.find(tx => tx.userId === 999999); // Special admin test user ID
       
       if (testTx) {
         testTransaction = {
@@ -255,7 +259,7 @@ class CryptoIntegrationService {
         amount: 10,
         currency: 'USD',
         cryptoCurrency: 'USDT',
-        userId: 'admin-test',
+        userId: '999999', // Special admin test user ID
         returnUrl: '/admin/crypto-integration'
       });
       
@@ -269,7 +273,6 @@ class CryptoIntegrationService {
             status: 'paid',
             price_amount: transaction.amount,
             price_currency: transaction.currency,
-            receive_currency: transaction.cryptoCurrency,
             transaction_id: `mock-tx-hash-${Date.now()}`,
             order_id: `order-${Date.now()}`,
             payment_id: `payment-${Date.now()}`,

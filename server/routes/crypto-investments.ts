@@ -5,8 +5,11 @@ import {
   cryptoPaymentWebhookSchema,
   cryptoRefundRequestSchema
 } from '@shared/crypto-schema';
-import { cryptoPaymentService } from '../services/crypto-payment-service';
+import { CryptoPaymentService } from '../services/crypto-payment-service';
 import { z } from 'zod';
+
+// Initialize the crypto payment service
+const cryptoPaymentService = new CryptoPaymentService();
 
 const router = express.Router();
 
@@ -81,8 +84,11 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Get user's crypto transactions
 router.get('/user/transactions', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.jwtPayload?.id as string;
-    const transactions = await cryptoPaymentService.getTransactionsByUser(userId);
+    const userId = req.jwtPayload?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const transactions = await cryptoPaymentService.getTransactionsByUser(userId.toString());
     
     res.json({
       success: true,
@@ -100,8 +106,11 @@ router.get('/user/transactions', authMiddleware, async (req: Request, res: Respo
 // Get user's crypto wallet balances
 router.get('/user/balances', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.jwtPayload?.id as string;
-    const balances = await cryptoPaymentService.getWalletBalances(userId);
+    const userId = req.jwtPayload?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const balances = await cryptoPaymentService.getWalletBalances(userId.toString());
     
     res.json({
       success: true,

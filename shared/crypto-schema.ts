@@ -7,7 +7,8 @@ export const cryptoTransactionStatusEnum = z.enum([
   'confirmed',
   'failed',
   'refunded',
-  'expired'
+  'expired',
+  'completed'
 ]);
 
 // Define supported crypto currencies
@@ -18,6 +19,14 @@ export const cryptoCurrencyEnum = z.enum([
   'USDT'
 ]);
 
+// Define supported networks
+export const cryptoNetworkEnum = z.enum([
+  'ethereum',
+  'polygon',
+  'binance',
+  'solana'
+]);
+
 // Define a schema for crypto payment intents
 export const cryptoPaymentIntentSchema = z.object({
   amount: z.number().positive(),
@@ -26,7 +35,8 @@ export const cryptoPaymentIntentSchema = z.object({
   userId: z.string(),
   investmentId: z.string().optional(),
   propertyId: z.string().optional(),
-  returnUrl: z.string().optional()
+  returnUrl: z.string().optional(),
+  network: cryptoNetworkEnum.optional()
 });
 
 export type CryptoPaymentIntent = z.infer<typeof cryptoPaymentIntentSchema>;
