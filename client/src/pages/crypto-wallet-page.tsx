@@ -465,6 +465,110 @@ const CryptoWalletPage: React.FC = () => {
         </p>
       </div>
       
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle className="text-base">The Full Investment Cycle</CardTitle>
+          <CardDescription>Understanding what happens after you invest</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-medium text-base mb-2">Release Phase</h4>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 flex-shrink-0">
+                    <div className="bg-green-100 dark:bg-green-800 h-6 w-6 rounded-full flex items-center justify-center">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-300" />
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm">Successful Projects</h5>
+                    <p className="text-sm text-muted-foreground">
+                      When all conditions are met, the smart contract automatically releases funds to the property developer or to iREVA's treasury for disbursement.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 flex-shrink-0">
+                    <div className="bg-amber-100 dark:bg-amber-800 h-6 w-6 rounded-full flex items-center justify-center">
+                      <ArrowRight className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm">Unsuccessful Projects</h5>
+                    <p className="text-sm text-muted-foreground">
+                      If funding goals or other conditions aren't met by the deadline, your investment is automatically returned to your wallet address without requiring any action on your part.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-2 border-t">
+              <h4 className="font-medium text-base mb-2">Payout & Tracking</h4>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 flex-shrink-0">
+                    <div className="bg-blue-100 dark:bg-blue-800 h-6 w-6 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-300 text-xs font-bold">1</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm">Event Triggers</h5>
+                    <p className="text-sm text-muted-foreground">
+                      Smart contract events are automatically emitted whenever funds are released or returned, which our system monitors in real-time.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 flex-shrink-0">
+                    <div className="bg-blue-100 dark:bg-blue-800 h-6 w-6 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-300 text-xs font-bold">2</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm">ROI Distributions</h5>
+                    <p className="text-sm text-muted-foreground">
+                      When property returns are generated, the system automatically calculates your share based on your investment percentage.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 flex-shrink-0">
+                    <div className="bg-blue-100 dark:bg-blue-800 h-6 w-6 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-300 text-xs font-bold">3</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm">Transparent Logging</h5>
+                    <p className="text-sm text-muted-foreground">
+                      All transactions are permanently recorded in both the blockchain and our database, providing an immutable audit trail.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="mt-1 flex-shrink-0">
+                    <div className="bg-blue-100 dark:bg-blue-800 h-6 w-6 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-300 text-xs font-bold">4</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm">Notifications</h5>
+                    <p className="text-sm text-muted-foreground">
+                      You'll receive email and in-app notifications at every milestone, including investment confirmations, project status updates, and ROI distributions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>What's Next?</CardTitle>
