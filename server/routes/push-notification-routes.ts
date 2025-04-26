@@ -49,6 +49,67 @@ pushNotificationRouter.post('/unsubscribe', authMiddleware, async (req: Request,
   }
 });
 
+// Test notification endpoint
+pushNotificationRouter.post('/test-notification', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { title, body } = req.body;
+    const userId = req.user?.id;
+    
+    if (!title || !body) {
+      return res.status(400).json({ error: 'Title and body are required' });
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    // For demo purposes, we'll send a notification to the current user only
+    const result = await sendPushNotificationToUser(userId, title, body);
+    
+    if (result) {
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Notification sent successfully' 
+      });
+    } else {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'You need to subscribe to push notifications first' 
+      });
+    }
+  } catch (error) {
+    console.error('Error sending test notification:', error);
+    return res.status(500).json({ error: 'Failed to send test notification' });
+  }
+});
+
+// Admin endpoint to send a notification to all users
+pushNotificationRouter.post('/admin/notify-all', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { title, body } = req.body;
+    
+    // Check if user is admin
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    if (!title || !body) {
+      return res.status(400).json({ error: 'Title and body are required' });
+    }
+    
+    const results = await sendPushNotificationToAll(title, body);
+    
+    return res.status(200).json({ 
+      success: true, 
+      message: `Notification sent to ${results.filter(r => r.success).length} users`,
+      results 
+    });
+  } catch (error) {
+    console.error('Error sending notifications to all users:', error);
+    return res.status(500).json({ error: 'Failed to send notifications' });
+  }
+});
+
 // Example function to send a notification to a specific user
 export async function sendPushNotificationToUser(userId: number, title: string, body: string) {
   try {
