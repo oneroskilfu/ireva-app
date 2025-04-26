@@ -3,11 +3,11 @@ import { Grid, Typography, Box } from '@mui/material';
 import { lazy, Suspense } from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
 
-// Lazy load components exactly as requested in your example
-const InvestmentSummaryCard = lazy(() => import('@/components/investor/InvestmentSummaryCard'));
-const WalletBalanceCard = lazy(() => import('@/components/investor/WalletBalanceCard'));
-const RecentTransactions = lazy(() => import('@/components/investor/RecentTransactions'));
-const CryptoStatus = lazy(() => import('@/components/investor/CryptoStatus'));
+// Lazy load components for performance optimization
+const InvestmentSummaryCard = lazy(() => import('../../components/investor/InvestmentSummaryCard'));
+const WalletBalanceCard = lazy(() => import('../../components/investor/WalletBalanceCard'));
+const RecentTransactions = lazy(() => import('../../components/investor/RecentTransactions'));
+const CryptoStatus = lazy(() => import('../../components/investor/CryptoStatus'));
 
 // Loading fallback component
 const LoadingCard = () => (
@@ -31,7 +31,7 @@ export default function Dashboard() {
         Dashboard
       </Typography>
       
-      {/* Using the exact same Grid layout as your example */}
+      {/* Responsive Grid layout - stacks vertically on mobile, 2-column on desktop */}
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Suspense fallback={<LoadingCard />}>
