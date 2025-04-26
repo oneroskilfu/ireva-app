@@ -5,6 +5,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { useEffect, useState, lazy, Suspense, StrictMode } from "react";
 import { DebugHelper } from "@/components/DebugHelper";
+import PWAInstallToast from "@/components/PWAInstallToast";
 import AuthMiddleware from "@/middleware/AuthMiddleware";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import InvestorLayout from "@/components/layouts/InvestorLayout";
@@ -784,6 +785,7 @@ function App() {
               <AuthProvider>
                 <Router />
                 <Toaster />
+                <PWAInstallToast />
                 {/* Only show debug helper in development mode */}
                 {isDevelopment && <DebugHelper />}
               </AuthProvider>
