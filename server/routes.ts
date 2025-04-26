@@ -57,6 +57,8 @@ import { walletTransactionsRouter } from './routes/wallet-transactions';
 // Import CoinGate integration routes
 import cryptoRoutes from './routes/crypto-routes';
 import { webhookRouter } from './coingate/webhookHandler';
+// Import Escrow smart contract routes
+import { escrowRouter } from './routes/escrow-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -626,6 +628,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update investment returns" });
     }
   });
+
+  // Set up Smart Contract Escrow routes
+  app.use('/api/escrow', escrowRouter);
+  console.log("Smart contract escrow routes registered");
 
   const httpServer = createServer(app);
   

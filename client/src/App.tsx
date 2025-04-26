@@ -77,6 +77,7 @@ function Router() {
   const InvestorProjectsPage = lazy(() => import('@/pages/investor/InvestorProjectsPage'));
   const ProjectsPage = lazy(() => import('@/pages/investor/projects-page'));
   const ProjectDetailPage = lazy(() => import('@/pages/investor/project-detail-page'));
+  const PropertyEscrowPage = lazy(() => import('@/pages/investor/PropertyEscrowPage'));
   const ROICalculatorPage = lazy(() => import('@/pages/investor/ROICalculatorPage'));
   const InvestorSavedPropertiesPage = lazy(() => import('@/pages/investor/InvestorSavedPropertiesPage'));
   const InvestorPortfolioPage = lazy(() => import('@/pages/investor/portfolio-page'));
@@ -506,6 +507,19 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <InvestorLayout>
                 <InvestorROIDashboardPage />
+              </InvestorLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Property Escrow Page */}
+      <Route path="/investor/escrow">
+        {() => (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <InvestorLayout>
+                <PropertyEscrowPage />
               </InvestorLayout>
             </Suspense>
           </AuthMiddleware>

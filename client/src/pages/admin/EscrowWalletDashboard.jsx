@@ -1,0 +1,310 @@
+import React, { useEffect, useState } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Table, 
+  TableHead, 
+  TableBody, 
+  TableRow, 
+  TableCell, 
+  Paper,
+  Button,
+  Chip,
+  CircularProgress,
+  Alert,
+  Card,
+  CardContent,
+  Grid
+} from '@mui/material';
+import { AdminPanelSettings, CheckCircle, PendingActions, Error } from '@mui/icons-material';
+import axios from 'axios';
+
+function EscrowWalletDashboard() {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [walletBalance, setWalletBalance] = useState({
+    usdc: '0',
+    eth: '0'
+  });
+
+  useEffect(() => {
+    fetchProjects();
+    fetchWalletBalance();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get('/api/admin/escrow-projects');
+      setProjects(data.projects || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching escrow projects:', err);
+      setError('Failed to load escrow projects. Please try again.');
+      // Use mock data for development
+      if (process.env.NODE_ENV === 'development') {
+        setProjects(getMockProjects());
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchWalletBalance = async () => {
+    try {
+      const { data } = await axios.get('/api/admin/escrow-wallet-balance');
+      setWalletBalance(data.balance);
+    } catch (err) {
+      console.error('Error fetching wallet balance:', err);
+      // Use mock data for development
+      if (process.env.NODE_ENV === 'development') {
+        setWalletBalance({
+          usdc: '3,750,000',
+          eth: '1.25'
+        });
+      }
+    }
+  };
+
+  const handleReleaseFunds = async (projectId, milestoneId) => {
+    try {
+      await axios.post('/api/admin/release-escrow-funds', {
+        projectId,
+        milestoneId
+      });
+      // Refresh projects after releasing funds
+      fetchProjects();
+    } catch (err) {
+      console.error('Error releasing funds:', err);
+      setError('Failed to release funds. Please try again.');
+    }
+  };
+
+  const getStatusChip = (status) => {
+    switch (status) {
+      case 'active':
+        return <Chip icon={<PendingActions />} label="Active" color="primary" size="small" />;
+      case 'successful':
+        return <Chip icon={<CheckCircle />} label="Successful" color="success" size="small" />;
+      case 'failed':
+        return <Chip icon={<Error />} label="Failed" color="error" size="small" />;
+      default:
+        return <Chip label={status} size="small" />;
+    }
+  };
+
+  // Mock data for development only
+  const getMockProjects = () => {
+    return [
+      {
+        id: 1,
+        name: "Lagos Heights Residential Tower",
+        goal: "5,000,000",
+        raised: "3,750,000",
+        status: "active",
+        percentComplete: 75,
+        nextMilestone: {
+          id: 2,
+          title: "Construction Phase 2",
+          amount: "1,500,000",
+          releaseDate: "2023-09-15",
+          status: "pending"
+        }
+      },
+      {
+        id: 2,
+        name: "Abuja Commercial Plaza",
+        goal: "2,500,000",
+        raised: "2,500,000",
+        status: "successful",
+        percentComplete: 100,
+        nextMilestone: {
+          id: 3,
+          title: "Final Completion",
+          amount: "750,000",
+          releaseDate: "2023-07-30",
+          status: "ready"
+        }
+      },
+      {
+        id: 3,
+        name: "Port Harcourt Business Hub",
+        goal: "3,200,000",
+        raised: "1,250,000",
+        status: "failed",
+        percentComplete: 39,
+        nextMilestone: null
+      }
+    ];
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ padding: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4">
+          <AdminPanelSettings sx={{ mr: 1, verticalAlign: 'middle' }} />
+          Escrow Wallet Dashboard
+        </Typography>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Wallet Balance Cards */}
+      <Typography variant="h5" sx={{ mb: 2 }}>Wallet Overview</Typography>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom>
+                USDC Balance
+              </Typography>
+              <Typography variant="h4">
+                {walletBalance.usdc} USDC
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography color="text.secondary" gutterBottom>
+                ETH Balance
+              </Typography>
+              <Typography variant="h4">
+                {walletBalance.eth} ETH
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Projects Table */}
+      <Typography variant="h5" sx={{ mb: 2 }}>Active Escrow Projects</Typography>
+      <Paper sx={{ mb: 4 }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Project Name</TableCell>
+              <TableCell>Goal (USDC)</TableCell>
+              <TableCell>Current Raised (USDC)</TableCell>
+              <TableCell>Completion</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Action</TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {projects.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  No escrow projects found
+                </TableCell>
+              </TableRow>
+            ) : (
+              projects.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell>{project.name}</TableCell>
+                  <TableCell>{project.goal}</TableCell>
+                  <TableCell>{project.raised}</TableCell>
+                  <TableCell>{project.percentComplete}%</TableCell>
+                  <TableCell>{getStatusChip(project.status)}</TableCell>
+                  <TableCell>
+                    {project.nextMilestone && project.nextMilestone.status === 'ready' && (
+                      <Button 
+                        variant="contained" 
+                        size="small"
+                        onClick={() => handleReleaseFunds(project.id, project.nextMilestone.id)}
+                      >
+                        Release Funds
+                      </Button>
+                    )}
+                    {project.nextMilestone && project.nextMilestone.status === 'pending' && (
+                      <Button 
+                        variant="outlined" 
+                        size="small"
+                        disabled
+                      >
+                        Pending Release
+                      </Button>
+                    )}
+                    {(!project.nextMilestone) && (
+                      <Button 
+                        variant="outlined" 
+                        size="small"
+                        disabled
+                      >
+                        No Action
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Paper>
+
+      {/* Pending Milestone Releases */}
+      <Typography variant="h5" sx={{ mb: 2 }}>Pending Milestone Releases</Typography>
+      <Paper>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Project</TableCell>
+              <TableCell>Milestone</TableCell>
+              <TableCell>Amount (USDC)</TableCell>
+              <TableCell>Release Date</TableCell>
+              <TableCell>Action</TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {projects.filter(p => p.nextMilestone && p.nextMilestone.status === 'ready').length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  No pending releases at this time
+                </TableCell>
+              </TableRow>
+            ) : (
+              projects
+                .filter(p => p.nextMilestone && p.nextMilestone.status === 'ready')
+                .map((project) => (
+                  <TableRow key={`milestone-${project.id}`}>
+                    <TableCell>{project.name}</TableCell>
+                    <TableCell>{project.nextMilestone.title}</TableCell>
+                    <TableCell>{project.nextMilestone.amount}</TableCell>
+                    <TableCell>{project.nextMilestone.releaseDate}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="contained" 
+                        color="success"
+                        size="small"
+                        onClick={() => handleReleaseFunds(project.id, project.nextMilestone.id)}
+                      >
+                        Approve & Release
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+            )}
+          </TableBody>
+        </Table>
+      </Paper>
+    </Box>
+  );
+}
+
+export default EscrowWalletDashboard;

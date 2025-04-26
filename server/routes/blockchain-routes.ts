@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authMiddleware, ensureAdmin } from '../auth-jwt';
 import { z } from 'zod';
 import { ethers } from 'ethers';
-import { blockchainService } from '../services/blockchain-service';
+import blockchainService from '../services/blockchain-service';
 import { blockchainStatusController } from '../controllers/blockchain-status-controller';
 
 const blockchainRouter = Router();
@@ -23,6 +23,14 @@ blockchainRouter.get('/transaction/:txHash', authMiddleware, async (req: Request
     
     if (!txHash) {
       return res.status(400).json({ error: 'Transaction hash is required' });
+    }
+    
+    // Check if blockchain service is properly initialized
+    if (!blockchainService.isInitialized()) {
+      return res.status(503).json({
+        error: 'Blockchain service not fully initialized',
+        details: 'Contract address may be missing'
+      });
     }
     
     // Get the transaction status from the blockchain

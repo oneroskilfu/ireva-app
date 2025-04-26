@@ -1,71 +1,119 @@
-// Deploy script for the iREVA Escrow smart contract
-const { ethers } = require("hardhat");
-require("dotenv").config();
+// We require the Hardhat Runtime Environment explicitly here. This is optional
+// but useful for running the script in a standalone fashion through `node <script>`.
+//
+// When running the script with `npx hardhat run <script>` you'll find the Hardhat
+// Runtime Environment's members available in the global scope.
+const hre = require("hardhat");
+const fs = require('fs');
+const path = require('path');
+
+// USDC contract address
+// Mumbai testnet address for test USDC
+const USDC_ADDRESS = "0xe11A86849d99F524cAC3E7A0Ec1241828e332C62";
+
+// Campaign parameters
+const CAMPAIGN_DURATION = 30 * 24 * 60 * 60; // 30 days in seconds
+const FUNDING_GOAL = ethers.parseUnits("1000000", 6); // 1,000,000 USDC (6 decimals)
 
 async function main() {
-  try {
-    console.log("Starting iREVA Escrow deployment process...");
-    
-    // Get deployer account
-    const [deployer] = await ethers.getSigners();
-    console.log(`Deploying contracts with account: ${deployer.address}`);
-    
-    // Display account balance
-    const deployerBalance = await deployer.getBalance();
-    console.log(`Account balance: ${ethers.formatEther(deployerBalance)} ETH`);
-    
-    // Get parameters from environment variables or use defaults
-    const projectOwner = process.env.PROJECT_OWNER_ADDRESS || deployer.address;
-    const stablecoinAddress = process.env.STABLECOIN_CONTRACT_ADDRESS || "0xe11A86849d99F524cAC3E7A0Ec1241828e332C62"; // Mumbai USDC
-    const fundingGoal = process.env.FUNDING_GOAL || "10000";
-    const campaignDuration = process.env.CAMPAIGN_DURATION || "30";
-    
-    console.log(`Project Owner Address: ${projectOwner}`);
-    console.log(`Stablecoin Contract Address: ${stablecoinAddress}`);
-    console.log(`Funding Goal: ${fundingGoal} USDC`);
-    console.log(`Campaign Duration: ${campaignDuration} days`);
-    
-    // Deploy iREVAEscrow
-    const iREVAEscrow = await ethers.getContractFactory("iREVAEscrow");
-    
-    // Convert funding goal to proper units (USDC has 6 decimals)
-    const fundingGoalInTokenUnits = ethers.parseUnits(fundingGoal, 6);
-    
-    const escrowContract = await iREVAEscrow.deploy(
-      projectOwner, 
-      stablecoinAddress,
-      fundingGoalInTokenUnits,
-      campaignDuration
+  // Hardhat always runs the compile task when running scripts with its command
+  // line interface.
+  //
+  // If this script is run directly using `node` you may want to call compile
+  // manually to make sure everything is compiled
+  // await hre.run('compile');
+
+  console.log("Deploying iREVA Escrow contract...");
+  console.log("Network:", hre.network.name);
+  console.log("USDC Address:", USDC_ADDRESS);
+  console.log("Campaign Duration:", CAMPAIGN_DURATION, "seconds");
+  console.log("Funding Goal:", ethers.formatUnits(FUNDING_GOAL, 6), "USDC");
+
+  // Get the deployer account
+  const [deployer] = await ethers.getSigners();
+  console.log("Deployer:", deployer.address);
+  
+  // Deploy the contract
+  const iREVAEscrow = await ethers.getContractFactory("iREVAEscrow");
+  const escrow = await iREVAEscrow.deploy(
+    USDC_ADDRESS,
+    CAMPAIGN_DURATION,
+    FUNDING_GOAL
+  );
+
+  await escrow.waitForDeployment();
+
+  const escrowAddress = await escrow.getAddress();
+  console.log("iREVA Escrow deployed to:", escrowAddress);
+
+  // Save the contract information
+  const contractInfo = {
+    network: hre.network.name,
+    address: escrowAddress,
+    deployer: deployer.address,
+    usdc: USDC_ADDRESS,
+    duration: CAMPAIGN_DURATION,
+    fundingGoal: ethers.formatUnits(FUNDING_GOAL, 6),
+    deploymentTime: new Date().toISOString(),
+    abi: JSON.parse(escrow.interface.formatJson())
+  };
+
+  // Create the deployments directory if it doesn't exist
+  const deploymentsDir = path.join(__dirname, '../deployments');
+  if (!fs.existsSync(deploymentsDir)){
+    fs.mkdirSync(deploymentsDir, { recursive: true });
+  }
+
+  // Save the contract information to a JSON file
+  const deploymentPath = path.join(deploymentsDir, `${hre.network.name}-escrow.json`);
+  fs.writeFileSync(
+    deploymentPath,
+    JSON.stringify(contractInfo, null, 2)
+  );
+  console.log(`Deployment information saved to ${deploymentPath}`);
+
+  // Update the .env.escrow file with the contract address
+  const envPath = path.join(__dirname, '../.env.escrow');
+  let envContents = '';
+  
+  if (fs.existsSync(envPath)) {
+    envContents = fs.readFileSync(envPath, 'utf8');
+  }
+
+  // Replace or add the ESCROW_CONTRACT_ADDRESS
+  if (envContents.includes('ESCROW_CONTRACT_ADDRESS=')) {
+    envContents = envContents.replace(
+      /ESCROW_CONTRACT_ADDRESS=.*/,
+      `ESCROW_CONTRACT_ADDRESS=${escrowAddress}`
     );
-    
-    await escrowContract.waitForDeployment();
-    
-    const escrowAddress = await escrowContract.getAddress();
-    console.log(`iREVA Escrow contract deployed to: ${escrowAddress}`);
-    
-    console.log("\nDeployment completed successfully!");
-    console.log("\nContract address:");
-    console.log(`- iREVAEscrow: ${escrowAddress}`);
-    
-    // Important: Store this address in your deployment environment or database
-    console.log("\nIMPORTANT: Save the above contract address in your environment variables or database.");
-    console.log("For example in your .env file:");
-    console.log(`ESCROW_CONTRACT_ADDRESS=${escrowAddress}`);
-    
-    // Return the deployed address (useful for automated scripts)
-    return {
-      escrowAddress
-    };
+  } else {
+    envContents += `\nESCROW_CONTRACT_ADDRESS=${escrowAddress}\n`;
+  }
+
+  fs.writeFileSync(envPath, envContents);
+  console.log(`Updated ${envPath} with contract address`);
+
+  console.log("Verifying contract on Etherscan...");
+  try {
+    await hre.run("verify:verify", {
+      address: escrowAddress,
+      constructorArguments: [
+        USDC_ADDRESS,
+        CAMPAIGN_DURATION,
+        FUNDING_GOAL
+      ],
+    });
+    console.log("Contract verified on Etherscan!");
   } catch (error) {
-    console.error("Error during deployment:", error);
-    process.exit(1);
+    console.log("Error verifying contract:", error.message);
   }
 }
 
-// Execute the script
+// We recommend this pattern to be able to use async/await everywhere
+// and properly handle errors.
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error("Unhandled error:", error);
+    console.error(error);
     process.exit(1);
   });

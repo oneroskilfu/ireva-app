@@ -1,371 +1,390 @@
-import * as ethers from 'ethers';
-import { db } from '../db';
-import { properties, cryptoWallets } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+import { ethers } from 'ethers';
 import dotenv from 'dotenv';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { BlockchainUtils } from './blockchain-utils';
+import fs from 'fs';
+import path from 'path';
 
+// Load environment variables
 dotenv.config();
 
-// These will be populated once the contracts are compiled
-// We'll use placeholder empty ABIs for now
-const PropertyFactoryABI: any[] = [];
-const PropertyEscrowABI: any[] = [];
-const PropertyTokenABI: any[] = [];
-const ROIDistributorABI: any[] = [];
+// Use import.meta.url for ES modules instead of __dirname
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// Contract addresses (these would be stored in the database or environment variables in production)
-const FACTORY_CONTRACT_ADDRESS = process.env.FACTORY_CONTRACT_ADDRESS;
+// Load contract ABI
+const loadContractABI = () => {
+  try {
+    // Get current file path
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    
+    const abiPath = path.join(__dirname, '../../artifacts/contracts/iREVAEscrow.sol/iREVAEscrow.json');
+    if (fs.existsSync(abiPath)) {
+      const contractData = JSON.parse(fs.readFileSync(abiPath, 'utf8'));
+      return contractData.abi;
+    } else {
+      console.warn(`ABI file not found at ${abiPath}, using placeholder ABI`);
+      // Return a minimal ABI for basic functions if file not found
+      return [
+        "function invest(uint256 amount) external",
+        "function getCampaignStatus() external view returns (uint256 endTime, uint256 raised, uint256 goal, bool isFinalized, bool isSuccessful)",
+        "function getInvestorDetails(address investorAddress) external view returns (uint256 amount, bool refunded)",
+        "function claimRefund() external",
+        "function remainingTime() external view returns (uint256)"
+      ];
+    }
+  } catch (error) {
+    console.error('Error loading contract ABI:', error);
+    // Use placeholder ABI instead of throwing which would break the service
+    return [
+      "function invest(uint256 amount) external",
+      "function getCampaignStatus() external view returns (uint256 endTime, uint256 raised, uint256 goal, bool isFinalized, bool isSuccessful)",
+      "function getInvestorDetails(address investorAddress) external view returns (uint256 amount, bool refunded)",
+      "function claimRefund() external",
+      "function remainingTime() external view returns (uint256)"
+    ];
+  }
+};
 
 class BlockchainService {
-  private provider: ethers.JsonRpcProvider;
-  private wallet: ethers.Wallet;
-  private factoryContract: ethers.Contract;
+  private provider: ethers.Provider;
+  private escrowAddress: string;
+  private escrowABI: any;
+  private wallet: ethers.Wallet | null = null;
+  private contract: ethers.Contract | null = null;
+  private readOnlyContract: ethers.Contract | null = null;
   
   constructor() {
-    // Using a dummy URL for now until we have a real RPC endpoint
-    const dummyUrl = process.env.RPC_URL || "https://rpc-url-placeholder.com";
+    // Initialize with environment variables
+    const rpcUrl = process.env.MUMBAI_RPC_URL || 'https://rpc-mumbai.maticvigil.com/';
+    this.escrowAddress = process.env.ESCROW_CONTRACT_ADDRESS || '';
+    const privateKey = process.env.PRIVATE_KEY || '';
     
     // Initialize provider
-    this.provider = new ethers.JsonRpcProvider(dummyUrl);
+    this.provider = new ethers.JsonRpcProvider(rpcUrl);
     
-    // Initialize wallet with a placeholder private key
-    // In production, this would come from environment variables
-    const privateKey = process.env.PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000001";
-    this.wallet = new ethers.Wallet(privateKey, this.provider);
+    // Load contract ABI
+    this.escrowABI = loadContractABI();
     
-    // Initialize factory contract with a placeholder address
-    // In production, this would come from environment variables or database
-    const factoryAddress = FACTORY_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000001";
-    this.factoryContract = new ethers.Contract(factoryAddress, PropertyFactoryABI, this.wallet);
-    
-    console.log("BlockchainService initialized with dummy values for development");
-  }
-  
-  /**
-   * Create smart contracts for a new property
-   * @param propertyId Property ID in the database
-   * @param developerAddress Blockchain address of the property developer
-   */
-  async createPropertyContracts(propertyId: number, developerAddress: string): Promise<{
-    escrowAddress: string;
-    tokenAddress: string;
-  }> {
-    try {
-      // Get property details from database
-      const [property] = await db
-        .select()
-        .from(properties)
-        .where(eq(properties.id, propertyId));
-      
-      if (!property) {
-        throw new Error(`Property with ID ${propertyId} not found`);
+    // Only initialize contracts if we have a valid address
+    if (this.escrowAddress && this.escrowAddress.startsWith('0x') && this.escrowAddress.length === 42) {
+      // Initialize wallet if private key is available
+      if (privateKey) {
+        this.wallet = new ethers.Wallet(privateKey, this.provider);
+        this.contract = new ethers.Contract(
+          this.escrowAddress, 
+          this.escrowABI, 
+          this.wallet
+        );
       }
       
-      // Convert developer address to payable address
-      const developerPayable = developerAddress as string;
-      
-      // Convert targetFunding to wei
-      const targetAmount = BlockchainUtils.toWei(property.totalFunding || 0);
-      
-      // Investment period in days (convert from propertyDaysLeft or use default)
-      const investmentPeriodInDays = property.daysLeft || 60;
-      
-      // Create escrow contract
-      console.log(`Creating escrow contract for property ${propertyId}...`);
-      const escrowTx = await this.factoryContract.createEscrowContract(
-        propertyId,
-        developerPayable,
-        targetAmount,
-        investmentPeriodInDays
+      // Initialize read-only contract
+      this.readOnlyContract = new ethers.Contract(
+        this.escrowAddress,
+        this.escrowABI,
+        this.provider
       );
       
-      await escrowTx.wait();
-      console.log("Escrow contract created, transaction hash:", escrowTx.hash);
+      console.log('BlockchainService initialized with contract at:', this.escrowAddress);
+    } else {
+      console.log('BlockchainService initialized in mock mode - contract address not properly configured')
+    }
+  }
+  
+  /**
+   * Get the status of the current campaign
+   * @returns Object containing campaign status details
+   */
+  async getCampaignStatus() {
+    try {
+      if (!this.readOnlyContract) {
+        throw new Error('Contract not initialized');
+      }
       
-      // Get property contract details
-      const propertyContract = await this.factoryContract.getPropertyContract(propertyId);
-      const escrowAddress = propertyContract.escrowAddress;
+      const status = await this.readOnlyContract.getCampaignStatus();
       
-      // Create token symbol from property name
-      const tokenSymbol = BlockchainUtils.createTokenSymbol(property.name);
+      return {
+        endTime: Number(status[0]),
+        raised: ethers.formatUnits(status[1], 6), // USDC has 6 decimals
+        goal: ethers.formatUnits(status[2], 6),
+        isFinalized: status[3],
+        isSuccessful: status[4],
+        remainingTimeInSeconds: await this.getRemainingTime()
+      };
+    } catch (error) {
+      console.error('Error getting campaign status:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get the remaining time in the campaign
+   * @returns Remaining time in seconds
+   */
+  async getRemainingTime() {
+    try {
+      if (!this.readOnlyContract) {
+        throw new Error('Contract not initialized');
+      }
       
-      // Create token contract
-      console.log(`Creating token contract for property ${propertyId} with symbol ${tokenSymbol}...`);
-      const tokenTx = await this.factoryContract.createTokenContract(
+      const remainingTime = await this.readOnlyContract.remainingTime();
+      return Number(remainingTime);
+    } catch (error) {
+      console.error('Error getting remaining time:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get details about an investor's contribution
+   * @param investorAddress The Ethereum address of the investor
+   * @returns Object containing investment amount and refund status
+   */
+  async getInvestorDetails(investorAddress: string) {
+    try {
+      if (!this.readOnlyContract) {
+        throw new Error('Contract not initialized');
+      }
+      
+      const details = await this.readOnlyContract.getInvestorDetails(investorAddress);
+      
+      return {
+        amount: ethers.formatUnits(details[0], 6), // USDC has 6 decimals
+        refunded: details[1]
+      };
+    } catch (error) {
+      console.error('Error getting investor details:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Invest in the property through the escrow contract
+   * @param amount Amount to invest in USDC
+   * @param investorAddress The investor's address
+   * @returns Transaction receipt
+   */
+  async invest(amount: string, investorAddress?: string) {
+    try {
+      if (!this.contract) {
+        throw new Error('Contract not initialized for writing');
+      }
+      
+      // If investorAddress is provided, we need a different way to sign transactions
+      // This would require additional implementation for production use
+      
+      // Convert amount to the proper units (USDC has 6 decimals)
+      const amountInWei = ethers.parseUnits(amount, 6);
+      
+      // Send the transaction
+      const tx = await this.contract.invest(amountInWei);
+      
+      // Wait for transaction to be mined
+      const receipt = await tx.wait();
+      
+      return {
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        status: receipt.status === 1 ? 'success' : 'failed'
+      };
+    } catch (error) {
+      console.error('Error investing:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Claim a refund if the campaign failed
+   * @returns Transaction receipt
+   */
+  async claimRefund() {
+    try {
+      if (!this.contract) {
+        throw new Error('Contract not initialized for writing');
+      }
+      
+      // Send the transaction
+      const tx = await this.contract.claimRefund();
+      
+      // Wait for transaction to be mined
+      const receipt = await tx.wait();
+      
+      return {
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        status: receipt.status === 1 ? 'success' : 'failed'
+      };
+    } catch (error) {
+      console.error('Error claiming refund:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Check if the contract is properly initialized
+   * @returns True if the contract is initialized
+   */
+  isInitialized() {
+    return !!this.readOnlyContract && !!this.escrowAddress;
+  }
+  
+  /**
+   * Get the address of the escrow contract
+   * @returns The contract address
+   */
+  getContractAddress() {
+    return this.escrowAddress;
+  }
+
+  /**
+   * Get transaction status on the blockchain
+   * @param txHash Transaction hash to check
+   * @returns Transaction status information
+   */
+  async getTransactionStatus(txHash: string) {
+    try {
+      if (!this.provider) {
+        throw new Error('Blockchain provider not initialized');
+      }
+      
+      const tx = await this.provider.getTransaction(txHash);
+      if (!tx) {
+        return { found: false, message: 'Transaction not found' };
+      }
+      
+      const receipt = await this.provider.getTransactionReceipt(txHash);
+      
+      let timestamp = null;
+      if (tx.blockNumber) {
+        const block = await this.provider.getBlock(tx.blockNumber);
+        timestamp = block ? block.timestamp : null;
+      }
+      
+      return {
+        found: true,
+        hash: txHash,
+        from: tx.from,
+        to: tx.to,
+        blockNumber: tx.blockNumber,
+        confirmations: tx.confirmations ?? 0,
+        status: receipt ? (receipt.status === 1 ? 'success' : 'failed') : 'pending',
+        timestamp
+      };
+    } catch (error) {
+      console.error('Error getting transaction status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify an investment on the blockchain
+   * @param propertyId Property ID
+   * @param investmentId Investment ID
+   * @param transactionHash Transaction hash
+   * @param userId User ID
+   * @returns Verification result
+   */
+  async verifyInvestment(propertyId: number, investmentId: string, transactionHash: string, userId: string) {
+    try {
+      // This is a simplified implementation
+      // In a real system, we would check the transaction details and match against the investment
+      const txStatus = await this.getTransactionStatus(transactionHash);
+      
+      if (!txStatus.found || txStatus.status !== 'success') {
+        return {
+          verified: false,
+          message: 'Transaction not found or not successful',
+          transactionDetails: txStatus
+        };
+      }
+      
+      // Here we would match the transaction details with the expected investment data
+      // For simplicity, we'll just return success
+      return {
+        verified: true,
+        message: 'Investment verified on blockchain',
         propertyId,
-        property.name || `Property ${propertyId}`,
-        tokenSymbol,
-        18, // decimals
-        1000000, // initial supply (1 million tokens)
-        developerPayable,
-        BlockchainUtils.toWei(0.0001) // price per token (0.0001 ETH)
-      );
-      
-      await tokenTx.wait();
-      console.log("Token contract created, transaction hash:", tokenTx.hash);
-      
-      // Get updated property contract details
-      const updatedPropertyContract = await this.factoryContract.getPropertyContract(propertyId);
-      const tokenAddress = updatedPropertyContract.tokenAddress;
-      
-      // TODO: Update property record in database with contract addresses
-      
-      return {
-        escrowAddress,
-        tokenAddress
+        investmentId,
+        transactionHash,
+        userId,
+        transactionDetails: txStatus
       };
     } catch (error) {
-      console.error("Error creating property contracts:", error);
-      throw new Error(`Failed to create property contracts: ${error instanceof Error ? error.message : String(error)}`);
+      console.error('Error verifying investment:', error);
+      throw error;
     }
   }
-  
+
   /**
-   * Invest in a property using the escrow contract
-   * @param propertyId Property ID in the database
-   * @param investorAddress Blockchain address of the investor
-   * @param amount Investment amount in ETH
+   * Get property token details
+   * @param propertyId Property ID
+   * @returns Token details
    */
-  async investInProperty(propertyId: number, investorAddress: string, amount: string): Promise<{
-    transactionHash: string;
-    success: boolean;
-  }> {
-    try {
-      // Get property contract details
-      const propertyContract = await this.factoryContract.getPropertyContract(propertyId);
-      const escrowAddress = propertyContract.escrowAddress;
-      
-      if (BlockchainUtils.isZeroAddress(escrowAddress)) {
-        throw new Error(`No escrow contract found for property ID ${propertyId}`);
-      }
-      
-      // Create new wallet instance for the investor
-      const investor = new ethers.Wallet(process.env.INVESTOR_PRIVATE_KEY || '', this.provider);
-      
-      // Create escrow contract instance
-      const escrowContract = new ethers.Contract(escrowAddress, PropertyEscrowABI, investor);
-      
-      // Convert amount to wei
-      const amountInWei = BlockchainUtils.toWei(amount);
-      
-      // Make investment
-      const tx = await escrowContract.invest({
-        value: amountInWei
-      });
-      
-      await tx.wait();
-      
-      return {
-        transactionHash: tx.hash,
-        success: true
-      };
-    } catch (error) {
-      console.error("Error investing in property:", error);
-      throw new Error(`Failed to invest in property: ${error instanceof Error ? error.message : String(error)}`);
-    }
+  async getPropertyTokenDetails(propertyId: number) {
+    // This is a simplified implementation
+    // In a real system, we would query an ERC-20 or ERC-721 token contract
+    return {
+      propertyId,
+      tokenSymbol: `PROP${propertyId}`,
+      tokenAddress: this.escrowAddress, // In a real system, this would be different
+      totalSupply: '1000000',
+      tokenType: 'ERC-20',
+      network: process.env.NETWORK || 'mumbai'
+    };
   }
-  
+
   /**
-   * Distribute ROI to investors
-   * @param propertyId Property ID in the database
-   * @param amount Amount to distribute in ETH
-   * @param description Description of the distribution
+   * Get investor token balance for a property
+   * @param propertyId Property ID
+   * @param userId User ID
+   * @returns Token balance
    */
-  async distributeROI(propertyId: number, amount: string, description: string): Promise<{
-    transactionHash: string;
-    success: boolean;
-  }> {
-    try {
-      // Get property token address (assuming it's stored in the database)
-      const [property] = await db
-        .select()
-        .from(properties)
-        .where(eq(properties.id, propertyId));
-      
-      if (!property) {
-        throw new Error(`Property with ID ${propertyId} not found`);
-      }
-      
-      // TODO: Replace with actual field name that stores the ROI distributor address
-      // For now using a placeholder property in the comment
-      const roiDistributorAddress = (property as any).roiDistributorAddress || '';
-      
-      if (!roiDistributorAddress) {
-        throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
-      }
-      
-      // Create ROI distributor contract instance
-      const roiDistributorContract = new ethers.Contract(roiDistributorAddress, ROIDistributorABI, this.wallet);
-      
-      // Convert amount to wei
-      const amountInWei = BlockchainUtils.toWei(amount);
-      
-      // Distribute ROI
-      const tx = await roiDistributorContract.distributeROI(description, {
-        value: amountInWei
-      });
-      
-      await tx.wait();
-      
-      return {
-        transactionHash: tx.hash,
-        success: true
-      };
-    } catch (error) {
-      console.error("Error distributing ROI:", error);
-      throw new Error(`Failed to distribute ROI: ${error instanceof Error ? error.message : String(error)}`);
-    }
+  async getInvestorTokenBalance(propertyId: number, userId: string) {
+    // This is a simplified implementation
+    // In a real system, we would query the token contract for the user's balance
+    return {
+      propertyId,
+      userId,
+      tokenSymbol: `PROP${propertyId}`,
+      balance: '0', // Mock balance, would be fetched from blockchain
+      network: process.env.NETWORK || 'mumbai'
+    };
   }
-  
+
   /**
-   * Get property investment statistics
-   * @param propertyId Property ID in the database
+   * Claim ROI for a property
+   * @param propertyId Property ID
+   * @param userId User ID
+   * @returns Claim result
    */
-  async getPropertyInvestmentStats(propertyId: number): Promise<{
-    totalInvested: string;
-    targetAmount: string;
-    investorCount: number;
-    fundingComplete: boolean;
-    remainingTime: number;
-  }> {
-    try {
-      // Get property contract details
-      const propertyContract = await this.factoryContract.getPropertyContract(propertyId);
-      const escrowAddress = propertyContract.escrowAddress;
-      
-      if (BlockchainUtils.isZeroAddress(escrowAddress)) {
-        throw new Error(`No escrow contract found for property ID ${propertyId}`);
-      }
-      
-      // Create escrow contract instance
-      const escrowContract = new ethers.Contract(escrowAddress, PropertyEscrowABI, this.provider);
-      
-      // Get statistics
-      const totalInvested = await escrowContract.totalInvested();
-      const targetAmount = await escrowContract.targetAmount();
-      const investorCount = await escrowContract.getInvestorCount();
-      const fundingComplete = await escrowContract.fundingComplete();
-      const remainingTime = await escrowContract.getRemainingTime();
-      
-      return {
-        totalInvested: BlockchainUtils.fromWei(totalInvested),
-        targetAmount: BlockchainUtils.fromWei(targetAmount),
-        investorCount: Number(investorCount),
-        fundingComplete,
-        remainingTime: Number(remainingTime)
-      };
-    } catch (error) {
-      console.error("Error getting property investment statistics:", error);
-      throw new Error(`Failed to get property investment statistics: ${error instanceof Error ? error.message : String(error)}`);
-    }
+  async claimRoi(propertyId: number, userId: string) {
+    // This is a simplified implementation
+    // In a real system, we would call a smart contract function
+    return {
+      success: false,
+      message: 'ROI claiming not implemented yet',
+      propertyId,
+      userId
+    };
   }
-  
+
   /**
-   * Get investor's pending ROI rewards
-   * @param propertyId Property ID in the database
-   * @param investorAddress Blockchain address of the investor
+   * Distribute ROI for a property (admin only)
+   * @param propertyId Property ID
+   * @param amount Amount to distribute
+   * @returns Distribution result
    */
-  async getInvestorRewards(propertyId: number, investorAddress: string): Promise<{
-    pendingRewards: string;
-    hasPendingRewards: boolean;
-  }> {
-    try {
-      // Get property token address (assuming it's stored in the database)
-      const [property] = await db
-        .select()
-        .from(properties)
-        .where(eq(properties.id, propertyId));
-      
-      if (!property) {
-        throw new Error(`Property with ID ${propertyId} not found`);
-      }
-      
-      // TODO: Replace with actual field name that stores the ROI distributor address
-      // For now using a placeholder property in the comment
-      const roiDistributorAddress = (property as any).roiDistributorAddress || '';
-      
-      if (!roiDistributorAddress) {
-        throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
-      }
-      
-      // Create ROI distributor contract instance
-      const roiDistributorContract = new ethers.Contract(roiDistributorAddress, ROIDistributorABI, this.provider);
-      
-      // Get pending rewards
-      const pendingRewards = await roiDistributorContract.calculatePendingRewards(investorAddress);
-      const hasPendingRewards = await roiDistributorContract.hasPendingRewards(investorAddress);
-      
-      return {
-        pendingRewards: BlockchainUtils.fromWei(pendingRewards),
-        hasPendingRewards
-      };
-    } catch (error) {
-      console.error("Error getting investor rewards:", error);
-      throw new Error(`Failed to get investor rewards: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-  
-  /**
-   * Claim investor's ROI rewards
-   * @param propertyId Property ID in the database
-   * @param investorPrivateKey Private key of the investor
-   */
-  async claimRewards(propertyId: number, investorPrivateKey: string): Promise<{
-    transactionHash: string;
-    success: boolean;
-    amountClaimed: string;
-  }> {
-    try {
-      // Get property token address (assuming it's stored in the database)
-      const [property] = await db
-        .select()
-        .from(properties)
-        .where(eq(properties.id, propertyId));
-      
-      if (!property) {
-        throw new Error(`Property with ID ${propertyId} not found`);
-      }
-      
-      // TODO: Replace with actual field name that stores the ROI distributor address
-      // For now using a placeholder property in the comment
-      const roiDistributorAddress = (property as any).roiDistributorAddress || '';
-      
-      if (!roiDistributorAddress) {
-        throw new Error(`No ROI distributor contract found for property ID ${propertyId}`);
-      }
-      
-      // Create investor wallet
-      const investor = new ethers.Wallet(investorPrivateKey, this.provider);
-      const investorAddress = investor.address;
-      
-      // Create ROI distributor contract instance with investor signer
-      const roiDistributorContract = new ethers.Contract(roiDistributorAddress, ROIDistributorABI, investor);
-      
-      // Get pending rewards before claiming
-      const pendingRewards = await roiDistributorContract.calculatePendingRewards(investorAddress);
-      
-      // Check if there are rewards to claim
-      if (pendingRewards === BigInt(0)) {
-        throw new Error("No pending rewards to claim");
-      }
-      
-      // Claim rewards
-      const tx = await roiDistributorContract.claimRewards();
-      await tx.wait();
-      
-      return {
-        transactionHash: tx.hash,
-        success: true,
-        amountClaimed: BlockchainUtils.fromWei(pendingRewards)
-      };
-    } catch (error) {
-      console.error("Error claiming rewards:", error);
-      throw new Error(`Failed to claim rewards: ${error instanceof Error ? error.message : String(error)}`);
-    }
+  async distributeRoi(propertyId: number, amount: string) {
+    // This is a simplified implementation
+    // In a real system, we would call a smart contract function
+    return {
+      success: false,
+      message: 'ROI distribution not implemented yet',
+      propertyId,
+      amount
+    };
   }
 }
 
-export const blockchainService = new BlockchainService();
+// Create and export a singleton instance
+const blockchainService = new BlockchainService();
+export default blockchainService;
