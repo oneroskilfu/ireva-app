@@ -2,6 +2,7 @@
   "short_name": "iREVA",
   "name": "iREVA - Real Estate Investment Platform",
   "description": "Invest smartly in prime African real estate with iREVA. Crowdfund. Grow. Prosper.",
+  "gcm_sender_id": "103953800507",
   "icons": [
     {
       "src": "favicon.ico",

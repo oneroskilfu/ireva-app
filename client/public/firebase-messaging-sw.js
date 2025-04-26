@@ -1,13 +1,9 @@
-// Give the service worker access to Firebase Messaging.
-// Note that you can only use Firebase Messaging here. Other Firebase libraries
-// are not available in the service worker.
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+// firebase-messaging-sw.js
 
-// Initialize the Firebase app in the service worker by passing in
-// your app's Firebase config object.
-// https://firebase.google.com/docs/web/setup#config-object
-firebase.initializeApp({
+importScripts('https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-compat.js');
+
+const firebaseConfig = {
   apiKey: "AIzaSyAHhiM0PxwYn8a64DzOBco5RWlXf4adQOk",
   authDomain: "ireva-platform.firebaseapp.com",
   projectId: "ireva-platform",
@@ -15,42 +11,42 @@ firebase.initializeApp({
   messagingSenderId: "488160387734",
   appId: "1:488160387734:web:02088d5591c8d75f4598b7",
   measurementId: "G-LHGPCTYFTK"
-});
+};
 
-// Retrieve an instance of Firebase Messaging so that it can handle background
-// messages.
+firebase.initializeApp(firebaseConfig);
+
 const messaging = firebase.messaging();
 
-// Handle background messages
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
+messaging.onBackgroundMessage(function(payload) {
+  console.log('Received background message ', payload);
+
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
     icon: '/icons/icon-192x192.png',
     badge: '/icons/badge-72x72.png',
-    data: payload.data
+    data: payload.data || {}
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Handle notification click
-self.addEventListener('notificationclick', (event) => {
-  console.log('[firebase-messaging-sw.js] Notification click Received');
-
-  const clickAction = event.notification.data?.url || '/';
+self.addEventListener('notificationclick', function(event) {
+  console.log('Notification click received');
+  
   event.notification.close();
-
-  // This looks to see if the current is already open and focuses if it is
+  
+  // Get the URL from the notification data or default to root
+  const clickAction = event.notification.data.url || '/';
+  
+  // This looks to see if the current is already open and focuses it
   event.waitUntil(
     clients.matchAll({
       type: "window"
     })
-    .then((clientList) => {
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
+    .then(function(clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
         if (client.url === clickAction && 'focus' in client) {
           return client.focus();
         }
