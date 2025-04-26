@@ -578,7 +578,7 @@ export class DatabaseStorage implements IStorage {
       try {
         // Run a simple query to check if tables exist 
         const usersExist = await db.execute(sql`SELECT id FROM users LIMIT 1`);
-        const propertiesExist = await db.execute(sql`SELECT id FROM properties LIMIT 1`);
+        const propertiesResult = await db.execute(sql`SELECT id FROM properties LIMIT 1`);
         
         // Check if we need to run schema migrations
         await this.migrateSchema();
@@ -587,15 +587,15 @@ export class DatabaseStorage implements IStorage {
           console.log("Initializing database with test users...");
           await this.seedTestUser();
         }
+        
+        if (propertiesResult.rowCount === 0) {
+          console.log("Initializing database with sample properties...");
+          await this.seedProperties();
+        }
       } catch (err) {
         // If the table doesn't exist yet, this is first run
         console.log("Tables don't exist yet, initializing database...");
         await this.seedTestUser();
-      }
-    
-      
-      if (!propertiesExist) {
-        console.log("Initializing database with sample properties...");
         await this.seedProperties();
       }
     } catch (error) {
