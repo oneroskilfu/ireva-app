@@ -14,7 +14,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import { db, pool } from "./db";
 import connectPg from "connect-pg-simple";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
 
 const MemoryStore = createMemoryStore(session);
@@ -547,16 +547,52 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  // Add a migration method to handle schema changes
+  private async migrateSchema() {
+    try {
+      // Check if referrals column exists
+      const referralsExists = await db.execute(
+        sql`SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'referrals'`
+      );
+      
+      // If referrals column doesn't exist, add it
+      if (referralsExists.rowCount === 0) {
+        console.log("Adding referrals column to users table...");
+        await db.execute(
+          sql`ALTER TABLE users ADD COLUMN referrals JSONB DEFAULT '[]'::jsonb`
+        );
+        console.log("Added referrals column successfully");
+      }
+      
+      // Add more migrations as needed here
+      
+    } catch (error) {
+      console.error("Error during schema migration:", error);
+    }
+  }
+  
   private async initializeDatabase() {
     try {
-      // Run a simple query to check if tables exist 
-      const usersExist = await db.query.users.findFirst();
-      const propertiesExist = await db.query.properties.findFirst();
-      
-      if (!usersExist) {
-        console.log("Initializing database with test users...");
+      // First try a safer query that won't fail if the column doesn't exist
+      try {
+        // Run a simple query to check if tables exist 
+        const usersExist = await db.execute(sql`SELECT id FROM users LIMIT 1`);
+        const propertiesExist = await db.execute(sql`SELECT id FROM properties LIMIT 1`);
+        
+        // Check if we need to run schema migrations
+        await this.migrateSchema();
+        
+        if (usersExist.rowCount === 0) {
+          console.log("Initializing database with test users...");
+          await this.seedTestUser();
+        }
+      } catch (err) {
+        // If the table doesn't exist yet, this is first run
+        console.log("Tables don't exist yet, initializing database...");
         await this.seedTestUser();
       }
+    
       
       if (!propertiesExist) {
         console.log("Initializing database with sample properties...");
