@@ -89,33 +89,77 @@ function EscrowWalletDashboard() {
         severity: "info"
       });
       
-      // Call API to release funds
-      const response = await axios.post('/api/admin/release-escrow-funds', {
-        projectId,
-        milestoneId
-      });
+      // First, interact directly with the smart contract if we have web3 enabled
+      // Import the smart contract service
+      const smartContractService = await import('../../services/smartContractService').then(module => module.default);
       
-      // Get transaction hash from response
-      const txHash = response?.data?.transactionHash;
-      
-      if (txHash) {
-        try {
-          // Wait for transaction to be mined
-          await waitForTransaction(PROVIDER_URL, txHash);
-          
-          // Show success message
-          setSnackbar({
-            open: true,
-            message: "Funds released successfully!",
-            severity: "success"
-          });
-        } catch (txError) {
-          console.error('Transaction error:', txError);
-          setSnackbar({
-            open: true,
-            message: "Transaction failed to confirm!",
-            severity: "error"
-          });
+      if (smartContractService && smartContractService.getInitializationStatus()) {
+        // Use the smart contract service to release funds
+        const txResult = await smartContractService.releaseFunds(projectId, milestoneId);
+        console.log('Smart contract transaction result:', txResult);
+        
+        // Get transaction hash from the blockchain transaction
+        const txHash = txResult?.transactionHash;
+        
+        if (txHash) {
+          try {
+            // Wait for transaction to be mined (smart contract service might already handle this)
+            await waitForTransaction(PROVIDER_URL, txHash);
+            
+            // Notify the backend about the fund release
+            await axios.post('/api/admin/release-escrow-funds', {
+              projectId,
+              milestoneId,
+              transactionHash: txHash
+            });
+            
+            // Show success message
+            setSnackbar({
+              open: true,
+              message: "Funds released successfully!",
+              severity: "success"
+            });
+          } catch (txError) {
+            console.error('Transaction error:', txError);
+            setSnackbar({
+              open: true,
+              message: "Transaction failed to confirm!",
+              severity: "error"
+            });
+          }
+        }
+      } else {
+        // Fallback to API-only approach if web3 is not available
+        console.log('Smart contract service not available, using API only');
+        
+        // Call API to release funds
+        const response = await axios.post('/api/admin/release-escrow-funds', {
+          projectId,
+          milestoneId
+        });
+        
+        // Get transaction hash from response
+        const txHash = response?.data?.transactionHash;
+        
+        if (txHash) {
+          try {
+            // Wait for transaction to be mined
+            await waitForTransaction(PROVIDER_URL, txHash);
+            
+            // Show success message
+            setSnackbar({
+              open: true,
+              message: "Funds released successfully!",
+              severity: "success"
+            });
+          } catch (txError) {
+            console.error('Transaction error:', txError);
+            setSnackbar({
+              open: true,
+              message: "Transaction failed to confirm!",
+              severity: "error"
+            });
+          }
         }
       }
       
