@@ -1,214 +1,243 @@
 import React, { useState } from 'react';
 import { 
+  Box, 
   Drawer, 
   IconButton, 
   List, 
   ListItem, 
   ListItemButton, 
-  ListItemIcon, 
-  ListItemText,
-  Box,
-  Typography,
+  ListItemText, 
+  ListItemIcon,
   Divider,
-  useTheme
+  Typography,
+  Avatar,
+  Fab,
+  SwipeableDrawer,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import { 
-  Menu as MenuIcon, 
+  Menu as MenuIcon,
   Home as HomeIcon,
-  Storefront as StorefrontIcon,
+  Business as BusinessIcon,
+  Dashboard as DashboardIcon,
   AccountBalanceWallet as WalletIcon,
-  BarChart as BarChartIcon,
-  ContactSupport as ContactSupportIcon,
-  Settings as SettingsIcon,
-  ChevronRight as ChevronRightIcon,
-  Person as PersonIcon,
-  NotificationsActive as NotificationsIcon
+  NotificationsOutlined as NotificationsIcon,
+  SettingsOutlined as SettingsIcon,
+  BarChart as AnalyticsIcon,
+  HelpOutline as SupportIcon,
+  Info as AboutIcon,
+  Logout as LogoutIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
-import { Link, useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 
-// Interface for navigation items
-interface NavItem {
-  text: string;
+// Mock user data - would come from authentication context in a real app
+const mockUser = {
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  avatar: 'https://i.pravatar.cc/150?img=68'
+};
+
+interface NavigationItem {
+  label: string;
   path: string;
   icon: React.ReactNode;
+  dividerAfter?: boolean;
 }
-
-// Navigation items for the app
-const navItems: NavItem[] = [
-  { text: 'Dashboard', path: '/dashboard', icon: <HomeIcon /> },
-  { text: 'Properties', path: '/properties', icon: <StorefrontIcon /> },
-  { text: 'My Investments', path: '/investments', icon: <BarChartIcon /> },
-  { text: 'Wallet', path: '/wallet', icon: <WalletIcon /> },
-  { text: 'Support', path: '/support', icon: <ContactSupportIcon /> },
-  { text: 'Settings', path: '/settings', icon: <SettingsIcon /> },
-];
 
 const MobileNavDrawer: React.FC = () => {
   const [open, setOpen] = useState(false);
-  const [location] = useLocation();
   const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const [location] = useLocation();
 
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpen(newOpen);
   };
 
-  // Handle swipe gestures for the drawer (open and close)
-  const handleSwipeOpen = () => {
-    setOpen(true);
-  };
+  // Navigation items with icons
+  const navigationItems: NavigationItem[] = [
+    { label: 'Home', path: '/', icon: <HomeIcon />, dividerAfter: true },
+    { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+    { label: 'Properties', path: '/properties', icon: <BusinessIcon /> },
+    { label: 'Wallet', path: '/wallet', icon: <WalletIcon /> },
+    { label: 'Analytics', path: '/analytics', icon: <AnalyticsIcon />, dividerAfter: true },
+    { label: 'Notifications', path: '/notifications', icon: <NotificationsIcon /> },
+    { label: 'Settings', path: '/settings', icon: <SettingsIcon />, dividerAfter: true },
+    { label: 'Support', path: '/support', icon: <SupportIcon /> },
+    { label: 'About', path: '/about', icon: <AboutIcon /> },
+  ];
 
-  return (
-    <>
-      {/* Hamburger menu button */}
-      <IconButton 
-        color="inherit" 
-        edge="start" 
-        onClick={toggleDrawer(true)}
-        sx={{
-          position: 'fixed',
-          top: 16,
-          left: 16,
-          zIndex: 1100,
-          backgroundColor: 'background.paper',
-          boxShadow: 2,
-          '&:hover': {
-            backgroundColor: 'action.hover',
-          },
+  // iOS has a "swipe to go back" feature that interferes with the swipe to open drawer
+  const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  const drawerContent = (
+    <Box 
+      sx={{ 
+        width: 280,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* User profile section */}
+      <Box 
+        sx={{ 
+          p: 2, 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center',
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText',
+          pb: 3
         }}
       >
-        <MenuIcon />
-      </IconButton>
-
-      {/* Swipe area to open drawer */}
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '20px',
-          height: '100%',
-          zIndex: 1000,
-          cursor: 'grab',
-        }}
-        onClick={handleSwipeOpen}
-      />
-
-      {/* Navigation drawer */}
-      <Drawer
-        anchor="left"
-        open={open}
-        onClose={toggleDrawer(false)}
-        ModalProps={{
-          keepMounted: true, // Better performance on mobile
-        }}
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: 280,
-            boxSizing: 'border-box',
-            pb: 2,
-          },
-        }}
-        variant="temporary"
-      >
-        {/* User profile section */}
-        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            sx={{
-              width: 50,
-              height: 50,
-              borderRadius: '50%',
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+        <Avatar 
+          src={mockUser.avatar} 
+          sx={{ width: 64, height: 64, mb: 1, mt: 1 }}
+        />
+        <Typography variant="subtitle1" fontWeight="bold">
+          {mockUser.name}
+        </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.8 }}>
+          {mockUser.email}
+        </Typography>
+        <Box sx={{ mt: 1 }}>
+          <IconButton 
+            size="small" 
+            sx={{ 
+              color: 'primary.contrastText',
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '&:hover': {
+                bgcolor: 'rgba(255,255,255,0.2)',
+              }
             }}
+            component={Link} 
+            href="/profile"
+            onClick={toggleDrawer(false)}
           >
-            <PersonIcon sx={{ color: 'white', fontSize: 30 }} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" fontWeight="bold">John Doe</Typography>
-            <Typography variant="body2" color="text.secondary">Premium Investor</Typography>
-          </Box>
+            <PersonIcon fontSize="small" />
+          </IconButton>
         </Box>
+      </Box>
 
-        <Divider />
-
-        {/* Notification banner */}
-        <Box 
-          sx={{ 
-            m: 2, 
-            p: 1.5, 
-            borderRadius: 2, 
-            backgroundColor: 'primary.light', 
-            color: 'primary.contrastText',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1
-          }}
-        >
-          <NotificationsIcon />
-          <Typography variant="body2">
-            You have 3 new notifications
-          </Typography>
-        </Box>
-
-        {/* Navigation items */}
-        <List sx={{ pt: 0 }}>
-          {navItems.map((item) => (
-            <ListItem 
-              key={item.text} 
-              disablePadding
-              sx={{ 
-                mb: 0.5, 
-                '& .MuiListItemButton-root': {
-                  py: 1.5, // Larger padding for touch targets
-                },
-              }}
-            >
-              <ListItemButton 
-                component={Link} 
+      {/* Navigation links */}
+      <List sx={{ flexGrow: 1, pt: 0 }}>
+        {navigationItems.map((item, index) => (
+          <React.Fragment key={index}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
                 href={item.path}
                 selected={location === item.path}
                 onClick={toggleDrawer(false)}
                 sx={{
-                  borderRadius: 1,
-                  mx: 1,
+                  py: 1.5,
                   '&.Mui-selected': {
-                    bgcolor: 'primary.light',
+                    bgcolor: 'action.selected',
+                    borderRight: `4px solid ${theme.palette.primary.main}`,
                     '&:hover': {
-                      bgcolor: 'primary.light',
-                    },
-                    '& .MuiListItemIcon-root': {
-                      color: 'primary.main',
-                    },
-                    '& .MuiListItemText-primary': {
-                      color: 'primary.main',
-                      fontWeight: 'bold',
-                    },
-                  },
+                      bgcolor: 'action.hover',
+                    }
+                  }
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                <ListItemIcon sx={{ minWidth: 40, color: location === item.path ? 'primary.main' : 'inherit' }}>
+                  {item.icon}
+                </ListItemIcon>
                 <ListItemText 
-                  primary={item.text} 
-                  primaryTypographyProps={{
-                    fontSize: '16px', // Larger text for better readability
-                  }}
+                  primary={item.label} 
+                  primaryTypographyProps={{ 
+                    fontWeight: location === item.path ? 'bold' : 'regular'
+                  }} 
                 />
-                <ChevronRightIcon />
               </ListItemButton>
             </ListItem>
-          ))}
-        </List>
+            {item.dividerAfter && <Divider sx={{ my: 1 }} />}
+          </React.Fragment>
+        ))}
+      </List>
 
-        <Box sx={{ flexGrow: 1 }} />
+      {/* Logout button */}
+      <Box sx={{ p: 2 }}>
+        <ListItemButton
+          component={Link}
+          href="/logout"
+          onClick={toggleDrawer(false)}
+          sx={{
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <LogoutIcon color="error" />
+          </ListItemIcon>
+          <ListItemText primary="Logout" />
+        </ListItemButton>
+      </Box>
+    </Box>
+  );
 
-        <Box sx={{ p: 2 }}>
-          <Typography variant="caption" color="text.secondary">
-            iREVA - v1.0.0 | © 2025
-          </Typography>
-        </Box>
-      </Drawer>
+  return (
+    <>
+      {/* Menu button - fixed position for easy access */}
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: isDesktop ? 'auto' : 20,
+          top: isDesktop ? 20 : 'auto',
+          right: 20,
+          zIndex: 1000,
+        }}
+      >
+        <Fab
+          color="primary"
+          aria-label="menu"
+          onClick={toggleDrawer(true)}
+          size={isDesktop ? 'medium' : 'large'}
+          sx={{
+            boxShadow: theme.shadows[8],
+          }}
+        >
+          <MenuIcon />
+        </Fab>
+      </Box>
+
+      {/* Swipeable drawer for mobile, regular drawer for desktop */}
+      {isDesktop ? (
+        <Drawer
+          anchor="right"
+          open={open}
+          onClose={toggleDrawer(false)}
+          sx={{
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              boxShadow: theme.shadows[5],
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      ) : (
+        <SwipeableDrawer
+          anchor="left"
+          open={open}
+          onClose={toggleDrawer(false)}
+          onOpen={toggleDrawer(true)}
+          disableBackdropTransition={!iOS}
+          disableDiscovery={iOS}
+          sx={{
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              boxShadow: theme.shadows[5],
+            },
+          }}
+        >
+          {drawerContent}
+        </SwipeableDrawer>
+      )}
     </>
   );
 };
