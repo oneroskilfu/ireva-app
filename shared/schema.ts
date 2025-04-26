@@ -315,6 +315,18 @@ export const messages = pgTable("messages", {
   sentAt: timestamp("sent_at").defaultNow()
 });
 
+// Push notification subscriptions schema
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull(),
+  deviceType: text("device_type"),
+  deviceName: text("device_name"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   kycSubmissions: many(kycSubmissions),
@@ -330,6 +342,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   notifications: many(notifications),
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
+  pushSubscriptions: many(pushSubscriptions),
   feedback: many(userFeedback),
   issues: many(issues),
   issueComments: many(issueComments),
@@ -484,6 +497,13 @@ export const issueCommentsRelations = relations(issueComments, ({ one }) => ({
   })
 }));
 
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [pushSubscriptions.userId],
+    references: [users.id]
+  })
+}));
+
 // Create schemas for insertions
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -586,6 +606,13 @@ export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalReques
   status: true
 });
 
+// Create schema for push subscriptions
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Export the property schema with a new name to match the import in admin-routes.ts
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
@@ -643,3 +670,6 @@ export type InsertCryptoPayment = z.infer<typeof insertCryptoPaymentSchema>;
 
 export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
 export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
