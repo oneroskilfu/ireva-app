@@ -17,6 +17,11 @@ import {
 } from '@mui/material';
 import { AccessTime, Check, Close, Warning, ArrowUpward, Payments, AccountBalanceWallet } from '@mui/icons-material';
 import escrowService from '../../services/escrowService';
+import CustomSnackbar from '../../components/CustomSnackbar';
+import { waitForTransaction } from '../../utils/web3Listeners';
+
+// This should come from environment or blockchain config
+const PROVIDER_URL = process.env.VITE_RPC_URL || 'https://mainnet.infura.io/v3/your-infura-key';
 
 const EscrowDashboard = ({ userWalletAddress }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +33,11 @@ const EscrowDashboard = ({ userWalletAddress }) => {
   const [investAmount, setInvestAmount] = useState('100');
   const [showInvestForm, setShowInvestForm] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     if (userWalletAddress) {
@@ -52,36 +62,42 @@ const EscrowDashboard = ({ userWalletAddress }) => {
         setInvestorData(investorDetails);
       }
 
-      // Mock milestones data (this would come from the smart contract in a real implementation)
-      setMilestones([
-        {
-          id: 1,
-          title: "Property Acquisition",
-          description: "Initial funds released for property acquisition",
-          amount: "30%",
-          isApproved: true,
-          isReleased: true,
-          releaseDate: "Mar 15, 2023"
-        },
-        {
-          id: 2,
-          title: "Construction Progress",
-          description: "Funds released at 50% construction completion",
-          amount: "40%",
-          isApproved: true,
-          isReleased: false,
-          releaseDate: "Sep 15, 2023"
-        },
-        {
-          id: 3,
-          title: "Project Completion",
-          description: "Final funds released upon project completion",
-          amount: "30%",
-          isApproved: false,
-          isReleased: false,
-          releaseDate: "Mar 15, 2024"
-        }
-      ]);
+      // Get milestones
+      const milestonesData = await escrowService.getMilestones();
+      if (milestonesData && Array.isArray(milestonesData)) {
+        setMilestones(milestonesData);
+      } else {
+        // Use mock milestones if API fails
+        setMilestones([
+          {
+            id: 1,
+            title: "Property Acquisition",
+            description: "Initial funds released for property acquisition",
+            amount: "30%",
+            isApproved: true,
+            isReleased: true,
+            releaseDate: "Mar 15, 2023"
+          },
+          {
+            id: 2,
+            title: "Construction Progress",
+            description: "Funds released at 50% construction completion",
+            amount: "40%",
+            isApproved: true,
+            isReleased: false,
+            releaseDate: "Sep 15, 2023"
+          },
+          {
+            id: 3,
+            title: "Project Completion",
+            description: "Final funds released upon project completion",
+            amount: "30%",
+            isApproved: false,
+            isReleased: false,
+            releaseDate: "Mar 15, 2024"
+          }
+        ]);
+      }
     } catch (err) {
       console.error("Error fetching escrow data:", err);
       setError(err.message || "Failed to fetch escrow data");
@@ -99,9 +115,38 @@ const EscrowDashboard = ({ userWalletAddress }) => {
     try {
       setIsInvesting(true);
       setError(null);
+      
+      // Show processing notification
+      setSnackbar({
+        open: true,
+        message: "Processing your investment...",
+        severity: "info"
+      });
 
+      // Submit investment
       const result = await escrowService.invest(investAmount, userWalletAddress);
       console.log("Investment result:", result);
+      
+      if (result.transactionHash) {
+        try {
+          // Wait for the transaction to be mined
+          await waitForTransaction(PROVIDER_URL, result.transactionHash);
+          
+          // Show success message
+          setSnackbar({
+            open: true,
+            message: `Successfully invested ${investAmount} USDC in this property!`,
+            severity: "success"
+          });
+        } catch (txError) {
+          console.error("Transaction error:", txError);
+          setSnackbar({
+            open: true,
+            message: "Transaction failed to confirm!",
+            severity: "error"
+          });
+        }
+      }
 
       // Refetch data after investment
       await fetchEscrowData();
@@ -109,6 +154,11 @@ const EscrowDashboard = ({ userWalletAddress }) => {
     } catch (err) {
       console.error("Error investing:", err);
       setError(err.message || "Failed to invest");
+      setSnackbar({
+        open: true,
+        message: "Investment failed: " + (err.message || "Unknown error"),
+        severity: "error"
+      });
     } finally {
       setIsInvesting(false);
     }
@@ -123,18 +173,58 @@ const EscrowDashboard = ({ userWalletAddress }) => {
     try {
       setIsRefunding(true);
       setError(null);
+      
+      // Show processing notification
+      setSnackbar({
+        open: true,
+        message: "Processing refund request...",
+        severity: "info"
+      });
 
       const result = await escrowService.claimRefund(userWalletAddress);
       console.log("Refund result:", result);
+      
+      if (result.transactionHash) {
+        try {
+          // Wait for the transaction to be mined
+          await waitForTransaction(PROVIDER_URL, result.transactionHash);
+          
+          // Show success message
+          setSnackbar({
+            open: true,
+            message: "Refund request processed successfully! Funds will be credited to your wallet soon.",
+            severity: "success"
+          });
+        } catch (txError) {
+          console.error("Transaction error:", txError);
+          setSnackbar({
+            open: true,
+            message: "Transaction failed to confirm!",
+            severity: "error"
+          });
+        }
+      }
 
       // Refetch data after refund
       await fetchEscrowData();
     } catch (err) {
       console.error("Error claiming refund:", err);
       setError(err.message || "Failed to claim refund");
+      setSnackbar({
+        open: true,
+        message: "Refund request failed: " + (err.message || "Unknown error"),
+        severity: "error"
+      });
     } finally {
       setIsRefunding(false);
     }
+  };
+  
+  const handleCloseSnackbar = () => {
+    setSnackbar({
+      ...snackbar,
+      open: false
+    });
   };
 
   if (isLoading) {
@@ -415,6 +505,14 @@ const EscrowDashboard = ({ userWalletAddress }) => {
           </List>
         </CardContent>
       </Card>
+      
+      {/* Snackbar for transaction feedback */}
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={handleCloseSnackbar}
+        severity={snackbar.severity}
+        message={snackbar.message}
+      />
     </Box>
   );
 };

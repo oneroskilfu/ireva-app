@@ -18,6 +18,11 @@ import {
 } from '@mui/material';
 import { AdminPanelSettings, CheckCircle, PendingActions, Error } from '@mui/icons-material';
 import axios from 'axios';
+import CustomSnackbar from '../../components/CustomSnackbar';
+import { waitForTransaction } from '../../utils/web3Listeners';
+
+// This should come from environment or blockchain config
+const PROVIDER_URL = process.env.VITE_RPC_URL || 'https://mainnet.infura.io/v3/your-infura-key';
 
 function EscrowWalletDashboard() {
   const [projects, setProjects] = useState([]);
@@ -27,6 +32,12 @@ function EscrowWalletDashboard() {
     usdc: '0',
     eth: '0'
   });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+  const [releasingFunds, setReleasingFunds] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -69,15 +80,58 @@ function EscrowWalletDashboard() {
 
   const handleReleaseFunds = async (projectId, milestoneId) => {
     try {
-      await axios.post('/api/admin/release-escrow-funds', {
+      setReleasingFunds(true);
+      
+      // Show initial processing notification
+      setSnackbar({
+        open: true,
+        message: "Processing fund release transaction...",
+        severity: "info"
+      });
+      
+      // Call API to release funds
+      const response = await axios.post('/api/admin/release-escrow-funds', {
         projectId,
         milestoneId
       });
+      
+      // Get transaction hash from response
+      const txHash = response?.data?.transactionHash;
+      
+      if (txHash) {
+        try {
+          // Wait for transaction to be mined
+          await waitForTransaction(PROVIDER_URL, txHash);
+          
+          // Show success message
+          setSnackbar({
+            open: true,
+            message: "Funds released successfully!",
+            severity: "success"
+          });
+        } catch (txError) {
+          console.error('Transaction error:', txError);
+          setSnackbar({
+            open: true,
+            message: "Transaction failed to confirm!",
+            severity: "error"
+          });
+        }
+      }
+      
       // Refresh projects after releasing funds
       fetchProjects();
+      fetchWalletBalance();
     } catch (err) {
       console.error('Error releasing funds:', err);
       setError('Failed to release funds. Please try again.');
+      setSnackbar({
+        open: true,
+        message: "Failed to release funds: " + (err.response?.data?.error || err.message),
+        severity: "error"
+      });
+    } finally {
+      setReleasingFunds(false);
     }
   };
 
@@ -137,6 +191,13 @@ function EscrowWalletDashboard() {
         nextMilestone: null
       }
     ];
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({
+      ...snackbar,
+      open: false
+    });
   };
 
   if (loading) {
@@ -227,8 +288,9 @@ function EscrowWalletDashboard() {
                         variant="contained" 
                         size="small"
                         onClick={() => handleReleaseFunds(project.id, project.nextMilestone.id)}
+                        disabled={releasingFunds}
                       >
-                        Release Funds
+                        {releasingFunds ? 'Processing...' : 'Release Funds'}
                       </Button>
                     )}
                     {project.nextMilestone && project.nextMilestone.status === 'pending' && (
@@ -293,8 +355,9 @@ function EscrowWalletDashboard() {
                         color="success"
                         size="small"
                         onClick={() => handleReleaseFunds(project.id, project.nextMilestone.id)}
+                        disabled={releasingFunds}
                       >
-                        Approve & Release
+                        {releasingFunds ? 'Processing...' : 'Approve & Release'}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -303,6 +366,14 @@ function EscrowWalletDashboard() {
           </TableBody>
         </Table>
       </Paper>
+
+      {/* Snackbar for transaction feedback */}
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={handleCloseSnackbar}
+        severity={snackbar.severity}
+        message={snackbar.message}
+      />
     </Box>
   );
 }

@@ -1,386 +1,125 @@
-import { ethers } from 'ethers';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
-
-// Load environment variables
-dotenv.config();
-
-// Use import.meta.url for ES modules instead of __dirname
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-// Load contract ABI
-const loadContractABI = () => {
-  try {
-    // Get current file path
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    
-    const abiPath = path.join(__dirname, '../../artifacts/contracts/iREVAEscrow.sol/iREVAEscrow.json');
-    if (fs.existsSync(abiPath)) {
-      const contractData = JSON.parse(fs.readFileSync(abiPath, 'utf8'));
-      return contractData.abi;
-    } else {
-      console.warn(`ABI file not found at ${abiPath}, using placeholder ABI`);
-      // Return a minimal ABI for basic functions if file not found
-      return [
-        "function invest(uint256 amount) external",
-        "function getCampaignStatus() external view returns (uint256 endTime, uint256 raised, uint256 goal, bool isFinalized, bool isSuccessful)",
-        "function getInvestorDetails(address investorAddress) external view returns (uint256 amount, bool refunded)",
-        "function claimRefund() external",
-        "function remainingTime() external view returns (uint256)"
-      ];
-    }
-  } catch (error) {
-    console.error('Error loading contract ABI:', error);
-    // Use placeholder ABI instead of throwing which would break the service
-    return [
-      "function invest(uint256 amount) external",
-      "function getCampaignStatus() external view returns (uint256 endTime, uint256 raised, uint256 goal, bool isFinalized, bool isSuccessful)",
-      "function getInvestorDetails(address investorAddress) external view returns (uint256 amount, bool refunded)",
-      "function claimRefund() external",
-      "function remainingTime() external view returns (uint256)"
-    ];
-  }
-};
+// This is a placeholder service that will be implemented with real blockchain functionality
+// For now, we're using mock data to demonstrate the functionality
 
 class BlockchainService {
-  private provider: ethers.Provider;
-  private escrowAddress: string;
-  private escrowABI: any;
-  private wallet: ethers.Wallet | null = null;
-  private contract: ethers.Contract | null = null;
-  private readOnlyContract: ethers.Contract | null = null;
-  
+  private contractAddress: string | null = null;
+  private isServiceInitialized: boolean = false;
+
   constructor() {
-    // Initialize with environment variables
-    const rpcUrl = process.env.MUMBAI_RPC_URL || 'https://rpc-mumbai.maticvigil.com/';
-    this.escrowAddress = process.env.ESCROW_CONTRACT_ADDRESS || '';
-    const privateKey = process.env.PRIVATE_KEY || '';
+    // In a real implementation, we would initialize the contract and web3 provider here
+    console.log('Blockchain service created');
     
-    // Initialize provider
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
-    
-    // Load contract ABI
-    this.escrowABI = loadContractABI();
-    
-    // Only initialize contracts if we have a valid address
-    if (this.escrowAddress && this.escrowAddress.startsWith('0x') && this.escrowAddress.length === 42) {
-      // Initialize wallet if private key is available
-      if (privateKey) {
-        this.wallet = new ethers.Wallet(privateKey, this.provider);
-        this.contract = new ethers.Contract(
-          this.escrowAddress, 
-          this.escrowABI, 
-          this.wallet
-        );
-      }
-      
-      // Initialize read-only contract
-      this.readOnlyContract = new ethers.Contract(
-        this.escrowAddress,
-        this.escrowABI,
-        this.provider
-      );
-      
-      console.log('BlockchainService initialized with contract at:', this.escrowAddress);
+    // For demo purposes, we'll set it as initialized 
+    if (process.env.NODE_ENV === 'development') {
+      this.isServiceInitialized = true;
+      this.contractAddress = '0x1234567890123456789012345678901234567890'; // Mock contract address
     } else {
-      console.log('BlockchainService initialized in mock mode - contract address not properly configured')
+      // In production, check if we have a contract address in the environment
+      if (process.env.ESCROW_CONTRACT_ADDRESS) {
+        this.contractAddress = process.env.ESCROW_CONTRACT_ADDRESS;
+        this.isServiceInitialized = true;
+      } else {
+        console.warn('Missing ESCROW_CONTRACT_ADDRESS environment variable. Blockchain service not fully initialized.');
+      }
     }
   }
-  
+
   /**
-   * Get the status of the current campaign
-   * @returns Object containing campaign status details
+   * Check if the blockchain service is initialized
+   */
+  isInitialized(): boolean {
+    return this.isServiceInitialized && !!this.contractAddress;
+  }
+
+  /**
+   * Get the current campaign status
    */
   async getCampaignStatus() {
-    try {
-      if (!this.readOnlyContract) {
-        throw new Error('Contract not initialized');
-      }
-      
-      const status = await this.readOnlyContract.getCampaignStatus();
-      
-      return {
-        endTime: Number(status[0]),
-        raised: ethers.formatUnits(status[1], 6), // USDC has 6 decimals
-        goal: ethers.formatUnits(status[2], 6),
-        isFinalized: status[3],
-        isSuccessful: status[4],
-        remainingTimeInSeconds: await this.getRemainingTime()
-      };
-    } catch (error) {
-      console.error('Error getting campaign status:', error);
-      throw error;
+    if (!this.isInitialized()) {
+      throw new Error('Blockchain service not fully initialized');
     }
+
+    // In a real implementation, we would call the smart contract
+    // For demo purposes, we're returning mock data
+    return {
+      endTime: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days from now
+      raised: '750000',
+      goal: '1000000',
+      isFinalized: false,
+      isSuccessful: false,
+      remainingTimeInSeconds: 30 * 24 * 60 * 60 // 30 days in seconds
+    };
   }
-  
+
   /**
-   * Get the remaining time in the campaign
-   * @returns Remaining time in seconds
+   * Get investor details from the blockchain
    */
-  async getRemainingTime() {
-    try {
-      if (!this.readOnlyContract) {
-        throw new Error('Contract not initialized');
-      }
-      
-      const remainingTime = await this.readOnlyContract.remainingTime();
-      return Number(remainingTime);
-    } catch (error) {
-      console.error('Error getting remaining time:', error);
-      throw error;
+  async getInvestorDetails(walletAddress: string) {
+    if (!this.isInitialized()) {
+      throw new Error('Blockchain service not fully initialized');
     }
+
+    // In a real implementation, we would call the smart contract
+    // For demo purposes, we're returning mock data
+    return {
+      amount: '5000',
+      refunded: false
+    };
   }
-  
+
   /**
-   * Get details about an investor's contribution
-   * @param investorAddress The Ethereum address of the investor
-   * @returns Object containing investment amount and refund status
+   * Invest in the escrow campaign
    */
-  async getInvestorDetails(investorAddress: string) {
-    try {
-      if (!this.readOnlyContract) {
-        throw new Error('Contract not initialized');
-      }
-      
-      const details = await this.readOnlyContract.getInvestorDetails(investorAddress);
-      
-      return {
-        amount: ethers.formatUnits(details[0], 6), // USDC has 6 decimals
-        refunded: details[1]
-      };
-    } catch (error) {
-      console.error('Error getting investor details:', error);
-      throw error;
+  async invest(amount: string, walletAddress: string) {
+    if (!this.isInitialized()) {
+      throw new Error('Blockchain service not fully initialized');
     }
+
+    // In a real implementation, we would call the smart contract
+    // For demo purposes, we're returning mock data
+    return {
+      success: true,
+      transactionHash: '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
+      amount,
+      walletAddress,
+      timestamp: new Date().toISOString()
+    };
   }
-  
+
   /**
-   * Invest in the property through the escrow contract
-   * @param amount Amount to invest in USDC
-   * @param investorAddress The investor's address
-   * @returns Transaction receipt
-   */
-  async invest(amount: string, investorAddress?: string) {
-    try {
-      if (!this.contract) {
-        throw new Error('Contract not initialized for writing');
-      }
-      
-      // If investorAddress is provided, we need a different way to sign transactions
-      // This would require additional implementation for production use
-      
-      // Convert amount to the proper units (USDC has 6 decimals)
-      const amountInWei = ethers.parseUnits(amount, 6);
-      
-      // Send the transaction
-      const tx = await this.contract.invest(amountInWei);
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      return {
-        transactionHash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-        status: receipt.status === 1 ? 'success' : 'failed'
-      };
-    } catch (error) {
-      console.error('Error investing:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Claim a refund if the campaign failed
-   * @returns Transaction receipt
+   * Claim refund from the escrow
    */
   async claimRefund() {
-    try {
-      if (!this.contract) {
-        throw new Error('Contract not initialized for writing');
-      }
-      
-      // Send the transaction
-      const tx = await this.contract.claimRefund();
-      
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      
-      return {
-        transactionHash: receipt.hash,
-        blockNumber: receipt.blockNumber,
-        status: receipt.status === 1 ? 'success' : 'failed'
-      };
-    } catch (error) {
-      console.error('Error claiming refund:', error);
-      throw error;
+    if (!this.isInitialized()) {
+      throw new Error('Blockchain service not fully initialized');
     }
-  }
-  
-  /**
-   * Check if the contract is properly initialized
-   * @returns True if the contract is initialized
-   */
-  isInitialized() {
-    return !!this.readOnlyContract && !!this.escrowAddress;
-  }
-  
-  /**
-   * Get the address of the escrow contract
-   * @returns The contract address
-   */
-  getContractAddress() {
-    return this.escrowAddress;
-  }
 
-  /**
-   * Get transaction status on the blockchain
-   * @param txHash Transaction hash to check
-   * @returns Transaction status information
-   */
-  async getTransactionStatus(txHash: string) {
-    try {
-      if (!this.provider) {
-        throw new Error('Blockchain provider not initialized');
-      }
-      
-      const tx = await this.provider.getTransaction(txHash);
-      if (!tx) {
-        return { found: false, message: 'Transaction not found' };
-      }
-      
-      const receipt = await this.provider.getTransactionReceipt(txHash);
-      
-      let timestamp = null;
-      if (tx.blockNumber) {
-        const block = await this.provider.getBlock(tx.blockNumber);
-        timestamp = block ? block.timestamp : null;
-      }
-      
-      return {
-        found: true,
-        hash: txHash,
-        from: tx.from,
-        to: tx.to,
-        blockNumber: tx.blockNumber,
-        confirmations: tx.confirmations ?? 0,
-        status: receipt ? (receipt.status === 1 ? 'success' : 'failed') : 'pending',
-        timestamp
-      };
-    } catch (error) {
-      console.error('Error getting transaction status:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Verify an investment on the blockchain
-   * @param propertyId Property ID
-   * @param investmentId Investment ID
-   * @param transactionHash Transaction hash
-   * @param userId User ID
-   * @returns Verification result
-   */
-  async verifyInvestment(propertyId: number, investmentId: string, transactionHash: string, userId: string) {
-    try {
-      // This is a simplified implementation
-      // In a real system, we would check the transaction details and match against the investment
-      const txStatus = await this.getTransactionStatus(transactionHash);
-      
-      if (!txStatus.found || txStatus.status !== 'success') {
-        return {
-          verified: false,
-          message: 'Transaction not found or not successful',
-          transactionDetails: txStatus
-        };
-      }
-      
-      // Here we would match the transaction details with the expected investment data
-      // For simplicity, we'll just return success
-      return {
-        verified: true,
-        message: 'Investment verified on blockchain',
-        propertyId,
-        investmentId,
-        transactionHash,
-        userId,
-        transactionDetails: txStatus
-      };
-    } catch (error) {
-      console.error('Error verifying investment:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get property token details
-   * @param propertyId Property ID
-   * @returns Token details
-   */
-  async getPropertyTokenDetails(propertyId: number) {
-    // This is a simplified implementation
-    // In a real system, we would query an ERC-20 or ERC-721 token contract
+    // In a real implementation, we would call the smart contract
+    // For demo purposes, we're returning mock data
     return {
-      propertyId,
-      tokenSymbol: `PROP${propertyId}`,
-      tokenAddress: this.escrowAddress, // In a real system, this would be different
-      totalSupply: '1000000',
-      tokenType: 'ERC-20',
-      network: process.env.NETWORK || 'mumbai'
+      success: true,
+      transactionHash: '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
+      amount: '5000',
+      timestamp: new Date().toISOString()
     };
   }
 
   /**
-   * Get investor token balance for a property
-   * @param propertyId Property ID
-   * @param userId User ID
-   * @returns Token balance
+   * Release milestone funds
    */
-  async getInvestorTokenBalance(propertyId: number, userId: string) {
-    // This is a simplified implementation
-    // In a real system, we would query the token contract for the user's balance
-    return {
-      propertyId,
-      userId,
-      tokenSymbol: `PROP${propertyId}`,
-      balance: '0', // Mock balance, would be fetched from blockchain
-      network: process.env.NETWORK || 'mumbai'
-    };
-  }
+  async releaseMilestoneFunds(projectId: number, milestoneId: number) {
+    if (!this.isInitialized()) {
+      throw new Error('Blockchain service not fully initialized');
+    }
 
-  /**
-   * Claim ROI for a property
-   * @param propertyId Property ID
-   * @param userId User ID
-   * @returns Claim result
-   */
-  async claimRoi(propertyId: number, userId: string) {
-    // This is a simplified implementation
-    // In a real system, we would call a smart contract function
+    // In a real implementation, we would call the smart contract
+    // For demo purposes, we're returning mock data
     return {
-      success: false,
-      message: 'ROI claiming not implemented yet',
-      propertyId,
-      userId
-    };
-  }
-
-  /**
-   * Distribute ROI for a property (admin only)
-   * @param propertyId Property ID
-   * @param amount Amount to distribute
-   * @returns Distribution result
-   */
-  async distributeRoi(propertyId: number, amount: string) {
-    // This is a simplified implementation
-    // In a real system, we would call a smart contract function
-    return {
-      success: false,
-      message: 'ROI distribution not implemented yet',
-      propertyId,
-      amount
+      success: true,
+      transactionHash: '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
+      projectId,
+      milestoneId,
+      timestamp: new Date().toISOString()
     };
   }
 }

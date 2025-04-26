@@ -1,268 +1,174 @@
-import express, { Request, Response } from 'express';
-import { authMiddleware } from '../auth-jwt';
-import { ensureAdmin } from '../auth-jwt';
+import express from 'express';
+import { authMiddleware, ensureAdmin } from '../auth-jwt';
 import blockchainService from '../services/blockchain-service';
-import { ethers } from 'ethers';
+import { escrowController } from '../controllers/escrowController';
 
 const escrowRouter = express.Router();
 
 /**
- * Get escrow campaign status
- * Returns the current status of the active investment campaign
+ * Get all escrow projects (admin only)
  */
-escrowRouter.get('/status', async (req: Request, res: Response) => {
+escrowRouter.get('/admin/escrow-projects', authMiddleware, ensureAdmin, async (req, res) => {
   try {
-    // Check if blockchain service is properly initialized
-    if (!blockchainService.isInitialized()) {
-      return res.status(503).json({
-        success: false,
-        message: 'Blockchain service not fully initialized. Contract address may be missing.',
-        contractAddress: blockchainService.getContractAddress() || 'Not configured'
-      });
-    }
-
-    const campaignStatus = await blockchainService.getCampaignStatus();
-    
-    return res.status(200).json({
-      success: true,
-      data: campaignStatus
-    });
-  } catch (error: any) {
-    console.error('Error fetching escrow status:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch escrow status',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Get investor contribution details
- * Authentication required
- */
-escrowRouter.get('/investor/:address', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const { address } = req.params;
-    
-    if (!ethers.isAddress(address)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid Ethereum address'
-      });
-    }
-
-    // Check if blockchain service is properly initialized
-    if (!blockchainService.isInitialized()) {
-      return res.status(503).json({
-        success: false,
-        message: 'Blockchain service not fully initialized'
-      });
-    }
-
-    const investorDetails = await blockchainService.getInvestorDetails(address);
-    
-    return res.status(200).json({
-      success: true,
-      data: investorDetails
-    });
-  } catch (error: any) {
-    console.error('Error fetching investor details:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch investor details',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Invest in a property through the escrow contract
- * Authentication required
- */
-escrowRouter.post('/invest', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const { amount, investorAddress } = req.body;
-    
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid investment amount'
-      });
-    }
-
-    // Check if blockchain service is properly initialized
-    if (!blockchainService.isInitialized()) {
-      return res.status(503).json({
-        success: false,
-        message: 'Blockchain service not fully initialized'
-      });
-    }
-
-    // Optionally validate the investor address if provided
-    if (investorAddress && !ethers.isAddress(investorAddress)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid Ethereum address'
-      });
-    }
-
-    const transactionResult = await blockchainService.invest(amount, investorAddress);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Investment transaction submitted',
-      data: transactionResult
-    });
-  } catch (error: any) {
-    console.error('Error processing investment:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to process investment',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Claim refund if campaign failed
- * Authentication required
- */
-escrowRouter.post('/claim-refund', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    // Check if blockchain service is properly initialized
-    if (!blockchainService.isInitialized()) {
-      return res.status(503).json({
-        success: false,
-        message: 'Blockchain service not fully initialized'
-      });
-    }
-
-    const transactionResult = await blockchainService.claimRefund();
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Refund claim transaction submitted',
-      data: transactionResult
-    });
-  } catch (error: any) {
-    console.error('Error processing refund claim:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to process refund claim',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Admin route to release milestone funds
- * Admin authentication required
- */
-escrowRouter.post('/admin/release-milestone/:milestoneIndex', ensureAdmin, async (req: Request, res: Response) => {
-  try {
-    const { milestoneIndex } = req.params;
-    const milestoneIndexNum = parseInt(milestoneIndex);
-    
-    if (isNaN(milestoneIndexNum) || milestoneIndexNum < 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid milestone index'
-      });
-    }
-
-    // This is a placeholder as we need to implement this function in the blockchain service
-    // For now, we'll just return a message
-    return res.status(501).json({
-      success: false,
-      message: 'Feature not implemented yet. This requires an admin-only function to release milestone funds.'
-    });
-    
-    /* Implementation would look like this:
-    const transactionResult = await blockchainService.releaseMilestoneFunds(milestoneIndexNum);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Milestone funds release transaction submitted',
-      data: transactionResult
-    });
-    */
-  } catch (error: any) {
-    console.error('Error releasing milestone funds:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to release milestone funds',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Admin route to approve a milestone
- * Admin authentication required
- */
-escrowRouter.post('/admin/approve-milestone/:milestoneIndex', ensureAdmin, async (req: Request, res: Response) => {
-  try {
-    const { milestoneIndex } = req.params;
-    const milestoneIndexNum = parseInt(milestoneIndex);
-    
-    if (isNaN(milestoneIndexNum) || milestoneIndexNum < 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid milestone index'
-      });
-    }
-
-    // This is a placeholder as we need to implement this function in the blockchain service
-    // For now, we'll just return a message
-    return res.status(501).json({
-      success: false,
-      message: 'Feature not implemented yet. This requires an admin-only function to approve a milestone.'
-    });
-    
-    /* Implementation would look like this:
-    const transactionResult = await blockchainService.approveMilestone(milestoneIndexNum);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Milestone approval transaction submitted',
-      data: transactionResult
-    });
-    */
-  } catch (error: any) {
-    console.error('Error approving milestone:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to approve milestone',
-      error: error.message
-    });
-  }
-});
-
-/**
- * Get contract configuration
- * Public route to get contract address and network information
- */
-escrowRouter.get('/contract-info', async (req: Request, res: Response) => {
-  try {
-    return res.status(200).json({
-      success: true,
-      data: {
-        contractAddress: blockchainService.getContractAddress(),
-        network: process.env.NETWORK || 'mumbai',
-        networkExplorer: process.env.NETWORK === 'mainnet' 
-          ? 'https://polygonscan.com' 
-          : 'https://mumbai.polygonscan.com'
+    // In a production environment, fetch real projects from database
+    // For demonstration, we're using mock data
+    const projects = [
+      {
+        id: 1,
+        name: "Lagos Heights Residential Tower",
+        goal: "5,000,000",
+        raised: "3,750,000",
+        status: "active",
+        percentComplete: 75,
+        nextMilestone: {
+          id: 2,
+          title: "Construction Phase 2",
+          amount: "1,500,000",
+          releaseDate: "2023-09-15",
+          status: "pending"
+        }
+      },
+      {
+        id: 2,
+        name: "Abuja Commercial Plaza",
+        goal: "2,500,000",
+        raised: "2,500,000",
+        status: "successful",
+        percentComplete: 100,
+        nextMilestone: {
+          id: 3,
+          title: "Final Completion",
+          amount: "750,000",
+          releaseDate: "2023-07-30",
+          status: "ready"
+        }
+      },
+      {
+        id: 3,
+        name: "Port Harcourt Business Hub",
+        goal: "3,200,000",
+        raised: "1,250,000",
+        status: "failed",
+        percentComplete: 39,
+        nextMilestone: null
       }
-    });
-  } catch (error: any) {
-    console.error('Error fetching contract info:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to fetch contract info',
-      error: error.message
-    });
+    ];
+    
+    res.json({ projects });
+  } catch (error) {
+    console.error('Error fetching escrow projects:', error);
+    res.status(500).json({ error: 'Failed to fetch escrow projects' });
   }
 });
 
-export { escrowRouter };
+/**
+ * Get escrow wallet balance (admin only)
+ */
+escrowRouter.get('/admin/escrow-wallet-balance', authMiddleware, ensureAdmin, async (req, res) => {
+  try {
+    // In a real implementation, we would fetch this from the blockchain
+    // For demo purposes, we're using mock data
+    const balance = {
+      usdc: '3,750,000',
+      eth: '1.25'
+    };
+    
+    res.json({ balance });
+  } catch (error) {
+    console.error('Error fetching wallet balance:', error);
+    res.status(500).json({ error: 'Failed to fetch wallet balance' });
+  }
+});
+
+/**
+ * Release escrow funds for a milestone (admin only) - WITH EMAIL NOTIFICATION
+ */
+escrowRouter.post('/admin/release-escrow-funds', authMiddleware, ensureAdmin, escrowController.releaseFunds);
+
+/**
+ * Get escrow campaign status
+ */
+escrowRouter.get('/escrow/status', authMiddleware, async (req, res) => {
+  try {
+    // Check if blockchain service is initialized
+    if (!blockchainService.isInitialized()) {
+      return res.status(503).json({
+        error: 'Blockchain service not fully initialized',
+        details: 'Contract address may be missing'
+      });
+    }
+    
+    // Get the campaign status from the blockchain
+    const status = await blockchainService.getCampaignStatus();
+    
+    res.json(status);
+  } catch (error) {
+    console.error('Error getting campaign status:', error);
+    res.status(500).json({ error: 'Failed to get campaign status' });
+  }
+});
+
+/**
+ * Get investor details
+ */
+escrowRouter.get('/escrow/investor/:walletAddress', authMiddleware, async (req, res) => {
+  try {
+    const walletAddress = req.params.walletAddress;
+    
+    if (!walletAddress) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+    
+    // Check if blockchain service is initialized
+    if (!blockchainService.isInitialized()) {
+      return res.status(503).json({
+        error: 'Blockchain service not fully initialized',
+        details: 'Contract address may be missing'
+      });
+    }
+    
+    // Get the investor details from the blockchain
+    const details = await blockchainService.getInvestorDetails(walletAddress);
+    
+    res.json(details);
+  } catch (error) {
+    console.error('Error getting investor details:', error);
+    res.status(500).json({ error: 'Failed to get investor details' });
+  }
+});
+
+/**
+ * Invest in escrow campaign
+ */
+escrowRouter.post('/escrow/invest', authMiddleware, async (req, res) => {
+  try {
+    const { amount, walletAddress } = req.body;
+    
+    if (!amount) {
+      return res.status(400).json({ error: 'Amount is required' });
+    }
+    
+    // Check if blockchain service is initialized
+    if (!blockchainService.isInitialized()) {
+      return res.status(503).json({
+        error: 'Blockchain service not fully initialized',
+        details: 'Contract address may be missing'
+      });
+    }
+    
+    // Invest in the campaign
+    const result = await blockchainService.invest(amount, walletAddress);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error investing:', error);
+    res.status(500).json({ error: 'Failed to invest' });
+  }
+});
+
+/**
+ * Claim refund from escrow - WITH EMAIL NOTIFICATION
+ */
+escrowRouter.post('/escrow/refund', authMiddleware, escrowController.requestRefund);
+
+export default escrowRouter;

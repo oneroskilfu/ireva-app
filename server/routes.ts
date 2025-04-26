@@ -58,7 +58,7 @@ import { walletTransactionsRouter } from './routes/wallet-transactions';
 import cryptoRoutes from './routes/crypto-routes';
 import { webhookRouter } from './coingate/webhookHandler';
 // Import Escrow smart contract routes
-import { escrowRouter } from './routes/escrow-routes';
+import escrowRouter from './routes/escrow-routes';
 import fs from 'fs';
 import path from 'path';
 
