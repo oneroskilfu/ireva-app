@@ -63,3 +63,20 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// Handle push notifications
+self.addEventListener('push', function(event) {
+  const data = event.data.json();
+  console.log('Push received:', data);
+
+  const title = data.title || "iREVA Notification";
+  const options = {
+    body: data.body,
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png'
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
+});
