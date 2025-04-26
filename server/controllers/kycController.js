@@ -1,231 +1,289 @@
-const { db } = require('../db');
-const { users } = require('../../shared/schema');
-const { eq } = require('drizzle-orm');
+const KYC = require('../models/KYC');
+const { sendNotificationEmail } = require('../services/emailService');
 
 /**
- * @desc    Submit KYC information
- * @route   POST /api/kyc
- * @access  Private
+ * Controller for KYC-related operations
  */
-const submitKYC = async (req, res) => {
+
+/**
+ * Submit a new KYC application
+ * @route POST /api/kyc/submit
+ * @access Private
+ */
+exports.submitKYC = async (req, res) => {
   try {
-    const userId = req.jwtPayload?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    const { fullName, address, idNumber, idType, bankName, accountNumber } = req.body;
-
-    // Validate input
-    if (!fullName || !address || !idNumber || !idType || !bankName || !accountNumber) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    if (accountNumber.length < 10) {
-      return res.status(400).json({ message: 'Account number must be at least 10 digits' });
-    }
-
-    // Create KYC document object
-    const kycDocument = {
-      idType,
-      idNumber,
+    const {
       fullName,
-      bankName,
-      accountNumber,
       address,
-      // These fields would typically come from file uploads in a real system
-      frontImage: "https://example.com/placeholder-id-front.jpg", // Replace with actual upload URL
-      selfieImage: "https://example.com/placeholder-selfie.jpg", // Replace with actual upload URL
-    };
+      city,
+      country,
+      idDocumentType,
+      idDocumentFile,
+      proofOfAddressFile,
+      cryptoWallet,
+      sourceOfFunds,
+      occupation,
+      citizenship,
+      isPEP,
+      expectedInvestmentRange
+    } = req.body;
 
-    // Update user with KYC information
-    const [updatedUser] = await db.update(users)
-      .set({
-        kycDocuments: kycDocument,
-        kycStatus: "pending",
-        kycSubmittedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning({
-        id: users.id,
-        username: users.username,
-        email: users.email,
-        kycStatus: users.kycStatus
+    // Check if user already has a pending or approved KYC
+    const existingKYC = await KYC.findOne({ 
+      user: req.user._id,
+      status: { $in: ['pending', 'approved'] }
+    });
+
+    if (existingKYC) {
+      return res.status(400).json({ 
+        message: existingKYC.status === 'approved' 
+          ? 'You already have an approved KYC application' 
+          : 'You already have a pending KYC application'
       });
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Create notification for admin
-    // In a real system, you would have a notifications service/module
-    /*
-    await createNotification({
-      userId: userId,
-      type: "kyc",
-      title: "New KYC Submission",
-      message: `${fullName} has submitted KYC documents for verification.`,
-      link: `/admin/kyc/${userId}`
+    // Create new KYC application
+    const newKYC = new KYC({
+      user: req.user._id,
+      fullName,
+      address,
+      city,
+      country,
+      idDocumentType,
+      idDocumentUrl: idDocumentFile, // Ideally this would be a URL to the uploaded file
+      proofOfAddressUrl: proofOfAddressFile, // Ideally this would be a URL to the uploaded file
+      cryptoWallet,
+      sourceOfFunds,
+      occupation,
+      citizenship,
+      isPEP,
+      expectedInvestmentRange,
+      submissionIp: req.ip || req.connection.remoteAddress
     });
-    */
+
+    await newKYC.save();
+
+    // Notify admins of new KYC submission
+    try {
+      // Send email notification to admin
+      await sendNotificationEmail({
+        to: process.env.ADMIN_EMAIL || process.env.IREVA_EMAIL,
+        subject: 'New KYC Application Submitted',
+        text: `A new KYC application has been submitted by ${fullName} (User ID: ${req.user._id}) and is pending review.`,
+        html: `
+          <h2>New KYC Application Submitted</h2>
+          <p>A new KYC application has been submitted and is pending review.</p>
+          <p><strong>User:</strong> ${fullName}</p>
+          <p><strong>User ID:</strong> ${req.user._id}</p>
+          <p><strong>Country:</strong> ${country}</p>
+          <p><strong>Investment Range:</strong> ${expectedInvestmentRange}</p>
+          <p><strong>PEP Status:</strong> ${isPEP ? 'Is a PEP (High Risk)' : 'Not a PEP'}</p>
+          <p>Please review this application in the admin dashboard.</p>
+        `
+      });
+    } catch (emailError) {
+      // Log error but don't fail the request
+      console.error('Failed to send KYC notification email:', emailError);
+    }
+
+    res.status(201).json({ 
+      success: true,
+      message: 'KYC application submitted successfully', 
+      kyc: {
+        id: newKYC._id,
+        status: newKYC.status,
+        submittedAt: newKYC.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Error submitting KYC:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to submit KYC application',
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Upload a document for KYC verification
+ * @route POST /api/kyc/upload-document
+ * @access Private
+ */
+exports.uploadDocument = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // In a production environment, this would upload to S3/Azure/etc
+    // and return a secure URL. For now, we'll just return a mock URL
+    const documentUrl = `/uploads/${req.file.filename}`;
+
+    res.status(200).json({ 
+      success: true,
+      documentUrl,
+      message: 'Document uploaded successfully' 
+    });
+  } catch (error) {
+    console.error('Error uploading document:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to upload document',
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Get the current user's KYC status
+ * @route GET /api/kyc/status
+ * @access Private
+ */
+exports.getKYCStatus = async (req, res) => {
+  try {
+    const kyc = await KYC.findOne({ user: req.user._id }).sort({ createdAt: -1 });
+
+    if (!kyc) {
+      return res.status(200).json({ 
+        status: 'not_submitted',
+        message: 'No KYC application found'
+      });
+    }
 
     res.status(200).json({
-      message: 'KYC submission successful',
-      status: updatedUser.kycStatus
+      status: kyc.status,
+      submittedAt: kyc.createdAt,
+      updatedAt: kyc.updatedAt,
+      reason: kyc.rejectionReason
     });
   } catch (error) {
-    console.error('KYC submission error:', error);
-    res.status(500).json({ message: 'Server error during KYC submission' });
+    console.error('Error getting KYC status:', error);
+    res.status(500).json({ 
+      message: 'Failed to get KYC status',
+      error: error.message 
+    });
   }
 };
 
 /**
- * @desc    Get all KYC submissions (admin only)
- * @route   GET /api/kyc
- * @access  Admin
+ * Admin endpoint to get all KYC applications
+ * @route GET /api/admin/kyc
+ * @access Admin
  */
-const getAllKYC = async (req, res) => {
+exports.getAllKYCApplications = async (req, res) => {
   try {
-    const kycSubmissions = await db.query.users.findMany({
-      where: (users) => 
-        eq(users.kycStatus, "pending")
-        .or(eq(users.kycStatus, "verified"))
-        .or(eq(users.kycStatus, "rejected")),
-      columns: {
-        id: true,
-        username: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phoneNumber: true,
-        kycStatus: true,
-        kycDocuments: true,
-        kycSubmittedAt: true,
-        kycVerifiedAt: true,
-        kycRejectionReason: true
-      }
-    });
+    const { status = 'pending', page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
 
-    if (!kycSubmissions || kycSubmissions.length === 0) {
-      return res.status(404).json({ message: 'No KYC submissions found' });
-    }
-
-    res.json(kycSubmissions);
-  } catch (error) {
-    console.error('Get all KYC error:', error);
-    res.status(500).json({ message: 'Server error getting KYC submissions' });
-  }
-};
-
-/**
- * @desc    Get user's own KYC status
- * @route   GET /api/kyc/status
- * @access  Private
- */
-const getKYCStatus = async (req, res) => {
-  try {
-    const userId = req.jwtPayload?.id;
+    const query = status !== 'all' ? { status } : {};
     
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    const applications = await KYC.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .populate('user', 'email');
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-      columns: {
-        kycStatus: true,
-        kycSubmittedAt: true,
-        kycVerifiedAt: true,
-        kycRejectionReason: true
-      }
-    });
+    const totalCount = await KYC.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / limit);
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({
-      status: user.kycStatus,
-      submittedAt: user.kycSubmittedAt,
-      verifiedAt: user.kycVerifiedAt,
-      rejectionReason: user.kycRejectionReason
+    res.status(200).json({
+      applications,
+      totalCount,
+      totalPages,
+      currentPage: page
     });
   } catch (error) {
-    console.error('KYC status error:', error);
-    res.status(500).json({ message: 'Server error getting KYC status' });
+    console.error('Error getting KYC applications:', error);
+    res.status(500).json({ 
+      message: 'Failed to get KYC applications',
+      error: error.message 
+    });
   }
 };
 
 /**
- * @desc    Admin verifies a user's KYC
- * @route   PATCH /api/kyc/:id/verify
- * @access  Admin
+ * Admin endpoint to verify a KYC application
+ * @route PATCH /api/admin/kyc/:id/verify
+ * @access Admin
  */
-const verifyKYC = async (req, res) => {
+exports.verifyKYCApplication = async (req, res) => {
   try {
     const { id } = req.params;
-    const { approved, rejectionReason } = req.body;
+    const { status, reason } = req.body;
 
-    if (approved === undefined) {
-      return res.status(400).json({ message: 'Approval status is required' });
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
     }
 
-    if (!approved && !rejectionReason) {
-      return res.status(400).json({ message: 'Rejection reason is required when rejecting KYC' });
+    const kyc = await KYC.findById(id);
+
+    if (!kyc) {
+      return res.status(404).json({ message: 'KYC application not found' });
     }
 
-    const updateData = approved 
-      ? { 
-          kycStatus: "verified", 
-          kycVerifiedAt: new Date(),
-          kycRejectionReason: null
-        }
-      : { 
-          kycStatus: "rejected", 
-          kycRejectionReason: rejectionReason 
-        };
-
-    const [updatedUser] = await db.update(users)
-      .set(updateData)
-      .where(eq(users.id, parseInt(id)))
-      .returning({
-        id: users.id,
-        username: users.username,
-        email: users.email,
-        kycStatus: users.kycStatus
+    if (kyc.status !== 'pending') {
+      return res.status(400).json({ 
+        message: `KYC application is already ${kyc.status}` 
       });
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Create notification for user about KYC status
-    /*
-    await createNotification({
-      userId: parseInt(id),
-      type: "kyc",
-      title: approved ? "KYC Verified" : "KYC Rejected",
-      message: approved 
-        ? "Your KYC verification has been approved. You can now invest in all eligible properties."
-        : `Your KYC verification was not approved. Reason: ${rejectionReason}`,
-      link: approved ? "/dashboard" : "/kyc"
-    });
-    */
+    kyc.status = status;
+    
+    if (status === 'rejected' && reason) {
+      kyc.rejectionReason = reason;
+    }
+    
+    kyc.verifiedBy = req.user._id;
+    kyc.verifiedAt = Date.now();
+    
+    await kyc.save();
+
+    // Notify user of KYC verification result
+    try {
+      // Get user email from populated field or via lookup
+      const userEmail = kyc.user.email || 'user@example.com';
+      
+      await sendNotificationEmail({
+        to: userEmail,
+        subject: `KYC Verification ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+        text: status === 'approved' 
+          ? 'Your KYC application has been approved. You can now make cryptocurrency investments on the platform.'
+          : `Your KYC application has been rejected. Reason: ${reason || 'Not specified'}`,
+        html: status === 'approved'
+          ? `
+            <h2>KYC Verification Approved</h2>
+            <p>Good news! Your KYC application has been approved.</p>
+            <p>You can now make cryptocurrency investments on the platform.</p>
+            <p>Thank you for using iREVA.</p>
+          `
+          : `
+            <h2>KYC Verification Rejected</h2>
+            <p>Unfortunately, your KYC application has been rejected.</p>
+            <p><strong>Reason:</strong> ${reason || 'Not specified'}</p>
+            <p>You can submit a new application with the correct information.</p>
+            <p>If you believe this is an error, please contact our support team.</p>
+          `
+      });
+    } catch (emailError) {
+      // Log error but don't fail the request
+      console.error('Failed to send KYC verification email:', emailError);
+    }
 
     res.status(200).json({
-      message: approved ? 'KYC verified successfully' : 'KYC rejected',
-      user: updatedUser
+      success: true,
+      message: `KYC application ${status}`,
+      kyc: {
+        id: kyc._id,
+        status: kyc.status,
+        verifiedAt: kyc.verifiedAt
+      }
     });
   } catch (error) {
-    console.error('KYC verification error:', error);
-    res.status(500).json({ message: 'Server error during KYC verification' });
+    console.error('Error verifying KYC application:', error);
+    res.status(500).json({ 
+      message: 'Failed to verify KYC application',
+      error: error.message 
+    });
   }
-};
-
-module.exports = {
-  submitKYC,
-  getAllKYC,
-  getKYCStatus,
-  verifyKYC
 };
