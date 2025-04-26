@@ -86,7 +86,8 @@ function Router() {
   const InvestorPropertiesPage = lazy(() => import('@/pages/investor/properties-page'));
   const InvestorWalletPage = lazy(() => import('@/pages/investor/wallet-page'));
   const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'));
-const InvestorNotificationsPage = lazy(() => import('@/pages/investor/notifications-page'));
+  const InvestorNotificationsPage = lazy(() => import('@/pages/investor/notifications-page'));
+  const SendNotificationPage = lazy(() => import('@/pages/admin/SendNotificationPage'));
   const InvestorDocumentsPage = lazy(() => import('@/pages/investor/InvestorDocumentsPage'));
   const InvestorKYCPage = lazy(() => import('@/pages/investor/KYCPage'));
   const MessagesPage = lazy(() => import('@/pages/investor/MessagesPage'));
@@ -357,6 +358,19 @@ const InvestorNotificationsPage = lazy(() => import('@/pages/investor/notificati
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <AdminMessagesPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Notifications Management Route */}
+      <Route path="/admin/notifications">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <SendNotificationPage />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>

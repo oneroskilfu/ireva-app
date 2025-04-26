@@ -1,162 +1,194 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useToast } from "@/hooks/use-toast";
-import { Helmet } from "react-helmet-async";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { Link } from "wouter";
+import axios from "axios";
+import { 
+  Bell, 
+  Clock, 
+  Calendar, 
+  ExternalLink, 
+  Search,
+  Trash2,
+  MoreHorizontal,
+  ArrowUpDown,
+  ChevronDown  
+} from "lucide-react";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Bell, ChevronDown, Settings, Calendar, Mail, BellOff, Info, AlertTriangle, RefreshCw, Send, CheckCheck, PlusCircle, MessageSquare, DollarSign, Award, Clock, Eye, Filter } from "lucide-react";
-import PushNotificationDemo from "@/components/PushNotificationDemo";
+import { useToast } from "@/hooks/use-toast";
+import { format, formatDistanceToNow } from "date-fns";
+import PushNotificationSubscription from "../../components/PushNotificationSubscription";
+import PushNotificationDemo from "../../components/PushNotificationDemo";
+import UserLayout from "../../components/layouts/UserLayout";
+
+// Date formatting function
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return format(date, 'MMMM d, yyyy');
+};
+
+// Relative date formatting
+const formatRelativeDate = (dateString) => {
+  const date = new Date(dateString);
+  return formatDistanceToNow(date, { addSuffix: true });
+};
+
+// Helper to get badge color based on notification type
+const getNotificationBadge = (type) => {
+  switch (type) {
+    case 'investment':
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Investment</Badge>;
+    case 'security':
+      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Security</Badge>;
+    case 'roi':
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">ROI</Badge>;
+    case 'milestone':
+      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Milestone</Badge>;
+    case 'announcement':
+      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Announcement</Badge>;
+    default:
+      return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">System</Badge>;
+  }
+};
 
 const NotificationsPage = () => {
-  const [activeTab, setActiveTab] = useState("all");
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [preferences, setPreferences] = useState({
-    pushEnabled: true,
-    emailEnabled: true,
-    categories: {
-      investments: true,
-      roi: true,
-      security: true,
-      marketing: false,
-      system: true,
-    }
-  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sortDirection, setSortDirection] = useState("desc");
+  const [selectedTab, setSelectedTab] = useState("all");
   const { toast } = useToast();
-
+  
   useEffect(() => {
     fetchNotifications();
-  }, [activeTab]);
-
+  }, [currentPage, filter, sortDirection, selectedTab]);
+  
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      // In a real implementation, this would filter based on activeTab
-      const response = await axios.get('/api/notifications');
-      setNotifications(response.data || []);
+      // Add params for pagination, filtering, sorting
+      const params = {
+        page: currentPage,
+        limit: 10,
+        sort: sortDirection,
+        filter: filter,
+        type: selectedTab !== "all" ? selectedTab : undefined
+      };
+      
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
+      
+      const response = await axios.get('/api/notifications', { params });
+      
+      setNotifications(response.data.notifications || []);
+      setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
         title: "Failed to load notifications",
-        description: "Please try refreshing the page",
+        description: error.response?.data?.message || "Please try again later",
         variant: "destructive",
       });
-      // Set some example notifications for development
-      setNotifications(getSampleNotifications());
     } finally {
       setLoading(false);
     }
   };
-
-  const getSampleNotifications = () => {
-    return [
-      {
-        id: 1,
-        type: 'investment',
-        title: 'New Investment Opportunity',
-        message: 'Prime Lekki Phase 1 Apartment complex now available for investment. Limited units!',
-        isRead: false,
-        createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-        priority: 'high',
-        action: '/properties/5',
-      },
-      {
-        id: 2,
-        type: 'roi',
-        title: 'ROI Payment',
-        message: 'You have received a quarterly ROI payment of ₦123,500 from your investment in Victoria Island Commercial Plaza.',
-        isRead: true,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-        priority: 'medium',
-        action: '/investor/roi-dashboard',
-      },
-      {
-        id: 3,
-        type: 'security',
-        title: 'New Login Detected',
-        message: 'Your account was accessed from a new device. If this wasn\'t you, please contact support immediately.',
-        isRead: false,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
-        priority: 'high',
-        action: '/investor/security',
-      },
-      {
-        id: 4,
-        type: 'system',
-        title: 'Platform Maintenance',
-        message: 'iREVA will undergo scheduled maintenance this weekend. Services might be temporarily unavailable on Saturday from 2 AM to 4 AM WAT.',
-        isRead: true,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-        priority: 'low',
-        action: null,
-      },
-      {
-        id: 5,
-        type: 'investment',
-        title: 'Property Construction Update',
-        message: 'The Westfield Retail Center construction is now 75% complete. View the latest photos and progress report.',
-        isRead: false,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(), // 36 hours ago
-        priority: 'medium',
-        action: '/properties/2/updates',
-      },
-      {
-        id: 6,
-        type: 'roi',
-        title: 'Upcoming ROI Distribution',
-        message: 'Your upcoming quarterly ROI payment from Lekki Gardens investment is scheduled for next week.',
-        isRead: true,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-        priority: 'medium',
-        action: '/investor/roi-dashboard',
-      },
-      {
-        id: 7,
-        type: 'marketing',
-        title: 'Exclusive Investor Webinar',
-        message: 'Join our CEO for an exclusive webinar on "The Future of Real Estate in Nigeria" this Friday at 5 PM.',
-        isRead: true,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), // 3 days ago
-        priority: 'low',
-        action: 'https://webinar.ireva.com/future-real-estate',
-      },
-    ];
+  
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1); // Reset to first page for new search
+    fetchNotifications();
   };
-
-  const markAsRead = async (id) => {
+  
+  const handleToggleRead = async (id, isRead) => {
     try {
-      await axios.patch(`/api/notifications/${id}/read`);
+      await axios.patch(`/api/notifications/${id}`, { isRead: !isRead });
       
-      // Update local state
-      setNotifications(notifications.map(notification => 
-        notification.id === id ? { ...notification, isRead: true } : notification
-      ));
+      // Update the notification in the local state
+      setNotifications(
+        notifications.map((notification) =>
+          notification.id === id 
+            ? { ...notification, isRead: !isRead } 
+            : notification
+        )
+      );
       
       toast({
-        title: "Notification marked as read",
+        title: isRead ? "Marked as unread" : "Marked as read",
         variant: "default",
       });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-      
-      // Still update UI optimistically
-      setNotifications(notifications.map(notification => 
-        notification.id === id ? { ...notification, isRead: true } : notification
-      ));
+      console.error('Error updating notification:', error);
+      toast({
+        title: "Failed to update notification",
+        description: "Please try again",
+        variant: "destructive",
+      });
     }
   };
-
+  
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/api/notifications/${id}`);
+      
+      // Remove the notification from the local state
+      setNotifications(
+        notifications.filter((notification) => notification.id !== id)
+      );
+      
+      toast({
+        title: "Notification deleted",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast({
+        title: "Failed to delete notification",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+  
   const markAllAsRead = async () => {
     try {
-      await axios.patch('/api/notifications/mark-all-read');
+      await axios.put('/api/notifications/mark-all-read');
       
-      // Update local state
-      setNotifications(notifications.map(notification => ({ ...notification, isRead: true })));
+      // Update all notifications in the local state
+      setNotifications(
+        notifications.map((notification) => ({
+          ...notification,
+          isRead: true,
+        }))
+      );
       
       toast({
         title: "All notifications marked as read",
@@ -164,546 +196,504 @@ const NotificationsPage = () => {
       });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      
-      // Still update UI optimistically
-      setNotifications(notifications.map(notification => ({ ...notification, isRead: true })));
-    }
-  };
-
-  const updatePreference = (category, value) => {
-    if (category === 'pushEnabled' || category === 'emailEnabled') {
-      setPreferences({
-        ...preferences,
-        [category]: value
-      });
-    } else {
-      setPreferences({
-        ...preferences,
-        categories: {
-          ...preferences.categories,
-          [category]: value
-        }
+      toast({
+        title: "Failed to update notifications",
+        description: "Please try again",
+        variant: "destructive",
       });
     }
-    
-    // In a real implementation, save preferences to the server
-    toast({
-      title: `${category} notifications ${value ? 'enabled' : 'disabled'}`,
-      variant: "default",
-    });
   };
-
-  const getNotificationIcon = (type, priority) => {
-    switch(type) {
-      case 'investment':
-        return <PlusCircle className={`h-5 w-5 ${priority === 'high' ? 'text-green-600' : 'text-green-500'}`} />;
-      case 'roi':
-        return <DollarSign className={`h-5 w-5 ${priority === 'high' ? 'text-blue-600' : 'text-blue-500'}`} />;
-      case 'security':
-        return <AlertTriangle className={`h-5 w-5 ${priority === 'high' ? 'text-amber-600' : 'text-amber-500'}`} />;
-      case 'system':
-        return <Info className={`h-5 w-5 ${priority === 'high' ? 'text-purple-600' : 'text-purple-500'}`} />;
-      case 'marketing':
-        return <MessageSquare className={`h-5 w-5 text-indigo-500`} />;
-      default:
-        return <Bell className={`h-5 w-5 ${priority === 'high' ? 'text-primary' : 'text-muted-foreground'}`} />;
+  
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+  };
+  
+  // Sample notification data for demonstration
+  const sampleNotifications = [
+    {
+      id: 1,
+      title: "ROI Payment Processed",
+      body: "Your Q2 2023 ROI payment of ₦450,000 has been processed and will be credited to your wallet within 24 hours.",
+      type: "roi",
+      isRead: false,
+      createdAt: "2023-07-15T10:30:00Z",
+      link: "/investor/wallet"
+    },
+    {
+      id: 2,
+      title: "New Property Investment Opportunity",
+      body: "Exclusive pre-launch access: Victoria Garden City Luxury Apartments now available for premium investors.",
+      type: "investment",
+      isRead: true,
+      createdAt: "2023-07-12T14:45:00Z",
+      link: "/properties/12"
+    },
+    {
+      id: 3,
+      title: "KYC Verification Approved",
+      body: "Congratulations! Your KYC verification has been approved. You now have full access to all investment opportunities.",
+      type: "security",
+      isRead: true,
+      createdAt: "2023-07-10T09:15:00Z",
+      link: "/account/kyc"
+    },
+    {
+      id: 4,
+      title: "Construction Milestone Reached",
+      body: "Victoria Garden City project has completed foundation work. View the latest photos and construction updates.",
+      type: "milestone",
+      isRead: false,
+      createdAt: "2023-07-08T11:20:00Z",
+      link: "/properties/12/updates"
+    },
+    {
+      id: 5,
+      title: "Platform Update: New Features",
+      body: "We've added new features to enhance your experience: Portfolio analytics, document management, and improved reporting.",
+      type: "announcement",
+      isRead: false,
+      createdAt: "2023-07-05T16:30:00Z",
+      link: "/announcements/platform-update"
     }
-  };
-
-  const formatNotificationTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now - date;
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes} min${diffInMinutes !== 1 ? 's' : ''} ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
-    } else if (diffInDays < 7) {
-      return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
-    } else {
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-    }
-  };
-
-  const getFilteredNotifications = () => {
-    if (activeTab === 'all') {
-      return notifications;
-    }
-    
-    return notifications.filter(notification => notification.type === activeTab);
-  };
-
-  const getUnreadCount = (type = null) => {
-    if (type) {
-      return notifications.filter(n => n.type === type && !n.isRead).length;
-    }
-    return notifications.filter(n => !n.isRead).length;
-  };
-
+  ];
+  
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <Helmet>
-        <title>Notifications | iREVA</title>
-      </Helmet>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
+    <UserLayout>
+      <div className="container py-8">
+        <div className="flex flex-col space-y-8">
+          <div>
             <h1 className="text-3xl font-bold">Notifications</h1>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={fetchNotifications}
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span className="hidden md:inline">Refresh</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={markAllAsRead}
-                disabled={!getUnreadCount()}
-              >
-                <CheckCheck className="h-4 w-4" />
-                <span className="hidden md:inline">Mark all as read</span>
-              </Button>
-            </div>
+            <p className="text-muted-foreground mt-1">
+              Stay updated with important information about your investments
+            </p>
           </div>
           
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
-                <TabsTrigger value="all" className="relative">
-                  All
-                  {getUnreadCount() > 0 && (
-                    <Badge variant="default" className="ml-1 px-1 py-0 h-5 min-w-[20px] absolute -top-2 -right-2">
-                      {getUnreadCount()}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="investment" className="relative">
-                  Investments
-                  {getUnreadCount('investment') > 0 && (
-                    <Badge variant="default" className="ml-1 px-1 py-0 h-5 min-w-[20px] absolute -top-2 -right-2">
-                      {getUnreadCount('investment')}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="roi" className="relative">
-                  ROI
-                  {getUnreadCount('roi') > 0 && (
-                    <Badge variant="default" className="ml-1 px-1 py-0 h-5 min-w-[20px] absolute -top-2 -right-2">
-                      {getUnreadCount('roi')}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="security">Security</TabsTrigger>
-              </TabsList>
-              
-              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                <Filter className="h-4 w-4" />
-                <span className="hidden md:inline">Filter</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <TabsContent value="all" className="mt-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
               <Card>
-                <CardContent className="p-0">
-                  {loading ? (
-                    <div className="flex justify-center items-center p-12">
-                      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Your Notifications</CardTitle>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={markAllAsRead}
+                        disabled={!notifications.some(n => !n.isRead)}
+                      >
+                        Mark all as read
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={toggleSortDirection}
+                      >
+                        <ArrowUpDown className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ) : getFilteredNotifications().length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-12 text-center">
-                      <BellOff className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium">No notifications</h3>
-                      <p className="text-muted-foreground mt-2">
-                        You don't have any notifications in this category yet
-                      </p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 pt-2">
+                    <div className="relative flex-grow">
+                      <form onSubmit={handleSearch}>
+                        <Input
+                          placeholder="Search notifications..."
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          className="pl-8"
+                        />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      </form>
                     </div>
-                  ) : (
-                    <ScrollArea className="h-[calc(100vh-24rem)] pr-4">
-                      <ul className="divide-y divide-border">
-                        {getFilteredNotifications().map((notification) => (
-                          <li 
-                            key={notification.id}
-                            className={`p-4 hover:bg-muted/50 ${!notification.isRead ? 'bg-muted/30' : ''}`}
-                          >
-                            <div className="flex items-start gap-4">
-                              <div className="mt-1">
-                                {getNotificationIcon(notification.type, notification.priority)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <h3 className={`text-base font-medium truncate ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                    {notification.title}
-                                  </h3>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                      {formatNotificationTime(notification.createdAt)}
+                    <Select 
+                      value={filter} 
+                      onValueChange={setFilter}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Filter by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="unread">Unread</SelectItem>
+                        <SelectItem value="read">Read</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                
+                <Tabs defaultValue="all" onValueChange={setSelectedTab}>
+                  <div className="px-6">
+                    <TabsList className="grid grid-cols-6 w-full">
+                      <TabsTrigger value="all">All</TabsTrigger>
+                      <TabsTrigger value="investment">Investments</TabsTrigger>
+                      <TabsTrigger value="roi">ROI</TabsTrigger>
+                      <TabsTrigger value="milestone">Milestones</TabsTrigger>
+                      <TabsTrigger value="security">Security</TabsTrigger>
+                      <TabsTrigger value="announcement">Announcements</TabsTrigger>
+                    </TabsList>
+                  </div>
+                  
+                  <CardContent className="pt-6">
+                    <TabsContent value="all" className="mt-0">
+                      {/* Using sample data while API integration is in progress */}
+                      {loading ? (
+                        <div className="flex justify-center py-12">
+                          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                        </div>
+                      ) : notifications.length === 0 ? (
+                        <div className="text-center py-12">
+                          <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-medium">No notifications</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            You don't have any notifications at the moment
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {sampleNotifications.map((notification) => (
+                            <div 
+                              key={notification.id}
+                              className={`relative p-4 rounded-lg border ${
+                                notification.isRead 
+                                  ? 'bg-background' 
+                                  : 'bg-primary/5 border-primary/20'
+                              }`}
+                            >
+                              {!notification.isRead && (
+                                <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-primary" />
+                              )}
+                              
+                              <div className="flex items-start gap-4">
+                                <div className="rounded-full p-2 bg-primary/10 text-primary">
+                                  <Bell className="h-5 w-5" />
+                                </div>
+                                
+                                <div className="flex-grow">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    {getNotificationBadge(notification.type)}
+                                    <span className="text-xs text-muted-foreground flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {formatRelativeDate(notification.createdAt)}
                                     </span>
-                                    {notification.priority === 'high' && (
-                                      <Badge variant="destructive" className="px-1 py-0 h-5">
-                                        Important
-                                      </Badge>
-                                    )}
+                                  </div>
+                                  
+                                  <h3 className="font-medium">{notification.title}</h3>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {notification.body}
+                                  </p>
+                                  
+                                  <div className="flex items-center justify-between mt-3">
+                                    <div className="text-xs text-muted-foreground flex items-center">
+                                      <Calendar className="h-3 w-3 mr-1" />
+                                      {formatDate(notification.createdAt)}
+                                    </div>
+                                    
+                                    <div className="flex items-center space-x-2">
+                                      {notification.link && (
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          asChild
+                                          className="h-8 px-2 text-xs"
+                                        >
+                                          <Link to={notification.link}>
+                                            <ExternalLink className="h-3 w-3 mr-1" />
+                                            View details
+                                          </Link>
+                                        </Button>
+                                      )}
+                                      
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem 
+                                            onClick={() => handleToggleRead(notification.id, notification.isRead)}
+                                          >
+                                            Mark as {notification.isRead ? 'unread' : 'read'}
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem 
+                                            className="text-destructive"
+                                            onClick={() => handleDelete(notification.id)}
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Delete
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
                                   </div>
                                 </div>
-                                <p className={`mt-1 text-sm ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                  {notification.message}
-                                </p>
-                                <div className="mt-2 flex items-center gap-3">
-                                  {notification.action && (
-                                    <Button 
-                                      variant="link" 
-                                      className="h-auto p-0 text-sm"
-                                      onClick={() => window.location.href = notification.action}
-                                    >
-                                      View details
-                                    </Button>
-                                  )}
-                                  {!notification.isRead && (
-                                    <Button 
-                                      variant="link" 
-                                      className="h-auto p-0 text-sm"
-                                      onClick={() => markAsRead(notification.id)}
-                                    >
-                                      Mark as read
-                                    </Button>
-                                  )}
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {totalPages > 1 && (
+                            <div className="flex justify-center pt-4">
+                              <div className="flex space-x-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setCurrentPage(currentPage - 1)}
+                                  disabled={currentPage === 1}
+                                >
+                                  Previous
+                                </Button>
+                                <Button variant="outline" size="sm" disabled>
+                                  Page {currentPage} of {totalPages}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setCurrentPage(currentPage + 1)}
+                                  disabled={currentPage === totalPages}
+                                >
+                                  Next
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </TabsContent>
+                    
+                    {/* Other tabs would filter based on notification type */}
+                    <TabsContent value="investment" className="mt-0">
+                      {/* Content filtered for investments */}
+                      <div className="space-y-4">
+                        {sampleNotifications
+                          .filter(n => n.type === 'investment')
+                          .map((notification) => (
+                            <div 
+                              key={notification.id}
+                              className={`relative p-4 rounded-lg border ${
+                                notification.isRead 
+                                  ? 'bg-background' 
+                                  : 'bg-primary/5 border-primary/20'
+                              }`}
+                            >
+                              {/* Same content structure as above */}
+                              {!notification.isRead && (
+                                <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-primary" />
+                              )}
+                              
+                              <div className="flex items-start gap-4">
+                                <div className="rounded-full p-2 bg-primary/10 text-primary">
+                                  <Bell className="h-5 w-5" />
+                                </div>
+                                
+                                <div className="flex-grow">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    {getNotificationBadge(notification.type)}
+                                    <span className="text-xs text-muted-foreground flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {formatRelativeDate(notification.createdAt)}
+                                    </span>
+                                  </div>
+                                  
+                                  <h3 className="font-medium">{notification.title}</h3>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {notification.body}
+                                  </p>
+                                  
+                                  <div className="flex items-center justify-between mt-3">
+                                    <div className="text-xs text-muted-foreground flex items-center">
+                                      <Calendar className="h-3 w-3 mr-1" />
+                                      {formatDate(notification.createdAt)}
+                                    </div>
+                                    
+                                    <div className="flex items-center space-x-2">
+                                      {notification.link && (
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          asChild
+                                          className="h-8 px-2 text-xs"
+                                        >
+                                          <Link to={notification.link}>
+                                            <ExternalLink className="h-3 w-3 mr-1" />
+                                            View details
+                                          </Link>
+                                        </Button>
+                                      )}
+                                      
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem 
+                                            onClick={() => handleToggleRead(notification.id, notification.isRead)}
+                                          >
+                                            Mark as {notification.isRead ? 'unread' : 'read'}
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem 
+                                            className="text-destructive"
+                                            onClick={() => handleDelete(notification.id)}
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Delete
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </ScrollArea>
-                  )}
-                </CardContent>
+                          ))}
+                      </div>
+                    </TabsContent>
+                    
+                    {/* Similar structure for other tabs */}
+                    <TabsContent value="roi" className="mt-0">
+                      {/* Filtered ROI notifications */}
+                    </TabsContent>
+                    
+                    <TabsContent value="milestone" className="mt-0">
+                      {/* Filtered milestone notifications */}
+                    </TabsContent>
+                    
+                    <TabsContent value="security" className="mt-0">
+                      {/* Filtered security notifications */}
+                    </TabsContent>
+                    
+                    <TabsContent value="announcement" className="mt-0">
+                      {/* Filtered announcement notifications */}
+                    </TabsContent>
+                  </CardContent>
+                </Tabs>
               </Card>
-            </TabsContent>
+            </div>
             
-            <TabsContent value="investment" className="mt-0">
+            <div className="space-y-6">
               <Card>
-                <CardContent className="p-6">
-                  {getFilteredNotifications().length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-8 text-center">
-                      <BellOff className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium">No investment notifications</h3>
-                      <p className="text-muted-foreground mt-2">
-                        Investment updates and new opportunities will appear here
-                      </p>
+                <CardHeader>
+                  <CardTitle>Notification Settings</CardTitle>
+                  <CardDescription>
+                    Control how you receive notifications
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <PushNotificationSubscription />
+                  
+                  <Separator className="my-4" />
+                  
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm">Email Notifications</h4>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="font-medium text-sm">Investment Updates</div>
+                        <div className="text-xs text-muted-foreground">
+                          New properties and investment opportunities
+                        </div>
+                      </div>
+                      <Select defaultValue="daily">
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="realtime">Real-time</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="off">Off</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ) : (
-                    <ul className="divide-y divide-border">
-                      {getFilteredNotifications().map((notification) => (
-                        <li 
-                          key={notification.id}
-                          className={`py-4 first:pt-0 last:pb-0 ${!notification.isRead ? 'bg-muted/30' : ''}`}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="mt-1">
-                              {getNotificationIcon(notification.type, notification.priority)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <h3 className={`text-base font-medium truncate ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                  {notification.title}
-                                </h3>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {formatNotificationTime(notification.createdAt)}
-                                </span>
-                              </div>
-                              <p className={`mt-1 text-sm ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                {notification.message}
-                              </p>
-                              <div className="mt-2 flex items-center gap-3">
-                                {notification.action && (
-                                  <Button 
-                                    variant="link" 
-                                    className="h-auto p-0 text-sm"
-                                    onClick={() => window.location.href = notification.action}
-                                  >
-                                    View details
-                                  </Button>
-                                )}
-                                {!notification.isRead && (
-                                  <Button 
-                                    variant="link" 
-                                    className="h-auto p-0 text-sm"
-                                    onClick={() => markAsRead(notification.id)}
-                                  >
-                                    Mark as read
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="font-medium text-sm">ROI Payments</div>
+                        <div className="text-xs text-muted-foreground">
+                          Dividend distributions and performance reports
+                        </div>
+                      </div>
+                      <Select defaultValue="realtime">
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="realtime">Real-time</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="off">Off</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="font-medium text-sm">Security Alerts</div>
+                        <div className="text-xs text-muted-foreground">
+                          Account activities and login attempts
+                        </div>
+                      </div>
+                      <Select defaultValue="realtime">
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="realtime">Real-time</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="off">Off</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="font-medium text-sm">Platform Announcements</div>
+                        <div className="text-xs text-muted-foreground">
+                          New features and system updates
+                        </div>
+                      </div>
+                      <Select defaultValue="weekly">
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="realtime">Real-time</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="off">Off</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-4" />
+                  
+                  <div className="pt-2">
+                    <Button className="w-full">Save Preferences</Button>
+                  </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-            
-            <TabsContent value="roi" className="mt-0">
+              
               <Card>
-                <CardContent className="p-6">
-                  {getFilteredNotifications().length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-8 text-center">
-                      <BellOff className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium">No ROI notifications</h3>
-                      <p className="text-muted-foreground mt-2">
-                        You'll be notified here about ROI payments and dividend distributions
-                      </p>
-                    </div>
-                  ) : (
-                    <ul className="divide-y divide-border">
-                      {getFilteredNotifications().map((notification) => (
-                        <li 
-                          key={notification.id}
-                          className={`py-4 first:pt-0 last:pb-0 ${!notification.isRead ? 'bg-muted/30' : ''}`}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="mt-1">
-                              {getNotificationIcon(notification.type, notification.priority)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <h3 className={`text-base font-medium truncate ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                  {notification.title}
-                                </h3>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {formatNotificationTime(notification.createdAt)}
-                                </span>
-                              </div>
-                              <p className={`mt-1 text-sm ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                {notification.message}
-                              </p>
-                              <div className="mt-2 flex items-center gap-3">
-                                {notification.action && (
-                                  <Button 
-                                    variant="link" 
-                                    className="h-auto p-0 text-sm"
-                                    onClick={() => window.location.href = notification.action}
-                                  >
-                                    View details
-                                  </Button>
-                                )}
-                                {!notification.isRead && (
-                                  <Button 
-                                    variant="link" 
-                                    className="h-auto p-0 text-sm"
-                                    onClick={() => markAsRead(notification.id)}
-                                  >
-                                    Mark as read
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <CardHeader>
+                  <CardTitle>Test Notifications</CardTitle>
+                  <CardDescription>
+                    Send a test notification to verify your settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PushNotificationDemo />
                 </CardContent>
               </Card>
-            </TabsContent>
-            
-            <TabsContent value="security" className="mt-0">
-              <Card>
-                <CardContent className="p-6">
-                  {getFilteredNotifications().length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-8 text-center">
-                      <BellOff className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium">No security notifications</h3>
-                      <p className="text-muted-foreground mt-2">
-                        Security alerts and account status updates will appear here
-                      </p>
-                    </div>
-                  ) : (
-                    <ul className="divide-y divide-border">
-                      {getFilteredNotifications().map((notification) => (
-                        <li 
-                          key={notification.id}
-                          className={`py-4 first:pt-0 last:pb-0 ${!notification.isRead ? 'bg-muted/30' : ''}`}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="mt-1">
-                              {getNotificationIcon(notification.type, notification.priority)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <h3 className={`text-base font-medium truncate ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                  {notification.title}
-                                </h3>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {formatNotificationTime(notification.createdAt)}
-                                </span>
-                              </div>
-                              <p className={`mt-1 text-sm ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                {notification.message}
-                              </p>
-                              <div className="mt-2 flex items-center gap-3">
-                                {notification.action && (
-                                  <Button 
-                                    variant="link" 
-                                    className="h-auto p-0 text-sm"
-                                    onClick={() => window.location.href = notification.action}
-                                  >
-                                    View details
-                                  </Button>
-                                )}
-                                {!notification.isRead && (
-                                  <Button 
-                                    variant="link" 
-                                    className="h-auto p-0 text-sm"
-                                    onClick={() => markAsRead(notification.id)}
-                                  >
-                                    Mark as read
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Notification Settings
-              </CardTitle>
-              <CardDescription>
-                Manage how you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <h4 className="text-sm font-medium">Push Notifications</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications in your browser
-                  </p>
-                </div>
-                <Switch 
-                  checked={preferences.pushEnabled} 
-                  onCheckedChange={(value) => updatePreference('pushEnabled', value)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <h4 className="text-sm font-medium">Email Notifications</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Receive notifications via email
-                  </p>
-                </div>
-                <Switch 
-                  checked={preferences.emailEnabled} 
-                  onCheckedChange={(value) => updatePreference('emailEnabled', value)}
-                />
-              </div>
-              
-              <Separator />
-              
-              <h4 className="text-sm font-medium pt-2">Notification Categories</h4>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <PlusCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Investment Updates</span>
-                </div>
-                <Switch 
-                  checked={preferences.categories.investments} 
-                  onCheckedChange={(value) => updatePreference('investments', value)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm">ROI & Payments</span>
-                </div>
-                <Switch 
-                  checked={preferences.categories.roi} 
-                  onCheckedChange={(value) => updatePreference('roi', value)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm">Security Alerts</span>
-                </div>
-                <Switch 
-                  checked={preferences.categories.security} 
-                  onCheckedChange={(value) => updatePreference('security', value)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-indigo-500" />
-                  <span className="text-sm">Marketing & Events</span>
-                </div>
-                <Switch 
-                  checked={preferences.categories.marketing} 
-                  onCheckedChange={(value) => updatePreference('marketing', value)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Info className="h-4 w-4 text-purple-500" />
-                  <span className="text-sm">System Notifications</span>
-                </div>
-                <Switch 
-                  checked={preferences.categories.system} 
-                  onCheckedChange={(value) => updatePreference('system', value)}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">Save Preferences</Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Browser Notifications
-              </CardTitle>
-              <CardDescription>
-                Enable push notifications in your browser
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PushNotificationDemo />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </UserLayout>
   );
 };
 
