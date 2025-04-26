@@ -59,6 +59,8 @@ import cryptoRoutes from './routes/crypto-routes';
 import { webhookRouter } from './coingate/webhookHandler';
 // Import Escrow smart contract routes
 import escrowRouter from './routes/escrow-routes';
+// Import Push notification routes
+import { pushNotificationRouter } from './routes/push-notification-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -361,6 +363,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up CoinGate webhook handler
   app.use('/api/crypto', webhookRouter);
   console.log("CoinGate webhook handler registered");
+  
+  // Set up Push Notification routes
+  app.use('/api/push-notifications', pushNotificationRouter);
+  console.log("Push notification routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
