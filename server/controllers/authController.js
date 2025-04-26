@@ -56,13 +56,25 @@ const generateToken = (user) => {
 };
 
 /**
- * Registers a new user
+ * Generates a referral code for a user
+ * Format: IRV-XXXXX (where XXXXX is padded user ID)
+ * @param {number} userId - The user ID
+ * @returns {string} - The formatted referral code
+ */
+const generateReferralCode = (userId) => {
+  // Get just the numeric part and pad to 5 digits
+  const paddedId = userId.toString().padStart(5, '0');
+  return `IRV-${paddedId}`;
+};
+
+/**
+ * Registers a new user and handles referral logic
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
 const register = async (req, res) => {
   try {
-    const { username, email, password, firstName, lastName, phoneNumber } = req.body;
+    const { username, email, password, firstName, lastName, phoneNumber, referredBy } = req.body;
     
     // Check if username or email already exists
     const existingUser = await db.query.users.findFirst({
@@ -76,10 +88,25 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'Username or email already exists' });
     }
     
+    // Validate referral code if provided
+    let referrerId = null;
+    if (referredBy) {
+      const referrer = await db.query.users.findFirst({
+        where: eq(users.referralCode, referredBy)
+      });
+      
+      if (referrer) {
+        referrerId = referrer.id;
+      } else {
+        // Invalid referral code, but we'll still allow registration
+        console.warn(`Invalid referral code used during registration: ${referredBy}`);
+      }
+    }
+    
     // Hash password
     const hashedPassword = await hashPassword(password);
     
-    // Create new user
+    // Create new user (without referral code initially)
     const [newUser] = await db.insert(users)
       .values({
         username,
@@ -88,7 +115,8 @@ const register = async (req, res) => {
         firstName,
         lastName,
         phoneNumber,
-        role: 'user',
+        role: 'investor', // Updated to match your enum values
+        referredBy: referrerId,
         createdAt: new Date(),
       })
       .returning({
@@ -100,11 +128,38 @@ const register = async (req, res) => {
         role: users.role,
       });
     
+    // Generate and update the user with a unique referral code
+    const referralCode = generateReferralCode(newUser.id);
+    await db.update(users)
+      .set({ referralCode })
+      .where(eq(users.id, newUser.id));
+      
+    // If the user was referred, update the referrer's referral records
+    if (referrerId) {
+      // Get current referrals array or initialize empty array
+      const referrer = await db.query.users.findFirst({
+        where: eq(users.id, referrerId)
+      });
+      
+      if (referrer) {
+        const currentReferrals = referrer.referrals || [];
+        const updatedReferrals = [...currentReferrals, newUser.id];
+        
+        // Update referrer with new referrals and add referral reward
+        await db.update(users)
+          .set({ 
+            referrals: updatedReferrals,
+            referralRewards: (referrer.referralRewards || 0) + 50 // $50 bonus per referral
+          })
+          .where(eq(users.id, referrerId));
+      }
+    }
+    
     // Generate JWT token
     const token = generateToken(newUser);
     
     res.status(201).json({
-      user: newUser,
+      user: { ...newUser, referralCode },
       token
     });
   } catch (error) {
@@ -156,6 +211,9 @@ const login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        referralCode: user.referralCode,
+        referrals: user.referrals || [],
+        referralRewards: user.referralRewards || 0,
       },
       token
     });
@@ -189,6 +247,9 @@ const getCurrentUser = async (req, res) => {
       lastName: user.lastName,
       role: user.role,
       phoneNumber: user.phoneNumber,
+      referralCode: user.referralCode,
+      referrals: user.referrals || [],
+      referralRewards: user.referralRewards || 0,
       createdAt: user.createdAt,
     });
   } catch (error) {
@@ -201,6 +262,7 @@ module.exports = {
   hashPassword,
   comparePasswords,
   generateToken,
+  generateReferralCode,
   register,
   login,
   getCurrentUser

@@ -118,6 +118,13 @@ export const loginFormSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+// Referral code validation - Format IRV-XXXXX where X is alphanumeric
+export const referralCodeSchema = z
+  .string()
+  .regex(/^IRV-[A-Z0-9]{5}$/, 'Referral code must be in the format IRV-XXXXX')
+  .optional()
+  .transform((val) => val || null);
+
 // Registration form schema
 export const registrationFormSchema = z.object({
   username: usernameSchema,
@@ -127,6 +134,7 @@ export const registrationFormSchema = z.object({
   firstName: nameSchema.optional(),
   lastName: nameSchema.optional(),
   phoneNumber: phoneNumberSchema.optional(),
+  referredBy: referralCodeSchema,
   agreeToTerms: z.boolean().refine((val) => val === true, 'You must agree to the terms and conditions'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',

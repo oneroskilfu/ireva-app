@@ -64,7 +64,9 @@ export interface IUser extends Document {
   badges?: string[];
   referralCode?: string;
   referredBy?: mongoose.Types.ObjectId;
+  referrals?: mongoose.Types.ObjectId[];
   referralBonus: number;
+  referralRewards: number;
   notificationPreferences?: {
     email: boolean;
     push: boolean;
@@ -183,9 +185,11 @@ const UserSchema: Schema = new Schema(
     totalEarnings: { type: Number, default: 0 },
     rewardsPoints: { type: Number, default: 0 },
     badges: [{ type: String }],
-    referralCode: { type: String, index: true },
+    referralCode: { type: String, unique: true, index: true },
     referredBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    referrals: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     referralBonus: { type: Number, default: 0 },
+    referralRewards: { type: Number, default: 0 },
     notificationPreferences: {
       email: { type: Boolean, default: true },
       push: { type: Boolean, default: true },

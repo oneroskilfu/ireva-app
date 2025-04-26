@@ -71,6 +71,8 @@ import investorKycRoutes from './api/investor/kyc';
 import transactionRouter from './transaction-routes';
 import walletRouter from './wallet-routes';
 import notificationRouter from './notification-routes';
+import adminKycRouter from './routes/admin-kyc-routes';
+import kycRouter from './routes/kyc';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up JWT authentication routes
@@ -90,7 +92,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log("Admin routes registered");
   
   // Set up admin KYC routes
-  app.use('/api/admin/kyc', adminKycRoutes);
+  app.use('/api/admin/kyc', adminKycRouter);
+  console.log("Admin KYC management routes registered");
   
   // Set up admin properties routes
   app.use('/api/admin/properties', adminPropertiesRoutes);
@@ -101,9 +104,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up investor KYC routes
   app.use('/api/investor/kyc', investorKycRoutes);
+  console.log("Investor KYC routes registered");
   
   // Set up KYC routes
-  app.use('/api/kyc', kycRoutes);
+  app.use('/api/kyc', kycRouter);
   console.log("KYC routes registered");
   
   // Set up Investment routes

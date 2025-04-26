@@ -167,7 +167,7 @@ exports.getKYCStatus = async (req, res) => {
 };
 
 /**
- * Admin endpoint to get all KYC applications
+ * Admin endpoint to get all KYC applications (paginated, filtered)
  * @route GET /api/admin/kyc
  * @access Admin
  */
@@ -197,6 +197,28 @@ exports.getAllKYCApplications = async (req, res) => {
     console.error('Error getting KYC applications:', error);
     res.status(500).json({ 
       message: 'Failed to get KYC applications',
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Admin endpoint to get all KYC submissions (simple version)
+ * @route GET /api/admin/kyc/all
+ * @access Admin
+ */
+exports.getAllKYCs = async (req, res) => {
+  try {
+    const kycs = await KYC.find()
+      .sort({ createdAt: -1 })
+      .populate('user', 'email firstName lastName');
+    
+    res.status(200).json(kycs);
+  } catch (error) {
+    console.error('Error fetching KYCs:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
       error: error.message 
     });
   }
@@ -284,6 +306,92 @@ exports.verifyKYCApplication = async (req, res) => {
     res.status(500).json({ 
       message: 'Failed to verify KYC application',
       error: error.message 
+    });
+  }
+};
+
+/**
+ * Admin endpoint to update KYC status (alternate naming convention)
+ * @route PATCH /api/admin/kyc/:id/status
+ * @access Admin
+ */
+exports.updateKYCStatus = async (req, res) => {
+  try {
+    const kycId = req.params.id;
+    const { status, adminRemarks } = req.body;
+
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const kyc = await KYC.findById(kycId);
+    
+    if (!kyc) {
+      return res.status(404).json({ message: 'KYC not found' });
+    }
+
+    // Update KYC document
+    kyc.status = status;
+    kyc.adminRemarks = adminRemarks;
+    kyc.updatedAt = Date.now();
+    
+    // If this is a verification action (changing from pending to approved/rejected)
+    if (kyc.status !== 'pending' && !kyc.verifiedAt) {
+      kyc.verifiedBy = req.user._id;
+      kyc.verifiedAt = Date.now();
+      
+      // If rejecting, store the admin remarks as rejection reason as well
+      if (status === 'rejected' && adminRemarks) {
+        kyc.rejectionReason = adminRemarks;
+      }
+      
+      // Notify user via email
+      try {
+        const userEmail = kyc.user.email || 'user@example.com';
+        
+        await sendNotificationEmail({
+          to: userEmail,
+          subject: `KYC Verification ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+          text: status === 'approved' 
+            ? 'Your KYC application has been approved. You can now make cryptocurrency investments on the platform.'
+            : `Your KYC application has been rejected. Reason: ${adminRemarks || 'Not specified'}`,
+          html: status === 'approved'
+            ? `
+              <h2>KYC Verification Approved</h2>
+              <p>Good news! Your KYC application has been approved.</p>
+              <p>You can now make cryptocurrency investments on the platform.</p>
+              <p>Thank you for using iREVA.</p>
+            `
+            : `
+              <h2>KYC Verification Rejected</h2>
+              <p>Unfortunately, your KYC application has been rejected.</p>
+              <p><strong>Reason:</strong> ${adminRemarks || 'Not specified'}</p>
+              <p>You can submit a new application with the correct information.</p>
+              <p>If you believe this is an error, please contact our support team.</p>
+            `
+        });
+      } catch (emailError) {
+        console.error('Failed to send KYC verification email:', emailError);
+      }
+    }
+
+    await kyc.save();
+    
+    res.status(200).json({ 
+      success: true,
+      message: 'KYC updated successfully',
+      kyc: {
+        id: kyc._id,
+        status: kyc.status,
+        updatedAt: kyc.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('Error updating KYC:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: error.message
     });
   }
 };

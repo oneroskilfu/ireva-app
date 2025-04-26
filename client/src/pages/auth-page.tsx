@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Info, Lock } from "lucide-react";
+import { Loader2, User, Info, Lock, Users } from "lucide-react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { loginFormSchema, registrationFormSchema } from "@/shared/validators/formValidators";
@@ -16,10 +16,30 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 type RegisterFormValues = z.infer<typeof registrationFormSchema>;
 
 export default function AuthPage() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  
+  // Extract referral code from URL if present
+  useEffect(() => {
+    // Check if we have a referral code in the URL
+    const params = new URLSearchParams(window.location.search);
+    const referralCode = params.get('ref');
+    
+    if (referralCode) {
+      // Set the referral code in the form and switch to register tab
+      registerForm.setValue('referredBy', referralCode);
+      setActiveTab('register');
+      
+      // Show toast notification
+      toast({
+        title: "Referral Code Applied",
+        description: `You've been referred by ${referralCode}`,
+        duration: 5000,
+      });
+    }
+  }, []);
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -42,6 +62,7 @@ export default function AuthPage() {
       firstName: "",
       lastName: "",
       phoneNumber: "",
+      referredBy: "",
       agreeToTerms: false,
     },
   });
@@ -338,6 +359,33 @@ export default function AuthPage() {
                     {registerForm.formState.errors.confirmPassword && (
                       <p className="text-sm text-red-500">
                         {registerForm.formState.errors.confirmPassword.message}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1 mb-4">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Users className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <Input
+                        type="text"
+                        placeholder="Referral Code (e.g., IRV-12345)"
+                        className="pl-10 py-6 rounded-xl border-gray-200"
+                        {...registerForm.register("referredBy")}
+                      />
+                    </div>
+                    {registerForm.formState.errors.referredBy && (
+                      <p className="text-sm text-red-500">
+                        {registerForm.formState.errors.referredBy.message}
+                      </p>
+                    )}
+                    {registerForm.getValues("referredBy") && (
+                      <p className="text-sm text-green-600 flex items-center">
+                        <svg className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Referral code applied
                       </p>
                     )}
                   </div>
