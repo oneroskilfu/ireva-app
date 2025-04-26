@@ -1,7 +1,7 @@
 {
   "short_name": "iREVA",
-  "name": "iREVA | Real Estate Investment Platform",
-  "description": "Invest in premium African real estate properties with blockchain technology security",
+  "name": "iREVA - Real Estate Investment Platform",
+  "description": "Invest smartly in prime African real estate with iREVA. Crowdfund. Grow. Prosper.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -23,14 +23,24 @@
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ],
   "start_url": "/",
-  "display": "standalone",
-  "theme_color": "#673ab7",
   "background_color": "#ffffff",
-  "orientation": "portrait",
+  "display": "standalone",
   "scope": "/",
+  "theme_color": "#5C4033",
+  "orientation": "portrait-primary",
   "shortcuts": [
     {
       "name": "Dashboard",

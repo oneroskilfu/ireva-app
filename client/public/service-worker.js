@@ -1,15 +1,17 @@
 // Service Worker for iREVA PWA
-const CACHE_NAME = "ireva-cache-v1";
+const CACHE_NAME = "ireva-cache-v2";
 const urlsToCache = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/logo192.png",
-  "/logo512.png",
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/logo192.png',
+  '/logo512.png'
 ];
 
-// Install event handler - caches assets
-self.addEventListener("install", (event) => {
+// Install Service Worker
+self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -24,8 +26,8 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activation event handler - cleans up old caches
-self.addEventListener("activate", (event) => {
+// Activate Service Worker
+self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activating...');
   
   event.waitUntil(
@@ -45,8 +47,8 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch event handler
-self.addEventListener("fetch", (event) => {
+// Fetch cached assets
+self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
