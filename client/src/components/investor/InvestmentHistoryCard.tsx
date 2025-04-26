@@ -4,241 +4,170 @@ import {
   CardContent, 
   Typography, 
   Box, 
-  Chip, 
-  Avatar,
-  Divider,
-  Button,
+  Chip,
+  LinearProgress,
   useTheme
 } from '@mui/material';
-import { formatCurrency, formatDate } from '@/utils/formatters';
-import { Investment } from '@shared/schema';
-
-// Icons
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import TouchOptimizedButton from '../ui/TouchOptimizedButton';
+import { ArrowForward } from '@mui/icons-material';
 
 interface InvestmentHistoryCardProps {
-  investment: Investment;
-  onViewDetails?: (id: string) => void;
+  property: {
+    id: number;
+    name: string;
+    location: string;
+    imageUrl: string;
+    type: string;
+    targetReturn: string;
+    term: number;
+    totalFunding: number;
+    currentFunding: number;
+    investmentDate?: string;
+    investmentAmount?: number;
+    returnPaid?: number;
+    nextPaymentDate?: string;
+  };
+  onClick?: (id: number) => void;
 }
 
-export default function InvestmentHistoryCard({ 
-  investment,
-  onViewDetails
-}: InvestmentHistoryCardProps) {
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-NG', { 
+    style: 'currency', 
+    currency: 'NGN',
+    maximumFractionDigits: 0
+  }).format(amount);
+};
+
+const InvestmentHistoryCard: React.FC<InvestmentHistoryCardProps> = ({ property, onClick }) => {
   const theme = useTheme();
+  const progress = (property.currentFunding / property.totalFunding) * 100;
   
-  // Status chip appearance based on investment status
-  const getStatusChip = (status: string) => {
-    const statusConfig = {
-      active: {
-        icon: <CheckCircleIcon fontSize="small" />,
-        color: 'success',
-        label: 'Active'
-      },
-      pending: {
-        icon: <HourglassEmptyIcon fontSize="small" />,
-        color: 'warning',
-        label: 'Pending'
-      },
-      completed: {
-        icon: <CheckCircleIcon fontSize="small" />,
-        color: 'primary',
-        label: 'Completed'
-      },
-      cancelled: {
-        icon: <WarningIcon fontSize="small" />,
-        color: 'error',
-        label: 'Cancelled'
-      },
-      refunded: {
-        icon: <WarningIcon fontSize="small" />,
-        color: 'error',
-        label: 'Refunded'
-      }
-    };
-    
-    const config = statusConfig[status.toLowerCase()] || statusConfig.pending;
-    
-    return (
-      <Chip 
-        icon={config.icon}
-        label={config.label}
-        color={config.color as any}
-        size="small"
-        sx={{ fontWeight: 'medium' }}
-      />
-    );
-  };
-  
-  const handleViewDetailsClick = () => {
-    if (onViewDetails && investment.id) {
-      onViewDetails(investment.id.toString());
+  const handleClick = () => {
+    if (onClick) {
+      onClick(property.id);
     }
   };
-  
+
   return (
     <Card 
       sx={{ 
-        marginBottom: 2, 
+        mb: 2, 
         borderRadius: 2,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        // Add subtle border
-        border: `1px solid ${theme.palette.divider}`,
-        transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-        }
+        overflow: 'hidden',
+        boxShadow: theme.shadows[3]
       }}
     >
-      <CardContent sx={{ p: 0 }}>
-        {/* Header with property name and status */}
-        <Box sx={{ 
-          p: 2, 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `1px solid ${theme.palette.divider}`
-        }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-            {investment.property?.name || 'Property Investment'}
+      {/* Property image (as a header) */}
+      <Box 
+        sx={{ 
+          position: 'relative',
+          height: 140,
+          backgroundImage: `url(${property.imageUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.7))',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '100%',
+            p: 1.5,
+          }}
+        >
+          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+            {property.name}
           </Typography>
-          {getStatusChip(investment.status || 'pending')}
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+            {property.location} • {property.type.charAt(0).toUpperCase() + property.type.slice(1)}
+          </Typography>
         </Box>
-        
-        {/* Main content */}
-        <Box sx={{ p: 2 }}>
-          {/* Investment amount */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            mb: 1.5,
-            gap: 1
-          }}>
-            <Avatar 
-              sx={{ 
-                bgcolor: theme.palette.primary.light,
-                width: 32,
-                height: 32
-              }}
-            >
-              <AccountBalanceIcon fontSize="small" />
-            </Avatar>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Investment Amount
-              </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {formatCurrency(Number(investment.totalAmount))}
-              </Typography>
-            </Box>
+      </Box>
+
+      <CardContent sx={{ p: 2 }}>
+        {/* Display primary information about the investment */}
+        <Box sx={{ mb: 1.5 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
+            <Typography variant="body2" color="text.secondary">Your Investment</Typography>
+            <Chip 
+              label={`${property.targetReturn}% ROI`} 
+              color="success" 
+              size="small"
+              sx={{ height: 24, fontWeight: 'medium' }}
+            />
           </Box>
-          
-          {/* Investment units */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            mb: 1.5,
-            gap: 1
-          }}>
-            <Avatar 
-              sx={{ 
-                bgcolor: theme.palette.secondary.light,
-                width: 32,
-                height: 32
-              }}
-            >
-              <LocalOfferIcon fontSize="small" />
-            </Avatar>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Units Invested
-              </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {investment.unitsInvested} {investment.unitsInvested === 1 ? 'Unit' : 'Units'}
-              </Typography>
-            </Box>
+          <Typography variant="h6" fontWeight="bold" sx={{ mb: 0.5 }}>
+            {property.investmentAmount ? formatCurrency(property.investmentAmount) : 'N/A'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {property.investmentDate ? `Invested on ${property.investmentDate}` : ''}
+          </Typography>
+        </Box>
+
+        {/* Funding progress */}
+        <Box sx={{ mb: 2 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
+            <Typography variant="body2" color="text.secondary">
+              Funding Progress
+            </Typography>
+            <Typography variant="body2" fontWeight="medium">
+              {Math.round(progress)}%
+            </Typography>
           </Box>
-          
-          {/* ROI earned */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            mb: 1.5,
-            gap: 1
-          }}>
-            <Avatar 
-              sx={{ 
-                bgcolor: theme.palette.success.light,
-                width: 32,
-                height: 32
-              }}
-            >
-              <TimelineIcon fontSize="small" />
-            </Avatar>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                ROI Earned
-              </Typography>
-              <Typography variant="body1" fontWeight="medium" color="success.main">
-                {investment.roiEarned ? formatCurrency(Number(investment.roiEarned)) : 'N/A'}
-              </Typography>
-            </Box>
-          </Box>
-          
-          {/* Investment date */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            mb: 1.5,
-            gap: 1
-          }}>
-            <Avatar 
-              sx={{ 
-                bgcolor: theme.palette.info.light,
-                width: 32,
-                height: 32
-              }}
-            >
-              <CalendarTodayIcon fontSize="small" />
-            </Avatar>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Investment Date
-              </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {investment.investedAt ? formatDate(investment.investedAt) : 'N/A'}
-              </Typography>
-            </Box>
+          <LinearProgress 
+            variant="determinate" 
+            value={progress} 
+            sx={{ height: 8, borderRadius: 4 }}
+          />
+          <Box display="flex" justifyContent="space-between" mt={0.5}>
+            <Typography variant="caption" color="text.secondary">
+              {formatCurrency(property.currentFunding)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {formatCurrency(property.totalFunding)}
+            </Typography>
           </Box>
         </Box>
-        
-        <Divider />
-        
-        {/* Footer with view details button */}
-        <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button 
-            endIcon={<ArrowForwardIcon />}
-            onClick={handleViewDetailsClick}
-            sx={{ 
-              minHeight: '42px', 
-              borderRadius: '8px',
-              px: 2,
-              textTransform: 'none',
-              fontWeight: 'medium'
-            }}
-          >
-            View Details
-          </Button>
+
+        {/* Additional information */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+          <Box>
+            <Typography variant="body2" color="text.secondary">Term</Typography>
+            <Typography variant="body1" fontWeight="medium">
+              {property.term} months
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">Return Paid</Typography>
+            <Typography variant="body1" fontWeight="medium">
+              {property.returnPaid ? formatCurrency(property.returnPaid) : '₦0'}
+            </Typography>
+          </Box>
         </Box>
+
+        {/* Action button */}
+        <TouchOptimizedButton
+          endIcon={<ArrowForward />}
+          onClick={handleClick}
+          size="medium"
+          fullWidth
+        >
+          View Details
+        </TouchOptimizedButton>
       </CardContent>
     </Card>
   );
-}
+};
+
+export default InvestmentHistoryCard;

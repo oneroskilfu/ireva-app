@@ -6,178 +6,211 @@ import {
   ListItem, 
   ListItemButton, 
   ListItemIcon, 
-  ListItemText, 
-  Box, 
-  Divider, 
-  Avatar, 
-  Typography 
+  ListItemText,
+  Box,
+  Typography,
+  Divider,
+  useTheme
 } from '@mui/material';
-import { SwipeableDrawer } from '@mui/material';
-import { useTheme } from '@mui/material';
+import { 
+  Menu as MenuIcon, 
+  Home as HomeIcon,
+  Storefront as StorefrontIcon,
+  AccountBalanceWallet as WalletIcon,
+  BarChart as BarChartIcon,
+  ContactSupport as ContactSupportIcon,
+  Settings as SettingsIcon,
+  ChevronRight as ChevronRightIcon,
+  Person as PersonIcon,
+  NotificationsActive as NotificationsIcon
+} from '@mui/icons-material';
 import { Link, useLocation } from 'wouter';
 
-// Icons
-import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
-import PersonIcon from '@mui/icons-material/Person';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import HelpIcon from '@mui/icons-material/Help';
-import LogoutIcon from '@mui/icons-material/Logout';
-
-// User auth context
-import { useAuth } from '@/hooks/use-auth';
-
-interface MobileNavProps {
-  title?: string;
+// Interface for navigation items
+interface NavItem {
+  text: string;
+  path: string;
+  icon: React.ReactNode;
 }
 
-export default function MobileNavDrawer({ title = 'iREVA' }: MobileNavProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const { user, logoutMutation } = useAuth();
-  const theme = useTheme();
+// Navigation items for the app
+const navItems: NavItem[] = [
+  { text: 'Dashboard', path: '/dashboard', icon: <HomeIcon /> },
+  { text: 'Properties', path: '/properties', icon: <StorefrontIcon /> },
+  { text: 'My Investments', path: '/investments', icon: <BarChartIcon /> },
+  { text: 'Wallet', path: '/wallet', icon: <WalletIcon /> },
+  { text: 'Support', path: '/support', icon: <ContactSupportIcon /> },
+  { text: 'Settings', path: '/settings', icon: <SettingsIcon /> },
+];
+
+const MobileNavDrawer: React.FC = () => {
+  const [open, setOpen] = useState(false);
   const [location] = useLocation();
-  
-  const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
-    if (
-      event &&
-      event.type === 'keydown' &&
-      ((event as React.KeyboardEvent).key === 'Tab' ||
-        (event as React.KeyboardEvent).key === 'Shift')
-    ) {
-      return;
-    }
-    setIsOpen(open);
+  const theme = useTheme();
+
+  const toggleDrawer = (newOpen: boolean) => () => {
+    setOpen(newOpen);
   };
-  
-  const handleLogout = () => {
-    logoutMutation.mutate();
-    setIsOpen(false);
+
+  // Handle swipe gestures for the drawer (open and close)
+  const handleSwipeOpen = () => {
+    setOpen(true);
   };
-  
-  const navigationItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Wallet', icon: <AccountBalanceWalletIcon />, path: '/wallet' },
-    { text: 'Investments', icon: <BusinessCenterIcon />, path: '/investments' },
-    { text: 'Properties', icon: <ShowChartIcon />, path: '/properties' },
-    { text: 'KYC Verification', icon: <VerifiedUserIcon />, path: '/kyc' },
-    { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
-    { text: 'Help & Support', icon: <HelpIcon />, path: '/support' },
-  ];
-  
+
   return (
     <>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        padding: 1,
-        justifyContent: 'space-between',
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        position: 'sticky',
-        top: 0,
-        backgroundColor: theme.palette.background.paper,
-        zIndex: 10,
-      }}>
-        <IconButton 
-          edge="start" 
-          color="inherit" 
-          aria-label="menu"
-          onClick={toggleDrawer(true)}
-          sx={{ p: '12px' }} // Larger touch target
-        >
-          <MenuIcon />
-        </IconButton>
-        
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, ml: 1 }}>
-          {title}
-        </Typography>
-      </Box>
-      
-      <SwipeableDrawer
-        anchor="left"
-        open={isOpen}
-        onClose={toggleDrawer(false)}
-        onOpen={toggleDrawer(true)}
+      {/* Hamburger menu button */}
+      <IconButton 
+        color="inherit" 
+        edge="start" 
+        onClick={toggleDrawer(true)}
         sx={{
-          '& .MuiDrawer-paper': { 
-            width: { xs: '85%', sm: 280 },
-            boxSizing: 'border-box',
+          position: 'fixed',
+          top: 16,
+          left: 16,
+          zIndex: 1100,
+          backgroundColor: 'background.paper',
+          boxShadow: 2,
+          '&:hover': {
+            backgroundColor: 'action.hover',
           },
         }}
       >
-        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Avatar 
-            sx={{ 
-              width: 80, 
-              height: 80, 
-              mb: 1,
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)'
+        <MenuIcon />
+      </IconButton>
+
+      {/* Swipe area to open drawer */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '20px',
+          height: '100%',
+          zIndex: 1000,
+          cursor: 'grab',
+        }}
+        onClick={handleSwipeOpen}
+      />
+
+      {/* Navigation drawer */}
+      <Drawer
+        anchor="left"
+        open={open}
+        onClose={toggleDrawer(false)}
+        ModalProps={{
+          keepMounted: true, // Better performance on mobile
+        }}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 280,
+            boxSizing: 'border-box',
+            pb: 2,
+          },
+        }}
+        variant="temporary"
+      >
+        {/* User profile section */}
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{
+              width: 50,
+              height: 50,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-          </Avatar>
-          <Typography variant="h6">
-            {user?.firstName && user?.lastName 
-              ? `${user.firstName} ${user.lastName}`
-              : user?.username || 'User'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {user?.email || ''}
+            <PersonIcon sx={{ color: 'white', fontSize: 30 }} />
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold">John Doe</Typography>
+            <Typography variant="body2" color="text.secondary">Premium Investor</Typography>
+          </Box>
+        </Box>
+
+        <Divider />
+
+        {/* Notification banner */}
+        <Box 
+          sx={{ 
+            m: 2, 
+            p: 1.5, 
+            borderRadius: 2, 
+            backgroundColor: 'primary.light', 
+            color: 'primary.contrastText',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          <NotificationsIcon />
+          <Typography variant="body2">
+            You have 3 new notifications
           </Typography>
         </Box>
-        
-        <Divider />
-        
-        <List>
-          {navigationItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
+
+        {/* Navigation items */}
+        <List sx={{ pt: 0 }}>
+          {navItems.map((item) => (
+            <ListItem 
+              key={item.text} 
+              disablePadding
+              sx={{ 
+                mb: 0.5, 
+                '& .MuiListItemButton-root': {
+                  py: 1.5, // Larger padding for touch targets
+                },
+              }}
+            >
               <ListItemButton 
                 component={Link} 
                 href={item.path}
                 selected={location === item.path}
                 onClick={toggleDrawer(false)}
                 sx={{
-                  borderRadius: '0 20px 20px 0',
+                  borderRadius: 1,
                   mx: 1,
-                  py: 1.5, // Taller buttons for touch targets
                   '&.Mui-selected': {
-                    backgroundColor: 'primary.light',
+                    bgcolor: 'primary.light',
                     '&:hover': {
-                      backgroundColor: 'primary.light',
+                      bgcolor: 'primary.light',
                     },
                     '& .MuiListItemIcon-root': {
                       color: 'primary.main',
                     },
+                    '& .MuiListItemText-primary': {
+                      color: 'primary.main',
+                      fontWeight: 'bold',
+                    },
                   },
                 }}
               >
-                <ListItemIcon>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{
+                    fontSize: '16px', // Larger text for better readability
+                  }}
+                />
+                <ChevronRightIcon />
               </ListItemButton>
             </ListItem>
           ))}
         </List>
-        
-        <Divider sx={{ mt: 'auto' }} />
-        
-        <List>
-          <ListItem disablePadding>
-            <ListItemButton 
-              onClick={handleLogout}
-              sx={{ py: 1.5 }} // Taller button for touch target
-            >
-              <ListItemIcon>
-                <LogoutIcon />
-              </ListItemIcon>
-              <ListItemText primary="Logout" />
-            </ListItemButton>
-          </ListItem>
-        </List>
-      </SwipeableDrawer>
+
+        <Box sx={{ flexGrow: 1 }} />
+
+        <Box sx={{ p: 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            iREVA - v1.0.0 | © 2025
+          </Typography>
+        </Box>
+      </Drawer>
     </>
   );
-}
+};
+
+export default MobileNavDrawer;

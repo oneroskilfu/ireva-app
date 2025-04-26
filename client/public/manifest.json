@@ -1,21 +1,52 @@
 {
   "short_name": "iREVA",
-  "name": "iREVA - Real Estate Investment Platform",
+  "name": "iREVA | Real Estate Investment Platform",
+  "description": "Invest in premium African real estate properties with blockchain technology security",
   "icons": [
     {
-      "src": "/logo192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
     },
     {
-      "src": "/logo512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "maskable_icon.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
     }
   ],
-  "start_url": ".",
-  "background_color": "#ffffff",
+  "start_url": "/",
   "display": "standalone",
   "theme_color": "#673ab7",
-  "orientation": "portrait-primary"
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your investment dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "shortcuts/dashboard.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Browse Properties",
+      "short_name": "Properties",
+      "description": "Browse available properties to invest in",
+      "url": "/properties",
+      "icons": [{ "src": "shortcuts/properties.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
