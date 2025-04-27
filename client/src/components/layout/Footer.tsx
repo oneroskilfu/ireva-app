@@ -80,6 +80,9 @@ export default function Footer() {
                 <Link component={WouterLink} href="/legal/aml-statement" color="text.secondary" underline="hover">
                   AML Statement
                 </Link>
+                <Link component={WouterLink} href="/legal/gdpr-commitment" color="text.secondary" underline="hover">
+                  GDPR Commitment
+                </Link>
               </Box>
             </Box>
 

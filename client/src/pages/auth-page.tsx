@@ -400,8 +400,9 @@ export default function AuthPage() {
                       I agree to the <Link href="/legal/terms-of-service" className="text-[#16b5a0] hover:underline">Terms of Service</Link>, 
                       <Link href="/legal/privacy-policy" className="text-[#16b5a0] hover:underline"> Privacy Policy</Link>, 
                       <Link href="/legal/cookies-policy" className="text-[#16b5a0] hover:underline"> Cookies Policy</Link>, 
-                      <Link href="/legal/investor-risk-disclosure" className="text-[#16b5a0] hover:underline"> Investor Risk Disclosure</Link>, and
-                      <Link href="/legal/aml-statement" className="text-[#16b5a0] hover:underline"> AML Statement</Link>. 
+                      <Link href="/legal/investor-risk-disclosure" className="text-[#16b5a0] hover:underline"> Investor Risk Disclosure</Link>,
+                      <Link href="/legal/aml-statement" className="text-[#16b5a0] hover:underline"> AML Statement</Link>, and
+                      <Link href="/legal/gdpr-commitment" className="text-[#16b5a0] hover:underline"> GDPR Commitment</Link>. 
                       By registering, I confirm I am at least 18 years old and understand the risks of property investment.
                     </label>
                   </div>
