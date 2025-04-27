@@ -76,6 +76,7 @@ import investorKycRoutes from './api/investor/kyc';
 import transactionRouter from './transaction-routes';
 import walletRouter from './wallet-routes';
 import notificationRouter from './notification-routes';
+import { adminNotificationRouter } from './routes/admin-notification-routes';
 import adminKycRouter from './routes/admin-kyc-routes';
 import kycRouter from './routes/kyc';
 
@@ -99,6 +100,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up admin KYC routes
   app.use('/api/admin/kyc', adminKycRouter);
   console.log("Admin KYC management routes registered");
+  
+  // Set up admin notification routes
+  app.use('/api/admin/notifications', adminNotificationRouter);
+  console.log("Admin notification routes registered");
   
   // Set up admin properties routes
   app.use('/api/admin/properties', adminPropertiesRoutes);

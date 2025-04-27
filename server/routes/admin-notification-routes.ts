@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { ensureAdmin } from '../auth-jwt';
 import { db } from '../db';
-import { notifications, users } from '../../shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { notifications, users, insertNotificationSchema } from '../../shared/schema';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { getSocketIo } from '../socketio';
+import { zodValidator } from '../utils/validators';
 
 export const adminNotificationRouter = Router();
 
@@ -39,7 +40,7 @@ adminNotificationRouter.post('/user/:userId', ensureAdmin, async (req: Request, 
 
     const [newNotification] = await db.insert(notifications)
       .values({
-        userId,
+        userId: userId.toString(), // Convert to string as schema expects string
         title,
         message,
         link: link || null,
@@ -86,7 +87,7 @@ adminNotificationRouter.post('/broadcast', ensureAdmin, async (req: Request, res
     }
 
     const notificationsToInsert = allUsers.map(user => ({
-      userId: user.id,
+      userId: user.id.toString(), // Convert to string as schema expects string
       title,
       message,
       link: link || null,
@@ -129,13 +130,12 @@ adminNotificationRouter.post('/property/:propertyId', ensureAdmin, async (req: R
 
     // Get all users who invested in this property
     // This SQL query will depend on your schema structure for investments
-    const query = `
+    // Using SQL template tag for parameterized queries
+    const result = await db.execute(sql`
       SELECT DISTINCT u.id FROM users u
       JOIN investments i ON u.id = i.userId
-      WHERE i.propertyId = $1
-    `;
-    
-    const result = await db.execute(query, [propertyId]);
+      WHERE i.projectId = ${propertyId}
+    `);
     const investorIds = result.rows.map((row: any) => row.id);
     
     if (investorIds.length === 0) {
@@ -143,7 +143,7 @@ adminNotificationRouter.post('/property/:propertyId', ensureAdmin, async (req: R
     }
 
     const notificationsToInsert = investorIds.map(userId => ({
-      userId,
+      userId: userId.toString(), // Convert to string as schema expects string
       title,
       message,
       link: link || `/investor/properties/${propertyId}`,
