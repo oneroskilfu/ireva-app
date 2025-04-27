@@ -23,7 +23,7 @@ function RequestPermissionButton() {
       if (permission === 'granted') {
         // Get the token
         const currentToken = await getToken(messaging, {
-          vapidKey: "BL_hy-dBVTtm08ZIp9lgWIrEcNd8YTwjQHuFyEZYcgbJ3wNPgPPtHZ-1lfHQUJOX_hY2ykJcIoVJPaKXQAQy5Vs",
+          vapidKey: "BJbmSUisOcoOrDhFmYs5BcUvGefmSt6WIaeYhGm9xuysEy4JuE-XlqiXVOI5pYy-ztNS0qlfCJpcLNqGju0OV9s",
         });
 
         if (currentToken) {
