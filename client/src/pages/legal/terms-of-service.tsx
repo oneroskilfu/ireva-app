@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layout } from '@/components/layout/Layout';
-import { Container, Typography, Box, Breadcrumbs, Link } from '@mui/material';
+import { Container, Typography, Box, Breadcrumbs, Link, Divider } from '@mui/material';
 import { Link as WouterLink } from 'wouter';
 
 const TermsOfServicePage: React.FC = () => {
@@ -15,217 +15,230 @@ const TermsOfServicePage: React.FC = () => {
         </Breadcrumbs>
 
         <Typography variant="h2" component="h1" gutterBottom sx={{ mb: 4 }}>
-          Terms of Service
+          iREVA Terms of Service
         </Typography>
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Last Updated: April 27, 2025
+            Effective Date: April 1, 2025
           </Typography>
           
           <Typography variant="body1" paragraph>
-            Please read these Terms of Service ("Terms") carefully before using the iREVA platform and services.
+            Welcome to iREVA!
+            These Terms of Service ("Terms") govern your use of the iREVA platform and services ("Services").
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            By accessing or using iREVA, you agree to be bound by these Terms. If you do not agree, do not use the platform.
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Acceptance of Terms
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            By accessing or using our platform, you agree to be bound by these Terms and our Privacy Policy. If you do not agree with any part of these Terms, you may not use our services.
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Eligibility
+            1. Eligibility
           </Typography>
           
           <Typography variant="body1" paragraph>
-            You must be at least 18 years old and have the legal capacity to enter into a binding agreement to use our services. By using our platform, you represent and warrant that you meet these requirements.
+            You must:
           </Typography>
           
-          <Typography variant="body1" paragraph>
-            Certain investment opportunities may require you to be an accredited investor or meet specific eligibility criteria. You are responsible for ensuring that you meet all applicable requirements for any investment you participate in.
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Be at least 18 years old.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Have full legal capacity to form binding contracts.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Not be restricted from investing under applicable laws (including securities laws).</Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            You must also complete all required KYC (Know Your Customer) verification processes.
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Account Registration and Security
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            To access certain features of our platform, you must create an account. You are responsible for:
-          </Typography>
-          
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                Providing accurate, current, and complete information during registration
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Maintaining the confidentiality of your account credentials
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                All activities that occur under your account
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Notifying us immediately of any unauthorized use of your account
-              </Typography>
-            </li>
-          </ul>
-          
-          <Typography variant="body1" paragraph>
-            We reserve the right to refuse service, terminate accounts, or cancel transactions at our discretion.
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Investment Risks
+            2. Account Registration
           </Typography>
           
           <Typography variant="body1" paragraph>
-            Investing in real estate and using cryptocurrency involves significant risks, including:
+            You agree to:
           </Typography>
           
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                Loss of principal investment
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Illiquidity and difficulty in exiting investments
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Market fluctuations and economic downturns
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Regulatory changes that may affect real estate or cryptocurrency
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Cryptocurrency volatility and technical risks
-              </Typography>
-            </li>
-          </ul>
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Provide accurate and complete information.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Maintain confidentiality of your login credentials.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Notify us immediately if you suspect unauthorized use.</Typography>
+            </Box>
+          </Box>
           
-          <Typography variant="body1" paragraph>
-            You should carefully review our Investor Risk Disclosure and conduct your own due diligence before making any investment. We strongly recommend consulting with financial, legal, and tax advisors.
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            You are responsible for all activities conducted under your account.
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            KYC and AML Compliance
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            You agree to comply with our Know Your Customer (KYC) and Anti-Money Laundering (AML) procedures, which may include:
-          </Typography>
-          
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                Providing identification documents and personal information
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Verifying the source of funds used for investments
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Ongoing monitoring of transactions
-              </Typography>
-            </li>
-          </ul>
-          
-          <Typography variant="body1" paragraph>
-            Failure to complete these procedures may result in limited access to our services or termination of your account.
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Intellectual Property
+            3. Investment Disclosures
           </Typography>
           
-          <Typography variant="body1" paragraph>
-            All content, features, and functionality of our platform, including text, graphics, logos, icons, and software, are owned by iREVA or our licensors and are protected by copyright, trademark, and other intellectual property laws.
-          </Typography>
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">All investments involve risks, including possible loss of capital.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Past performance does not guarantee future results.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">You are solely responsible for your investment decisions.</Typography>
+            </Box>
+          </Box>
           
-          <Typography variant="body1" paragraph>
-            You may not reproduce, distribute, modify, create derivative works of, publicly display, publicly perform, republish, download, or store any material from our platform without our prior written consent.
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            You should consult independent financial or legal advisors if needed.
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Limitation of Liability
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            To the maximum extent permitted by law, iREVA and our affiliates, officers, directors, employees, and agents shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from or related to your use of our platform and services, even if advised of the possibility of such damages.
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            Our total liability for all claims arising from or related to these Terms shall not exceed the amount you have paid us in the six months preceding the claim.
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Governing Law
+            4. Platform Use
           </Typography>
           
           <Typography variant="body1" paragraph>
-            These Terms shall be governed by and construed in accordance with the laws of Nigeria, without regard to its conflict of law provisions. Any dispute arising from these Terms shall be resolved exclusively in the courts of Nigeria.
+            You agree not to:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Violate any law, regulation, or these Terms.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Use the platform to transmit malicious software.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Interfere with the functionality or security of the platform.</Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            We may suspend or terminate your account if you breach these Terms.
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Changes to Terms
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            We may update these Terms from time to time. We will notify you of any material changes by posting the new Terms on our platform or by sending you an email. Your continued use of our services after such changes constitutes your acceptance of the revised Terms.
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Contact Us
+            5. Fees
           </Typography>
           
           <Typography variant="body1" paragraph>
-            If you have any questions about these Terms, please contact us at:
+            iREVA may charge platform fees, transaction fees, or asset management fees.
+            Details will be disclosed clearly before investment.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            6. Crypto Transactions
           </Typography>
           
           <Typography variant="body1" paragraph>
-            Email: legal@ireva.com
+            If you invest using cryptocurrencies:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">You accept the inherent volatility and risk.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Blockchain transactions are irreversible.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">iREVA is not responsible for lost private keys or incorrect wallet addresses.</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            7. No Financial Advice
           </Typography>
           
           <Typography variant="body1" paragraph>
-            Address: 123 Investment Street, Lagos, Nigeria
+            iREVA is a technology platform.
+            We do not provide investment, tax, or legal advice.
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            You acknowledge that any investment decision is made solely at your own risk.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            8. Limitation of Liability
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            To the maximum extent permitted by law:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">iREVA shall not be liable for indirect, incidental, special, or consequential damages.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Our liability shall not exceed the fees paid by you to us over the past 12 months.</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            9. Amendments
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            We may update these Terms at any time.
+            Material changes will be communicated via email or platform notification.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            10. Contact
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            For questions about these Terms:
+            Email: ireva.investments@gmail.com
           </Typography>
         </Box>
       </Container>
