@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Info, Lock, Users } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { loginFormSchema, registrationFormSchema } from "@/shared/validators/formValidators";
 
@@ -390,13 +390,18 @@ export default function AuthPage() {
                     )}
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-start space-x-2">
                     <Checkbox 
                       id="agree-terms" 
                       {...registerForm.register("agreeToTerms")}
+                      className="mt-1"
                     />
                     <label htmlFor="agree-terms" className="text-sm text-gray-600">
-                      I agree to the <a href="#" className="text-[#16b5a0] hover:underline">Terms and Conditions</a>
+                      I agree to the <Link href="/legal/terms-of-service" className="text-[#16b5a0] hover:underline">Terms of Service</Link>, 
+                      <Link href="/legal/privacy-policy" className="text-[#16b5a0] hover:underline"> Privacy Policy</Link>, 
+                      <Link href="/legal/cookies-policy" className="text-[#16b5a0] hover:underline"> Cookies Policy</Link>, and 
+                      <Link href="/legal/investor-risk-disclosure" className="text-[#16b5a0] hover:underline"> Investor Risk Disclosure</Link>. 
+                      By registering, I confirm I am at least 18 years old and understand the risks of property investment.
                     </label>
                   </div>
                   {registerForm.formState.errors.agreeToTerms && (
