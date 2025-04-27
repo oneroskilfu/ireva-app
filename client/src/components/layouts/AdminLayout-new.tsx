@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import NotificationBell from "@/components/NotificationBell";
 import {
   LayoutDashboard,
   Users,
@@ -15,7 +16,6 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   User
 } from "lucide-react";
 import { 
@@ -216,35 +216,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               </Button>
             </div>
             <div className="flex items-center space-x-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-primary"></span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <div className="max-h-80 overflow-y-auto">
-                    <div className="py-2 px-3 hover:bg-muted rounded-sm cursor-pointer">
-                      <p className="font-medium">New user registration</p>
-                      <p className="text-sm text-muted-foreground">John Doe just registered</p>
-                      <p className="text-xs text-muted-foreground mt-1">10 min ago</p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <div className="py-2 px-3 hover:bg-muted rounded-sm cursor-pointer">
-                      <p className="font-medium">Property funded</p>
-                      <p className="text-sm text-muted-foreground">Skyline Apartments reached 100%</p>
-                      <p className="text-xs text-muted-foreground mt-1">1 hour ago</p>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer justify-center font-medium">
-                    View all notifications
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationBell />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

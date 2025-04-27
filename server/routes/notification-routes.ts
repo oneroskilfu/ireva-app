@@ -27,6 +27,27 @@ notificationRouter.get('/', authMiddleware, async (req: Request, res: Response) 
   }
 });
 
+// Get recent notifications (limited to 5) for the current user
+notificationRouter.get('/recent', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.jwtPayload?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const recentNotifications = await db.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId.toString()))
+      .orderBy(desc(notifications.createdAt))
+      .limit(5);
+
+    return res.status(200).json(recentNotifications);
+  } catch (error) {
+    console.error('Error fetching recent notifications:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Get unread notifications count for the current user
 notificationRouter.get('/unread', authMiddleware, async (req: Request, res: Response) => {
   try {
