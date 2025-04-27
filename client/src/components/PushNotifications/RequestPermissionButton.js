@@ -68,7 +68,19 @@ function RequestPermissionButton() {
   
   const saveTokenToServer = async (token) => {
     try {
-      await axios.post('/api/push-notifications/subscribe', { token });
+      // Using fetch API as requested in your example
+      const response = await fetch('/api/push-notifications/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       console.log('Token saved to server successfully');
     } catch (error) {
       console.error('Error saving token to server:', error);

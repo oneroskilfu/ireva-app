@@ -62,6 +62,7 @@ import escrowRouter from './routes/escrow-routes';
 // Import Push notification routes
 import { pushNotificationRouter } from './routes/push-notification-routes';
 import { sendNotificationRouter } from './routes/send-notification-routes';
+import { savePushTokenRouter } from './routes/save-push-token-routes';
 import fs from 'fs';
 import path from 'path';
 
