@@ -1,9 +1,9 @@
+import React, { useEffect, useState, lazy, Suspense, StrictMode } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/hooks/use-theme";
-import { useEffect, useState, lazy, Suspense, StrictMode } from "react";
 import { DebugHelper } from "@/components/DebugHelper";
 import PWAInstallToast from "@/components/PWAInstallToast";
 import AuthMiddleware from "@/middleware/AuthMiddleware";
@@ -123,36 +123,39 @@ function Router() {
   return (
     <Switch>
       {/* Public Routes */}
-      <Route path="/" component={() => (
-        <React.Suspense fallback={
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            height: '100vh',
-            background: '#f5f5f5'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                display: 'inline-block',
-                width: '40px',
-                height: '40px',
-                margin: '20px auto',
-                border: '4px solid rgba(0,0,0,0.1)',
-                borderRadius: '50%',
-                borderTop: '4px solid #4F46E5',
-                animation: 'spin 1s linear infinite'
-              }} />
-              <style>
-                {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
-              </style>
-              <p style={{ fontFamily: 'Arial', color: '#333' }}>Loading iREVA...</p>
+      <Route path="/" component={() => {
+        const StandalonePage = React.lazy(() => import("@/pages/standalone-page"));
+        return (
+          <React.Suspense fallback={
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '100vh',
+              background: '#f5f5f5'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  display: 'inline-block',
+                  width: '40px',
+                  height: '40px',
+                  margin: '20px auto',
+                  border: '4px solid rgba(0,0,0,0.1)',
+                  borderRadius: '50%',
+                  borderTop: '4px solid #4F46E5',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                <style>
+                  {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
+                </style>
+                <p style={{ fontFamily: 'Arial', color: '#333' }}>Loading iREVA...</p>
+              </div>
             </div>
-          </div>
-        }>
-          <React.lazy(() => import("@/pages/standalone-page"))() />
-        </React.Suspense>
-      )} />
+          }>
+            <StandalonePage />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/original" component={isMobile ? MobileHomePage : HomePage} />
       <Route path="/mui-home" component={() => {
         const StandaloneMuiHome = React.lazy(() => import("@/pages/standalone-mui-home"));
@@ -192,6 +195,12 @@ function Router() {
       <Route path="/crypto-education" component={CryptoEducationPage} />
       <Route path="/wallet-demo" component={WalletDemo} />
       <Route path="/demo/offline-form" component={OfflineFormDemoPage} />
+      
+      {/* Legal Pages */}
+      <Route path="/legal/privacy-policy" component={React.lazy(() => import("@/pages/legal/privacy-policy"))} />
+      <Route path="/legal/terms-of-service" component={React.lazy(() => import("@/pages/legal/terms-of-service"))} />
+      <Route path="/legal/cookies-policy" component={React.lazy(() => import("@/pages/legal/cookies-policy"))} />
+      <Route path="/legal/investor-risk-disclosure" component={React.lazy(() => import("@/pages/legal/investor-risk-disclosure"))} />
       
       {/* Legacy Protected Routes - will be deprecated gradually */}
       <Route path="/dashboard">

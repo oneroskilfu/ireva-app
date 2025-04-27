@@ -1,6 +1,8 @@
 import React from 'react';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Container } from '@mui/material';
 import { createTheme } from '@mui/material/styles';
+import FooterSimple from '@/components/FooterSimple';
+import { Link as WouterLink } from 'wouter';
 
 // Create a basic theme
 const theme = createTheme({
@@ -65,69 +67,132 @@ const theme = createTheme({
 
 // Standalone page wrapper that's isolated from the app's providers
 const StandalonePage: React.FC = () => {
-  // Simple welcome content
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        padding: 20,
-        textAlign: 'center',
-        background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`
-      }}>
-        <h1 style={{ 
-          color: '#ffffff', 
-          marginBottom: 20,
-          fontSize: '2.5rem',
-          fontWeight: 700
-        }}>
-          Welcome to iREVA
-        </h1>
-        
-        <p style={{ 
-          color: '#ffffff', 
-          marginBottom: 30,
-          fontSize: '1.2rem',
-          maxWidth: 600
-        }}>
-          Africa's premier real estate investment platform
-        </p>
-        
-        <div>
-          <button style={{
-            background: '#ffffff',
-            color: theme.palette.primary.main,
-            padding: '12px 24px',
-            borderRadius: 8,
-            fontSize: '1rem',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            marginRight: 16,
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}>
-            View Properties
-          </button>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        {/* Header/Navigation */}
+        <AppBar position="static" color="transparent" elevation={0} sx={{ bgcolor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(8px)' }}>
+          <Container maxWidth="lg">
+            <Toolbar>
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold', color: theme.palette.primary.main }}>
+                iREVA
+              </Typography>
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+                <Button color="inherit" component={WouterLink} href="/properties">Properties</Button>
+                <Button color="inherit" component={WouterLink} href="/crypto-education">Crypto</Button>
+                <Button color="inherit" component={WouterLink} href="/explore">Explore</Button>
+                <Button color="inherit" component={WouterLink} href="/auth">Login</Button>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  component={WouterLink} 
+                  href="/auth"
+                  sx={{ 
+                    background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                    '&:hover': {
+                      background: `linear-gradient(90deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+                    }
+                  }}
+                >
+                  Sign Up
+                </Button>
+              </Box>
+            </Toolbar>
+          </Container>
+        </AppBar>
+
+        {/* Main Hero Section */}
+        <Box 
+          sx={{ 
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: { xs: 2, md: 6 },
+            textAlign: 'center',
+            background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
+          }}
+        >
+          <Typography 
+            variant="h1" 
+            component="h1" 
+            sx={{ 
+              color: 'white',
+              mb: 2,
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              fontWeight: 700
+            }}
+          >
+            Real Estate Investments <br /> Powered by Blockchain
+          </Typography>
           
-          <button style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            color: '#ffffff',
-            padding: '12px 24px',
-            borderRadius: 8,
-            fontSize: '1rem',
-            fontWeight: 600,
-            border: '2px solid #ffffff',
-            cursor: 'pointer',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}>
-            Learn More
-          </button>
-        </div>
-      </div>
+          <Typography 
+            variant="h5" 
+            component="p" 
+            sx={{ 
+              color: 'rgba(255, 255, 255, 0.9)',
+              mb: 4,
+              maxWidth: 700,
+              fontSize: { xs: '1rem', md: '1.25rem' },
+            }}
+          >
+            Africa's premier platform democratizing property investments with secure, 
+            transparent, and accessible opportunities for everyone.
+          </Typography>
+          
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+            <Button 
+              variant="contained" 
+              size="large"
+              component={WouterLink}
+              href="/properties"
+              sx={{ 
+                bgcolor: 'white',
+                color: theme.palette.primary.main,
+                px: 4,
+                py: 1.5,
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.9)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              View Properties
+            </Button>
+            
+            <Button 
+              variant="outlined" 
+              size="large"
+              component={WouterLink}
+              href="/auth"
+              sx={{ 
+                borderColor: 'white',
+                color: 'white',
+                px: 4,
+                py: 1.5,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 20px rgba(0, 0, 0, 0.1)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Start Investing
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Footer Component */}
+        <FooterSimple />
+      </Box>
     </ThemeProvider>
   );
 };
