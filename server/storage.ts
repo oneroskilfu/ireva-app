@@ -777,8 +777,23 @@ export class DatabaseStorage implements IStorage {
   // ===== User Methods =====
   async getUser(id: number): Promise<User | undefined> {
     try {
-      const [user] = await db.select().from(schema.users).where(eq(schema.users.id, id));
-      return user;
+      // Select specific columns instead of all columns to avoid issues with missing columns
+      const [user] = await db.select({
+        id: schema.users.id,
+        username: schema.users.username,
+        email: schema.users.email,
+        password: schema.users.password,
+        role: schema.users.role,
+        phoneNumber: schema.users.phoneNumber,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+        bio: schema.users.bio,
+        profileImage: schema.users.profileImage,
+        kycStatus: schema.users.kycStatus,
+        // Skip referralRewards and other problematic fields
+      }).from(schema.users).where(eq(schema.users.id, id));
+      
+      return user as User;
     } catch (error) {
       console.error("Error in getUser:", error);
       return undefined;
@@ -787,8 +802,23 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
-      const [user] = await db.select().from(schema.users).where(eq(schema.users.username, username));
-      return user;
+      // Select specific columns instead of all columns to avoid issues with missing columns
+      const [user] = await db.select({
+        id: schema.users.id,
+        username: schema.users.username,
+        email: schema.users.email,
+        password: schema.users.password,
+        role: schema.users.role,
+        phoneNumber: schema.users.phoneNumber,
+        firstName: schema.users.firstName,
+        lastName: schema.users.lastName,
+        bio: schema.users.bio,
+        profileImage: schema.users.profileImage,
+        kycStatus: schema.users.kycStatus,
+        // Skip referralRewards and other problematic fields
+      }).from(schema.users).where(eq(schema.users.username, username));
+      
+      return user as User;
     } catch (error) {
       console.error("Error in getUserByUsername:", error);
       return undefined;
