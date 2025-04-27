@@ -1,18 +1,29 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@shared/schema";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link as WouterLink } from "wouter";
 import PropertyGrid from "@/components/properties/PropertyGrid";
-import ModernHero from "@/components/home/ModernHero";
-import AnimatedFeatures from "@/components/home/AnimatedFeatures";
-import InvestmentPlanner from "@/components/home/InvestmentPlanner";
-import LiveChat from "@/components/chat/LiveChat";
 import { motion } from "framer-motion";
 
+// Material UI imports 
+import { 
+  Container, 
+  Box, 
+  Typography, 
+  Grid, 
+  Card, 
+  CardContent, 
+  CardMedia 
+} from '@mui/material';
+
+/**
+ * Combined HomePage component that merges the existing styled implementation
+ * with the new Material UI based design
+ */
 export default function HomePage() {
   const [filters, setFilters] = useState({
     search: "",
@@ -23,23 +34,179 @@ export default function HomePage() {
   const { data: properties = [] } = useQuery<Project[]>({
     queryKey: ["/api/properties"],
   });
+
+  // State to determine which hero variant to show
+  const [showMuiHero, setShowMuiHero] = useState(false);
+
+  // Toggle between hero variants for testing
+  const toggleHeroVariant = () => {
+    setShowMuiHero(!showMuiHero);
+  };
   
-  return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
-      <Header />
-      <main className="flex-grow">
+  // MUI-based HomePage implementation
+  const renderMuiHomePage = () => {
+    return (
+      <Container maxWidth="xl" sx={{ mt: 8, mb: 8 }}>
         {/* Hero Section */}
-        <ModernHero />
-        
-        {/* Features Section */}
-        <AnimatedFeatures />
-        
-        {/* Investment Planner Section */}
-        <InvestmentPlanner />
-        
-        {/* Live Chat Component */}
-        <LiveChat />
-        
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            py: 6,
+            bgcolor: 'rgba(245, 245, 245, 0.8)',
+            borderRadius: 4,
+            px: 4,
+          }}
+        >
+          <Box sx={{ maxWidth: '600px' }}>
+            <Typography variant="h2" fontWeight={700} gutterBottom>
+              Invest in the Future of Real Estate
+            </Typography>
+            <Typography variant="h5" color="text.secondary" gutterBottom>
+              Powered by Blockchain. Designed for You.
+            </Typography>
+            <Typography sx={{ mt: 2 }}>
+              With iREVA, anyone, anywhere can invest securely in prime real estate assets — through a simple, transparent,
+              and crypto-enabled platform.
+            </Typography>
+            <Button
+              variant="default"
+              size="lg"
+              className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group"
+              onClick={() => window.location.href = "/auth"}
+            >
+              Start Investing
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Box>
+          <Box
+            component="img"
+            src="/logo512.svg"
+            alt="Invest in Real Estate with Crypto"
+            sx={{ maxWidth: '500px', width: '100%', mt: { xs: 4, md: 0 } }}
+          />
+        </Box>
+
+        {/* Benefits Section */}
+        <Box sx={{ py: 10 }}>
+          <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
+            Why Choose iREVA?
+          </Typography>
+          <Grid container spacing={4} sx={{ mt: 4 }}>
+            {[
+              { title: 'Fractional Ownership', desc: 'Invest with as little as $50 and own a share of valuable properties.' },
+              { title: 'Crypto Friendly', desc: 'Deposit and withdraw investments with Bitcoin, Ethereum, and more.' },
+              { title: 'Secure and Transparent', desc: 'Blockchain-backed transactions, real-time tracking, and full KYC compliance.' },
+              { title: 'Global Access', desc: 'Designed for investors in the diaspora and across emerging markets.' },
+            ].map((item, index) => (
+              <Grid item xs={12} md={3} key={index}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Typography variant="h6" fontWeight={600}>
+                      {item.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {item.desc}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        {/* Featured Properties Section */}
+        <Box sx={{ py: 10, bgcolor: 'rgba(250, 250, 250, 0.8)', borderRadius: 4 }}>
+          <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
+            Featured Investment Opportunities
+          </Typography>
+          <Grid container spacing={4} sx={{ mt: 4, mb: 4 }}>
+            {properties.slice(0, 3).map((property, id) => (
+              <Grid item xs={12} md={4} key={id}>
+                <Card>
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={property.imageUrl || `/logo512.svg`}
+                    alt={property.name}
+                  />
+                  <CardContent>
+                    <Typography variant="h6" fontWeight={600}>
+                      {property.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      ROI: {property.targetReturn}% | Tenor: {property.term} Months | {property.accreditedOnly ? 'Accredited Only' : 'Open for All'}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Button 
+              variant="default"
+              size="lg" 
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group"
+              onClick={() => window.location.href = "/properties"}
+            >
+              View All Properties
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Box>
+        </Box>
+
+        {/* How it Works Section */}
+        <Box sx={{ py: 10 }}>
+          <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
+            How iREVA Works
+          </Typography>
+          <Grid container spacing={4} sx={{ mt: 4 }}>
+            {[
+              { title: '1. Register & Verify', desc: 'Sign up, complete KYC, and start browsing real estate projects.' },
+              { title: '2. Fund Wallet', desc: 'Deposit using your crypto wallet or local bank account.' },
+              { title: '3. Invest & Earn', desc: 'Choose projects, invest, and watch your portfolio grow securely.' },
+            ].map((step, index) => (
+              <Grid item xs={12} md={4} key={index}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h5" fontWeight={600}>
+                      {step.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {step.desc}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        {/* Final Call to Action */}
+        <Box textAlign="center" sx={{ py: 8 }}>
+          <Typography variant="h4" fontWeight={700} gutterBottom>
+            Your Gateway to Building Wealth Starts Here
+          </Typography>
+          <Button
+            variant="default"
+            size="lg"
+            className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group"
+            onClick={() => window.location.href = "/auth"}
+          >
+            Join iREVA Now
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Button>
+        </Box>
+      </Container>
+    );
+  };
+  
+  // The original Tailwind / shadcn based implementation
+  const renderOriginalHomePage = () => {
+    return (
+      <main className="flex-grow">
         {/* Testimonials Section */}
         <section className="py-20 bg-gray-900 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -155,7 +322,7 @@ export default function HomePage() {
               viewport={{ once: true }}
               className="mt-16 text-center"
             >
-              <Link href="/properties">
+              <WouterLink href="/properties">
                 <Button 
                   size="lg" 
                   className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group"
@@ -163,7 +330,7 @@ export default function HomePage() {
                   View All Properties
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
-              </Link>
+              </WouterLink>
             </motion.div>
           </div>
         </section>
@@ -246,6 +413,30 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+    );
+  };
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
+      <Header />
+      
+      {/* Fixed toggle button for testing - comment out for production */}
+      {/* 
+      <div className="fixed top-20 right-4 z-50">
+        <Button onClick={toggleHeroVariant} size="sm" variant="outline">
+          Toggle Hero
+        </Button>
+      </div>
+      */}
+      
+      {/* Render the selected hero variant */}
+      {showMuiHero ? renderMuiHomePage() : 
+        <>
+          {renderMuiHomePage()}
+          {renderOriginalHomePage()}
+        </>
+      }
+      
       <Footer />
     </div>
   );
