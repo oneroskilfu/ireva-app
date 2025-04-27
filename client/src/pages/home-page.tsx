@@ -43,38 +43,37 @@ export default function HomePage() {
     setShowMuiHero(!showMuiHero);
   };
   
-  // MUI-based HomePage implementation
+  // Mobile-optimized MUI-based HomePage implementation
   const renderMuiHomePage = () => {
     return (
-      <Container maxWidth="xl" sx={{ mt: 8, mb: 8 }}>
-        {/* Hero Section */}
+      <Container maxWidth="xl" sx={{ mt: 8, mb: 8, px: { xs: 2, md: 4 } }}>
+        {/* Hero Section - Mobile Optimized */}
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
             alignItems: 'center',
             justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            py: 6,
+            py: { xs: 6, md: 8 },
             bgcolor: 'rgba(245, 245, 245, 0.8)',
             borderRadius: 4,
-            px: 4,
           }}
         >
-          <Box sx={{ maxWidth: '600px' }}>
-            <Typography variant="h2" fontWeight={700} gutterBottom>
+          <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' }, px: { xs: 2, md: 4 } }}>
+            <Typography variant="h3" fontWeight={700} gutterBottom>
               Invest in the Future of Real Estate
             </Typography>
-            <Typography variant="h5" color="text.secondary" gutterBottom>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
               Powered by Blockchain. Designed for You.
             </Typography>
-            <Typography sx={{ mt: 2 }}>
+            <Typography sx={{ mt: 2, fontSize: { xs: '1rem', md: '1.125rem' } }}>
               With iREVA, anyone, anywhere can invest securely in prime real estate assets — through a simple, transparent,
               and crypto-enabled platform.
             </Typography>
             <Button
               variant="default"
               size="lg"
-              className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group"
+              className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group w-full sm:w-auto"
               onClick={() => window.location.href = "/auth"}
             >
               Start Investing
@@ -85,12 +84,17 @@ export default function HomePage() {
             component="img"
             src="/logo512.svg"
             alt="Invest in Real Estate with Crypto"
-            sx={{ maxWidth: '500px', width: '100%', mt: { xs: 4, md: 0 } }}
+            sx={{
+              flex: 1,
+              maxWidth: { xs: '90%', md: '500px' },
+              mt: { xs: 6, md: 0 },
+              mx: 'auto',
+            }}
           />
         </Box>
 
         {/* Benefits Section */}
-        <Box sx={{ py: 10 }}>
+        <Box sx={{ py: { xs: 8, md: 10 } }}>
           <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
             Why Choose iREVA?
           </Typography>
@@ -101,9 +105,9 @@ export default function HomePage() {
               { title: 'Secure and Transparent', desc: 'Blockchain-backed transactions, real-time tracking, and full KYC compliance.' },
               { title: 'Global Access', desc: 'Designed for investors in the diaspora and across emerging markets.' },
             ].map((item, index) => (
-              <Grid item xs={12} md={3} key={index}>
+              <Grid item xs={12} sm={6} md={3} key={index}>
                 <Card sx={{ height: '100%' }}>
-                  <CardContent>
+                  <CardContent sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" fontWeight={600}>
                       {item.title}
                     </Typography>
@@ -118,7 +122,7 @@ export default function HomePage() {
         </Box>
 
         {/* Featured Properties Section */}
-        <Box sx={{ py: 10, bgcolor: 'rgba(250, 250, 250, 0.8)', borderRadius: 4 }}>
+        <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: 'rgba(250, 250, 250, 0.8)', borderRadius: 4 }}>
           <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
             Featured Investment Opportunities
           </Typography>
@@ -148,7 +152,7 @@ export default function HomePage() {
             <Button 
               variant="default"
               size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group w-full sm:w-auto"
               onClick={() => window.location.href = "/properties"}
             >
               View All Properties
@@ -158,7 +162,7 @@ export default function HomePage() {
         </Box>
 
         {/* How it Works Section */}
-        <Box sx={{ py: 10 }}>
+        <Box sx={{ py: { xs: 8, md: 10 } }}>
           <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
             How iREVA Works
           </Typography>
@@ -170,7 +174,7 @@ export default function HomePage() {
             ].map((step, index) => (
               <Grid item xs={12} md={4} key={index}>
                 <Card>
-                  <CardContent>
+                  <CardContent sx={{ textAlign: 'center' }}>
                     <Typography variant="h5" fontWeight={600}>
                       {step.title}
                     </Typography>
@@ -185,14 +189,14 @@ export default function HomePage() {
         </Box>
 
         {/* Final Call to Action */}
-        <Box textAlign="center" sx={{ py: 8 }}>
+        <Box textAlign="center" sx={{ py: { xs: 6, md: 8 } }}>
           <Typography variant="h4" fontWeight={700} gutterBottom>
             Your Gateway to Building Wealth Starts Here
           </Typography>
           <Button
             variant="default"
             size="lg"
-            className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group"
+            className="mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white group w-full sm:w-auto"
             onClick={() => window.location.href = "/auth"}
           >
             Join iREVA Now
