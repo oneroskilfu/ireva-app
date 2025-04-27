@@ -201,6 +201,8 @@ function Router() {
       <Route path="/legal/terms-of-service" component={React.lazy(() => import("@/pages/legal/terms-of-service"))} />
       <Route path="/legal/cookies-policy" component={React.lazy(() => import("@/pages/legal/cookies-policy"))} />
       <Route path="/legal/investor-risk-disclosure" component={React.lazy(() => import("@/pages/legal/investor-risk-disclosure"))} />
+      <Route path="/legal/aml-statement" component={React.lazy(() => import("@/pages/legal/aml-statement"))} />
+      <Route path="/legal/gdpr-commitment" component={React.lazy(() => import("@/pages/legal/gdpr-commitment"))} />
       
       {/* Legacy Protected Routes - will be deprecated gradually */}
       <Route path="/dashboard">

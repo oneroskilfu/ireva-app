@@ -77,6 +77,9 @@ export default function Footer() {
                 <Link component={WouterLink} href="/legal/investor-risk-disclosure" color="text.secondary" underline="hover">
                   Risk Disclosure
                 </Link>
+                <Link component={WouterLink} href="/legal/aml-statement" color="text.secondary" underline="hover">
+                  AML Statement
+                </Link>
               </Box>
             </Box>
 
