@@ -32,6 +32,7 @@ const WalletPage = lazy(() => import("@/pages/wallet-page"));
 const ProfilePage = lazy(() => import("@/pages/profile-page"));
 const ExplorePage = lazy(() => import("@/pages/explore-page"));
 const MobileHomePage = lazy(() => import("@/pages/mobile-home-page"));
+const MuiHomePage = lazy(() => import("@/pages/mui-home-page"));
 const CryptoEducationPage = lazy(() => import("@/pages/crypto-education-page"));
 const CryptoWalletPage = lazy(() => import("@/pages/crypto-wallet-page"));
 const AdminDashboard = lazy(() => import("@/pages/admin/admin-dashboard"));
