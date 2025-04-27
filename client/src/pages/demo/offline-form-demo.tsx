@@ -1,9 +1,11 @@
 import React from 'react';
 import { OfflineInvestmentForm } from '@/components/form/OfflineForm';
+import { OfflineKYCForm } from '@/components/form/OfflineKYCForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const OfflineFormDemoPage: React.FC = () => {
   const [isConnectionToggled, setIsConnectionToggled] = React.useState(false);

@@ -1,5 +1,6 @@
 // Service Worker for iREVA PWA
-const CACHE_NAME = "ireva-pwa-cache-v1";
+const CACHE_NAME = "ireva-pwa-cache-v2"; // Bump this version when releasing major updates
+const DYNAMIC_CACHE_NAME = "ireva-dynamic-cache-v2"; // Keep in sync with CACHE_NAME version
 const OFFLINE_URL = "/offline.html";
 const DB_NAME = "ireva-offline-db";
 const DB_VERSION = 1;
@@ -117,18 +118,104 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch Event
+// Fetch Event with Runtime Caching
 self.addEventListener("fetch", (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) return;
+  
+  // For navigation requests (HTML pages)
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+      // Try network first for HTML content, fallback to offline page
+      fetch(event.request)
+        .catch(() => caches.match(OFFLINE_URL))
     );
-  } else {
+    return;
+  }
+  
+  // For API requests - network first with no caching
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(error => {
+          console.error('API fetch failed:', error);
+          return new Response(
+            JSON.stringify({ error: 'Network connection lost' }), 
+            { 
+              status: 503,
+              headers: { 'Content-Type': 'application/json' } 
+            }
+          );
+        })
+    );
+    return;
+  }
+  
+  // For static assets (CSS, JS, images) - cache first, then network
+  if (
+    event.request.destination === 'style' || 
+    event.request.destination === 'script' ||
+    event.request.destination === 'image' ||
+    event.request.destination === 'font'
+  ) {
     event.respondWith(
       caches.match(event.request)
-        .then((response) => response || fetch(event.request))
+        .then(cachedResponse => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          
+          // Not in cache, get from network
+          return fetch(event.request)
+            .then(networkResponse => {
+              // Clone the response before using it
+              const clonedResponse = networkResponse.clone();
+              
+              // Add to cache for next time
+              caches.open(DYNAMIC_CACHE_NAME)
+                .then(cache => {
+                  cache.put(event.request, clonedResponse);
+                });
+                
+              return networkResponse;
+            })
+            .catch(() => {
+              // If both cache and network fail for images, return a fallback
+              if (event.request.destination === 'image') {
+                return caches.match('/icons/placeholder-image.png');
+              }
+              return new Response('Resource unavailable offline', { 
+                status: 503,
+                headers: { 'Content-Type': 'text/plain' } 
+              });
+            });
+        })
     );
+    return;
   }
+  
+  // For all other requests - try cache first with network fallback
+  event.respondWith(
+    caches.match(event.request)
+      .then(cachedResponse => {
+        return cachedResponse || fetch(event.request)
+          .then(networkResponse => {
+            // Store in dynamic cache
+            return caches.open(DYNAMIC_CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, networkResponse.clone());
+                return networkResponse;
+              });
+          })
+          .catch(error => {
+            console.error('Fetch failed:', error);
+            return caches.match(OFFLINE_URL);
+          });
+      })
+  );
 });
 
 // Background Sync
