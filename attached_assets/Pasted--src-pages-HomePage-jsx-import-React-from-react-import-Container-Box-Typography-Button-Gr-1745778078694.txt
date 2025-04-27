@@ -1,0 +1,153 @@
+// src/pages/HomePage.jsx
+import React from 'react';
+import { Container, Box, Typography, Button, Grid, Card, CardContent, CardMedia } from '@mui/material';
+
+const HomePage = () => {
+  return (
+    <Container maxWidth="xl" sx={{ mt: 8 }}>
+      {/* Hero Section */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          py: 6,
+          bgcolor: '#f5f5f5',
+          borderRadius: 4,
+          px: 4,
+        }}
+      >
+        <Box sx={{ maxWidth: '600px' }}>
+          <Typography variant="h2" fontWeight={700} gutterBottom>
+            Invest in the Future of Real Estate
+          </Typography>
+          <Typography variant="h5" color="text.secondary" gutterBottom>
+            Powered by Blockchain. Designed for You.
+          </Typography>
+          <Typography sx={{ mt: 2 }}>
+            With iREVA, anyone, anywhere can invest securely in prime real estate assets — through a simple, transparent,
+            and crypto-enabled platform.
+          </Typography>
+          <Button
+            variant="contained"
+            size="large"
+            sx={{ mt: 4 }}
+            color="primary"
+            href="/signup"
+          >
+            Start Investing
+          </Button>
+        </Box>
+        <Box
+          component="img"
+          src="/hero-image.svg"
+          alt="Invest in Real Estate with Crypto"
+          sx={{ maxWidth: '500px', width: '100%', mt: { xs: 4, md: 0 } }}
+        />
+      </Box>
+
+      {/* Benefits Section */}
+      <Box sx={{ py: 10 }}>
+        <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
+          Why Choose iREVA?
+        </Typography>
+        <Grid container spacing={4} sx={{ mt: 4 }}>
+          {[
+            { title: 'Fractional Ownership', desc: 'Invest with as little as $50 and own a share of valuable properties.' },
+            { title: 'Crypto Friendly', desc: 'Deposit and withdraw investments with Bitcoin, Ethereum, and more.' },
+            { title: 'Secure and Transparent', desc: 'Blockchain-backed transactions, real-time tracking, and full KYC compliance.' },
+            { title: 'Global Access', desc: 'Designed for investors in the diaspora and across emerging markets.' },
+          ].map((item, index) => (
+            <Grid item xs={12} md={3} key={index}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" fontWeight={600}>
+                    {item.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    {item.desc}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* Featured Projects Section */}
+      <Box sx={{ py: 10, bgcolor: '#fafafa', borderRadius: 4 }}>
+        <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
+          Featured Investment Opportunities
+        </Typography>
+        <Grid container spacing={4} sx={{ mt: 4 }}>
+          {[1, 2, 3].map((id) => (
+            <Grid item xs={12} md={4} key={id}>
+              <Card>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={`/property-${id}.jpg`} // Replace with real images
+                  alt={`Property ${id}`}
+                />
+                <CardContent>
+                  <Typography variant="h6" fontWeight={600}>
+                    Premium Estates - Lagos
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    ROI: 18% | Tenor: 24 Months | Open for Crypto & Fiat
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* How it Works Section */}
+      <Box sx={{ py: 10 }}>
+        <Typography variant="h4" align="center" fontWeight={600} gutterBottom>
+          How iREVA Works
+        </Typography>
+        <Grid container spacing={4} sx={{ mt: 4 }}>
+          {[
+            { title: '1. Register & Verify', desc: 'Sign up, complete KYC, and start browsing real estate projects.' },
+            { title: '2. Fund Wallet', desc: 'Deposit using your crypto wallet or local bank account.' },
+            { title: '3. Invest & Earn', desc: 'Choose projects, invest, and watch your portfolio grow securely.' },
+          ].map((step, index) => (
+            <Grid item xs={12} md={4} key={index}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h5" fontWeight={600}>
+                    {step.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    {step.desc}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* Final Call to Action */}
+      <Box textAlign="center" sx={{ py: 8 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Your Gateway to Building Wealth Starts Here
+        </Typography>
+        <Button
+          variant="contained"
+          size="large"
+          color="primary"
+          sx={{ mt: 2 }}
+          href="/signup"
+        >
+          Join iREVA Now
+        </Button>
+      </Box>
+    </Container>
+  );
+};
+
+export default HomePage;
