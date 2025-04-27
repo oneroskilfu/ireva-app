@@ -123,8 +123,54 @@ function Router() {
   return (
     <Switch>
       {/* Public Routes */}
-      <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
-      <Route path="/mui-home" component={MuiHomePage} />
+      <Route path="/" component={() => (
+        <React.Suspense fallback={
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100vh',
+            background: '#f5f5f5'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
+                display: 'inline-block',
+                width: '40px',
+                height: '40px',
+                margin: '20px auto',
+                border: '4px solid rgba(0,0,0,0.1)',
+                borderRadius: '50%',
+                borderTop: '4px solid #4F46E5',
+                animation: 'spin 1s linear infinite'
+              }} />
+              <style>
+                {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
+              </style>
+              <p style={{ fontFamily: 'Arial', color: '#333' }}>Loading iREVA...</p>
+            </div>
+          </div>
+        }>
+          <React.lazy(() => import("@/pages/standalone-page"))() />
+        </React.Suspense>
+      )} />
+      <Route path="/original" component={isMobile ? MobileHomePage : HomePage} />
+      <Route path="/mui-home" component={() => {
+        const StandaloneMuiHome = React.lazy(() => import("@/pages/standalone-mui-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <StandaloneMuiHome />
+          </React.Suspense>
+        );
+      }} />
+      {/* Direct access to simplified MUI homepage */}
+      <Route path="/simple-mui-home" component={() => {
+        const SimpleMuiHome = React.lazy(() => import("@/pages/simple-mui-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SimpleMuiHome />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/property/:id" component={PropertyPage} />
       <Route path="/property/:id/invest" component={PropertyInvestment} />
       <Route path="/properties" component={PropertiesPage} />
