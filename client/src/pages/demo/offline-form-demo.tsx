@@ -1,9 +1,10 @@
 import React from 'react';
 import { OfflineInvestmentForm } from '@/components/form/OfflineForm';
 import { OfflineKYCForm } from '@/components/form/OfflineKYCForm';
+import { SimpleInvestmentForm, SimpleKYCForm } from '@/components/form/SimpleOfflineForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wifi, WifiOff } from 'lucide-react';
+import { Wifi, WifiOff, Code } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -114,29 +115,88 @@ const OfflineFormDemoPage: React.FC = () => {
       </div>
       
       <div>
-        <Tabs defaultValue="investment" className="w-full">
+        <Tabs defaultValue="hook-based" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="investment">Investment Form</TabsTrigger>
-            <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
+            <TabsTrigger value="hook-based">Hook-Based Implementation</TabsTrigger>
+            <TabsTrigger value="direct">Direct Implementation</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="investment">
-            <Card>
-              <CardHeader>
-                <CardTitle>Make an Investment</CardTitle>
-                <CardDescription>
-                  Submit your investment details. If you're offline, the data will be saved
-                  and automatically submitted when you reconnect.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <OfflineInvestmentForm />
-              </CardContent>
-            </Card>
+          <TabsContent value="hook-based">
+            <Tabs defaultValue="investment" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="investment">Investment Form</TabsTrigger>
+                <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="investment">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Make an Investment (Hook-Based)</CardTitle>
+                    <CardDescription>
+                      Submit your investment details. If you're offline, the data will be saved
+                      and automatically submitted when you reconnect.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <OfflineInvestmentForm />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="kyc">
+                <OfflineKYCForm />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
           
-          <TabsContent value="kyc">
-            <OfflineKYCForm />
+          <TabsContent value="direct">
+            <Card className="mb-6">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Direct Implementation</CardTitle>
+                  <CardDescription>
+                    This approach uses the pendingDB utilities directly without the custom hook
+                  </CardDescription>
+                </div>
+                <div className="bg-muted p-3 rounded-md flex items-center gap-2">
+                  <Code size={18} className="text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground font-mono">saveToPendingDB</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md bg-muted p-4 mb-4">
+                  <pre className="text-xs font-mono text-muted-foreground overflow-auto">
+{`if (!navigator.onLine) {
+  await saveToPendingDB('investments', {
+    id: new Date().toISOString(),
+    amount: 500,
+    projectId: "12345",
+    userId: "user-789"
+  });
+  const registration = await navigator.serviceWorker.ready;
+  await registration.sync.register('sync-investments');
+} else {
+  // Normal online API call
+}`}
+                  </pre>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Tabs defaultValue="investment" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="investment">Investment Form</TabsTrigger>
+                <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="investment">
+                <SimpleInvestmentForm />
+              </TabsContent>
+              
+              <TabsContent value="kyc">
+                <SimpleKYCForm />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </div>
