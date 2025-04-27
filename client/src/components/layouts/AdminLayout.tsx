@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import NotificationBell from "@/components/NotificationBell";
 import {
   LayoutDashboard,
   Users,
@@ -109,23 +110,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </Link>
         </div>
         <div className="flex items-center space-x-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>System Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="max-h-[60vh] overflow-auto p-2">
-                <div className="text-center text-muted-foreground py-4">
-                  No new notifications
-                </div>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationBell />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
