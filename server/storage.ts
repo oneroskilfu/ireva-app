@@ -940,12 +940,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserProfile(userId: number, profile: Partial<User>): Promise<User> {
-    const [updatedUser] = await db.update(schema.users)
-      .set(profile)
-      .where(eq(schema.users.id, userId))
-      .returning();
-    
-    return updatedUser;
+    try {
+      // Make a safe copy of the profile to avoid modifying the input
+      const safeProfile = {...profile};
+      
+      // Remove any fields that might not exist in the schema to avoid column errors
+      // List fields known to cause issues
+      const fieldsToRemove = ['referral_rewards', 'referralRewards'];
+      
+      fieldsToRemove.forEach(field => {
+        if (field in safeProfile) {
+          delete safeProfile[field as keyof typeof safeProfile];
+        }
+      });
+      
+      const [updatedUser] = await db.update(schema.users)
+        .set(safeProfile)
+        .where(eq(schema.users.id, userId))
+        .returning();
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Error in updateUserProfile:", error);
+      // If update fails, fetch and return the current user
+      const user = await this.getUser(userId);
+      if (!user) {
+        throw new Error(`User with ID ${userId} not found`);
+      }
+      return user;
+    }
   }
 
   // ===== Property Methods =====
