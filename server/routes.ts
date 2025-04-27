@@ -61,6 +61,7 @@ import { webhookRouter } from './coingate/webhookHandler';
 import escrowRouter from './routes/escrow-routes';
 // Import Push notification routes
 import { pushNotificationRouter } from './routes/push-notification-routes';
+import { sendNotificationRouter } from './routes/send-notification-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -366,6 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up Push Notification routes
   app.use('/api/push-notifications', pushNotificationRouter);
+  app.use('/api/notifications', sendNotificationRouter);
   console.log("Push notification routes registered");
   
   // Temporarily disabled MongoDB Transaction routes

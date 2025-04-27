@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { authMiddleware } from '../auth-jwt';
 import { db } from '../db';
 import { notifications, pushSubscriptions } from '@shared/schema';
-import { desc, eq, and } from 'drizzle-orm';
+import { desc, eq, and, sql, count } from 'drizzle-orm';
 import { getSocketIo } from '../socketio';
 
 export const pushNotificationRouter = express.Router();
@@ -19,10 +19,11 @@ pushNotificationRouter.post('/subscribe', authMiddleware, async (req: Request, r
 
     // Check if subscription already exists for this user
     const existingSubscription = await db.query.pushSubscriptions.findFirst({
-      where: and(
-        eq(pushSubscriptions.userId, userId),
-        eq(pushSubscriptions.token, token)
-      )
+      where: (subscription) => 
+        and(
+          eq(subscription.userId, String(userId)),
+          eq(subscription.token, token)
+        )
     });
 
     if (existingSubscription) {
@@ -31,7 +32,7 @@ pushNotificationRouter.post('/subscribe', authMiddleware, async (req: Request, r
 
     // Insert new subscription
     await db.insert(pushSubscriptions).values({
-      userId,
+      userId: String(userId),
       token,
       createdAt: new Date()
     });
@@ -55,10 +56,12 @@ pushNotificationRouter.post('/unsubscribe', authMiddleware, async (req: Request,
 
     // Delete subscription
     await db.delete(pushSubscriptions)
-      .where(and(
-        eq(pushSubscriptions.userId, userId),
-        eq(pushSubscriptions.token, token)
-      ));
+      .where(
+        and(
+          eq(pushSubscriptions.userId, String(userId)),
+          eq(pushSubscriptions.token, token)
+        )
+      );
 
     res.status(200).json({ message: 'Push notification subscription removed successfully' });
   } catch (error) {
@@ -77,14 +80,14 @@ pushNotificationRouter.get('/history', authMiddleware, async (req: Request, res:
 
     const userNotifications = await db.select()
       .from(notifications)
-      .where(eq(notifications.userId, userId))
+      .where(eq(notifications.userId, String(userId)))
       .orderBy(desc(notifications.createdAt))
       .limit(limit)
       .offset(offset);
 
-    const totalCount = await db.select({ count: db.fn.count() })
+    const totalCount = await db.select({ count: count() })
       .from(notifications)
-      .where(eq(notifications.userId, userId));
+      .where(eq(notifications.userId, String(userId)));
 
     res.status(200).json({
       notifications: userNotifications,
@@ -104,15 +107,17 @@ pushNotificationRouter.get('/history', authMiddleware, async (req: Request, res:
 // Mark notification as read
 pushNotificationRouter.patch('/:id/read', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const notificationId = parseInt(req.params.id);
+    const notificationId = req.params.id;
     const userId = req.jwtPayload?.id;
 
     await db.update(notifications)
-      .set({ read: true, updatedAt: new Date() })
-      .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, userId)
-      ));
+      .set({ isRead: true, updatedAt: new Date() })
+      .where(
+        and(
+          eq(notifications.id, notificationId),
+          eq(notifications.userId, String(userId))
+        )
+      );
 
     res.status(200).json({ message: 'Notification marked as read' });
   } catch (error) {
@@ -127,8 +132,8 @@ pushNotificationRouter.patch('/mark-all-read', authMiddleware, async (req: Reque
     const userId = req.jwtPayload?.id;
 
     await db.update(notifications)
-      .set({ read: true, updatedAt: new Date() })
-      .where(eq(notifications.userId, userId));
+      .set({ isRead: true, updatedAt: new Date() })
+      .where(eq(notifications.userId, String(userId)));
 
     res.status(200).json({ message: 'All notifications marked as read' });
   } catch (error) {
@@ -142,12 +147,14 @@ pushNotificationRouter.get('/unread-count', authMiddleware, async (req: Request,
   try {
     const userId = req.jwtPayload?.id;
 
-    const unreadCount = await db.select({ count: db.fn.count() })
+    const unreadCount = await db.select({ count: count() })
       .from(notifications)
-      .where(and(
-        eq(notifications.userId, userId),
-        eq(notifications.read, false)
-      ));
+      .where(
+        and(
+          eq(notifications.userId, String(userId)),
+          eq(notifications.isRead, false)
+        )
+      );
 
     res.status(200).json({ count: Number(unreadCount[0]?.count || 0) });
   } catch (error) {
