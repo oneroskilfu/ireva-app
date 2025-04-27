@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layout } from '@/components/layout/Layout';
-import { Container, Typography, Box, Breadcrumbs, Link } from '@mui/material';
+import { Container, Typography, Box, Breadcrumbs, Link, Divider } from '@mui/material';
 import { Link as WouterLink } from 'wouter';
 
 const PrivacyPolicyPage: React.FC = () => {
@@ -15,212 +15,298 @@ const PrivacyPolicyPage: React.FC = () => {
         </Breadcrumbs>
 
         <Typography variant="h2" component="h1" gutterBottom sx={{ mb: 4 }}>
-          Privacy Policy
+          iREVA Privacy Policy
         </Typography>
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Last Updated: April 27, 2025
+            Effective Date: April 1, 2025
           </Typography>
           
           <Typography variant="body1" paragraph>
-            iREVA ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services.
+            Welcome to iREVA ("we", "our", or "us").
+            We are committed to protecting your personal information and your right to privacy.
+            This Privacy Policy describes how we collect, use, disclose, and safeguard your information when you visit or use our platform, including any services, products, or features offered through iREVA.
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            Please read this policy carefully. If you do not agree with the terms, please do not use our platform.
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Information We Collect
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            <strong>Personal Data:</strong> We collect personal information that you voluntarily provide to us when you register on our platform, express interest in obtaining information about us or our products and services, or otherwise contact us. This information may include:
-          </Typography>
-          
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                Contact information (name, email address, phone number)
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Identity verification documents (government IDs, proof of address)
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Financial information (bank account details, investment history)
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Cryptocurrency wallet addresses
-              </Typography>
-            </li>
-          </ul>
-          
-          <Typography variant="body1" paragraph>
-            <strong>Automatically Collected Data:</strong> When you access or use our platform, we automatically collect certain information, including:
-          </Typography>
-          
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                Device and browsing information (IP address, browser type, operating system)
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Usage patterns and preferences
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Location data (if permitted by your device settings)
-              </Typography>
-            </li>
-          </ul>
-        </Box>
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            How We Use Your Information
+            1. Information We Collect
           </Typography>
           
           <Typography variant="body1" paragraph>
-            We use the information we collect to:
+            We collect information that you voluntarily provide to us when you:
           </Typography>
           
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                Provide, maintain, and improve our services
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Process transactions and manage your account
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Comply with legal and regulatory requirements, including KYC and AML obligations
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Send you updates, security alerts, and support messages
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Personalize your experience and provide tailored content
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Analyze usage patterns to improve our platform
-              </Typography>
-            </li>
-          </ul>
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Register for an account</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Complete KYC/identity verification</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Invest in a project</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Request withdrawals</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Subscribe to newsletters</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Contact customer support</Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            This information may include:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Full name, address, phone number, and email address</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Government-issued ID and documents for verification</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Wallet addresses for crypto transactions</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Investment history and transaction details</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Communication preferences</Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            We may also automatically collect:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Device and usage data (IP address, browser type, device ID)</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Cookies and tracking technologies for platform optimization</Typography>
+            </Box>
+          </Box>
         </Box>
+
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Information Sharing and Disclosure
+            2. How We Use Your Information
           </Typography>
           
           <Typography variant="body1" paragraph>
-            We may share your information with:
+            We use your information to:
           </Typography>
           
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                <strong>Service Providers:</strong> Third parties that perform services on our behalf, such as payment processing, data analysis, email delivery, and customer service.
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                <strong>Business Partners:</strong> Trusted companies we work with to provide property investments and related services.
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                <strong>Legal Requirements:</strong> When we believe disclosure is necessary to comply with a legal obligation, protect our rights, or protect the safety of our users or the public.
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                <strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets.
-              </Typography>
-            </li>
-          </ul>
-        </Box>
-
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Data Security
-          </Typography>
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Create and manage your account</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Process investments, withdrawals, and payouts</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Verify your identity to comply with regulatory requirements</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Communicate updates, confirmations, and marketing materials</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Improve platform features, security, and user experience</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Enforce our Terms of Service and policies</Typography>
+            </Box>
+          </Box>
           
-          <Typography variant="body1" paragraph>
-            We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security.
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            We do not sell or rent your personal information to third parties.
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Your Rights
-          </Typography>
-          
-          <Typography variant="body1" paragraph>
-            Depending on your location, you may have certain rights regarding your personal information, including:
-          </Typography>
-          
-          <ul>
-            <li>
-              <Typography variant="body1" paragraph>
-                Right to access, correct, or delete your personal data
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Right to restrict or object to our processing of your data
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Right to data portability
-              </Typography>
-            </li>
-            <li>
-              <Typography variant="body1" paragraph>
-                Right to withdraw consent (where processing is based on consent)
-              </Typography>
-            </li>
-          </ul>
-          
-          <Typography variant="body1" paragraph>
-            To exercise these rights, please contact us using the details provided below.
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 4 }} />
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Contact Us
+            3. How We Share Your Information
           </Typography>
           
           <Typography variant="body1" paragraph>
-            If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:
+            We only share your data with:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Identity verification service providers (for KYC/AML compliance)</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Payment processors (for fiat and crypto transactions)</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Hosting and IT service providers (for platform operation)</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Legal authorities if required by law (e.g., anti-fraud, tax reporting)</Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            All partners are contractually required to safeguard your data.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            4. Crypto Transactions and Blockchain Data
           </Typography>
           
           <Typography variant="body1" paragraph>
-            Email: privacy@ireva.com
+            Please note:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Cryptocurrency transactions are recorded on public blockchains.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Blockchain data may be accessible globally and immutable.</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">By investing with crypto, you acknowledge and accept the transparency nature of blockchain technology.</Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            We will only request blockchain addresses or crypto wallet data necessary for your investments or withdrawals.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            5. Data Retention
           </Typography>
           
           <Typography variant="body1" paragraph>
-            Address: 123 Investment Street, Lagos, Nigeria
+            We retain your information:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">As long as your account remains active</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">For as long as necessary to fulfill legal and regulatory obligations</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Or until you request deletion (subject to compliance restrictions)</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            6. Your Privacy Rights
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            You have the right to:
+          </Typography>
+          
+          <Box component="ul" sx={{ pl: 4 }}>
+            <Box component="li">
+              <Typography variant="body1">Access and request a copy of your data</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Correct inaccuracies in your profile</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Request deletion of your account (where permissible)</Typography>
+            </Box>
+            <Box component="li">
+              <Typography variant="body1">Withdraw consent to marketing communications</Typography>
+            </Box>
+          </Box>
+          
+          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+            To exercise your rights, contact us at: ireva.investments@gmail.com
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            7. Data Security
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            We implement administrative, technical, and physical security measures to protect your data.
+            However, no method of transmission over the internet is 100% secure.
+            We encourage users to maintain strong passwords and monitor account activities.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            8. Third-Party Links
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            Our platform may contain links to third-party websites or services.
+            We are not responsible for the privacy practices of those external sites.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            9. Changes to This Policy
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            We may update this Privacy Policy from time to time.
+            We will notify you of any material changes through the platform or by email.
+          </Typography>
+        </Box>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            10. Contact Us
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            If you have any questions about this Privacy Policy, please contact us:
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            iREVA Support Team<br />
+            Email: ireva.investments@gmail.com
           </Typography>
         </Box>
       </Container>
