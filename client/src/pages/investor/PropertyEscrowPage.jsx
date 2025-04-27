@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Button, Divider, Alert } from '@mui/material';
 import { Link } from 'wouter';
 import EscrowDashboard from '../../components/investor/EscrowDashboard';
-import { useAuth } from '../../hooks/useAuth'; // Adjust this import according to your auth system
+import { useAuth } from '@/hooks/use-auth'; // Using alias path for auth hook
 
 const PropertyEscrowPage = () => {
   const { user } = useAuth();
