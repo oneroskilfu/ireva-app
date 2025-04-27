@@ -67,20 +67,7 @@ const OfflineFormDemoPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Make an Investment</CardTitle>
-            <CardDescription>
-              Submit your investment details. If you're offline, the data will be saved
-              and automatically submitted when you reconnect.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <OfflineInvestmentForm />
-          </CardContent>
-        </Card>
-
+      <div className="mb-8">
         <Card>
           <CardHeader>
             <CardTitle>How It Works</CardTitle>
@@ -124,6 +111,34 @@ const OfflineFormDemoPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+      
+      <div>
+        <Tabs defaultValue="investment" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="investment">Investment Form</TabsTrigger>
+            <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="investment">
+            <Card>
+              <CardHeader>
+                <CardTitle>Make an Investment</CardTitle>
+                <CardDescription>
+                  Submit your investment details. If you're offline, the data will be saved
+                  and automatically submitted when you reconnect.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OfflineInvestmentForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="kyc">
+            <OfflineKYCForm />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
