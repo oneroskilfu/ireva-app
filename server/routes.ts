@@ -75,7 +75,7 @@ import investorKycRoutes from './api/investor/kyc';
 // Import transaction and wallet routes
 import transactionRouter from './transaction-routes';
 import walletRouter from './wallet-routes';
-import notificationRouter from './notification-routes';
+import { notificationRouter } from './routes/notification-routes';
 import { adminNotificationRouter } from './routes/admin-notification-routes';
 import adminKycRouter from './routes/admin-kyc-routes';
 import kycRouter from './routes/kyc';
