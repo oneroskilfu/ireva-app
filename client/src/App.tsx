@@ -101,6 +101,7 @@ function Router() {
   const IssuesPage = lazy(() => import('@/pages/issues/IssuesPage'));
   const IssueDetailPage = lazy(() => import('@/pages/issues/IssueDetailPage'));
   const NewIssuePage = lazy(() => import('@/pages/issues/NewIssuePage'));
+  const OfflineFormDemoPage = lazy(() => import('@/pages/demo/offline-form-demo'));
   
   useEffect(() => {
     // Function to check if viewport is mobile
@@ -142,6 +143,7 @@ function Router() {
       <Route path="/explore" component={ExplorePage} />
       <Route path="/crypto-education" component={CryptoEducationPage} />
       <Route path="/wallet-demo" component={WalletDemo} />
+      <Route path="/demo/offline-form" component={OfflineFormDemoPage} />
       
       {/* Legacy Protected Routes - will be deprecated gradually */}
       <Route path="/dashboard">
