@@ -124,6 +124,7 @@ function Router() {
     <Switch>
       {/* Public Routes */}
       <Route path="/" component={isMobile ? MobileHomePage : HomePage} />
+      <Route path="/mui-home" component={MuiHomePage} />
       <Route path="/property/:id" component={PropertyPage} />
       <Route path="/property/:id/invest" component={PropertyInvestment} />
       <Route path="/properties" component={PropertiesPage} />
