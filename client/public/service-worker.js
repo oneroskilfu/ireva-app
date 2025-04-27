@@ -1,19 +1,22 @@
 // Service Worker for iREVA PWA
-const CACHE_NAME = "ireva-cache-v2";
-const OFFLINE_URL = '/offline.html';
+const CACHE_NAME = "ireva-pwa-cache-v1";
+const OFFLINE_URL = "/offline.html";
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/logo192.png',
-  '/logo512.png',
-  OFFLINE_URL
+  "/",
+  "/dashboard",
+  "/investments",
+  "/kyc",
+  "/manifest.json",
+  "/icons/icon-192x192.png",
+  "/icons/icon-512x512.png",
+  "/logo192.png",
+  "/logo512.png",
+  OFFLINE_URL,
 ];
 
-// Install Service Worker
-self.addEventListener('install', (event) => {
+// Install Event
+self.addEventListener("install", (event) => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -21,39 +24,42 @@ self.addEventListener('install', (event) => {
         console.log('Service Worker: Caching app shell and content');
         return cache.addAll(urlsToCache);
       })
-      .then(() => {
-        console.log("Content is cached for offline use.");
-        return self.skipWaiting();
-      })
   );
+  self.skipWaiting();
 });
 
-// Activate Service Worker
-self.addEventListener('activate', (event) => {
+// Activate Event
+self.addEventListener("activate", (event) => {
   console.log('Service Worker: Activating...');
-  
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Clearing old cache:', cacheName);
-            return caches.delete(cacheName);
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('Service Worker: Clearing old cache:', cache);
+            return caches.delete(cache);
           }
         })
-      );
-    }).then(() => {
+      )
+    ).then(() => {
       console.log('Service Worker: Now ready to handle fetches!');
       return self.clients.claim();
     })
   );
 });
 
-// Fetch cached assets
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => caches.match('/offline.html'))
-  );
+// Fetch Event
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(OFFLINE_URL))
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => response || fetch(event.request))
+    );
+  }
 });
 
 // Listen for messages from the client and skip waiting if requested
