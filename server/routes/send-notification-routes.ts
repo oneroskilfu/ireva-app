@@ -3,27 +3,11 @@ import { authMiddleware } from '../auth-jwt';
 import { db } from '../db';
 import { notifications, pushSubscriptions } from '@shared/schema';
 import { v4 as uuidv4 } from 'uuid';
-import admin from 'firebase-admin';
+import admin, { messaging } from '../firebase/firebaseAdmin';
 import { getSocketIo } from '../socketio';
+import { eq } from 'drizzle-orm';
 
 export const sendNotificationRouter = express.Router();
-
-// Initialize Firebase Admin if not already initialized
-let firebaseAdmin: typeof admin;
-try {
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-      })
-    });
-  }
-  firebaseAdmin = admin;
-} catch (error) {
-  console.error('Firebase admin initialization failed:', error);
-}
 
 // Send a test notification to self
 sendNotificationRouter.post('/send-self', authMiddleware, async (req: Request, res: Response) => {
@@ -50,10 +34,10 @@ sendNotificationRouter.post('/send-self', authMiddleware, async (req: Request, r
 
     // Get user's push subscriptions
     const userSubscriptions = await db.select().from(pushSubscriptions)
-      .where(sub => sub.userId.equals(String(userId)));
+      .where(eq(pushSubscriptions.userId, String(userId)));
 
     // Send push notification if Firebase Admin is initialized
-    if (firebaseAdmin && userSubscriptions.length > 0) {
+    if (messaging && userSubscriptions.length > 0) {
       try {
         // Prepare notification payload
         const notification = {
@@ -69,7 +53,7 @@ sendNotificationRouter.post('/send-self', authMiddleware, async (req: Request, r
 
         // Send to all user's devices
         const sendPromises = userSubscriptions.map(subscription => 
-          firebaseAdmin.messaging().send({
+          messaging.send({
             token: subscription.token,
             notification,
             data,
@@ -127,7 +111,7 @@ sendNotificationRouter.post('/send-self', authMiddleware, async (req: Request, r
         res.status(200).json({ 
           message: 'Notification saved but push notification failed',
           notificationId,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
     } else {
@@ -135,7 +119,7 @@ sendNotificationRouter.post('/send-self', authMiddleware, async (req: Request, r
       res.status(200).json({ 
         message: 'Notification saved but no push notification sent',
         notificationId,
-        reason: !firebaseAdmin ? 'Firebase Admin not initialized' : 'No device subscriptions found'
+        reason: !messaging ? 'Firebase Messaging not initialized' : 'No device subscriptions found'
       });
     }
   } catch (error) {
