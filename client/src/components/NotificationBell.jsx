@@ -1,171 +1,203 @@
 import React, { useState, useEffect } from 'react';
-import { Badge, IconButton, Menu, MenuItem, Typography, Box, Divider, Button } from '@mui/material';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
+import { 
+  Bell, 
+  BellRing, 
+  Check, 
+  ExternalLink 
+} from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
 
-const NotificationBell = ({ notifications = [], onNotificationClick = null }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [userNotifications, setUserNotifications] = useState(notifications);
-  const [, setLocation] = useLocation();
-
-  // Calculate unread notifications count
-  const unreadCount = userNotifications.filter((n) => !n.isRead).length;
-
-  // Fetch notifications from API if no notifications are provided
-  useEffect(() => {
-    if (notifications.length === 0) {
-      fetchNotifications();
-    } else {
-      setUserNotifications(notifications);
-    }
-  }, [notifications]);
-
-  const fetchNotifications = async () => {
+const NotificationBell = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+  
+  // Get unread notification count
+  const { data: unreadData } = useQuery({
+    queryKey: ['/api/notifications/unread'],
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  
+  // Get recent notifications (limited to 5)
+  const { data: notifications, isLoading } = useQuery({
+    queryKey: ['/api/notifications/recent'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/notifications/recent');
+      return await response.json();
+    },
+    enabled: isOpen, // Only fetch when dropdown is open
+  });
+  
+  const unreadCount = unreadData?.count || 0;
+  
+  const markAsRead = async (id) => {
     try {
-      const response = await axios.get('/api/notifications');
-      if (response.data) {
-        setUserNotifications(response.data);
-      }
+      await apiRequest('PATCH', `/api/notifications/${id}/read`);
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/recent'] });
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read",
+        variant: "destructive",
+      });
     }
   };
-
-  const handleOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleNotificationClick = (notification) => {
-    // Mark as read
-    markAsRead(notification.id);
-    
-    // If link is provided, navigate to it
-    if (notification.link) {
-      setLocation(notification.link);
-    }
-    
-    // If custom handler is provided, call it
-    if (onNotificationClick) {
-      onNotificationClick(notification);
-    }
-    
-    handleClose();
-  };
-
-  const markAsRead = async (notificationId) => {
-    try {
-      await axios.patch(`/api/notifications/${notificationId}/read`);
-      // Update local state to mark notification as read
-      setUserNotifications(prevNotifications => 
-        prevNotifications.map(n => 
-          n.id === notificationId ? { ...n, isRead: true } : n
-        )
-      );
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
-    }
-  };
-
+  
   const markAllAsRead = async () => {
     try {
-      await axios.patch('/api/notifications/mark-all-read');
-      // Update local state to mark all notifications as read
-      setUserNotifications(prevNotifications => 
-        prevNotifications.map(n => ({ ...n, isRead: true }))
-      );
+      await apiRequest('PATCH', '/api/notifications/mark-all-read');
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/recent'] });
+      
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read",
+        variant: "destructive",
+      });
     }
-    handleClose();
   };
-
-  const viewAllNotifications = () => {
-    setLocation('/notifications');
-    handleClose();
+  
+  const handleNotificationClick = async (notification) => {
+    // Mark as read if unread
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+    
+    // Navigate to linked page if available
+    if (notification.link) {
+      navigate(notification.link);
+    }
+    
+    // Close dropdown
+    setIsOpen(false);
+  };
+  
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'investment':
+        return <div className="h-2 w-2 rounded-full bg-green-500"></div>;
+      case 'property':
+        return <div className="h-2 w-2 rounded-full bg-blue-500"></div>;
+      case 'kyc':
+        return <div className="h-2 w-2 rounded-full bg-yellow-500"></div>;
+      case 'payment':
+        return <div className="h-2 w-2 rounded-full bg-purple-500"></div>;
+      default:
+        return <div className="h-2 w-2 rounded-full bg-gray-500"></div>;
+    }
   };
 
   return (
-    <>
-      <IconButton color="inherit" onClick={handleOpen} aria-label={`${unreadCount} unread notifications`}>
-        <Badge badgeContent={unreadCount} color="error">
-          <NotificationsIcon />
-        </Badge>
-      </IconButton>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          style: {
-            maxHeight: 400,
-            width: '350px',
-          },
-        }}
-      >
-        <Box sx={{ px: 2, py: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Notifications</Typography>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          className="relative h-9 w-9 rounded-full p-0" 
+          aria-label="Notifications"
+        >
+          {unreadCount > 0 ? (
+            <>
+              <BellRing className="h-5 w-5" />
+              <Badge 
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs" 
+                variant="destructive"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            </>
+          ) : (
+            <Bell className="h-5 w-5" />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <div className="flex items-center justify-between p-4">
+          <h3 className="font-medium">Notifications</h3>
           {unreadCount > 0 && (
-            <Button size="small" onClick={markAllAsRead}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs h-8"
+              onClick={markAllAsRead}
+            >
+              <Check className="h-3.5 w-3.5 mr-1" />
               Mark all as read
             </Button>
           )}
-        </Box>
+        </div>
+        <Separator />
         
-        <Divider />
+        {isLoading && (
+          <div className="p-4 flex justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          </div>
+        )}
         
-        {userNotifications.length === 0 ? (
-          <MenuItem>
-            <Typography variant="body2" sx={{ py: 2, color: 'text.secondary' }}>
-              No notifications
-            </Typography>
-          </MenuItem>
-        ) : (
+        {!isLoading && (!notifications || notifications.length === 0) && (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            No notifications
+          </div>
+        )}
+        
+        {!isLoading && notifications && notifications.length > 0 && (
           <>
-            {userNotifications.slice(0, 5).map((notification) => (
-              <MenuItem 
-                key={notification.id} 
+            {notifications.map((notification) => (
+              <DropdownMenuItem 
+                key={notification.id}
+                className={`p-4 flex flex-col items-start cursor-pointer ${!notification.isRead ? 'bg-muted' : ''}`}
                 onClick={() => handleNotificationClick(notification)}
-                sx={{ 
-                  py: 1.5,
-                  px: 2,
-                  borderLeft: notification.isRead ? 'none' : '3px solid',
-                  borderLeftColor: 'primary.main',
-                  backgroundColor: notification.isRead ? 'inherit' : 'action.hover'
-                }}
               >
-                <Box>
-                  <Typography variant="subtitle2">
-                    {notification.title || "New update!"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    {notification.message || notification.body || ""}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {notification.createdAt && new Date(notification.createdAt).toLocaleString()}
-                  </Typography>
-                </Box>
-              </MenuItem>
+                <div className="flex items-center gap-2 w-full">
+                  {getNotificationIcon(notification.type)}
+                  <span className="flex-grow font-medium text-sm">{notification.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(notification.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="text-xs mt-1 line-clamp-2">{notification.message}</p>
+                {notification.link && (
+                  <div className="flex items-center text-xs text-blue-500 mt-1">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Open
+                  </div>
+                )}
+              </DropdownMenuItem>
             ))}
             
-            <Divider />
-            
-            <MenuItem onClick={viewAllNotifications} sx={{ justifyContent: 'center' }}>
-              <Typography variant="button" color="primary">
-                View All Notifications
-              </Typography>
-            </MenuItem>
+            <Separator />
+            <DropdownMenuItem 
+              className="p-3 justify-center text-sm font-medium"
+              onClick={() => {
+                navigate('/notifications');
+                setIsOpen(false);
+              }}
+            >
+              View all notifications
+            </DropdownMenuItem>
           </>
         )}
-      </Menu>
-    </>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

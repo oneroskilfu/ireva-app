@@ -17,7 +17,7 @@ notificationRouter.get('/', authMiddleware, async (req: Request, res: Response) 
 
     const userNotifications = await db.select()
       .from(notifications)
-      .where(eq(notifications.userId, userId))
+      .where(eq(notifications.userId, userId.toString()))
       .orderBy(desc(notifications.createdAt));
 
     return res.status(200).json(userNotifications);
@@ -59,7 +59,7 @@ notificationRouter.get('/unread', authMiddleware, async (req: Request, res: Resp
     const unreadNotifications = await db.select()
       .from(notifications)
       .where(and(
-        eq(notifications.userId, userId),
+        eq(notifications.userId, userId.toString()),
         eq(notifications.isRead, false)
       ));
 
@@ -84,8 +84,8 @@ notificationRouter.patch('/:id/read', authMiddleware, async (req: Request, res: 
     const [notification] = await db.select()
       .from(notifications)
       .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, userId)
+        eq(notifications.id, notificationId.toString()),
+        eq(notifications.userId, userId.toString())
       ));
 
     if (!notification) {
@@ -95,7 +95,7 @@ notificationRouter.patch('/:id/read', authMiddleware, async (req: Request, res: 
     // Update the notification
     await db.update(notifications)
       .set({ isRead: true })
-      .where(eq(notifications.id, notificationId));
+      .where(eq(notifications.id, notificationId.toString()));
 
     return res.status(200).json({ message: 'Notification marked as read' });
   } catch (error) {
@@ -114,7 +114,7 @@ notificationRouter.patch('/mark-all-read', authMiddleware, async (req: Request, 
 
     await db.update(notifications)
       .set({ isRead: true })
-      .where(eq(notifications.userId, userId));
+      .where(eq(notifications.userId, userId.toString()));
 
     return res.status(200).json({ message: 'All notifications marked as read' });
   } catch (error) {
@@ -212,8 +212,8 @@ notificationRouter.delete('/:id', authMiddleware, async (req: Request, res: Resp
     const [notification] = await db.select()
       .from(notifications)
       .where(and(
-        eq(notifications.id, notificationId),
-        eq(notifications.userId, userId)
+        eq(notifications.id, notificationId.toString()),
+        eq(notifications.userId, userId.toString())
       ));
 
     if (!notification) {
@@ -222,7 +222,7 @@ notificationRouter.delete('/:id', authMiddleware, async (req: Request, res: Resp
 
     // Delete the notification
     await db.delete(notifications)
-      .where(eq(notifications.id, notificationId));
+      .where(eq(notifications.id, notificationId.toString()));
 
     return res.status(200).json({ message: 'Notification deleted successfully' });
   } catch (error) {
