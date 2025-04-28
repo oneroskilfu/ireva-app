@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Test Page</title>
+  <!-- Load React directly from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Load Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .nav-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #2196F3;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Basic React Component (Class Component, no hooks)
+    class BasicCounter extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { count: 0 };
+      }
+
+      increment = () => {
+        this.setState({ count: this.state.count + 1 });
+      }
+
+      reset = () => {
+        this.setState({ count: 0 });
+      }
+
+      render() {
+        return (
+          <div>
+            <h2>Class Component Counter</h2>
+            <p>Count: {this.state.count}</p>
+            <button onClick={this.increment}>Increment</button>
+            <button onClick={this.reset}>Reset</button>
+          </div>
+        );
+      }
+    }
+
+    // Simple Functional Component (No Hooks)
+    function Greeting(props) {
+      return (
+        <div>
+          <h2>Functional Component</h2>
+          <p>Hello, {props.name}!</p>
+        </div>
+      );
+    }
+
+    // Main App Component (Class based, no hooks)
+    class App extends React.Component {
+      render() {
+        return (
+          <div>
+            <h1>Basic React Test</h1>
+            <p>This page is testing the most basic React functionality without hooks or complex state management.</p>
+            
+            <div className="container">
+              <BasicCounter />
+            </div>
+            
+            <div className="container">
+              <Greeting name="React User" />
+            </div>
+            
+            <a href="/" className="nav-link">Back to Home</a>
+          </div>
+        );
+      }
+    }
+
+    // Render the App using ReactDOM
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
