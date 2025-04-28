@@ -7,19 +7,42 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Info, Lock, Users } from "lucide-react";
+import { Loader2, User, Info, Lock, Users, FileText } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { loginFormSchema, registrationFormSchema } from "@/shared/validators/formValidators";
+import LegalPdfViewer from "@/components/legal/LegalPdfViewer";
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 type RegisterFormValues = z.infer<typeof registrationFormSchema>;
+
+interface LegalDocument {
+  title: string;
+  pdfPath: string;
+}
 
 export default function AuthPage() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [currentPdf, setCurrentPdf] = useState<LegalDocument | null>(null);
+  
+  const legalDocuments = {
+    termsOfService: { 
+      title: "Terms of Service", 
+      pdfPath: "/pdfs/terms-of-service.pdf" 
+    },
+    privacyPolicy: { 
+      title: "Privacy Policy", 
+      pdfPath: "/pdfs/privacy-policy.pdf" 
+    },
+    investorRisk: { 
+      title: "Investor Risk Disclosure", 
+      pdfPath: "/pdfs/investor-risk-disclosure.pdf" 
+    }
+  };
   
   // Extract referral code from URL if present
   useEffect(() => {
@@ -397,12 +420,37 @@ export default function AuthPage() {
                       className="mt-1"
                     />
                     <label htmlFor="agree-terms" className="text-sm text-gray-600">
-                      I agree to the <Link href="/legal/terms-of-service" className="text-[#16b5a0] hover:underline">Terms of Service</Link>, 
-                      <Link href="/legal/privacy-policy" className="text-[#16b5a0] hover:underline"> Privacy Policy</Link>, 
-                      <Link href="/legal/cookies-policy" className="text-[#16b5a0] hover:underline"> Cookies Policy</Link>, 
-                      <Link href="/legal/investor-risk-disclosure" className="text-[#16b5a0] hover:underline"> Investor Risk Disclosure</Link>,
-                      <Link href="/legal/aml-statement" className="text-[#16b5a0] hover:underline"> AML Statement</Link>, and
-                      <Link href="/legal/gdpr-commitment" className="text-[#16b5a0] hover:underline"> GDPR Commitment</Link>. 
+                      I agree to the 
+                      <button 
+                        type="button"
+                        className="text-[#16b5a0] hover:underline font-medium mx-1"
+                        onClick={() => {
+                          setCurrentPdf(legalDocuments.termsOfService);
+                          setViewerOpen(true);
+                        }}
+                      >
+                        Terms of Service
+                      </button>,
+                      <button 
+                        type="button"
+                        className="text-[#16b5a0] hover:underline font-medium mx-1"
+                        onClick={() => {
+                          setCurrentPdf(legalDocuments.privacyPolicy);
+                          setViewerOpen(true);
+                        }}
+                      >
+                        Privacy Policy
+                      </button>, and
+                      <button 
+                        type="button"
+                        className="text-[#16b5a0] hover:underline font-medium mx-1"
+                        onClick={() => {
+                          setCurrentPdf(legalDocuments.investorRisk);
+                          setViewerOpen(true);
+                        }}
+                      >
+                        Investor Risk Disclosure
+                      </button>.
                       By registering, I confirm I am at least 18 years old and understand the risks of property investment.
                     </label>
                   </div>
@@ -549,6 +597,16 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
+      
+      {/* PDF Viewer Modal */}
+      {currentPdf && (
+        <LegalPdfViewer
+          open={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          pdfUrl={currentPdf.pdfPath}
+          title={currentPdf.title}
+        />
+      )}
     </div>
   );
 }
