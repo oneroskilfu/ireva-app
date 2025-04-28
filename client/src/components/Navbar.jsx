@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { AppBar, Toolbar, IconButton, Typography, Button, Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { motion } from 'framer-motion';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'wouter';
 
 const navItems = [
-  { title: 'Home', link: '/' },
+  { title: 'Home', link: '/simple' },
   { title: 'Projects', link: '/projects' },
-  { title: 'Transactions', link: '/wallet/transactions' },
-  { title: 'Settings', link: '/investor/settings' },
-  { title: 'Privacy', link: '/legal/privacy-policy' },
-  { title: 'Terms', link: '/legal/terms-of-service' },
+  { title: 'Transactions', link: '/simple/transactions' },
+  { title: 'Settings', link: '/simple/settings' },
+  { title: 'Privacy', link: '/simple/privacy-policy' },
+  { title: 'Terms', link: '/simple/terms' },
   { title: 'Login', link: '/auth' },
 ];
 

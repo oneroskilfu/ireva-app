@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'wouter';
 import { Box, Typography, Link, Container, Grid, Divider } from '@mui/material';
 
 function Footer() {
@@ -29,7 +29,7 @@ function Footer() {
             <Typography variant="h6" color="text.primary" gutterBottom>
               Explore
             </Typography>
-            <Link component={RouterLink} to="/" color="inherit" display="block" sx={{ mb: 1 }}>
+            <Link component={RouterLink} to="/simple" color="inherit" display="block" sx={{ mb: 1 }}>
               Home
             </Link>
             <Link component={RouterLink} to="/projects" color="inherit" display="block" sx={{ mb: 1 }}>
@@ -50,10 +50,10 @@ function Footer() {
             <Link component={RouterLink} to="/investor/dashboard" color="inherit" display="block" sx={{ mb: 1 }}>
               Dashboard
             </Link>
-            <Link component={RouterLink} to="/wallet/transactions" color="inherit" display="block" sx={{ mb: 1 }}>
+            <Link component={RouterLink} to="/simple/transactions" color="inherit" display="block" sx={{ mb: 1 }}>
               Transactions
             </Link>
-            <Link component={RouterLink} to="/investor/settings" color="inherit" display="block" sx={{ mb: 1 }}>
+            <Link component={RouterLink} to="/simple/settings" color="inherit" display="block" sx={{ mb: 1 }}>
               Settings
             </Link>
           </Grid>
@@ -62,10 +62,10 @@ function Footer() {
             <Typography variant="h6" color="text.primary" gutterBottom>
               Legal
             </Typography>
-            <Link component={RouterLink} to="/legal/privacy-policy" color="inherit" display="block" sx={{ mb: 1 }}>
+            <Link component={RouterLink} to="/simple/privacy-policy" color="inherit" display="block" sx={{ mb: 1 }}>
               Privacy Policy
             </Link>
-            <Link component={RouterLink} to="/legal/terms-of-service" color="inherit" display="block" sx={{ mb: 1 }}>
+            <Link component={RouterLink} to="/simple/terms" color="inherit" display="block" sx={{ mb: 1 }}>
               Terms of Service
             </Link>
             <Link component={RouterLink} to="/legal/investor-risk-disclosure" color="inherit" display="block" sx={{ mb: 1 }}>
@@ -81,10 +81,10 @@ function Footer() {
             © {currentYear} iREVA. All rights reserved.
           </Typography>
           <Box>
-            <Link component={RouterLink} to="/legal/privacy-policy" color="inherit" sx={{ ml: 2 }}>
+            <Link component={RouterLink} to="/simple/privacy-policy" color="inherit" sx={{ ml: 2 }}>
               Privacy
             </Link>
-            <Link component={RouterLink} to="/legal/terms-of-service" color="inherit" sx={{ ml: 2 }}>
+            <Link component={RouterLink} to="/simple/terms" color="inherit" sx={{ ml: 2 }}>
               Terms
             </Link>
             <Link component={RouterLink} to="/legal/cookies-policy" color="inherit" sx={{ ml: 2 }}>

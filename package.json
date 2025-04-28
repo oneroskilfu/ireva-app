@@ -104,6 +104,7 @@
     "react-joyride": "^2.9.3",
     "react-qr-code": "^2.0.15",
     "react-resizable-panels": "^2.1.4",
+    "react-router-dom": "^7.5.2",
     "react-toastify": "^11.0.5",
     "recharts": "^2.15.2",
     "socket.io": "^4.8.1",
