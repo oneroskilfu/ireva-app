@@ -1,5 +1,5 @@
 import React, { useEffect, useState, lazy, Suspense, StrictMode } from "react";
-import { Switch, Route, useLocation, Redirect } from "wouter";
+import { Switch, Route, useLocation, Redirect, Router } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
@@ -55,7 +55,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+function AppRouter() {
   const [isMobile, setIsMobile] = useState(false);
   
   // Lazy load the page components to avoid potential issues with circular dependencies
@@ -934,7 +934,9 @@ function AppContent({ isDevelopment }: { isDevelopment: boolean }) {
   
   return (
     <>
-      <Router />
+      <Router base="">
+        <AppRouter />
+      </Router>
       <Toaster />
       <PWAInstallToast />
       {/* Only show debug helper in development mode */}
