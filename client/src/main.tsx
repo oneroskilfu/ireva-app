@@ -8,13 +8,13 @@ import { IntegratedThemeProvider } from './providers/IntegratedThemeProvider';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <IntegratedThemeProvider>
+  <IntegratedThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
         <App />
-      </IntegratedThemeProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </IntegratedThemeProvider>
 );
 
 // Register service worker for PWA functionality
