@@ -1,57 +1,64 @@
-import React from 'react';
-import { Box, Typography, Paper } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, CircularProgress } from '@mui/material';
+import axios from 'axios';
 
 /**
- * Component to display legal document text content
- * 
- * @param {Object} props
- * @param {string} props.title - The title of the legal document
- * @param {string} props.content - The content of the legal document
- * @returns {JSX.Element}
+ * Component for displaying text-based legal documents
  */
-const LegalTextViewer = ({ title, content }) => {
-  if (!content) {
+export default function LegalTextViewer({ documentType, version }) {
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setLoading(true);
+        // Request the text document from backend
+        const response = await axios.get(`/api/legal-content/${documentType}/${version}/text`);
+        
+        setContent(response.data.content);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching text content:', err);
+        setError('Could not load document. Please try again later.');
+        setLoading(false);
+      }
+    };
+
+    fetchContent();
+  }, [documentType, version]);
+
+  if (loading) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography color="error">
-          Document content not available
-        </Typography>
+      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={2}>
+        <Typography color="error">{error}</Typography>
       </Box>
     );
   }
 
   return (
-    <Paper 
-      elevation={0} 
-      sx={{ 
-        p: 3, 
-        maxHeight: '60vh', 
-        overflowY: 'auto',
-        border: '1px solid #e0e0e0',
-        borderRadius: 2
-      }}
-    >
-      <Typography variant="h5" component="h2" gutterBottom>
-        {title}
-      </Typography>
-      
-      <Box sx={{ mt: 2 }}>
-        {content.split('\n\n').map((paragraph, index) => (
-          <Typography 
-            key={index} 
-            paragraph 
-            sx={{ 
-              fontSize: '0.9rem',
-              color: 'text.secondary',
-              mb: 2
-            }}
-          >
-            {paragraph}
-          </Typography>
-        ))}
-      </Box>
-    </Paper>
+    <Box width="100%" height="100%" overflow="auto" p={1}>
+      {content ? (
+        <div 
+          dangerouslySetInnerHTML={{ __html: content }} 
+          style={{ 
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            lineHeight: '1.6'
+          }}
+        />
+      ) : (
+        <Typography>No document content available</Typography>
+      )}
+    </Box>
   );
-};
-
-export default LegalTextViewer;
+}

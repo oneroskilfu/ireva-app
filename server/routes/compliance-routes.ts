@@ -148,7 +148,7 @@ complianceRouter.get('/document-versions', authMiddleware, async (req: Request, 
 /**
  * Admin: Add new document version
  */
-complianceRouter.post('/document-versions', authMiddleware, async (req: Request, res: Response) => {
+complianceRouter.post('/document-versions', authMiddleware, ensureAdmin, async (req: Request, res: Response) => {
   try {
     const { documentType, version } = req.body;
 
@@ -182,6 +182,30 @@ complianceRouter.post('/document-versions', authMiddleware, async (req: Request,
   } catch (error) {
     console.error('Error adding document version:', error);
     return res.status(500).json({ error: 'Failed to add document version' });
+  }
+});
+
+/**
+ * Admin: Get compliance logs for all users
+ */
+complianceRouter.get('/admin/compliance-logs', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const documentType = req.query.documentType as string | undefined;
+    
+    let query = db.select().from(complianceLogs);
+    
+    // Apply document type filter if provided
+    if (documentType) {
+      query = query.where(eq(complianceLogs.documentType, documentType));
+    }
+    
+    // Get all logs, ordered by most recent first
+    const logs = await query.orderBy(desc(complianceLogs.acceptedAt));
+    
+    return res.json(logs);
+  } catch (error) {
+    console.error('Error fetching compliance logs:', error);
+    return res.status(500).json({ error: 'Failed to fetch compliance logs' });
   }
 });
 

@@ -343,6 +343,7 @@ export const legalVersions = pgTable("legal_versions", {
   id: serial("id").primaryKey(),
   documentType: documentTypeEnum("document_type").notNull(),
   version: integer("version").notNull(),
+  notify_users: boolean("notify_users").default(false),
   releaseDate: timestamp("release_date").defaultNow()
 });
 
