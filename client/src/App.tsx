@@ -275,7 +275,7 @@ function AppRouter() {
       <Route path="/simplified-themed" component={SimplifiedThemedApp} />
       
       {/* Static Home Page with direct CSS styling - no Material UI */}
-      <Route path="/static-home-route" component={StaticHome} />
+      <Route path="/static-home" component={StaticHome} />
       
       {/* Mobile Optimized Homepage with inline styles - no Material UI */}
       <Route path="/mobile-optimized" component={MobileOptimizedHomePage} />

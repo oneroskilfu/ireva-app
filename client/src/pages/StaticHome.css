@@ -29,7 +29,6 @@
   border-radius: 30px;
   font-weight: bold;
   transition: 0.3s;
-  display: inline-block;
 }
 
 .cta-button:hover {
@@ -87,25 +86,4 @@
 
 .footer-links a:hover {
   text-decoration: underline;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .hero-content h1 {
-    font-size: 2rem;
-  }
-  
-  .hero-content p {
-    font-size: 1rem;
-  }
-  
-  .steps {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .step {
-    width: 100%;
-    max-width: 300px;
-  }
 }

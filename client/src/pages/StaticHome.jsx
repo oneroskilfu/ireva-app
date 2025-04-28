@@ -1,10 +1,30 @@
 // src/pages/StaticHome.jsx
 import React from 'react';
-import './StaticHome.css'; // Separate simple CSS file
+import { Helmet } from 'react-helmet';
+import './StaticHome.css'; // Import the CSS styling
 
 const StaticHome = () => {
   return (
     <div className="home-container">
+      {/* SEO HEAD */}
+      <Helmet>
+        <title>iREVA - Smart Real Estate Investing Platform</title>
+        <meta name="description" content="Invest in fractional real estate assets securely with crypto integration, smart contracts, and high ROI opportunities. Join iREVA today!" />
+        
+        {/* OpenGraph for social sharing */}
+        <meta property="og:title" content="iREVA - Smart Real Estate Investing Platform" />
+        <meta property="og:description" content="Invest smarter with iREVA. Verified properties, fractional ownership, crypto support, and blockchain security." />
+        <meta property="og:image" content="/assets/ireva-og-image.png" />
+        <meta property="og:url" content="https://yourdomain.com/static-home" />
+        <meta property="og:type" content="website" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="iREVA - Smart Real Estate Investing Platform" />
+        <meta name="twitter:description" content="Real estate investments made simple and secure through crypto and blockchain technology." />
+        <meta name="twitter:image" content="/assets/ireva-og-image.png" />
+      </Helmet>
+      
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
