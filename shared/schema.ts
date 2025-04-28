@@ -327,6 +327,28 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Document type enum for compliance logs
+export const documentTypeEnum = pgEnum("document_type", [
+  "terms_of_service", 
+  "privacy_policy", 
+  "investor_risk_disclosure", 
+  "crypto_risk_disclosure",
+  "aml_statement",
+  "gdpr_commitment",
+  "cookies_policy"
+]);
+
+// Compliance logs schema
+export const complianceLogs = pgTable("compliance_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  documentType: documentTypeEnum("document_type").notNull(),
+  documentVersion: text("document_version").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  acceptedAt: timestamp("accepted_at").notNull().defaultNow()
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   kycSubmissions: many(kycSubmissions),
@@ -343,6 +365,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   sentMessages: many(messages, { relationName: "sentMessages" }),
   receivedMessages: many(messages, { relationName: "receivedMessages" }),
   pushSubscriptions: many(pushSubscriptions),
+  complianceLogs: many(complianceLogs),
   feedback: many(userFeedback),
   issues: many(issues),
   issueComments: many(issueComments),
@@ -613,6 +636,12 @@ export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions
   updatedAt: true
 });
 
+// Create schema for compliance logs
+export const insertComplianceLogSchema = createInsertSchema(complianceLogs).omit({
+  id: true,
+  acceptedAt: true
+});
+
 // Export the property schema with a new name to match the import in admin-routes.ts
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
@@ -673,3 +702,6 @@ export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSche
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+
+export type ComplianceLog = typeof complianceLogs.$inferSelect;
+export type InsertComplianceLog = z.infer<typeof insertComplianceLogSchema>;

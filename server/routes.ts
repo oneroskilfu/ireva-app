@@ -64,6 +64,8 @@ import { pushNotificationRouter } from './routes/push-notification-routes';
 import { sendNotificationRouter } from './routes/send-notification-routes';
 import { savePushTokenRouter } from './routes/save-push-token-routes';
 import { pushNotificationSendRouter } from './routes/push-notification-send-routes';
+// Import compliance routes
+import complianceRoutes from './routes/compliance-routes';
 import fs from 'fs';
 import path from 'path';
 
@@ -378,6 +380,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', pushNotificationSendRouter);
   app.use('/api', savePushTokenRouter);
   console.log("Push notification routes registered");
+  
+  // Set up Compliance routes
+  app.use('/api', complianceRoutes);
+  console.log("Compliance logging routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);
