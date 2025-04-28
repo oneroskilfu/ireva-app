@@ -399,6 +399,16 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Standalone MUI App - Has its own ThemeProvider */}
+      <Route path="/standalone-mui-app" component={() => {
+        const MuiStandaloneApp = React.lazy(() => import("./pages/mui-standalone-app"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MuiStandaloneApp />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
