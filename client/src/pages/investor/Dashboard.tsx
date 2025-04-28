@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Grid, Typography, Box } from '@mui/material';
 import { lazy, Suspense } from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useAuth } from '@/hooks/use-auth';
+import LegalUpdateModal from '@/components/legal/LegalUpdateModal';
 
 // Lazy load components for performance optimization
 const InvestmentSummaryCard = lazy(() => import('../../components/investor/InvestmentSummaryCard'));
@@ -25,8 +27,13 @@ const LoadingCard = () => (
 );
 
 export default function Dashboard() {
+  const { user } = useAuth();
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {/* Legal document update modal that appears when user needs to accept latest terms */}
+      {user && <LegalUpdateModal currentUser={user} />}
+
       <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 3, fontWeight: 'bold' }}>
         Dashboard
       </Typography>

@@ -38,11 +38,13 @@ export default function LegalUpdateModal({ currentUser }) {
         documentType: doc.document_type,
         version: doc.version
       });
-      setOpen(false);
-      // Only reload if absolutely necessary - better UX to avoid page reload
+      
+      // Reload the page after acceptance to update the session compliance status
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error('Error accepting document:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -56,9 +58,13 @@ export default function LegalUpdateModal({ currentUser }) {
   return (
     <>
       <Modal 
-        open={open} 
-        disableEscapeKeyDown // Prevent closing with ESC key
-        disableBackdropClick // Prevent closing by clicking outside
+        open={open}
+        onClose={(event, reason) => {
+          // Prevent all attempts to close the modal except through the Accept button
+          return false;
+        }}
+        disableEscapeKeyDown
+        hideBackdrop={false}
       >
         <Box
           sx={{
