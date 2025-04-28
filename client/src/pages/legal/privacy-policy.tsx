@@ -15,7 +15,7 @@ import {
 import { Link as WouterLink } from 'wouter';
 import { FileDown, ArrowLeft } from 'lucide-react';
 import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import FooterSimple from '@/components/layout/FooterSimple';
 
 const PrivacyPolicyPage: React.FC = () => {
   const theme = useTheme();
@@ -342,7 +342,7 @@ const PrivacyPolicyPage: React.FC = () => {
           </Typography>
         </Paper>
       </Container>
-      <Footer />
+      <FooterSimple />
     </div>
   );
 };
