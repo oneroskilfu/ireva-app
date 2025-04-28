@@ -19,6 +19,8 @@ type RegisterFormValues = z.infer<typeof registrationFormSchema>;
 interface LegalDocument {
   title: string;
   pdfPath: string;
+  version?: string;
+  lastUpdated?: string;
 }
 
 export default function AuthPage() {
@@ -32,15 +34,27 @@ export default function AuthPage() {
   const legalDocuments = {
     termsOfService: { 
       title: "Terms of Service", 
-      pdfPath: "/pdfs/terms-of-service.pdf" 
+      pdfPath: "/pdfs/terms-of-service.pdf",
+      version: "1.0.3",
+      lastUpdated: "April 28, 2025" 
     },
     privacyPolicy: { 
       title: "Privacy Policy", 
-      pdfPath: "/pdfs/privacy-policy.pdf" 
+      pdfPath: "/pdfs/privacy-policy.pdf",
+      version: "1.0.2",
+      lastUpdated: "April 28, 2025"
     },
     investorRisk: { 
       title: "Investor Risk Disclosure", 
-      pdfPath: "/pdfs/investor-risk-disclosure.pdf" 
+      pdfPath: "/pdfs/investor-risk-disclosure.pdf",
+      version: "1.0.1",
+      lastUpdated: "April 28, 2025"
+    },
+    cryptoRisk: {
+      title: "Cryptocurrency Risk Disclosure",
+      pdfPath: "/pdfs/crypto-risk-disclosure.pdf",
+      version: "1.0.1",
+      lastUpdated: "April 28, 2025"
     }
   };
   

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogTitle, IconButton, DialogContent } from '@mui/material';
+import { Dialog, DialogTitle, IconButton, DialogContent, DialogActions, Typography, Box } from '@mui/material';
 import { X } from 'lucide-react';
 
 interface LegalPdfViewerProps {
@@ -7,9 +7,18 @@ interface LegalPdfViewerProps {
   onClose: () => void;
   pdfUrl: string;
   title: string;
+  version?: string;
+  lastUpdated?: string;
 }
 
-export default function LegalPdfViewer({ open, onClose, pdfUrl, title }: LegalPdfViewerProps) {
+export default function LegalPdfViewer({ 
+  open, 
+  onClose, 
+  pdfUrl, 
+  title, 
+  version = "1.0.3", 
+  lastUpdated = "April 2025" 
+}: LegalPdfViewerProps) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ m: 0, p: 2 }}>
@@ -27,7 +36,7 @@ export default function LegalPdfViewer({ open, onClose, pdfUrl, title }: LegalPd
           <X size={20} />
         </IconButton>
       </DialogTitle>
-      <DialogContent dividers sx={{ height: '80vh', p: 0 }}>
+      <DialogContent dividers sx={{ height: '70vh', p: 0 }}>
         <iframe
           src={pdfUrl}
           width="100%"
@@ -36,6 +45,18 @@ export default function LegalPdfViewer({ open, onClose, pdfUrl, title }: LegalPd
           title={title}
         />
       </DialogContent>
+      <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            Version: {version} | Last Updated: {lastUpdated}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            &copy; {new Date().getFullYear()} iREVA. All rights reserved.
+          </Typography>
+        </Box>
+      </DialogActions>
     </Dialog>
   );
 }
