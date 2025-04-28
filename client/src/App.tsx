@@ -261,6 +261,26 @@ function AppRouter() {
         );
       }} />
       
+      {/* Standalone iREVA Home - With self-contained MUI theme */}
+      <Route path="/standalone-home" component={() => {
+        const StandaloneIREVAHome = React.lazy(() => import("./pages/standalone-ireva-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <StandaloneIREVAHome />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Pure HTML Home - No dependencies at all */}
+      <Route path="/pure-html-home" component={() => {
+        const PureHTMLHome = React.lazy(() => import("./pages/pure-html-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <PureHTMLHome />
+          </React.Suspense>
+        );
+      }} />
+      
       {/* Ultra Simple iREVA Home - Absolute minimal implementation */}
       <Route path="/ultra-simple" component={() => {
         const UltraSimpleHome = React.lazy(() => import("./pages/ultra-simple-home"));
