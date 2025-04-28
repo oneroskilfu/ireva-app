@@ -1070,21 +1070,17 @@ function App() {
     <StrictMode>
       <HelmetProvider>
         <Router base="">
-          {/* ThemeProvider is now handled by IntegratedThemeProvider in main.tsx */}
-          <QueryClientProvider client={queryClient}>
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-screen">
-                <div className="text-center">
-                  <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
-                  <p className="text-muted-foreground">Loading application...</p>
-                </div>
+          {/* QueryClient and Auth are now handled in main.tsx */}
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
+                <p className="text-muted-foreground">Loading application...</p>
               </div>
-            }>
-              <AuthProvider>
-                <AppContent isDevelopment={isDevelopment} />
-              </AuthProvider>
-            </Suspense>
-          </QueryClientProvider>
+            </div>
+          }>
+            <AppContent isDevelopment={isDevelopment} />
+          </Suspense>
         </Router>
       </HelmetProvider>
     </StrictMode>
