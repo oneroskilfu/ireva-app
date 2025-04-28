@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import theme from "./theme.ts"; // Explicitly using .ts extension
+import theme from "./theme"; // Fixed import without extension
 import MinimalApp from "./MinimalApp";
 import "./index.css";
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
