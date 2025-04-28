@@ -2,7 +2,7 @@ import React, { useEffect, useState, lazy, Suspense, StrictMode } from "react";
 import { Switch, Route, useLocation, Redirect } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { DebugHelper } from "@/components/DebugHelper";
 import PWAInstallToast from "@/components/PWAInstallToast";
@@ -10,6 +10,7 @@ import AuthMiddleware from "@/middleware/AuthMiddleware";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import InvestorLayout from "@/components/layouts/InvestorLayout";
 import { HelmetProvider } from 'react-helmet-async';
+import LegalUpdateModal from "@/components/legal/LegalUpdateModal";
 
 // Lazily load all page components
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -887,17 +888,30 @@ function App() {
               </div>
             }>
               <AuthProvider>
-                <Router />
-                <Toaster />
-                <PWAInstallToast />
-                {/* Only show debug helper in development mode */}
-                {isDevelopment && <DebugHelper />}
+                <AppContent isDevelopment={isDevelopment} />
               </AuthProvider>
             </Suspense>
           </QueryClientProvider>
         </ThemeProvider>
       </HelmetProvider>
     </StrictMode>
+  );
+}
+
+// Separate component to access auth context
+function AppContent({ isDevelopment }: { isDevelopment: boolean }) {
+  const { user } = useAuth();
+  
+  return (
+    <>
+      <Router />
+      <Toaster />
+      <PWAInstallToast />
+      {/* Only show debug helper in development mode */}
+      {isDevelopment && <DebugHelper />}
+      {/* Show legal compliance modal when user is logged in */}
+      {user && <LegalUpdateModal currentUser={user} />}
+    </>
   );
 }
 

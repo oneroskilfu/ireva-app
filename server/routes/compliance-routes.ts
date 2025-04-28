@@ -2,8 +2,8 @@ import express from 'express';
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { legalVersions, userLegalAcceptance, complianceLogs } from '@shared/schema';
-import { authMiddleware } from '../auth-jwt';
-import { eq, and, max, sql } from 'drizzle-orm';
+import { authMiddleware, ensureAdmin } from '../auth-jwt';
+import { eq, and, max, sql, desc, like } from 'drizzle-orm';
 
 export const complianceRouter = express.Router();
 
