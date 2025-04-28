@@ -282,7 +282,7 @@ function AppRouter() {
       
       {/* New Home Page with Material UI and React Helmet */}
       <Route path="/new-home" component={() => {
-        const NewHomePage = React.lazy(() => import("./pages/HomePage"));
+        const NewHomePage = React.lazy(() => import("@/pages/HomePage"));
         return (
           <React.Suspense fallback={<div>Loading...</div>}>
             <NewHomePage />

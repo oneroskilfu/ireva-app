@@ -1,7 +1,11 @@
 // src/pages/HomePage.jsx
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Helmet } from 'react-helmet';
 import { Box, Button, Container, Grid, Typography, Card, CardContent } from '@mui/material';
+import ErrorBoundary from '../components/ErrorBoundary';
+
+// Simple fallback component
+const Fallback = () => <div style={{ padding: '20px', textAlign: 'center' }}>Loading UI components...</div>;
 
 const NewHomePage = () => {
   return (
@@ -211,4 +215,13 @@ const NewHomePage = () => {
   );
 };
 
-export default NewHomePage;
+// Wrap the component with ErrorBoundary and Suspense
+const HomepageWithErrorHandling = () => (
+  <ErrorBoundary>
+    <Suspense fallback={<Fallback />}>
+      <NewHomePage />
+    </Suspense>
+  </ErrorBoundary>
+);
+
+export default HomepageWithErrorHandling;
