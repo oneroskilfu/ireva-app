@@ -15,7 +15,7 @@
     "@emotion/styled": "^11.11.0",
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
-    "@mui/icons-material": "^5.14.18",
+    "@mui/icons-material": "^5.17.1",
     "@mui/material": "^5.14.18",
     "@neondatabase/serverless": "^0.10.4",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
@@ -139,9 +139,9 @@
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "tsx": "^4.19.1",
+    "tsx": "^4.19.3",
     "typescript": "5.6.3",
-    "vite": "^5.4.14"
+    "vite": "^5.4.18"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

@@ -10,22 +10,48 @@ import {
   CardContent,
   CardActions,
   TextField,
-  Alert
+  Alert,
+  createTheme,
+  ThemeProvider,
+  CssBaseline
 } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 
+// Create a standalone theme for this page only
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#4F46E5',
+      light: '#6366F1',
+      dark: '#3730A3',
+      contrastText: '#FFFFFF',
+    },
+    secondary: {
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
+      contrastText: '#FFFFFF',
+    }
+  },
+  typography: {
+    fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+  }
+});
+
 function ThemeTestPage() {
   return (
-    <Container maxWidth="lg">
-      <Helmet>
-        <title>iREVA - Theme Test Page</title>
-        <meta name="description" content="Testing the theme integration for iREVA" />
-      </Helmet>
-      
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h2" component="h1" gutterBottom align="center">
-          Theme Integration Test
-        </Typography>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Container maxWidth="lg">
+        <Helmet>
+          <title>iREVA - Theme Test Page</title>
+          <meta name="description" content="Testing the theme integration for iREVA" />
+        </Helmet>
+        
+        <Box sx={{ my: 4 }}>
+          <Typography variant="h2" component="h1" gutterBottom align="center">
+            Theme Integration Test
+          </Typography>
         
         <Typography variant="h5" component="h2" gutterBottom align="center">
           This page tests Material UI components with our integrated theme provider
@@ -136,6 +162,7 @@ function ThemeTestPage() {
         </Box>
       </Box>
     </Container>
+    </ThemeProvider>
   );
 }
 

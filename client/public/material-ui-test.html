@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material UI Test Page</title>
+  <!-- Fonts to support Material Design -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <!-- Material UI Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      color: #4F46E5;
+      margin-bottom: 0.5rem;
+    }
+    .header p {
+      font-size: 1.2rem;
+      color: #666;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .card h2 {
+      color: #4F46E5;
+      margin-top: 0;
+    }
+    .button-container {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .button {
+      cursor: pointer;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    .button-primary {
+      background-color: #4F46E5;
+      color: white;
+    }
+    .button-primary:hover {
+      background-color: #3730A3;
+    }
+    .button-secondary {
+      background-color: #10B981;
+      color: white;
+    }
+    .button-secondary:hover {
+      background-color: #059669;
+    }
+    .button-outline {
+      background-color: transparent;
+      border: 1px solid #4F46E5;
+      color: #4F46E5;
+    }
+    .button-outline:hover {
+      background-color: rgba(79, 70, 229, 0.1);
+    }
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+    .input-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #4F46E5;
+    }
+    .input-field {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    .input-field:focus {
+      border-color: #4F46E5;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    }
+    .input-error {
+      border-color: #ef4444;
+    }
+    .helper-text {
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+      color: #666;
+    }
+    .helper-text.error {
+      color: #ef4444;
+    }
+    .alert {
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+    }
+    .alert-success {
+      background-color: #d1fae5;
+      color: #065f46;
+      border-left: 4px solid #10B981;
+    }
+    .alert-info {
+      background-color: #e0f2fe;
+      color: #0369a1;
+      border-left: 4px solid #0ea5e9;
+    }
+    .alert-warning {
+      background-color: #fef3c7;
+      color: #92400e;
+      border-left: 4px solid #f59e0b;
+    }
+    .alert-error {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      border-left: 4px solid #ef4444;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      gap: 1.5rem;
+    }
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Material UI Styled Components</h1>
+      <p>This page demonstrates Material Design styled components without React</p>
+    </div>
+    
+    <div class="card">
+      <h2>Buttons</h2>
+      <div class="button-container">
+        <button class="button button-primary">Primary Button</button>
+        <button class="button button-secondary">Secondary Button</button>
+        <button class="button button-outline">Outlined Button</button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Form Controls</h2>
+      <div class="input-group">
+        <label class="input-label">Standard Input</label>
+        <input type="text" class="input-field" placeholder="Enter some text">
+      </div>
+      
+      <div class="input-group">
+        <label class="input-label">With Helper Text</label>
+        <input type="text" class="input-field" placeholder="Enter your email">
+        <p class="helper-text">We'll never share your email with anyone else.</p>
+      </div>
+      
+      <div class="input-group">
+        <label class="input-label">Error State</label>
+        <input type="text" class="input-field input-error" placeholder="Invalid input">
+        <p class="helper-text error">This field has an error</p>
+      </div>
+    </div>
+    
+    <div class="grid">
+      <div class="card">
+        <h2>Alert Components</h2>
+        <div class="alert alert-success">
+          <span>This is a success alert — check it out!</span>
+        </div>
+        <div class="alert alert-info">
+          <span>This is an info alert — check it out!</span>
+        </div>
+        <div class="alert alert-warning">
+          <span>This is a warning alert — check it out!</span>
+        </div>
+        <div class="alert alert-error">
+          <span>This is an error alert — check it out!</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h2>Typography & Styling</h2>
+        <h1 style="color: #4F46E5; font-size: 2rem; margin-bottom: 0.5rem;">Heading 1</h1>
+        <h2 style="color: #4F46E5; font-size: 1.5rem; margin-bottom: 0.5rem;">Heading 2</h2>
+        <h3 style="color: #4F46E5; font-size: 1.25rem; margin-bottom: 0.5rem;">Heading 3</h3>
+        <p style="margin-bottom: 1rem;">This is a paragraph of text. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p style="font-style: italic; margin-bottom: 1rem;">This text is italicized for emphasis.</p>
+        <p style="font-weight: bold;">This text is bold to show importance.</p>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 2rem;">
+      <a href="/" style="text-decoration: none;">
+        <button class="button button-primary">Back to Home</button>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
