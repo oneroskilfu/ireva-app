@@ -1,17 +1,11 @@
 import { createRoot } from "react-dom/client";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import theme from "./theme"; // Fixed import without extension
-import MinimalApp from "./MinimalApp";
+import App from "./App";
 import "./index.css";
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
-// Minimal render with just ThemeProvider and CssBaseline
+// Render the main App component
 createRoot(document.getElementById("root")!).render(
-  <ThemeProvider theme={theme}>
-    <CssBaseline />
-    <MinimalApp />
-  </ThemeProvider>
+  <App />
 );
 
 // Register service worker for PWA functionality
