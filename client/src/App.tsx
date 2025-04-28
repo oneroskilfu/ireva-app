@@ -3,7 +3,7 @@ import { Switch, Route, useLocation, Redirect, Router } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { ThemeProvider } from "@/hooks/use-theme";
+// ThemeProvider is now handled by IntegratedThemeProvider
 import { DebugHelper } from "@/components/DebugHelper";
 import PWAInstallToast from "@/components/PWAInstallToast";
 import AuthMiddleware from "@/middleware/AuthMiddleware";
@@ -257,6 +257,16 @@ function AppRouter() {
         return (
           <React.Suspense fallback={<div>Loading...</div>}>
             <MinimalIREVAHome />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Theme Test Page - Tests the integrated theme provider */}
+      <Route path="/theme-test" component={() => {
+        const ThemeTestPage = React.lazy(() => import("./pages/theme-test-page"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <ThemeTestPage />
           </React.Suspense>
         );
       }} />
@@ -1060,22 +1070,21 @@ function App() {
     <StrictMode>
       <HelmetProvider>
         <Router base="">
-          <ThemeProvider defaultTheme="system" storageKey="ireva-theme">
-            <QueryClientProvider client={queryClient}>
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-screen">
-                  <div className="text-center">
-                    <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
-                    <p className="text-muted-foreground">Loading application...</p>
-                  </div>
+          {/* ThemeProvider is now handled by IntegratedThemeProvider in main.tsx */}
+          <QueryClientProvider client={queryClient}>
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-screen">
+                <div className="text-center">
+                  <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
+                  <p className="text-muted-foreground">Loading application...</p>
                 </div>
-              }>
-                <AuthProvider>
-                  <AppContent isDevelopment={isDevelopment} />
-                </AuthProvider>
-              </Suspense>
-            </QueryClientProvider>
-          </ThemeProvider>
+              </div>
+            }>
+              <AuthProvider>
+                <AppContent isDevelopment={isDevelopment} />
+              </AuthProvider>
+            </Suspense>
+          </QueryClientProvider>
         </Router>
       </HelmetProvider>
     </StrictMode>
