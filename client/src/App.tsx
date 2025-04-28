@@ -127,7 +127,7 @@ function AppRouter() {
     <Switch>
       {/* Public Routes */}
       <Route path="/" component={() => {
-        const SimpleIREVAHome = React.lazy(() => import("./pages/simple-ireva-home"));
+        const MinimalIREVAHome = React.lazy(() => import("./pages/minimal-ireva-home"));
         return (
           <React.Suspense fallback={
             <div style={{ 
@@ -155,7 +155,7 @@ function AppRouter() {
               </div>
             </div>
           }>
-            <SimpleIREVAHome />
+            <MinimalIREVAHome />
           </React.Suspense>
         );
       }} />
@@ -244,6 +244,16 @@ function AppRouter() {
         return (
           <React.Suspense fallback={<div>Loading...</div>}>
             <SimpleIREVAHome />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Minimal iREVA Home - Pure React with inline styles */}
+      <Route path="/minimal-home" component={() => {
+        const MinimalIREVAHome = React.lazy(() => import("./pages/minimal-ireva-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MinimalIREVAHome />
           </React.Suspense>
         );
       }} />
