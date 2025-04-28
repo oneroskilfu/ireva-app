@@ -227,6 +227,36 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Material-UI v7 with minimal theme */}
+      <Route path="/mui-v7-basic" component={() => {
+        const MuiV7Basic = React.lazy(() => import("./pages/mui-v7-basic"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MuiV7Basic />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Material-UI v5 with minimal theme */}
+      <Route path="/mui-v5-basic" component={() => {
+        const MuiV5Basic = React.lazy(() => import("./pages/mui-v5-basic"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MuiV5Basic />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Basic standalone test without dependencies */}
+      <Route path="/basic-test" component={() => {
+        const BasicStandaloneTest = React.lazy(() => import("./pages/basic-standalone-test"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <BasicStandaloneTest />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
