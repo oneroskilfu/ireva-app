@@ -18,6 +18,7 @@ import faqRoutes from './routes/faq';
 import messageRoutes from './routes/messages';
 import projectsRoutes from './routes/projects';
 import emailCampaignRoutes from './routes/email-campaign';
+import { devToolsRouter } from './routes/dev-tools';
 import feedbackRoutes from './routes/feedback';
 import adminLogsRoutes from './routes/adminLogs';
 import issuesRoutes from './routes/issues';
@@ -309,6 +310,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Withdrawal request routes
   app.use('/api/withdrawals', withdrawalRouter);
   console.log("Withdrawal routes registered");
+  
+  // Set up Development Tools routes (only available in development)
+  app.use('/api', devToolsRouter);
+  console.log("Development tools routes registered");
   
   // Set up Crypto Wallet routes
   app.use('/api/crypto-wallets', cryptoWalletRouter);

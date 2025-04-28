@@ -1,73 +1,106 @@
-import React, { lazy, Suspense } from "react";
-import { Switch, Route, Router } from "wouter";
-import { Toaster } from "@/components/ui/toaster";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { AuthProvider, useAuth } from "@/contexts/unified-auth-context";
-import { ThemeProvider } from "@mui/material/styles";
-import { theme } from './theme';
+import React from 'react';
+import { Route, Switch, Router } from 'wouter';
 import { HelmetProvider } from 'react-helmet-async';
-// @ts-ignore: Import JSX file without type definitions
-import LegalUpdateModal from "@/components/legal/LegalUpdateModal";
-import PWAInstallToast from "@/components/PWAInstallToast";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
+import { AuthProvider, AuthErrorBoundary } from './contexts/unified-auth-context';
+import { Toaster } from './components/ui/toaster';
 
-// Lazy load page components
-const HomePage = lazy(() => import("@/pages/home-page"));
-const NotFound = lazy(() => import("@/pages/not-found"));
-const AuthPage = lazy(() => import("@/pages/auth-page"));
+// Components
+import MainLayout from './components/layouts/MainLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 
-// Simple Router component
-function AppRouter() {
+// Pages
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
+import PropertiesPage from './pages/PropertiesPage';
+import PropertyPage from './pages/PropertyPage';
+import ProfilePage from './pages/ProfilePage';
+import WalletPage from './pages/WalletPage';
+import InvestmentsPage from './pages/InvestmentsPage';
+import InvestmentPage from './pages/InvestmentPage';
+import NotificationPage from './pages/NotificationPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminPropertiesPage from './pages/admin/AdminPropertiesPage';
+import AdminKYCPage from './pages/admin/AdminKYCPage';
+import NotFoundPage from './pages/NotFoundPage';
+import SettingsPage from './pages/SettingsPage';
+import LegalPage from './pages/LegalPage';
+import FAQPage from './pages/FAQPage';
+import ContactPage from './pages/ContactPage';
+import AboutPage from './pages/AboutPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// App Content Component (uses auth context safely)
+const AppContent = () => {
   return (
-    <Switch>
-      <Route path="/" component={HomePage} />
-      <Route path="/auth" component={AuthPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <MainLayout>
+      <Switch>
+        {/* Public Routes */}
+        <Route path="/" component={HomePage} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="/register" component={RegisterPage} />
+        <Route path="/properties" component={PropertiesPage} />
+        <Route path="/property/:id" component={PropertyPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/contact" component={ContactPage} />
+        <Route path="/faq" component={FAQPage} />
+        <Route path="/privacy-policy" component={PrivacyPolicyPage} />
+        <Route path="/terms-of-service" component={TermsOfServicePage} />
+        <Route path="/legal" component={LegalPage} />
+        
+        {/* Protected Investor Routes */}
+        <ProtectedRoute path="/dashboard" component={DashboardPage} roles={['investor', 'admin']} />
+        <ProtectedRoute path="/profile" component={ProfilePage} roles={['investor', 'admin']} />
+        <ProtectedRoute path="/wallet" component={WalletPage} roles={['investor', 'admin']} />
+        <ProtectedRoute path="/investments" component={InvestmentsPage} roles={['investor', 'admin']} />
+        <ProtectedRoute path="/investment/:id" component={InvestmentPage} roles={['investor', 'admin']} />
+        <ProtectedRoute path="/notifications" component={NotificationPage} roles={['investor', 'admin']} />
+        <ProtectedRoute path="/settings" component={SettingsPage} roles={['investor', 'admin']} />
+        
+        {/* Protected Admin Routes */}
+        <ProtectedRoute path="/admin/dashboard" component={AdminDashboardPage} roles={['admin']} />
+        <ProtectedRoute path="/admin/users" component={AdminUsersPage} roles={['admin']} />
+        <ProtectedRoute path="/admin/properties" component={AdminPropertiesPage} roles={['admin']} />
+        <ProtectedRoute path="/admin/kyc" component={AdminKYCPage} roles={['admin']} />
+        
+        {/* Not Found */}
+        <Route component={NotFoundPage} />
+      </Switch>
+    </MainLayout>
   );
-}
+};
 
-// Separate component to access auth context - this ensures hooks are used properly
-function AppContent({ isDevelopment }: { isDevelopment: boolean }) {
-  // useAuth is now safely called within a component that's wrapped by AuthProvider
-  const { user } = useAuth();
-  
-  return (
-    <>
-      <AppRouter />
-      <Toaster />
-      <PWAInstallToast />
-      {user && <LegalUpdateModal />}
-      
-      {/* Add any debugging components for development */}
-      {isDevelopment && (
-        <div style={{ position: 'fixed', bottom: 10, right: 10, padding: 10, 
-                     background: 'rgba(0,0,0,0.8)', color: 'white', borderRadius: 5,
-                     fontSize: 12, zIndex: 9999 }}>
-          <p>Dev Mode: {process.env.NODE_ENV}</p>
-          <p>User: {user ? `${user.username} (${user.role})` : 'Not logged in'}</p>
-        </div>
-      )}
-    </>
-  );
-}
-
-// Main App component with proper provider nesting
-export default function App() {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
+// Main App Component with providers
+function App() {
   return (
     <HelmetProvider>
-      <Router base="">
+      <Router>
         <ThemeProvider theme={theme}>
+          <CssBaseline />
           <QueryClientProvider client={queryClient}>
-            <ErrorBoundary>
+            <AuthErrorBoundary>
               <AuthProvider>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <AppContent isDevelopment={isDevelopment} />
-                </Suspense>
+                <AppContent />
               </AuthProvider>
-            </ErrorBoundary>
+            </AuthErrorBoundary>
+            <Toaster />
           </QueryClientProvider>
         </ThemeProvider>
       </Router>
@@ -75,111 +108,4 @@ export default function App() {
   );
 }
 
-// Error Boundary component
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-  errorInfo: React.ErrorInfo | null;
-}
-
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-}
-
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
-      errorInfo: null 
-    };
-  }
-  
-  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    return { hasError: true, error };
-  }
-  
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    this.setState({ errorInfo });
-    console.error("Error caught by boundary:", error, errorInfo);
-  }
-  
-  render(): React.ReactNode {
-    if (this.state.hasError) {
-      return (
-        <div style={{ 
-          padding: '2rem', 
-          maxWidth: '800px', 
-          margin: '0 auto', 
-          fontFamily: 'system-ui, sans-serif',
-          backgroundColor: '#fff1f0',
-          border: '1px solid #ff4d4f',
-          borderRadius: '8px'
-        }}>
-          <h1 style={{ color: '#cf1322' }}>Something went wrong</h1>
-          <p>We've encountered an error rendering the application.</p>
-          <details style={{ marginBottom: '1rem' }}>
-            <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>
-              Error details
-            </summary>
-            <pre style={{ 
-              overflow: 'auto', 
-              background: '#f5f5f5', 
-              padding: '1rem',
-              borderRadius: '4px'
-            }}>
-              {this.state.error?.toString()}
-              {this.state.errorInfo?.componentStack}
-            </pre>
-          </details>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#1890ff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Reload Application
-          </button>
-        </div>
-      );
-    }
-    
-    return this.props.children;
-  }
-}
-
-// Simple loading spinner
-function LoadingSpinner() {
-  return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh',
-      background: '#f5f5f5'
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ 
-          display: 'inline-block',
-          width: '40px',
-          height: '40px',
-          margin: '20px auto',
-          border: '4px solid rgba(0,0,0,0.1)',
-          borderRadius: '50%',
-          borderTop: '4px solid #1890ff',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <style>
-          {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
-        </style>
-        <p style={{ fontFamily: 'Arial', color: '#333' }}>Loading iREVA...</p>
-      </div>
-    </div>
-  );
-}
+export default App;
