@@ -389,6 +389,16 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Simple MUI Page - Uses application's main ThemeProvider */}
+      <Route path="/simple-mui" component={() => {
+        const SimpleMuiPage = React.lazy(() => import("./pages/simple-mui-page"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SimpleMuiPage />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
