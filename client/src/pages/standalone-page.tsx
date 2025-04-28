@@ -1,7 +1,7 @@
 import React from 'react';
 import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Box, Container } from '@mui/material';
 import { createTheme } from '@mui/material/styles';
-import FooterSimple from '@/components/FooterSimple';
+import FooterSimple from '@/components/layout/FooterSimple';
 import { Link as WouterLink } from 'wouter';
 
 // Create a basic theme
