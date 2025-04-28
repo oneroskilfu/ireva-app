@@ -280,6 +280,16 @@ function AppRouter() {
       {/* Mobile Optimized Homepage with inline styles - no Material UI */}
       <Route path="/mobile-optimized" component={MobileOptimizedHomePage} />
       
+      {/* New Home Page with Material UI and React Helmet */}
+      <Route path="/new-home" component={() => {
+        const NewHomePage = React.lazy(() => import("./pages/HomePage"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <NewHomePage />
+          </React.Suspense>
+        );
+      }} />
+      
       {/* Material-UI v7 with minimal theme */}
       <Route path="/mui-v7-basic" component={() => {
         const MuiV7Basic = React.lazy(() => import("./pages/mui-v7-basic"));
