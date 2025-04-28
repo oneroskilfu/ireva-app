@@ -17,6 +17,7 @@
     "@jridgewell/trace-mapping": "^0.3.25",
     "@mui/icons-material": "^5.17.1",
     "@mui/material": "^5.14.18",
+    "@mui/material-pigment-css": "^7.0.2",
     "@neondatabase/serverless": "^0.10.4",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "^5.3.0",

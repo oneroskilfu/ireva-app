@@ -409,6 +409,16 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Minimal MUI - Simplest possible configuration */}
+      <Route path="/minimal-mui" component={() => {
+        const MinimalMui = React.lazy(() => import("./pages/minimal-mui"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MinimalMui />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
