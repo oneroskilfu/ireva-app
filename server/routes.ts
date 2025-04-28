@@ -101,6 +101,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
   });
   
+  // Serve our enhanced SEO-optimized static HTML home page
+  app.get('/static-ireva-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-ireva-home.html'));
+  });
+  
+  // Also map the route to another URL for testing
+  app.get('/enhanced-static', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
   // Serve the simplified themed HTML version
   app.get('/simplified-themed-static', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'client/public/simplified-themed.html'));
