@@ -419,6 +419,36 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Simple Material UI Test Page */}
+      <Route path="/simple-mui-test" component={() => {
+        const SimpleTestPage = React.lazy(() => import("./pages/SimpleTestPage"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SimpleTestPage />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Direct Material UI Test Page - with self-contained ThemeProvider */}
+      <Route path="/direct-mui-test" component={() => {
+        const DirectMuiTestPage = React.lazy(() => import("./pages/DirectMuiTestPage"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <DirectMuiTestPage />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Version Compatible Material UI Test Page */}
+      <Route path="/version-mui-test" component={() => {
+        const VersionCompatibleMui = React.lazy(() => import("./pages/VersionCompatibleMui"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <VersionCompatibleMui />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>

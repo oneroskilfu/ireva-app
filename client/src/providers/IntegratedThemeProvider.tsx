@@ -1,8 +1,6 @@
 import React, { ReactNode } from 'react';
-import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
-import { theme as muiTheme } from '../theme';
+import { MuiThemeProvider } from './MuiThemeProvider';
 import { ThemeProvider as ShadcnThemeProvider } from '@/hooks/use-theme';
-import CssBaseline from '@mui/material/CssBaseline';
 
 interface IntegratedThemeProviderProps {
   children: ReactNode;
@@ -19,12 +17,11 @@ export const IntegratedThemeProvider: React.FC<IntegratedThemeProviderProps> = (
   children 
 }) => {
   return (
-    <MUIThemeProvider theme={muiTheme}>
-      <CssBaseline />
+    <MuiThemeProvider>
       <ShadcnThemeProvider>
         {children}
       </ShadcnThemeProvider>
-    </MUIThemeProvider>
+    </MuiThemeProvider>
   );
 };
 
