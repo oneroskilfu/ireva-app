@@ -187,6 +187,36 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Minimal routes that don't depend on ThemeProvider */}
+      <Route path="/minimal" component={() => {
+        const MinimalHome = React.lazy(() => import("./pages/minimal-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MinimalHome />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Standalone Material-UI page with its own ThemeProvider */}
+      <Route path="/mui-standalone" component={() => {
+        const MuiStandalone = React.lazy(() => import("./pages/mui-standalone"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MuiStandalone />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Simplified Material-UI page with its own ThemeProvider */}
+      <Route path="/mui-basic" component={() => {
+        const MuiBasic = React.lazy(() => import("./pages/mui-basic"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MuiBasic />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
@@ -907,22 +937,24 @@ function App() {
   return (
     <StrictMode>
       <HelmetProvider>
-        <ThemeProvider defaultTheme="system" storageKey="ireva-theme">
-          <QueryClientProvider client={queryClient}>
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-screen">
-                <div className="text-center">
-                  <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
-                  <p className="text-muted-foreground">Loading application...</p>
+        <Router base="">
+          <ThemeProvider defaultTheme="system" storageKey="ireva-theme">
+            <QueryClientProvider client={queryClient}>
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-screen">
+                  <div className="text-center">
+                    <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-primary border-t-transparent rounded-full" />
+                    <p className="text-muted-foreground">Loading application...</p>
+                  </div>
                 </div>
-              </div>
-            }>
-              <AuthProvider>
-                <AppContent isDevelopment={isDevelopment} />
-              </AuthProvider>
-            </Suspense>
-          </QueryClientProvider>
-        </ThemeProvider>
+              }>
+                <AuthProvider>
+                  <AppContent isDevelopment={isDevelopment} />
+                </AuthProvider>
+              </Suspense>
+            </QueryClientProvider>
+          </ThemeProvider>
+        </Router>
       </HelmetProvider>
     </StrictMode>
   );
@@ -934,9 +966,7 @@ function AppContent({ isDevelopment }: { isDevelopment: boolean }) {
   
   return (
     <>
-      <Router base="">
-        <AppRouter />
-      </Router>
+      <AppRouter />
       <Toaster />
       <PWAInstallToast />
       {/* Only show debug helper in development mode */}
