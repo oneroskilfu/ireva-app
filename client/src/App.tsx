@@ -177,6 +177,36 @@ function Router() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Simple routes for navigation */}
+      <Route path="/simple" component={() => {
+        const SimpleHomePage = React.lazy(() => import("./pages/simple-home-page"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SimpleHomePage />
+          </React.Suspense>
+        );
+      }} />
+      <Route path="/simple/transactions" component={() => {
+        return (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <TransactionsPage />
+            </Suspense>
+          </AuthMiddleware>
+        );
+      }} />
+      <Route path="/simple/settings" component={() => {
+        return (
+          <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <SettingsPage />
+            </Suspense>
+          </AuthMiddleware>
+        );
+      }} />
+      <Route path="/simple/privacy-policy" component={React.lazy(() => import("@/pages/legal/privacy-policy"))} />
+      <Route path="/simple/terms" component={React.lazy(() => import("@/pages/legal/terms-of-service"))} />
       <Route path="/property/:id" component={PropertyPage} />
       <Route path="/property/:id/invest" component={PropertyInvestment} />
       <Route path="/properties" component={PropertiesPage} />
