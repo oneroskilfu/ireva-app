@@ -1,209 +1,194 @@
-import { useState, useEffect } from 'react';
-import {
-  Modal, Box, Typography, Button, CircularProgress,
-  Tabs, Tab, Divider, Paper
+import React, { useState, useEffect } from 'react';
+import { 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  Button, 
+  Typography, 
+  Box,
+  CircularProgress,
+  Tab,
+  Tabs,
+  Alert
 } from '@mui/material';
 import axios from 'axios';
-import LegalPdfViewer from './LegalPdfViewer';
 import LegalTextViewer from './LegalTextViewer';
 
-export default function LegalUpdateModal({ currentUser }) {
+/**
+ * Document type display names
+ */
+const DOCUMENT_TYPES = {
+  'terms_of_service': 'Terms of Service',
+  'privacy_policy': 'Privacy Policy',
+  'investor_risk_disclosure': 'Investor Risk Disclosure',
+  'crypto_risk_disclosure': 'Cryptocurrency Risk Disclosure',
+  'aml_statement': 'Anti-Money Laundering Statement',
+  'gdpr_commitment': 'GDPR Commitment',
+  'cookies_policy': 'Cookies Policy'
+};
+
+/**
+ * Modal component that checks if user needs to accept updated legal documents
+ * and prevents app usage until acceptance is recorded
+ * 
+ * @param {Object} props
+ * @param {Object} props.currentUser - The currently logged in user
+ * @returns {JSX.Element}
+ */
+const LegalUpdateModal = ({ currentUser }) => {
   const [open, setOpen] = useState(false);
-  const [doc, setDoc] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('text'); // 'text' or 'pdf'
-  const [hasScrolledToEnd, setHasScrolledToEnd] = useState(false); // Track if user has scrolled to end
-  
+  const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
+  const [error, setError] = useState(null);
+  const [document, setDocument] = useState(null);
+  const [documentContent, setDocumentContent] = useState('');
+  const [tabValue, setTabValue] = useState(0);
+
+  // Check if user needs to accept any legal updates
   useEffect(() => {
-    if (!currentUser) return;
-    checkCompliance();
+    const checkLegalCompliance = async () => {
+      if (!currentUser) return;
+      
+      try {
+        setLoading(true);
+        const response = await axios.get(`/api/compliance/check-latest?userId=${currentUser.id}`);
+        
+        if (response.data.needsAcceptance) {
+          setDocument(response.data.document);
+          setOpen(true);
+          
+          // Fetch the document content from the legal content API
+          const contentResponse = await axios.get(`/api/legal/content/${response.data.document.documentType}`);
+          setDocumentContent(contentResponse.data.content);
+        }
+      } catch (err) {
+        console.error('Error checking legal compliance:', err);
+        setError('Unable to verify legal compliance. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkLegalCompliance();
   }, [currentUser]);
 
-  const checkCompliance = async () => {
+  const handleAccept = async () => {
+    if (!document || !currentUser) return;
+    
     try {
-      const { data } = await axios.get('/api/compliance/check-latest', {
-        params: { userId: currentUser.id }
-      });
-      if (data.needsAcceptance) {
-        setDoc(data.document);
-        setOpen(true);
-      }
-    } catch (error) {
-      console.error('Error checking compliance:', error);
-    }
-  };
-
-  const acceptDocument = async () => {
-    try {
-      setLoading(true);
+      setAccepting(true);
+      setError(null);
+      
       await axios.post('/api/compliance/accept-latest', {
-        userId: currentUser.id,
-        documentType: doc.document_type,
-        version: doc.version
+        documentType: document.documentType,
+        version: document.version
       });
       
-      // Reload the page after acceptance to update the session compliance status
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    } catch (error) {
-      console.error('Error accepting document:', error);
-      setLoading(false);
+      // Force page reload to ensure session is compliant
+      window.location.reload();
+    } catch (err) {
+      console.error('Error accepting legal document:', err);
+      setError('Failed to record your acceptance. Please try again.');
+      setAccepting(false);
     }
   };
 
-  const handleViewDocument = () => {
-    setViewerOpen(true);
-  };
-  
-  const handleScroll = (e) => {
-    const element = e.target;
-    const scrollBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-    if (scrollBottom < 20) { // Within 20px of the bottom
-      setHasScrolledToEnd(true);
-    }
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
 
-  if (!doc) return null;
-  
-  // Format the document title based on document_type
-  const documentTitle = doc.title || (
-    doc.document_type === 'terms_of_service' ? 'Terms of Service' : 
-    doc.document_type === 'privacy_policy' ? 'Privacy Policy' :
-    doc.document_type === 'investor_risk_disclosure' ? 'Investor Risk Disclosure' : 
-    doc.document_type === 'crypto_risk_disclosure' ? 'Cryptocurrency Risk Disclosure' : 
-    doc.document_type.replace(/_/g, ' ')
-  );
-  
-  // Determine text content URL or use document-specific logic
-  const textContentUrl = doc.textContentUrl || `/api/legal/content/${doc.document_type}`;
+  // This modal cannot be closed except by accepting terms
+  // No close handler is provided
+
+  const documentTitle = document ? DOCUMENT_TYPES[document.documentType] || 'Legal Document' : '';
 
   return (
-    <>
-      <Modal 
-        open={open}
-        onClose={(event, reason) => {
-          // Prevent all attempts to close the modal except through the Accept button
-          return false;
-        }}
-        disableEscapeKeyDown
-        hideBackdrop={false}
-      >
-        <Box
-          sx={{
-            width: { xs: '95%', sm: '80%', md: '700px' }, 
-            maxWidth: '800px',
-            bgcolor: 'background.paper', 
-            p: { xs: 2, sm: 3 }, 
-            mx: 'auto', 
-            mt: '10vh',
-            borderRadius: 2, 
-            boxShadow: 24,
-            maxHeight: '80vh',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          <Typography variant="h5" mb={1} fontWeight="bold" color="primary">
-            Important Legal Update
-          </Typography>
-          
-          <Typography variant="subtitle1" mb={2} fontWeight="medium">
-            We've updated our {documentTitle}
-          </Typography>
-          
-          <Tabs 
-            value={viewMode} 
-            onChange={(e, newValue) => setViewMode(newValue)}
-            sx={{ mb: 2 }}
-          >
-            <Tab label="Text View" value="text" />
-            <Tab label="PDF View" value="pdf" />
-          </Tabs>
-          
-          <Divider sx={{ mb: 2 }} />
-          
-          <Box 
-            sx={{ 
-              flex: 1, 
-              overflowY: 'auto',
-              minHeight: '300px',
-              mb: 2
-            }}
-            onScroll={handleScroll}
-          >
-            {viewMode === 'text' ? (
-              <LegalTextViewer 
-                documentType={doc.document_type} 
-                documentUrl={textContentUrl}
-                variant="embedded"
-              />
-            ) : (
-              <Paper
-                elevation={0}
-                sx={{
-                  height: '400px',
-                  p: 0
-                }}
-              >
-                <iframe
-                  src={doc.pdfUrl}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 'none' }}
-                  title={documentTitle}
-                />
-              </Paper>
-            )}
+    <Dialog 
+      open={open} 
+      maxWidth="md" 
+      fullWidth
+      disableEscapeKeyDown
+      // No onClose prop - user must accept
+    >
+      <DialogTitle>
+        <Typography variant="h5" component="h2">
+          Important Update: {documentTitle}
+        </Typography>
+      </DialogTitle>
+      
+      <DialogContent>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress />
           </Box>
-          
-          <Divider sx={{ mb: 2 }} />
-          
-          <Box>
-            <Typography variant="body2" mb={2}>
-              By clicking "Accept and Continue," you acknowledge that you have read and understood 
-              this document and agree to be bound by its terms.
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : document ? (
+          <>
+            <Typography 
+              sx={{ mb: 2 }} 
+              color="text.secondary"
+            >
+              Our {documentTitle} has been updated. Please review and accept the latest version to continue using the platform.
             </Typography>
             
-            <Box display="flex" flexDirection="column" gap={2}>              
-              <Button 
-                variant="contained" 
-                color="primary" 
-                fullWidth
-                onClick={acceptDocument}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-                    Processing...
-                  </>
-                ) : (
-                  "Accept and Continue"
-                )}
-              </Button>
-              
-              <Typography variant="caption" align="center" mt={1} color="text.secondary">
-                Version: {doc.version} | Last Updated: {doc.lastUpdated || 'Recently'}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Modal>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange} 
+              sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+            >
+              <Tab label="Text Version" />
+              <Tab label="PDF Version" />
+            </Tabs>
+            
+            {tabValue === 0 && (
+              <LegalTextViewer 
+                title={documentTitle} 
+                content={documentContent} 
+              />
+            )}
+            
+            {tabValue === 1 && (
+              <Box sx={{ 
+                height: '60vh', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: '1px solid #e0e0e0', 
+                borderRadius: 2
+              }}>
+                <Typography color="text.secondary">
+                  PDF viewer would be embedded here
+                </Typography>
+              </Box>
+            )}
+          </>
+        ) : (
+          <Typography>No document updates required.</Typography>
+        )}
+      </DialogContent>
       
-      {/* Optional - full-screen PDF viewer if needed */}
-      {viewerOpen && doc && (
-        <LegalPdfViewer
-          open={viewerOpen}
-          onClose={() => setViewerOpen(false)}
-          pdfUrl={doc.pdfUrl}
-          title={documentTitle}
-          version={doc.version}
-          lastUpdated={doc.lastUpdated}
-          documentType={doc.document_type}
-        />
-      )}
-    </>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleAccept}
+          disabled={loading || accepting || !document}
+          fullWidth
+          size="large"
+        >
+          {accepting ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            `I Accept the Updated ${documentTitle}`
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
-}
+};
+
+export default LegalUpdateModal;
