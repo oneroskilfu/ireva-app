@@ -1,20 +1,16 @@
 import { createRoot } from "react-dom/client";
-import App from "./App";
+import MinimalApp from "./MinimalApp"; // Using our minimal app instead
 import "./index.css";
-import { AuthProvider } from "@/hooks/use-auth";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { IntegratedThemeProvider } from './providers/IntegratedThemeProvider';
+// Removing all providers temporarily for isolated testing
+// import { AuthProvider } from "@/hooks/use-auth";
+// import { QueryClientProvider } from "@tanstack/react-query";
+// import { queryClient } from "./lib/queryClient";
+// import { IntegratedThemeProvider } from './providers/IntegratedThemeProvider';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
+// Simplified render with no wrappers to isolate Material UI issues
 createRoot(document.getElementById("root")!).render(
-  <IntegratedThemeProvider>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </QueryClientProvider>
-  </IntegratedThemeProvider>
+  <MinimalApp />
 );
 
 // Register service worker for PWA functionality
