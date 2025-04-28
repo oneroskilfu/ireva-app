@@ -12,6 +12,7 @@ import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { loginFormSchema, registrationFormSchema } from "@/shared/validators/formValidators";
 import LegalPdfViewer from "@/components/legal/LegalPdfViewer";
+import axios from "axios";
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 type RegisterFormValues = z.infer<typeof registrationFormSchema>;
@@ -109,7 +110,34 @@ export default function AuthPage() {
     loginMutation.mutate(data);
   };
   
-  const onRegisterSubmit = (data: RegisterFormValues) => {
+  // Function to log compliance document acceptance
+  const logComplianceAcceptance = async (documentType, documentVersion) => {
+    try {
+      await axios.post('/api/compliance-log', {
+        documentType,
+        documentVersion
+      });
+      console.log(`Logged acceptance of ${documentType} v${documentVersion}`);
+    } catch (error) {
+      console.error('Error logging compliance acceptance:', error);
+    }
+  };
+
+  const onRegisterSubmit = async (data: RegisterFormValues) => {
+    // Log terms of service acceptance
+    if (data.agreeToTerms) {
+      await logComplianceAcceptance(
+        'terms_of_service', 
+        legalDocuments.termsOfService.version
+      );
+      
+      // Also log privacy policy acceptance as it's bundled with ToS
+      await logComplianceAcceptance(
+        'privacy_policy',
+        legalDocuments.privacyPolicy.version
+      );
+    }
+    
     // The redirect is handled in the useAuth hook
     registerMutation.mutate(data);
   };

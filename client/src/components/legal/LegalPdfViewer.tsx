@@ -1,6 +1,7 @@
-import React from 'react';
-import { Dialog, DialogTitle, IconButton, DialogContent, DialogActions, Typography, Box } from '@mui/material';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Dialog, DialogTitle, IconButton, DialogContent, DialogActions, Typography, Box, Button } from '@mui/material';
+import { X, Check } from 'lucide-react';
+import axios from 'axios';
 
 interface LegalPdfViewerProps {
   open: boolean;
@@ -9,6 +10,9 @@ interface LegalPdfViewerProps {
   title: string;
   version?: string;
   lastUpdated?: string;
+  documentType?: string; // For compliance logging
+  showAcceptButton?: boolean;
+  onAccept?: () => void;
 }
 
 export default function LegalPdfViewer({ 
