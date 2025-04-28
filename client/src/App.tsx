@@ -359,6 +359,16 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Minimal MUI Test - The absolute minimal Material UI implementation */}
+      <Route path="/minimal-mui-test" component={() => {
+        const MinimalMuiTest = React.lazy(() => import("./pages/minimal-mui-test"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MinimalMuiTest />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
