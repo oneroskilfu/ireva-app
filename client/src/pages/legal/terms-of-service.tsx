@@ -1,28 +1,74 @@
 import React from 'react';
-import { Layout } from '@/components/layout/Layout';
-import { Container, Typography, Box, Breadcrumbs, Link, Divider } from '@mui/material';
+import { 
+  Container, 
+  Typography, 
+  Box, 
+  Link, 
+  Divider, 
+  Button, 
+  Paper,
+  useTheme,
+  useMediaQuery
+} from '@mui/material';
 import { Link as WouterLink } from 'wouter';
+import { FileDown, ArrowLeft } from 'lucide-react';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 const TermsOfServicePage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const effectiveDate = "April 1, 2025";
+
+  // Function to handle PDF download
+  const handleDownloadPdf = () => {
+    window.open('/pdfs/terms-of-service.pdf', '_blank');
+  };
+
   return (
-    <Layout>
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Breadcrumbs sx={{ mb: 4 }}>
-          <Link component={WouterLink} href="/" underline="hover" color="inherit">
-            Home
+    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
+      <Header />
+      <Container maxWidth="md" sx={{ py: 8, flex: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Link 
+            component={WouterLink} 
+            href="/" 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              color: 'text.secondary',
+              textDecoration: 'none',
+              '&:hover': { color: 'primary.main' }
+            }}
+          >
+            <ArrowLeft size={18} />
+            <Typography variant="body2" sx={{ ml: 1 }}>
+              Back to Home
+            </Typography>
           </Link>
-          <Typography color="text.primary">Terms of Service</Typography>
-        </Breadcrumbs>
+        </Box>
 
-        <Typography variant="h2" component="h1" gutterBottom sx={{ mb: 4 }}>
-          iREVA Terms of Service
-        </Typography>
+        <Paper elevation={0} sx={{ p: { xs: 3, md: 5 }, borderRadius: 3, mb: 4 }}>
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Typography variant="h3" component="h1" gutterBottom fontWeight="bold">
+              iREVA Terms of Service
+            </Typography>
+            
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={handleDownloadPdf}
+              startIcon={<FileDown size={18} />}
+              sx={{ mt: 2 }}
+            >
+              Download PDF
+            </Button>
+            
+            <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 3 }}>
+              Effective Date: {effectiveDate}
+            </Typography>
+          </Box>
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Effective Date: April 1, 2025
-          </Typography>
-          
           <Typography variant="body1" paragraph>
             Welcome to iREVA!
             These Terms of Service ("Terms") govern your use of the iREVA platform and services ("Services").
@@ -31,12 +77,10 @@ const TermsOfServicePage: React.FC = () => {
           <Typography variant="body1" paragraph>
             By accessing or using iREVA, you agree to be bound by these Terms. If you do not agree, do not use the platform.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             1. Eligibility
           </Typography>
           
@@ -59,12 +103,10 @@ const TermsOfServicePage: React.FC = () => {
           <Typography variant="body1" paragraph sx={{ mt: 2 }}>
             You must also complete all required KYC (Know Your Customer) verification processes.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             2. Account Registration
           </Typography>
           
@@ -87,12 +129,10 @@ const TermsOfServicePage: React.FC = () => {
           <Typography variant="body1" paragraph sx={{ mt: 2 }}>
             You are responsible for all activities conducted under your account.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             3. Investment Disclosures
           </Typography>
           
@@ -111,12 +151,10 @@ const TermsOfServicePage: React.FC = () => {
           <Typography variant="body1" paragraph sx={{ mt: 2 }}>
             You should consult independent financial or legal advisors if needed.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             4. Platform Use
           </Typography>
           
@@ -139,12 +177,10 @@ const TermsOfServicePage: React.FC = () => {
           <Typography variant="body1" paragraph sx={{ mt: 2 }}>
             We may suspend or terminate your account if you breach these Terms.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             5. Fees
           </Typography>
           
@@ -152,12 +188,10 @@ const TermsOfServicePage: React.FC = () => {
             iREVA may charge platform fees, transaction fees, or asset management fees.
             Details will be disclosed clearly before investment.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             6. Crypto Transactions
           </Typography>
           
@@ -176,12 +210,10 @@ const TermsOfServicePage: React.FC = () => {
               <Typography variant="body1">iREVA is not responsible for lost private keys or incorrect wallet addresses.</Typography>
             </Box>
           </Box>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             7. No Financial Advice
           </Typography>
           
@@ -193,12 +225,10 @@ const TermsOfServicePage: React.FC = () => {
           <Typography variant="body1" paragraph>
             You acknowledge that any investment decision is made solely at your own risk.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             8. Limitation of Liability
           </Typography>
           
@@ -214,12 +244,10 @@ const TermsOfServicePage: React.FC = () => {
               <Typography variant="body1">Our liability shall not exceed the fees paid by you to us over the past 12 months.</Typography>
             </Box>
           </Box>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             9. Amendments
           </Typography>
           
@@ -227,22 +255,21 @@ const TermsOfServicePage: React.FC = () => {
             We may update these Terms at any time.
             Material changes will be communicated via email or platform notification.
           </Typography>
-        </Box>
 
-        <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 4 }} />
 
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 'bold' }}>
             10. Contact
           </Typography>
           
           <Typography variant="body1" paragraph>
             For questions about these Terms:
-            Email: ireva.investments@gmail.com
+            Email: <Link href="mailto:ireva.investments@gmail.com">ireva.investments@gmail.com</Link>
           </Typography>
-        </Box>
+        </Paper>
       </Container>
-    </Layout>
+      <Footer />
+    </div>
   );
 };
 
