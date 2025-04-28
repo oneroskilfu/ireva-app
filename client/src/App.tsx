@@ -11,6 +11,9 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import InvestorLayout from "@/components/layouts/InvestorLayout";
 import { HelmetProvider } from 'react-helmet-async';
 import LegalUpdateModal from "@/components/legal/LegalUpdateModal";
+import SimplifiedThemedApp from "./pages/simplified-themed-app";
+import StaticHome from "./pages/StaticHome";
+import MobileOptimizedHomePage from "./pages/MobileOptimizedHomePage";
 
 // Lazily load all page components
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -127,7 +130,7 @@ function AppRouter() {
     <Switch>
       {/* Public Routes */}
       <Route path="/" component={() => {
-        const MinimalIREVAHome = React.lazy(() => import("./pages/minimal-ireva-home"));
+        const UltraSimpleHome = React.lazy(() => import("./pages/ultra-simple-home"));
         return (
           <React.Suspense fallback={
             <div style={{ 
@@ -155,7 +158,7 @@ function AppRouter() {
               </div>
             </div>
           }>
-            <MinimalIREVAHome />
+            <UltraSimpleHome />
           </React.Suspense>
         );
       }} />
@@ -257,6 +260,25 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Ultra Simple iREVA Home - Absolute minimal implementation */}
+      <Route path="/ultra-simple" component={() => {
+        const UltraSimpleHome = React.lazy(() => import("./pages/ultra-simple-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <UltraSimpleHome />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Simplified themed app with built-in Material UI ThemeProvider */}
+      <Route path="/simplified-themed" component={SimplifiedThemedApp} />
+      
+      {/* Static Home Page with direct CSS styling - no Material UI */}
+      <Route path="/static-home-route" component={StaticHome} />
+      
+      {/* Mobile Optimized Homepage with inline styles - no Material UI */}
+      <Route path="/mobile-optimized" component={MobileOptimizedHomePage} />
       
       {/* Material-UI v7 with minimal theme */}
       <Route path="/mui-v7-basic" component={() => {

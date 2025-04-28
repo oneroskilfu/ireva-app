@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { setupSocketIO } from "./socketio";
 import { setupAuth } from "./auth";
 import { setupJwtAuth, verifyToken, authMiddleware } from "./auth-jwt";
@@ -70,7 +71,6 @@ import { sendNotificationRouter } from './routes/send-notification-routes';
 import { savePushTokenRouter } from './routes/save-push-token-routes';
 import { pushNotificationSendRouter } from './routes/push-notification-send-routes';
 import fs from 'fs';
-import path from 'path';
 
 // Import our new TypeScript routes
 import adminKycRoutes from './api/admin/kyc';
@@ -86,6 +86,37 @@ import adminKycRouter from './routes/admin-kyc-routes';
 import kycRouter from './routes/kyc';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve our static HTML home page at /static-home and at /static
+  app.get('/static-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
+  // Also serve the static HTML at /static
+  app.get('/static', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
+  // Also serve the static HTML at the root path as a fallback
+  app.get('/ireva-static-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
+  // Serve the simplified themed HTML version
+  app.get('/simplified-themed-static', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/simplified-themed.html'));
+  });
+  
+  // Serve direct access static home page for testing ThemeProvider fix
+  app.get('/direct-static-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/src/pages/StaticHome.jsx'));
+  });
+  
+  // Serve the static CSS file
+  app.get('/static-home.css', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/src/pages/StaticHome.css'));
+    res.type('text/css');
+  });
+
   // Set up JWT authentication routes
   setupJwtAuth(app);
   
