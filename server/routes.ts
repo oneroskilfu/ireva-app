@@ -48,6 +48,8 @@ import stablecoinRoutes from './routes/stablecoin-routes';
 import milestoneEscrowRoutes from './routes/milestone-escrow-routes';
 // Import crypto integration routes
 import { cryptoIntegrationRouter } from './routes/crypto-integration-routes';
+// Import legal content routes
+import { legalContentRouter } from './routes/legal-content-routes';
 // Import admin crypto validation routes
 import { adminCryptoValidateRouter } from './routes/admin-crypto-validate';
 // Import crypto webhook routes
@@ -339,6 +341,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Data Protection routes
   app.use('/api/privacy', dataProtectionRoutes);
   console.log("Data protection routes registered");
+  
+  // Set up Legal Content routes
+  app.use('/api/legal', legalContentRouter);
+  console.log("Legal content routes registered");
   
   // Set up Stablecoin routes
   app.use('/api/stablecoins', stablecoinRoutes);
