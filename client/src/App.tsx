@@ -127,7 +127,7 @@ function AppRouter() {
     <Switch>
       {/* Public Routes */}
       <Route path="/" component={() => {
-        const StandalonePage = React.lazy(() => import("@/pages/standalone-page"));
+        const SimpleIREVAHome = React.lazy(() => import("./pages/simple-ireva-home"));
         return (
           <React.Suspense fallback={
             <div style={{ 
@@ -155,7 +155,7 @@ function AppRouter() {
               </div>
             </div>
           }>
-            <StandalonePage />
+            <SimpleIREVAHome />
           </React.Suspense>
         );
       }} />
@@ -224,6 +224,26 @@ function AppRouter() {
         return (
           <React.Suspense fallback={<div>Loading...</div>}>
             <PureReact />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* iREVA Standalone Home */}
+      <Route path="/home" component={() => {
+        const StandaloneHome = React.lazy(() => import("./pages/standalone-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <StandaloneHome />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Simple iREVA Home - Complete standalone component */}
+      <Route path="/simple-home" component={() => {
+        const SimpleIREVAHome = React.lazy(() => import("./pages/simple-ireva-home"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SimpleIREVAHome />
           </React.Suspense>
         );
       }} />
