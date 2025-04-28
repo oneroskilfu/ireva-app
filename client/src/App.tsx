@@ -211,6 +211,16 @@ function AppRouter() {
         );
       }} />
       
+      {/* Completely standalone MUI Component with self-contained ThemeProvider */}
+      <Route path="/standalone-mui-component" component={() => {
+        const StandaloneMuiComponent = React.lazy(() => import("./pages/standalone-mui-component"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <StandaloneMuiComponent />
+          </React.Suspense>
+        );
+      }} />
+      
       {/* Simplified Material-UI page with its own ThemeProvider */}
       <Route path="/mui-basic" component={() => {
         const MuiBasic = React.lazy(() => import("./pages/mui-basic"));
