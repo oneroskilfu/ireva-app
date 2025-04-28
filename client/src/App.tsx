@@ -369,6 +369,26 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Minimal MUI Example - Self-contained MUI component with direct imports */}
+      <Route path="/minimal-mui-example" component={() => {
+        const MinimalMuiExample = React.lazy(() => import("./pages/minimal-mui-example"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <MinimalMuiExample />
+          </React.Suspense>
+        );
+      }} />
+      
+      {/* Forwarded MUI Example - Using forwardRef for React compatibility */}
+      <Route path="/forwarded-mui-example" component={() => {
+        const ForwardedMuiExample = React.lazy(() => import("./pages/forwarded-mui-example"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <ForwardedMuiExample />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
