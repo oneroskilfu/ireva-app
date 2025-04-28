@@ -41,6 +41,8 @@ const TestLogin = lazy(() => import("./test-login"));
 const DebugLoginPage = lazy(() => import("@/pages/DebugLoginPage"));
 // Add the WalletDemo component
 const WalletDemo = lazy(() => import("@/components/wallet/WalletDemo"));
+// Admin pages
+const ComplianceCenter = lazy(() => import("@/admin/pages/ComplianceCenter"));
 
 // Configure React Query with proper suspense handling
 const queryClient = new QueryClient({
@@ -291,6 +293,19 @@ function Router() {
             <Suspense fallback={<div>Loading...</div>}>
               <AdminLayout>
                 <AdminProjectsPage />
+              </AdminLayout>
+            </Suspense>
+          </AuthMiddleware>
+        )}
+      </Route>
+      
+      {/* Admin Compliance Center Route */}
+      <Route path="/admin/compliance">
+        {() => (
+          <AuthMiddleware requiredRoles={["admin", "super_admin"]}>
+            <Suspense fallback={<div>Loading...</div>}>
+              <AdminLayout>
+                <ComplianceCenter />
               </AdminLayout>
             </Suspense>
           </AuthMiddleware>
