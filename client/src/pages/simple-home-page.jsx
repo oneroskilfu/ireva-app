@@ -127,9 +127,9 @@ const SimpleFooter = () => {
             © {currentYear} iREVA. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link to="/simple/privacy-policy"><span style={{ color: '#666', cursor: 'pointer' }}>Privacy</span></Link>
-            <Link to="/simple/terms"><span style={{ color: '#666', cursor: 'pointer' }}>Terms</span></Link>
-            <Link to="/legal/cookies-policy"><span style={{ color: '#666', cursor: 'pointer' }}>Cookies</span></Link>
+            <Link href="/simple/privacy-policy"><span style={{ color: '#666', cursor: 'pointer' }}>Privacy</span></Link>
+            <Link href="/simple/terms"><span style={{ color: '#666', cursor: 'pointer' }}>Terms</span></Link>
+            <Link href="/legal/cookies-policy"><span style={{ color: '#666', cursor: 'pointer' }}>Cookies</span></Link>
           </div>
         </div>
       </div>
@@ -166,7 +166,7 @@ const SimpleHomePage = () => {
               iREVA makes property investment accessible to everyone with secure blockchain technology and fractional ownership.
             </p>
             <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/properties">
+              <Link href="/properties">
                 <span style={{ 
                   display: 'inline-block',
                   backgroundColor: 'white', 
@@ -181,7 +181,7 @@ const SimpleHomePage = () => {
                   Explore Properties
                 </span>
               </Link>
-              <Link to="/auth">
+              <Link href="/auth">
                 <span style={{ 
                   display: 'inline-block',
                   backgroundColor: 'transparent', 
@@ -335,7 +335,7 @@ const SimpleHomePage = () => {
               Join thousands of investors building wealth through African real estate
             </p>
             <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/auth">
+              <Link href="/auth">
                 <span style={{ 
                   display: 'inline-block',
                   backgroundColor: 'white', 
@@ -350,7 +350,7 @@ const SimpleHomePage = () => {
                   Create Account
                 </span>
               </Link>
-              <Link to="/properties">
+              <Link href="/properties">
                 <span style={{ 
                   display: 'inline-block',
                   backgroundColor: 'transparent', 
