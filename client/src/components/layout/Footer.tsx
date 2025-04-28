@@ -71,17 +71,11 @@ export default function Footer() {
                 <Link component={WouterLink} href="/legal/terms-of-service" color="text.secondary" underline="hover">
                   Terms of Service
                 </Link>
-                <Link component={WouterLink} href="/legal/cookies-policy" color="text.secondary" underline="hover">
-                  Cookies Policy
-                </Link>
                 <Link component={WouterLink} href="/legal/investor-risk-disclosure" color="text.secondary" underline="hover">
                   Risk Disclosure
                 </Link>
-                <Link component={WouterLink} href="/legal/aml-statement" color="text.secondary" underline="hover">
-                  AML Statement
-                </Link>
-                <Link component={WouterLink} href="/legal/gdpr-commitment" color="text.secondary" underline="hover">
-                  GDPR Commitment
+                <Link component={WouterLink} href="/legal" color="text.secondary" underline="hover">
+                  Legal Center
                 </Link>
               </Box>
             </Box>

@@ -166,7 +166,7 @@ const LegalCenterPage: React.FC = () => {
       <Container maxWidth="lg" sx={{ flex: 1, mb: 6 }}>
         <Grid container spacing={3}>
           {legalDocuments.map((doc, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
+            <Grid key={index} item xs={12} sm={6} md={4}>
               <LegalDocument {...doc} />
             </Grid>
           ))}
