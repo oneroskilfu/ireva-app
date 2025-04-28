@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standalone Material-UI</title>
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@material-ui/core@4.12.3/umd/material-ui.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { 
+      Button, 
+      Container, 
+      CssBaseline, 
+      Typography, 
+      Box, 
+      createTheme, 
+      ThemeProvider 
+    } = MaterialUI;
+
+    // Create a theme instance
+    const theme = createTheme({
+      palette: {
+        primary: {
+          main: '#4F46E5',
+        },
+        secondary: {
+          main: '#9333EA',
+        },
+      },
+    });
+
+    function App() {
+      return (
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Container maxWidth="sm" style={{ marginTop: 24 }}>
+            <Box my={4}>
+              <Typography variant="h4" component="h1" gutterBottom>
+                Standalone Material-UI Page
+              </Typography>
+              <Typography variant="body1" paragraph>
+                This page is completely independent of the main application, rendered directly
+                in a separate HTML file to isolate any theme provider conflicts.
+              </Typography>
+              <Button variant="contained" color="primary">
+                Primary Button
+              </Button>
+              <Button 
+                variant="contained" 
+                color="secondary" 
+                style={{ marginLeft: 16 }}
+              >
+                Secondary Button
+              </Button>
+            </Box>
+          </Container>
+        </ThemeProvider>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>

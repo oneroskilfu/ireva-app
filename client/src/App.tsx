@@ -217,6 +217,16 @@ function AppRouter() {
           </React.Suspense>
         );
       }} />
+      
+      {/* Pure React component with no external theming */}
+      <Route path="/pure-react" component={() => {
+        const PureReact = React.lazy(() => import("./pages/pure-react"));
+        return (
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <PureReact />
+          </React.Suspense>
+        );
+      }} />
       <Route path="/simple/transactions" component={() => {
         return (
           <AuthMiddleware requiredRoles={["user", "admin", "super_admin"]}>
