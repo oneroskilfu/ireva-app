@@ -6,6 +6,7 @@ import EnhancedAdminDashboard from '../pages/admin/EnhancedAdminDashboard';
 import KycManagement from '../pages/admin/KycManagement';
 import KycDetail from '../pages/admin/KycDetail';
 import InvestmentManagement from '../pages/admin/InvestmentManagement';
+import WalletManagement from '../pages/admin/WalletManagement';
 
 export default function AdminRoutes() {
   return (
