@@ -1,76 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress } from '@mui/material';
+import React, { useState } from 'react';
+import { Dialog, DialogTitle, IconButton, DialogContent, DialogActions, Typography, Box, Button } from '@mui/material';
+import { X, Check } from 'lucide-react';
 import axios from 'axios';
 
 interface LegalPdfViewerProps {
-  documentType: string;
-  version: number;
+  open: boolean;
+  onClose: () => void;
+  pdfUrl: string;
+  title: string;
+  version?: string;
+  lastUpdated?: string;
+  documentType?: string; // For compliance logging
+  showAcceptButton?: boolean;
+  onAccept?: () => void;
 }
 
-export default function LegalPdfViewer({ documentType, version }: LegalPdfViewerProps) {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchPdf = async () => {
-      try {
-        setLoading(true);
-        // Request the PDF document from backend
-        const response = await axios.get(`/api/legal-content/${documentType}/${version}`, {
-          responseType: 'blob'
-        });
-        
-        // Create a blob URL from the PDF data
-        const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-        setPdfUrl(url);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching PDF:', err);
-        setError('Could not load document. Please try again later.');
-        setLoading(false);
-      }
-    };
-
-    fetchPdf();
-    
-    // Clean up blob URL on unmount
-    return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [documentType, version]);
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={2}>
-        <Typography color="error">{error}</Typography>
-      </Box>
-    );
-  }
-
+export default function LegalPdfViewer({ 
+  open, 
+  onClose, 
+  pdfUrl, 
+  title, 
+  version = "1.0.3", 
+  lastUpdated = "April 2025" 
+}: LegalPdfViewerProps) {
   return (
-    <Box width="100%" height="100%">
-      {pdfUrl ? (
-        <iframe 
-          src={`${pdfUrl}#toolbar=0&navpanes=0`} 
-          width="100%" 
-          height="100%" 
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle sx={{ m: 0, p: 2 }}>
+        {title}
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <X size={20} />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers sx={{ height: '70vh', p: 0 }}>
+        <iframe
+          src={pdfUrl}
+          width="100%"
+          height="100%"
           style={{ border: 'none' }}
-          title={`${documentType} document`}
+          title={title}
         />
-      ) : (
-        <Typography>No document available</Typography>
-      )}
-    </Box>
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: 'space-between', p: 2 }}>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            Version: {version} | Last Updated: {lastUpdated}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            &copy; {new Date().getFullYear()} iREVA. All rights reserved.
+          </Typography>
+        </Box>
+      </DialogActions>
+    </Dialog>
   );
 }

@@ -1,16 +1,16 @@
 import React, { lazy, Suspense } from 'react';
 import { Box, Grid, Typography, useMediaQuery, useTheme } from '@mui/material';
-import LazyComponentWrapper from '../../components/layouts/LazyComponentWrapper';
+import LazyComponentWrapper from '@/components/layouts/LazyComponentWrapper';
 
 // Lazy loaded components - using dynamic imports for code splitting
-const InvestmentSummaryCard = lazy(() => import('../../components/investor/InvestmentSummaryCard'));
-const WalletBalanceCard = lazy(() => import('../../components/investor/WalletBalanceCard'));
-const RecentTransactions = lazy(() => import('../../components/investor/RecentTransactions'));
-const CryptoStatus = lazy(() => import('../../components/investor/CryptoStatus'));
-const PropertyHighlights = lazy(() => import('../../components/investor/PropertyHighlights'));
-const RoiChart = lazy(() => import('../../components/investor/RoiChart'));
-const NotificationsList = lazy(() => import('../../components/investor/NotificationsList'));
-const ReferralWidget = lazy(() => import('../../components/referral/ReferralWidget'));
+const InvestmentSummaryCard = lazy(() => import('@/components/investor/InvestmentSummaryCard'));
+const WalletBalanceCard = lazy(() => import('@/components/investor/WalletBalanceCard'));
+const RecentTransactions = lazy(() => import('@/components/investor/RecentTransactions'));
+const CryptoStatus = lazy(() => import('@/components/investor/CryptoStatus'));
+const PropertyHighlights = lazy(() => import('@/components/investor/PropertyHighlights'));
+const RoiChart = lazy(() => import('@/components/investor/RoiChart'));
+const NotificationsList = lazy(() => import('@/components/investor/NotificationsList'));
+const ReferralWidget = lazy(() => import('@/components/referral/ReferralWidget'));
 
 export default function ResponsiveDashboard() {
   const theme = useTheme();
