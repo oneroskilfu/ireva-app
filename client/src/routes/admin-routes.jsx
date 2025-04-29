@@ -17,6 +17,7 @@ export default function AdminRoutes() {
       <Route path="/admin/kyc" component={KycManagement} />
       <Route path="/admin/kyc/:id" component={KycDetail} />
       <Route path="/admin/investments" component={InvestmentManagement} />
+      <Route path="/admin/wallet" component={WalletManagement} />
       {/* Add more admin routes below */}
     </>
   );
