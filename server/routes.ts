@@ -84,6 +84,7 @@ import { notificationRouter } from './routes/notification-routes';
 import { adminNotificationRouter } from './routes/admin-notification-routes';
 import adminKycRouter from './routes/admin-kyc-routes';
 import kycRouter from './routes/kyc';
+import adminWalletRoutes from './routes/adminWalletRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve our static HTML home page at /static-home and at /static
@@ -150,6 +151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up admin notification routes
   app.use('/api/admin/notifications', adminNotificationRouter);
   console.log("Admin notification routes registered");
+
+  // Set up admin wallet routes
+  app.use('/api/admin/wallets', adminWalletRoutes);
+  console.log("Admin wallet routes registered");
   
   // Set up admin properties routes
   app.use('/api/admin/properties', adminPropertiesRoutes);
