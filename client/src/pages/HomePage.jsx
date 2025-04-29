@@ -22,7 +22,7 @@ import {
   Article
 } from '@mui/icons-material';
 import { useLocation } from 'wouter';
-import AdminDashboardSimple from './admin/AdminDashboardSimple';
+import AdminDashboardJS from '../components/admin/AdminDashboardJS';
 
 const FeatureCard = ({ icon, title, description }) => {
   return (
@@ -272,7 +272,7 @@ export default function HomePage() {
             Admin Dashboard Test
           </Typography>
           <Divider sx={{ mb: 4 }} />
-          <AdminDashboardSimple />
+          <AdminDashboardJS />
         </Container>
       </Box>
     </Box>
