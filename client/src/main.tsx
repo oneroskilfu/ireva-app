@@ -2,11 +2,11 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
-import MainApp from "./MainApp";
+import MinimalApp from "./MinimalApp";
 
-// Using MainApp which wraps everything with the SafeThemeProvider
+// Using MinimalApp for diagnostics
 createRoot(document.getElementById("root")!).render(
-  <MainApp />
+  <MinimalApp />
 );
 
 // Register service worker for PWA functionality

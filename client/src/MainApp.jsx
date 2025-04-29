@@ -4,7 +4,7 @@ import { Container, Box, Typography } from '@mui/material';
 import SafeThemeProvider from './components/SafeThemeProvider';
 import CssBaseline from '@mui/material/CssBaseline';
 import HomePage from './pages/HomePage.jsx';
-import DashboardPage from './pages/investor/DashboardPage';
+import SimpleDashboard from './pages/investor/SimpleDashboard';
 import Navigation from './components/Navigation';
 
 function MainApp() {
@@ -15,7 +15,7 @@ function MainApp() {
       <Router>
         <Switch>
           <Route path="/" component={HomePage} />
-          <Route path="/investor/dashboard" component={DashboardPage} />
+          <Route path="/investor/dashboard" component={SimpleDashboard} />
           <Route path="/:rest*">
             {(params) => (
               <Container>
