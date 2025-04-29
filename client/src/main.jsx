@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import SafeThemeProvider from './theme/SafeThemeProvider';
 import ThemeDebugger from './theme/ThemeDebugger';
+import ThemeDebugTest from './components/ThemeDebugTest';
 import CssBaseline from '@mui/material/CssBaseline';
 import Button from '@mui/material/Button';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
@@ -78,6 +79,10 @@ createRoot(document.getElementById('root')).render(
         <FontLinks />
         <TestThemeComponent />
         <ThemeDebugger />
+        {/* Added ThemeDebugTest component for explicit theme testing */}
+        <div style={{ position: 'fixed', top: '60px', left: '0', zIndex: 9000, maxWidth: '400px', backgroundColor: 'rgba(255,255,255,0.9)', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
+          <ThemeDebugTest />
+        </div>
         <App />
       </SafeThemeProvider>
     </ErrorBoundary>
