@@ -3,12 +3,16 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
 import SafeThemeProvider from './theme/SafeThemeProvider';
+import CssBaseline from '@mui/material/CssBaseline';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 createRoot(document.getElementById('root')).render(
-  <SafeThemeProvider>
-    <App />
-  </SafeThemeProvider>
+  <React.StrictMode>
+    <SafeThemeProvider>
+      <CssBaseline />
+      <App />
+    </SafeThemeProvider>
+  </React.StrictMode>
 );
 
 // Register service worker for PWA functionality

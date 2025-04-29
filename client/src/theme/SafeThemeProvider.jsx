@@ -1,6 +1,5 @@
 import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme'; // your customized theme
 
 const SafeThemeProvider = ({ children }) => {
@@ -8,7 +7,6 @@ const SafeThemeProvider = ({ children }) => {
     if (!theme) throw new Error('Theme is undefined');
     return (
       <ThemeProvider theme={theme}>
-        <CssBaseline />
         {children}
       </ThemeProvider>
     );
