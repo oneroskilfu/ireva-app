@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Container } from '@mui/material';
 import ResponsiveDashboard from './ResponsiveDashboard.jsx';
+import InvestorDashboardLayout from '../../components/layouts/InvestorDashboardLayout';
 
 /**
  * Main investor dashboard page that wraps the dashboard content
@@ -8,11 +9,9 @@ import ResponsiveDashboard from './ResponsiveDashboard.jsx';
  */
 const DashboardPage = () => {
   return (
-    <Box component="main" sx={{ flexGrow: 1, py: 3 }}>
-      <Container maxWidth="xl">
-        <ResponsiveDashboard />
-      </Container>
-    </Box>
+    <InvestorDashboardLayout>
+      <ResponsiveDashboard />
+    </InvestorDashboardLayout>
   );
 };
 
