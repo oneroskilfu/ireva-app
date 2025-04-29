@@ -1,27 +1,82 @@
-* {
+/* Base styles */
+html,
+body {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-}
-
-body {
+  min-height: 100vh;
+  width: 100%;
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Add some custom styling for buttons */
-.MuiButton-root {
-  text-transform: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
+/* This ensures scrollbar is always present to prevent layout shift */
+html {
+  overflow-y: scroll;
 }
 
-.MuiButton-contained:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Utility classes */
+.full-height {
+  min-height: 100vh;
 }
 
-.MuiButton-outlined:hover {
-  background-color: rgba(25, 118, 210, 0.04);
+.text-overflow-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Adds fade-in animation for content */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive image handling */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Focus styles for accessibility */
+:focus {
+  outline: 2px solid #2E7D32;
+  outline-offset: 2px;
+}
+
+/* Removes default link styling but maintains accessibility */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Modern scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
 }
