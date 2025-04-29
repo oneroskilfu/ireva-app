@@ -72,7 +72,7 @@ export default function AdminSidebar() {
           <ListItemIcon>
             <AccountBalance />
           </ListItemIcon>
-          <ListItemText primary="Investments" />
+          <ListItemText primary="Investment Management" />
         </ListItemButton>
         
         <ListItemButton component={Link} href="/admin/settings">
