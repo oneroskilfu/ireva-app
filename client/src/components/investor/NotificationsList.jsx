@@ -22,7 +22,7 @@ import {
   MarkEmailRead
 } from '@mui/icons-material';
 import axios from 'axios';
-import { useNavigate } from 'wouter/use-location';
+import { useLocation } from 'wouter';
 
 // Icon mapping for different notification types
 const notificationIcons = {
@@ -37,7 +37,7 @@ const NotificationsList = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
 
   useEffect(() => {
     const fetchNotifications = async () => {

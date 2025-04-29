@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, CircularProgress, Grid } from '@mui/material';
 import { AccountBalanceWallet, Add } from '@mui/icons-material';
 import axios from 'axios';
-import { useNavigate } from 'wouter/use-location';
+import { useLocation } from 'wouter';
 
 const WalletBalanceCard = () => {
   const [walletData, setWalletData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
 
   useEffect(() => {
     const fetchWalletBalance = async () => {
