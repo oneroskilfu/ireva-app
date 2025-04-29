@@ -1,28 +1,44 @@
-import { useState } from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Loader2, Phone, Shield } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { useMutation } from "@tanstack/react-query";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2, Shield, Phone } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PhoneVerification } from "@shared/schema";
-
-const phoneSchema = z.object({
-  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number is too long"),
+// Phone number validation with Nigerian format (starts with 0 or +234 followed by 10 digits)
+export const phoneSchema = z.object({
+  phoneNumber: z
+    .string()
+    .min(11, 'Phone number must be at least 11 digits')
+    .max(14, 'Phone number cannot exceed 14 characters')
+    .regex(
+      /^(0|\+234)[0-9]{10}$/,
+      'Please enter a valid Nigerian phone number (e.g., 08012345678 or +2348012345678)'
+    ),
 });
 
-const verificationCodeSchema = z.object({
-  code: z.string().length(6, "Verification code must be 6 digits"),
+// OTP code validation (6 digits)
+export const verificationCodeSchema = z.object({
+  code: z
+    .string()
+    .length(6, 'Verification code must be exactly 6 digits')
+    .regex(/^[0-9]{6}$/, 'Verification code must contain only digits'),
 });
 
 type PhoneFormValues = z.infer<typeof phoneSchema>;
 type VerificationFormValues = z.infer<typeof verificationCodeSchema>;
+
+type PhoneVerification = {
+  phoneNumber: string;
+  code: string;
+};
 
 interface PhoneVerificationProps {
   onVerificationComplete: (phoneNumber: string) => void;
@@ -85,9 +101,8 @@ export function PhoneVerificationForm({ onVerificationComplete, initialPhoneNumb
     onSuccess: () => {
       toast({
         title: "Phone verified",
-        description: "Your phone number has been verified successfully",
+        description: "Your phone number has been successfully verified",
       });
-      // Call the callback with the verified phone number
       onVerificationComplete(phoneNumber);
     },
     onError: (error: Error) => {
@@ -101,30 +116,28 @@ export function PhoneVerificationForm({ onVerificationComplete, initialPhoneNumb
   
   const onPhoneSubmit = (data: PhoneFormValues) => {
     setPhoneNumber(data.phoneNumber);
-    requestOtpMutation.mutate(data);
+    requestOtpMutation.mutate({ phoneNumber: data.phoneNumber });
   };
   
   const onVerificationSubmit = (data: VerificationFormValues) => {
     verifyOtpMutation.mutate({
-      phoneNumber,
+      phoneNumber: phoneNumber,
       code: data.code,
     });
   };
   
   const resendCode = () => {
-    if (phoneNumber) {
-      requestOtpMutation.mutate({ phoneNumber });
-    }
+    requestOtpMutation.mutate({ phoneNumber });
   };
   
   return (
-    <div className="flex flex-col gap-6 max-w-md mx-auto">
+    <div className="space-y-6">
       {!otpSent && (
         <Card>
           <CardHeader>
-            <CardTitle>Phone Verification</CardTitle>
+            <CardTitle>Verify Your Phone Number</CardTitle>
             <CardDescription>
-              Verify your phone number to secure your account
+              We'll send a verification code to your phone number
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -140,7 +153,7 @@ export function PhoneVerificationForm({ onVerificationComplete, initialPhoneNumb
                         <div className="flex items-center space-x-2">
                           <Phone className="text-muted-foreground h-5 w-5" />
                           <Input 
-                            placeholder="Enter your phone number" 
+                            placeholder="08012345678 or +2348012345678" 
                             className="flex-1" 
                             {...field} 
                           />
@@ -169,7 +182,7 @@ export function PhoneVerificationForm({ onVerificationComplete, initialPhoneNumb
           </CardContent>
         </Card>
       )}
-
+      
       {otpSent && (
         <Card>
           <CardHeader>
@@ -185,17 +198,24 @@ export function PhoneVerificationForm({ onVerificationComplete, initialPhoneNumb
                   control={verificationForm.control}
                   name="code"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="space-y-4">
                       <FormLabel>Verification Code</FormLabel>
                       <FormControl>
-                        <div className="flex items-center space-x-2">
-                          <Shield className="text-muted-foreground h-5 w-5" />
-                          <Input 
-                            placeholder="Enter 6-digit code" 
+                        <div className="flex justify-center">
+                          <InputOTP
                             maxLength={6}
-                            className="flex-1" 
-                            {...field} 
-                          />
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                          >
+                            <InputOTPGroup>
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
                         </div>
                       </FormControl>
                       <FormMessage />

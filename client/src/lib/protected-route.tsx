@@ -1,42 +1,50 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
-import { Redirect, Route, useLocation } from "wouter";
+import { Route, useLocation } from "wouter";
 
 interface ProtectedRouteProps {
   path: string;
   component: () => React.JSX.Element;
-  requiredRole?: "admin" | "super_admin" | "user";
+  requiredRole?: "admin" | "super_admin" | "investor";
+  roles?: string[];
 }
 
 export function ProtectedRoute({
   path,
   component: Component,
   requiredRole,
+  roles = [],
 }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
-  // Using a more reliable approach with useEffect for redirection
+  // Combine requiredRole and roles for easier handling
+  const allowedRoles = requiredRole ? [...roles, requiredRole] : roles;
+
+  // Using useEffect for redirection
   useEffect(() => {
     if (!isLoading) {
       // Redirect to auth if no user
       if (!user) {
         console.log("User not authenticated, redirecting to auth page");
         navigate("/auth");
+        return;
       } 
-      // If role requirement specified, check if user has the required role
-      else if (requiredRole && user.role !== requiredRole) {
-        console.log(`Access denied. Required role: ${requiredRole}, user role: ${user.role}`);
+      
+      // If roles requirement specified, check if user has an allowed role
+      if (allowedRoles.length > 0 && user.role && !allowedRoles.includes(user.role)) {
+        console.log(`Access denied. Required roles: ${allowedRoles.join(', ')}, user role: ${user.role}`);
+        
         // Redirect to a more appropriate location based on user's role
         if (user.role === "admin" || user.role === "super_admin") {
           navigate("/admin");
         } else {
-          navigate("/dashboard");
+          navigate("/investor/dashboard");
         }
       }
     }
-  }, [user, isLoading, navigate, requiredRole]);
+  }, [user, isLoading, navigate, allowedRoles]);
 
   if (isLoading) {
     return (
@@ -59,8 +67,8 @@ export function ProtectedRoute({
     );
   }
 
-  // Role check failed
-  if (requiredRole && user.role !== requiredRole) {
+  // Role check
+  if (allowedRoles.length > 0 && user.role && !allowedRoles.includes(user.role)) {
     return (
       <Route path={path}>
         <div className="flex items-center justify-center min-h-screen">

@@ -1,211 +1,171 @@
-import { createContext, ReactNode, useContext, useEffect, useTransition } from "react";
+import { createContext, ReactNode, useContext } from "react";
 import {
   useQuery,
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
 
-// Types for JWT authentication response
-type AuthResponse = {
-  user: SelectUser;
-  token: string;
+// Define user type
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  phoneNumber?: string;
+  isPhoneVerified?: boolean;
+  kycStatus?: 'not_started' | 'pending' | 'verified' | 'rejected';
+  walletBalance?: number;
+  createdAt?: string;
+}
+
+// Login data type
+type LoginData = {
+  username: string;
+  password: string;
 };
 
+// Registration data type
+type RegisterData = {
+  username: string;
+  email: string;
+  password: string;
+  role: string;
+};
+
+// Auth context type
 type AuthContextType = {
-  user: SelectUser | null;
+  user: User | null;
   isLoading: boolean;
   error: Error | null;
-  token: string | null;
-  loginMutation: UseMutationResult<AuthResponse, Error, LoginData>;
+  loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<AuthResponse, Error, InsertUser>;
+  registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password">;
-
-// Helper functions for token management
-const setAuthToken = (token: string) => {
-  localStorage.setItem('auth_token', token);
-};
-
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('auth_token');
-};
-
-const removeAuthToken = () => {
-  localStorage.removeItem('auth_token');
-};
-
+// Create auth context
 export const AuthContext = createContext<AuthContextType | null>(null);
+
+// Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const [, navigate] = useLocation();
-  const [isPending, startTransition] = useTransition();
   
-  // Get initial token from localStorage
-  const initialToken = getAuthToken();
-  
-  // Query to fetch current user data using JWT token
+  // Fetch current user data
   const {
     data: user,
     error,
     isLoading,
-    refetch,
-  } = useQuery<SelectUser | null, Error>({
-    queryKey: ["/api/user"],
-    queryFn: getQueryFn({ 
-      on401: "returnNull",
-      headers: initialToken ? { Authorization: `Bearer ${initialToken}` } : undefined
-    }),
-    enabled: !!initialToken, // Only run query if token exists
+  } = useQuery<User | null, Error>({
+    queryKey: ["/api/auth/user"],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", "/api/auth/user");
+        if (res.status === 401) return null;
+        return await res.json();
+      } catch (error) {
+        return null;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
   });
-
+  
   // Login mutation
-  const loginMutation = useMutation<AuthResponse, Error, LoginData>({
+  const loginMutation = useMutation<User, Error, LoginData>({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/auth/login", credentials);
-      const data = await res.json();
-      if (!data.token) {
-        throw new Error("No token received from server");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to log in");
       }
-      return data;
+      return res.json();
     },
-    onSuccess: (data) => {
-      // Store JWT token in localStorage
-      setAuthToken(data.token);
-      
-      // Update the query cache with user data
-      queryClient.setQueryData(["/api/user"], data.user);
-      
-      // Show success message
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/auth/user"], user);
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: "Login successful",
+        description: `Welcome back, ${user.username}!`,
       });
       
-      // Redirect based on user role - wrapped in startTransition to avoid suspension errors
-      startTransition(() => {
-        if (data.user.role === 'admin' || data.user.role === 'super_admin') {
-          console.log('Admin user detected, redirecting to admin dashboard');
-          navigate("/admin-new"); // Using the new route path
-        } else {
-          console.log('Regular user detected, redirecting to investor dashboard');
-          navigate("/investor"); // Using the new route path for investors
-        }
-      });
+      // Redirect based on verification status
+      if (!user.isPhoneVerified || user.kycStatus === 'not_started' || user.kycStatus === 'rejected') {
+        window.location.href = "/verification";
+      } else {
+        window.location.href = "/investor/dashboard";
+      }
     },
     onError: (error: Error) => {
       toast({
+        variant: "destructive",
         title: "Login failed",
         description: error.message,
-        variant: "destructive",
       });
     },
   });
-
-  // Registration mutation
-  const registerMutation = useMutation<AuthResponse, Error, InsertUser>({
-    mutationFn: async (userData: InsertUser) => {
+  
+  // Register mutation
+  const registerMutation = useMutation<User, Error, RegisterData>({
+    mutationFn: async (userData: RegisterData) => {
       const res = await apiRequest("POST", "/api/auth/register", userData);
-      const data = await res.json();
-      if (!data.token) {
-        throw new Error("No token received from server");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Registration failed");
       }
-      return data;
+      return res.json();
     },
-    onSuccess: (data) => {
-      // Store JWT token in localStorage
-      setAuthToken(data.token);
-      
-      // Update the query cache with user data
-      queryClient.setQueryData(["/api/user"], data.user);
-      
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/auth/user"], user);
       toast({
         title: "Account created",
-        description: "Your account has been successfully created.",
+        description: "Your account has been created successfully!",
       });
       
-      // Redirect based on user role - wrapped in startTransition
-      startTransition(() => {
-        if (data.user.role === 'admin' || data.user.role === 'super_admin') {
-          console.log('Admin user registered, redirecting to admin dashboard');
-          navigate("/admin-new"); // Using the new route path
-        } else {
-          console.log('Regular user registered, redirecting to investor dashboard');
-          navigate("/investor"); // Using the new route path for investors
-        }
-      });
+      // Redirect to verification page after registration
+      window.location.href = "/verification";
     },
     onError: (error: Error) => {
       toast({
+        variant: "destructive",
         title: "Registration failed",
         description: error.message,
-        variant: "destructive",
       });
     },
   });
-
+  
   // Logout mutation
-  const logoutMutation = useMutation({
+  const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      // If using server-side logout
-      try {
-        await apiRequest("POST", "/api/auth/logout", {}, {
-          headers: initialToken ? { Authorization: `Bearer ${initialToken}` } : undefined
-        });
-      } catch (err) {
-        console.error("Error during server logout:", err);
-        // Continue with client-side logout even if server logout fails
+      const res = await apiRequest("POST", "/api/auth/logout");
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to log out");
       }
-      
-      // Client-side logout
-      removeAuthToken();
     },
     onSuccess: () => {
-      // Clear user data from cache
-      queryClient.setQueryData(["/api/user"], null);
-      
+      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.invalidateQueries();
       toast({
         title: "Logged out",
-        description: "You have been successfully logged out.",
+        description: "You have been logged out successfully",
       });
-      
-      // Redirect to home page after logout - wrapped in startTransition
-      startTransition(() => {
-        navigate("/");
-      });
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
+        variant: "destructive",
         title: "Logout failed",
         description: error.message,
-        variant: "destructive",
       });
-      // Even if there's an error, we should still remove the token
-      removeAuthToken();
     },
   });
-
-  // Effect to handle token expiration or invalidation
-  useEffect(() => {
-    // If we have a token but no user data, the token might be invalid
-    if (initialToken && !isLoading && !user && !error) {
-      console.log("Token exists but no user data found. Token might be invalid.");
-      removeAuthToken();
-    }
-  }, [initialToken, isLoading, user, error]);
-
+  
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
+        user: user || null,
         isLoading,
         error,
-        token: initialToken,
         loginMutation,
         logoutMutation,
         registerMutation,
@@ -216,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
