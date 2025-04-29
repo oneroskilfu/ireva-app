@@ -51,7 +51,7 @@ export default function AdminSidebar() {
           <ListItemIcon>
             <VerifiedUser />
           </ListItemIcon>
-          <ListItemText primary="KYC Verification" />
+          <ListItemText primary="KYC Management" />
         </ListItemButton>
         
         <ListItemButton component={Link} href="/admin/properties">
