@@ -50,6 +50,7 @@ const Navigation = () => {
     { text: 'Home', icon: <Home />, path: '/' },
     { text: 'Investor Dashboard', icon: <Dashboard />, path: '/investor/dashboard' },
     { text: 'Admin Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
+    { text: 'Admin Overview', icon: <Dashboard />, path: '/admin/overview' },
     { text: 'Properties', icon: <AccountBalance />, path: '/investor/properties' },
     { text: 'Wallet', icon: <Payment />, path: '/investor/wallet' },
     { text: 'Settings', icon: <Settings />, path: '/settings' }

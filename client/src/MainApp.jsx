@@ -4,9 +4,9 @@ import { Container, Box, Typography } from '@mui/material';
 import SafeThemeProvider from './components/SafeThemeProvider';
 import CssBaseline from '@mui/material/CssBaseline';
 import HomePage from './pages/HomePage.jsx';
-import SimpleDashboard from './pages/investor/SimpleDashboard';
-import EnhancedAdminDashboard from './pages/admin/EnhancedAdminDashboard.jsx';
 import Navigation from './components/Navigation';
+import AdminRoutes from './routes/admin-routes';
+import InvestorRoutes from './routes/investor-routes';
 
 function MainApp() {
   return (
@@ -16,8 +16,8 @@ function MainApp() {
       <Router>
         <Switch>
           <Route path="/" component={HomePage} />
-          <Route path="/investor/dashboard" component={SimpleDashboard} />
-          <Route path="/admin/dashboard" component={EnhancedAdminDashboard} />
+          <InvestorRoutes />
+          <AdminRoutes />
           <Route path="/:rest*">
             {(params) => (
               <Container>
