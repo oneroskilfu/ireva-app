@@ -14,8 +14,23 @@ import {
 
 // App Routes/Pages Component
 const MainAppRoutes = () => {
+  // Add this line to verify component rendering
+  console.log("Rendering MainAppRoutes with MUI components");
+  
   return (
     <>
+      {/* Test button at the very top of the component */}
+      <div style={{ position: 'fixed', top: '10px', left: '10px', zIndex: 9999, padding: '5px' }}>
+        <Button 
+          variant="contained" 
+          color="secondary" 
+          size="small"
+          onClick={() => console.log("MainAppRoutes test button clicked!")}
+        >
+          Inner Test
+        </Button>
+      </div>
+      
       <AppBar position="static" elevation={1}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
