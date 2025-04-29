@@ -10,7 +10,8 @@ import {
   CardContent,
   CardMedia,
   Stack,
-  useTheme
+  useTheme,
+  Divider
 } from '@mui/material';
 import { 
   TrendingUp, 
@@ -21,6 +22,7 @@ import {
   Article
 } from '@mui/icons-material';
 import { useLocation } from 'wouter';
+import AdminDashboardSimple from './admin/AdminDashboardSimple';
 
 const FeatureCard = ({ icon, title, description }) => {
   return (
@@ -260,6 +262,17 @@ export default function HomePage() {
               </Grid>
             </Grid>
           </Paper>
+        </Container>
+      </Box>
+
+      {/* Test Admin Dashboard Section */}
+      <Box sx={{ bgcolor: 'white', py: 8 }}>
+        <Container>
+          <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Admin Dashboard Test
+          </Typography>
+          <Divider sx={{ mb: 4 }} />
+          <AdminDashboardSimple />
         </Container>
       </Box>
     </Box>
