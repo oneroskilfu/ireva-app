@@ -17,13 +17,13 @@ import {
 } from '@mui/material';
 import { Check, ArrowForward } from '@mui/icons-material';
 import axios from 'axios';
-import { useNavigate } from 'wouter/use-location';
+import { useLocation } from 'wouter';
 
 const CryptoStatus = () => {
   const [cryptoData, setCryptoData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
 
   useEffect(() => {
     const fetchCryptoStatus = async () => {
