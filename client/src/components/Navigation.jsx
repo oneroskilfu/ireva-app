@@ -48,7 +48,8 @@ const Navigation = () => {
   // Navigation items with icons and paths
   const navItems = [
     { text: 'Home', icon: <Home />, path: '/' },
-    { text: 'Dashboard', icon: <Dashboard />, path: '/investor/dashboard' },
+    { text: 'Investor Dashboard', icon: <Dashboard />, path: '/investor/dashboard' },
+    { text: 'Admin Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
     { text: 'Properties', icon: <AccountBalance />, path: '/investor/properties' },
     { text: 'Wallet', icon: <Payment />, path: '/investor/wallet' },
     { text: 'Settings', icon: <Settings />, path: '/settings' }
