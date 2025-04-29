@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
-import { kycSubmissions, users } from '@shared/schema';
+import { kycSubmissions, users, notifications } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { kycAmlService } from '../services/kyc-aml-service';
+import { sendPushNotificationToUser } from '../services/notificationService';
+import { storage } from '../storage';
+import * as emailService from '../services/emailService';
 
 /**
  * Controller for KYC administration
@@ -141,6 +144,12 @@ export const adminKycController = {
         .where(eq(kycSubmissions.id, parseInt(id)))
         .returning();
 
+      // Get the user for notification
+      const user = await storage.getUser(submission.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
       // Update the user's KYC status
       await db
         .update(users)
@@ -154,6 +163,83 @@ export const adminKycController = {
             finalNotes.join('; '),
         })
         .where(eq(users.id, submission.userId));
+
+      // Create notification for the user about KYC status
+      let notificationTitle, notificationMessage, notificationLink;
+      
+      if (approved) {
+        notificationTitle = "KYC Verification Approved";
+        notificationMessage = "Congratulations! Your KYC verification has been approved. You can now access all investment opportunities on the platform.";
+        notificationLink = "/profile/kyc-status";
+      } else {
+        notificationTitle = "KYC Verification Rejected";
+        notificationMessage = `Your KYC verification was not approved. Reason: ${finalNotes.join('; ')}. Please update your information and try again.`;
+        notificationLink = "/profile/kyc-update";
+      }
+
+      // Store notification in database
+      const notificationData = {
+        userId: submission.userId,
+        title: notificationTitle,
+        message: notificationMessage,
+        type: "kyc",
+        isRead: false,
+        link: notificationLink,
+        createdAt: new Date()
+      };
+
+      await storage.createNotification(notificationData);
+
+      // Send push notification if enabled
+      try {
+        await sendPushNotificationToUser(
+          submission.userId.toString(),
+          notificationTitle,
+          notificationMessage,
+          notificationLink
+        );
+      } catch (error) {
+        console.error('Error sending push notification:', error);
+        // Continue even if push notification fails
+      }
+
+      // Send email notification if user has email
+      if (user.email) {
+        try {
+          await emailService.sendKycStatusEmail(
+            user,
+            approved,
+            finalNotes.join('; ')
+          );
+        } catch (error) {
+          console.error('Error sending email notification:', error);
+          // Continue even if email fails
+        }
+      }
+
+      // If approved, create notification for admin team about new verified investor
+      if (approved) {
+        // Get admin users to notify
+        const adminUsers = await db
+          .select()
+          .from(users)
+          .where(eq(users.role, 'admin'));
+          
+        // Notify admins about new verified investor
+        for (const admin of adminUsers) {
+          const adminNotification = {
+            userId: admin.id,
+            title: "New Verified Investor",
+            message: `${user.firstName || user.username} has successfully completed KYC verification.`,
+            type: "admin_alert",
+            isRead: false,
+            link: `/admin/users/${user.id}`,
+            createdAt: new Date()
+          };
+          
+          await storage.createNotification(adminNotification);
+        }
+      }
 
       res.status(200).json(updatedSubmission);
     } catch (error) {

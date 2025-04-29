@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clean Material UI Implementation</title>
+  
+  <!-- Load React from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  
+  <!-- Load Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone@7.21.3/babel.min.js"></script>
+  
+  <!-- Load Material UI and dependencies -->
+  <script src="https://unpkg.com/@mui/material@5.11.14/umd/material-ui.development.js"></script>
+  
+  <!-- Roboto font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Access MaterialUI components
+    const {
+      Button,
+      Container,
+      Typography,
+      Box,
+      Card,
+      CardContent,
+      CardActions,
+      AppBar,
+      Toolbar,
+      IconButton,
+      createTheme,
+      ThemeProvider,
+      CssBaseline,
+    } = MaterialUI;
+
+    // Simple theme
+    const theme = createTheme({
+      palette: {
+        mode: 'light',
+        primary: {
+          main: '#4F46E5',
+          contrastText: '#ffffff'
+        },
+        secondary: {
+          main: '#38bdf8',
+        }
+      },
+    });
+
+    // Simple App component
+    function App() {
+      return (
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          
+          <AppBar position="static">
+            <Toolbar>
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                iREVA
+              </Typography>
+              <Button color="inherit">Login</Button>
+            </Toolbar>
+          </AppBar>
+          
+          <Container maxWidth="md" sx={{ mt: 4 }}>
+            <Box sx={{ my: 4, textAlign: 'center' }}>
+              <Typography variant="h3" component="h1" gutterBottom>
+                Clean Material UI Demo
+              </Typography>
+              <Typography variant="h5" component="h2" gutterBottom>
+                Completely isolated from the main application
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Card sx={{ minWidth: 275, maxWidth: 345 }}>
+                <CardContent>
+                  <Typography variant="h5" component="div" gutterBottom>
+                    Material UI Components
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    This page loads Material UI directly from CDN with no dependencies
+                    on our main application's provider structure.
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button size="small" variant="contained" color="primary">Learn More</Button>
+                </CardActions>
+              </Card>
+              
+              <Card sx={{ minWidth: 275, maxWidth: 345 }}>
+                <CardContent>
+                  <Typography variant="h5" component="div" gutterBottom>
+                    Isolating Issues
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    By creating a clean implementation, we can isolate whether the issue
+                    is with Material UI itself or with how it's integrated in our app.
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button size="small" variant="contained" color="secondary">Details</Button>
+                </CardActions>
+              </Card>
+            </Box>
+            
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 2 }}>
+              <Button variant="contained" color="primary">
+                Primary Action
+              </Button>
+              <Button variant="outlined" color="primary">
+                Secondary Action
+              </Button>
+            </Box>
+          </Container>
+        </ThemeProvider>
+      );
+    }
+
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

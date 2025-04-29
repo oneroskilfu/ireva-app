@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { setupSocketIO } from "./socketio";
 import { setupAuth } from "./auth";
 import { setupJwtAuth, verifyToken, authMiddleware } from "./auth-jwt";
@@ -18,6 +19,7 @@ import faqRoutes from './routes/faq';
 import messageRoutes from './routes/messages';
 import projectsRoutes from './routes/projects';
 import emailCampaignRoutes from './routes/email-campaign';
+import { devToolsRouter } from './routes/dev-tools';
 import feedbackRoutes from './routes/feedback';
 import adminLogsRoutes from './routes/adminLogs';
 import issuesRoutes from './routes/issues';
@@ -48,6 +50,10 @@ import stablecoinRoutes from './routes/stablecoin-routes';
 import milestoneEscrowRoutes from './routes/milestone-escrow-routes';
 // Import crypto integration routes
 import { cryptoIntegrationRouter } from './routes/crypto-integration-routes';
+// Import legal content routes
+import { legalContentRouter } from './routes/legal-content-routes';
+// Import compliance routes
+import { complianceRouter } from './routes/compliance-routes';
 // Import admin crypto validation routes
 import { adminCryptoValidateRouter } from './routes/admin-crypto-validate';
 // Import crypto webhook routes
@@ -64,10 +70,7 @@ import { pushNotificationRouter } from './routes/push-notification-routes';
 import { sendNotificationRouter } from './routes/send-notification-routes';
 import { savePushTokenRouter } from './routes/save-push-token-routes';
 import { pushNotificationSendRouter } from './routes/push-notification-send-routes';
-// Import compliance routes
-import complianceRoutes from './routes/compliance-routes';
 import fs from 'fs';
-import path from 'path';
 
 // Import our new TypeScript routes
 import adminKycRoutes from './api/admin/kyc';
@@ -83,6 +86,47 @@ import adminKycRouter from './routes/admin-kyc-routes';
 import kycRouter from './routes/kyc';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve our static HTML home page at /static-home and at /static
+  app.get('/static-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
+  // Also serve the static HTML at /static
+  app.get('/static', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
+  // Also serve the static HTML at the root path as a fallback
+  app.get('/ireva-static-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
+  // Serve our enhanced SEO-optimized static HTML home page
+  app.get('/static-ireva-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-ireva-home.html'));
+  });
+  
+  // Also map the route to another URL for testing
+  app.get('/enhanced-static', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/static-home.html'));
+  });
+  
+  // Serve the simplified themed HTML version
+  app.get('/simplified-themed-static', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/simplified-themed.html'));
+  });
+  
+  // Serve direct access static home page for testing ThemeProvider fix
+  app.get('/direct-static-home', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/src/pages/StaticHome.jsx'));
+  });
+  
+  // Serve the static CSS file
+  app.get('/static-home.css', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/src/pages/StaticHome.css'));
+    res.type('text/css');
+  });
+
   // Set up JWT authentication routes
   setupJwtAuth(app);
   
@@ -308,6 +352,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/withdrawals', withdrawalRouter);
   console.log("Withdrawal routes registered");
   
+  // Set up Development Tools routes (only available in development)
+  app.use('/api', devToolsRouter);
+  console.log("Development tools routes registered");
+  
   // Set up Crypto Wallet routes
   app.use('/api/crypto-wallets', cryptoWalletRouter);
   console.log("Crypto wallet routes registered");
@@ -339,6 +387,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Data Protection routes
   app.use('/api/privacy', dataProtectionRoutes);
   console.log("Data protection routes registered");
+  
+  // Set up Legal Content routes
+  app.use('/api/legal', legalContentRouter);
+  console.log("Legal content routes registered");
+  
+  // Set up Compliance routes
+  app.use('/api/compliance', complianceRouter);
+  console.log("Compliance logging routes registered");
   
   // Set up Stablecoin routes
   app.use('/api/stablecoins', stablecoinRoutes);
@@ -381,9 +437,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', savePushTokenRouter);
   console.log("Push notification routes registered");
   
-  // Set up Compliance routes
-  app.use('/api', complianceRoutes);
-  console.log("Compliance logging routes registered");
+  // Legacy compliance routes kept for compatibility
+  // app.use('/api', complianceRoutes);
+  // console.log("Legacy compliance routes registered");
   
   // Temporarily disabled MongoDB Transaction routes
   // app.use('/api/transactions', transactionRoutes);

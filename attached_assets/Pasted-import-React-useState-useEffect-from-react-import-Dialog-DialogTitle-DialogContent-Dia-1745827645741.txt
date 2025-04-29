@@ -1,0 +1,70 @@
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, CircularProgress } from '@mui/material';
+import axios from 'axios';
+
+const ComplianceModal = ({ currentPolicyVersion }) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check compliance status
+  useEffect(() => {
+    const fetchComplianceStatus = async () => {
+      try {
+        const response = await axios.get('/api/compliance/status');
+        const lastAccepted = response.data.lastAcceptedVersion;
+
+        if (lastAccepted !== currentPolicyVersion) {
+          setOpen(true);
+        }
+      } catch (error) {
+        console.error('Error fetching compliance status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplianceStatus();
+  }, [currentPolicyVersion]);
+
+  // Accept compliance
+  const handleAccept = async () => {
+    try {
+      await axios.post('/api/compliance/accept', { policyVersion: currentPolicyVersion });
+      setOpen(false);
+      window.location.reload(); // Refresh after acceptance
+    } catch (error) {
+      console.error('Error accepting compliance:', error);
+    }
+  };
+
+  if (loading) {
+    return <CircularProgress />;
+  }
+
+  return (
+    <Dialog open={open} maxWidth="sm" fullWidth>
+      <DialogTitle>Terms & Compliance Update</DialogTitle>
+      <DialogContent dividers>
+        <Typography variant="body1" gutterBottom>
+          Welcome to iREVA! We've updated our Terms of Service and Privacy Policy to enhance your experience.
+        </Typography>
+        <Typography variant="body2" color="textSecondary">
+          Please review and accept the latest compliance terms to continue using the platform.
+        </Typography>
+
+        <Typography sx={{ mt: 2 }}>
+          Latest Version: <strong>{currentPolicyVersion}</strong>
+        </Typography>
+
+        {/* Optionally: Display full terms inside here or link to a page */}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleAccept} variant="contained" color="primary">
+          Accept & Continue
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default ComplianceModal;

@@ -1,0 +1,76 @@
+import { useEffect, useState } from 'react';
+import {
+  Box, Typography, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Paper, Select, MenuItem, Button
+} from '@mui/material';
+import axios from 'axios';
+
+export default function ComplianceCenter() {
+  const [logs, setLogs] = useState([]);
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
+    fetchLogs();
+  }, [filter]);
+
+  const fetchLogs = async () => {
+    const response = await axios.get('/api/admin/compliance-logs', {
+      params: { documentType: filter || undefined }
+    });
+    setLogs(response.data);
+  };
+
+  const handleExportCSV = () => {
+    const csvRows = [
+      ["User ID", "Document Type", "Accepted At"],
+      ...logs.map(log => [log.user_id, log.document_type, new Date(log.accepted_at).toLocaleString()])
+    ];
+    const blob = new Blob([csvRows.map(r => r.join(",")).join("\n")], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'compliance_logs.csv';
+    a.click();
+  };
+
+  return (
+    <Box p={3}>
+      <Typography variant="h4" mb={2}>Compliance Center</Typography>
+
+      <Box mb={2} display="flex" alignItems="center" gap={2}>
+        <Select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          displayEmpty
+        >
+          <MenuItem value="">All Documents</MenuItem>
+          <MenuItem value="Terms of Service">Terms of Service</MenuItem>
+          <MenuItem value="Privacy Policy">Privacy Policy</MenuItem>
+          <MenuItem value="Crypto Risk Disclosure">Crypto Risk Disclosure</MenuItem>
+        </Select>
+        <Button variant="outlined" onClick={handleExportCSV}>Export CSV</Button>
+      </Box>
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>User ID</TableCell>
+              <TableCell>Document Type</TableCell>
+              <TableCell>Accepted At</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {logs.map((log) => (
+              <TableRow key={log.id}>
+                <TableCell>{log.user_id}</TableCell>
+                <TableCell>{log.document_type}</TableCell>
+                <TableCell>{new Date(log.accepted_at).toLocaleString()}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+}

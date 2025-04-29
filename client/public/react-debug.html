@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Debug</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: #f9f9f9;
+    }
+    .error {
+      color: #d32f2f;
+      background-color: #ffebee;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>React Debug Page</h1>
+  <p>This is a standalone debug page that loads React directly from CDN to verify React functionality.</p>
+  
+  <div class="card">
+    <h2>React Version</h2>
+    <div id="react-version"></div>
+  </div>
+
+  <div class="card">
+    <h2>Basic React Component</h2>
+    <div id="react-test"></div>
+  </div>
+
+  <div class="card">
+    <h2>Hook Test</h2>
+    <div id="hook-test"></div>
+  </div>
+
+  <div class="card">
+    <h2>Browser Information</h2>
+    <div id="browser-info"></div>
+  </div>
+
+  <a href="/" style="display: inline-block; margin-top: 20px; color: #2196F3; text-decoration: none;">Back to Home</a>
+
+  <script type="text/babel">
+    // Display React Version
+    function ReactVersion() {
+      return (
+        <div>
+          <p>React version: {React.version}</p>
+          <p>ReactDOM version: {ReactDOM.version}</p>
+        </div>
+      );
+    }
+    
+    // Basic Component Test
+    function Counter() {
+      const [count, setCount] = React.useState(0);
+      
+      return (
+        <div>
+          <p>Count: {count}</p>
+          <button onClick={() => setCount(count + 1)}>Increment</button>
+          <button onClick={() => setCount(0)}>Reset</button>
+        </div>
+      );
+    }
+    
+    // Multiple Hooks Test
+    function HooksTest() {
+      const [text, setText] = React.useState('');
+      const [items, setItems] = React.useState([]);
+      
+      React.useEffect(() => {
+        console.log('HooksTest component mounted');
+        return () => {
+          console.log('HooksTest component unmounted');
+        };
+      }, []);
+      
+      const addItem = () => {
+        if (text.trim() !== '') {
+          setItems([...items, text]);
+          setText('');
+        }
+      };
+      
+      return (
+        <div>
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Enter an item"
+            style={{ padding: '8px', marginRight: '8px' }}
+          />
+          <button onClick={addItem}>Add Item</button>
+          <ul>
+            {items.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+    
+    // Browser Information
+    function BrowserInfo() {
+      return (
+        <div>
+          <p>User Agent: {navigator.userAgent}</p>
+          <p>Platform: {navigator.platform}</p>
+          <p>Language: {navigator.language}</p>
+        </div>
+      );
+    }
+    
+    // Render components
+    try {
+      ReactDOM.createRoot(document.getElementById('react-version')).render(<ReactVersion />);
+      ReactDOM.createRoot(document.getElementById('react-test')).render(<Counter />);
+      ReactDOM.createRoot(document.getElementById('hook-test')).render(<HooksTest />);
+      ReactDOM.createRoot(document.getElementById('browser-info')).render(<BrowserInfo />);
+    } catch (error) {
+      document.body.innerHTML += `
+        <div class="error">
+          <h2>Error Rendering React</h2>
+          <pre>${error.message}\n${error.stack}</pre>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

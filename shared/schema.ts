@@ -338,6 +338,24 @@ export const documentTypeEnum = pgEnum("document_type", [
   "cookies_policy"
 ]);
 
+// Legal versions schema to track document versions
+export const legalVersions = pgTable("legal_versions", {
+  id: serial("id").primaryKey(),
+  documentType: documentTypeEnum("document_type").notNull(),
+  version: integer("version").notNull(),
+  notify_users: boolean("notify_users").default(false),
+  releaseDate: timestamp("release_date").defaultNow()
+});
+
+// User legal acceptance schema to track user acceptance of legal documents
+export const userLegalAcceptance = pgTable("user_legal_acceptance", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  documentType: documentTypeEnum("document_type").notNull(),
+  version: integer("version").notNull(),
+  acceptedAt: timestamp("accepted_at").defaultNow()
+});
+
 // Compliance logs schema
 export const complianceLogs = pgTable("compliance_logs", {
   id: serial("id").primaryKey(),

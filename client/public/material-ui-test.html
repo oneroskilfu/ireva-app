@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material UI Test</title>
+  <!-- Load React directly from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Load Babel for JSX support -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Load Material UI from CDN -->
+  <script src="https://unpkg.com/@mui/material@5.14.18/umd/material-ui.production.min.js"></script>
+  <!-- Roboto font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <!-- Material Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const {
+      createTheme,
+      ThemeProvider,
+      CssBaseline,
+      Button,
+      Typography,
+      Box,
+      Container
+    } = MaterialUI;
+
+    // Create a simple theme
+    const theme = createTheme({
+      palette: {
+        primary: {
+          main: '#1976d2',
+        },
+        secondary: {
+          main: '#dc004e',
+        },
+      },
+    });
+
+    // Main App component
+    function App() {
+      return (
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Container maxWidth="sm">
+            <Box sx={{ my: 4 }}>
+              <Typography variant="h4" gutterBottom>
+                Material UI Test Page
+              </Typography>
+              <Typography variant="body1" paragraph>
+                This is a standalone test page that loads React and Material UI directly from CDN.
+              </Typography>
+              <Button variant="contained" color="primary">
+                Primary Button
+              </Button>
+              <Button variant="contained" color="secondary" sx={{ ml: 2 }}>
+                Secondary Button
+              </Button>
+            </Box>
+          </Container>
+        </ThemeProvider>
+      );
+    }
+
+    // Render the App component
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

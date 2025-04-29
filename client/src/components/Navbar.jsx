@@ -1,0 +1,116 @@
+import React, { useState } from 'react';
+import { AppBar, Toolbar, IconButton, Typography, Button, Drawer, List, ListItem, ListItemText, Box } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { motion } from 'framer-motion';
+import { Link as RouterLink } from 'wouter';
+
+const navItems = [
+  { title: 'Home', link: '/simple' },
+  { title: 'Projects', link: '/projects' },
+  { title: 'Transactions', link: '/simple/transactions' },
+  { title: 'Settings', link: '/simple/settings' },
+  { title: 'Privacy', link: '/simple/privacy-policy' },
+  { title: 'Terms', link: '/simple/terms' },
+  { title: 'Login', link: '/auth' },
+];
+
+const Navbar = () => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const drawer = (
+    <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
+      <Typography variant="h6" sx={{ my: 2 }}>
+        iREVA
+      </Typography>
+      <List>
+        {navItems.map((item) => (
+          <ListItem button key={item.title} component={RouterLink} to={item.link}>
+            <ListItemText primary={item.title} />
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
+  return (
+    <>
+      <AppBar
+        position="fixed"
+        sx={{
+          backgroundColor: 'white',
+          color: 'black',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        }}
+      >
+        <Toolbar>
+          {/* Logo with animation */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+          >
+            <Typography
+              variant="h6"
+              component={RouterLink}
+              to="/"
+              sx={{ textDecoration: 'none', color: 'black', fontWeight: 700 }}
+            >
+              iREVA
+            </Typography>
+          </motion.div>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Desktop Nav Links */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 3 }}>
+            {navItems.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 * index }}
+              >
+                <Button
+                  component={RouterLink}
+                  to={item.link}
+                  sx={{ color: 'black', fontWeight: 500 }}
+                >
+                  {item.title}
+                </Button>
+              </motion.div>
+            ))}
+          </Box>
+
+          {/* Mobile Menu Icon */}
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="end"
+            onClick={handleDrawerToggle}
+            sx={{ display: { md: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        sx={{
+          '& .MuiDrawer-paper': { width: 250 },
+        }}
+      >
+        {drawer}
+      </Drawer>
+    </>
+  );
+};
+
+export default Navbar;

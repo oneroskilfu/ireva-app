@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA - Smart Real Estate Investing Platform</title>
+  
+  <!-- Basic SEO Meta Tags -->
+  <meta name="description" content="Invest in fractional real estate assets securely with crypto integration, smart contracts, and high ROI opportunities. Join iREVA today!">
+  <meta name="keywords" content="real estate investment, property investing, fractional ownership, crypto real estate, blockchain properties, Nigeria real estate, African property market">
+  <meta name="author" content="iREVA Investment Platform">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="English">
+  <meta name="revisit-after" content="7 days">
+  
+  <!-- OpenGraph for social sharing -->
+  <meta property="og:title" content="iREVA - Smart Real Estate Investing Platform">
+  <meta property="og:description" content="Invest smarter with iREVA. Verified properties, fractional ownership, crypto support, and blockchain security.">
+  <meta property="og:image" content="/assets/ireva-og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="iREVA Real Estate Investment Platform Interface">
+  <meta property="og:url" content="https://yourdomain.com">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="iREVA">
+  <meta property="og:locale" content="en_US">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="iREVA - Smart Real Estate Investing Platform">
+  <meta name="twitter:description" content="Real estate investments made simple and secure through crypto and blockchain technology.">
+  <meta name="twitter:image" content="/assets/ireva-og-image.png">
+  <meta name="twitter:image:alt" content="iREVA Investment Platform Screenshot">
+  <meta name="twitter:site" content="@iREVAPlatform">
+  <meta name="twitter:creator" content="@iREVAPlatform">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://yourdomain.com">
+  
+  <style>
+    /* Base styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+      color: #333;
+      background-color: #f8fafc;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      font-size: 1rem;
+    }
+    
+    .btn-primary {
+      background-color: #4F46E5;
+      color: white;
+      box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+    }
+    
+    .btn-primary:hover {
+      background-color: #3730A3;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 10px rgba(79, 70, 229, 0.3);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+    
+    .btn-outline:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Hero section */
+    .hero {
+      background-color: #1a365d;
+      color: white;
+      padding: 120px 20px;
+      text-align: center;
+    }
+    
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    
+    .hero p {
+      font-size: 1.25rem;
+      max-width: 600px;
+      margin: 0 auto 2rem auto;
+      opacity: 0.9;
+    }
+    
+    .hero-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    /* Section styling */
+    .section {
+      padding: 80px 0;
+    }
+    
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .section-subtitle {
+      font-size: 1.25rem;
+      text-align: center;
+      max-width: 700px;
+      margin: -2rem auto 3rem auto;
+      color: #666;
+    }
+    
+    /* Card grid */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      margin-top: 2rem;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      padding: 30px;
+      transition: all 0.3s ease;
+      border: 1px solid #eee;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .step-card {
+      text-align: center;
+    }
+    
+    .step-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      position: relative;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+    
+    .step-card h3::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      width: 50px;
+      height: 3px;
+      background: #4F46E5;
+      transform: translateX(-50%);
+    }
+    
+    .feature-card h3 {
+      font-size: 1.25rem;
+      position: relative;
+      padding-bottom: 10px;
+      margin-bottom: 1rem;
+    }
+    
+    .feature-card h3::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background: #4F46E5;
+      transition: width 0.3s ease;
+    }
+    
+    .feature-card:hover h3::after {
+      width: 60px;
+    }
+    
+    /* CTA section */
+    .cta-section {
+      background-color: #4F46E5;
+      color: white;
+      text-align: center;
+      padding: 80px 20px;
+    }
+    
+    .cta-section h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .cta-section p {
+      font-size: 1.25rem;
+      max-width: 700px;
+      margin: 0 auto 2rem auto;
+      opacity: 0.9;
+    }
+    
+    .btn-cta {
+      background-color: white;
+      color: #4F46E5;
+      font-weight: bold;
+    }
+    
+    .btn-cta:hover {
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+    
+    /* Footer */
+    .footer {
+      background-color: #111827;
+      color: white;
+      padding: 80px 20px 40px;
+    }
+    
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    .footer-column h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .footer-column ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .footer-column ul li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .footer-column a {
+      color: #9ca3af;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    .footer-column a:hover {
+      color: white;
+    }
+    
+    .footer-bottom {
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #9ca3af;
+      font-size: 0.875rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2rem;
+      }
+      
+      .hero p {
+        font-size: 1.1rem;
+      }
+      
+      .section {
+        padding: 60px 0;
+      }
+      
+      .section-title {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- SEO-rich structured data -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "iREVA",
+      "url": "https://yourdomain.com",
+      "logo": "https://yourdomain.com/assets/ireva-logo.png",
+      "description": "A cutting-edge real estate investment platform leveraging blockchain technology for secure and transparent property investments.",
+      "sameAs": [
+        "https://facebook.com/iREVAPlatform",
+        "https://twitter.com/iREVAPlatform",
+        "https://linkedin.com/company/ireva-platform",
+        "https://instagram.com/iREVAPlatform"
+      ],
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "123 Investment Avenue",
+        "addressLocality": "Lagos",
+        "addressRegion": "Lagos State",
+        "postalCode": "100001",
+        "addressCountry": "Nigeria"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+234-000-0000",
+        "contactType": "customer service",
+        "availableLanguage": ["English"]
+      }
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "iREVA Investment Platform",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1024"
+      }
+    }
+  </script>
+
+  <!-- Hero Section -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="container">
+      <h1 id="hero-heading">Building Wealth Together: Real Estate, Reimagined.</h1>
+      <p>Fractional investment in premium real estate projects, powered by innovation and trust.</p>
+      <div class="hero-buttons">
+        <a href="#" class="btn btn-primary" aria-label="Get Started with iREVA">Get Started</a>
+        <a href="#" class="btn btn-outline" aria-label="Browse investment opportunities">See Opportunities</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Section -->
+  <section class="section" aria-labelledby="trust-heading">
+    <div class="container">
+      <h2 id="trust-heading" class="section-title">Trusted By Thousands</h2>
+      <p class="section-subtitle">Over 5,000+ active investors building wealth with iREVA.</p>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="section" style="background-color: #f8fafc;" aria-labelledby="how-it-works-heading">
+    <div class="container">
+      <h2 id="how-it-works-heading" class="section-title">How It Works</h2>
+      <div class="card-grid" role="list">
+        <div class="card step-card" role="listitem">
+          <h3>Step 1</h3>
+          <p>Sign Up and Complete KYC</p>
+        </div>
+        <div class="card step-card" role="listitem">
+          <h3>Step 2</h3>
+          <p>Browse Verified Investment Projects</p>
+        </div>
+        <div class="card step-card" role="listitem">
+          <h3>Step 3</h3>
+          <p>Invest and Track ROI</p>
+        </div>
+        <div class="card step-card" role="listitem">
+          <h3>Step 4</h3>
+          <p>Withdraw or Reinvest Earnings</p>
+        </div>
+        <div class="card step-card" role="listitem">
+          <h3>Step 5</h3>
+          <p>Manage Crypto Wallet</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="section" aria-labelledby="features-heading">
+    <div class="container">
+      <h2 id="features-heading" class="section-title">Key Features</h2>
+      <div class="card-grid" role="list">
+        <div class="card feature-card" role="listitem">
+          <h3>Own Real Estate with Ease</h3>
+          <p>Direct ownership shares, no huge upfront capital.</p>
+        </div>
+        <div class="card feature-card" role="listitem">
+          <h3>Crypto-Enabled Investments</h3>
+          <p>Optional deposits via stablecoins and Bitcoin.</p>
+        </div>
+        <div class="card feature-card" role="listitem">
+          <h3>Smart Contract Escrow</h3>
+          <p>Secure transaction settlements powered by blockchain.</p>
+        </div>
+        <div class="card feature-card" role="listitem">
+          <h3>Seamless Mobile Experience</h3>
+          <p>Invest and monitor anywhere with our PWA app.</p>
+        </div>
+        <div class="card feature-card" role="listitem">
+          <h3>Fully Regulated Compliance</h3>
+          <p>KYC, AML, and legal protections in place.</p>
+        </div>
+        <div class="card feature-card" role="listitem">
+          <h3>Transparent Reporting</h3>
+          <p>Real-time dashboards and project updates.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="cta-section" aria-labelledby="cta-heading">
+    <div class="container">
+      <h2 id="cta-heading">Ready to Start Your Investment Journey?</h2>
+      <p>Join our growing community of investors and get access to exclusive property deals.</p>
+      <a href="#" class="btn btn-cta">Create Your Account</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-column">
+          <h3>iREVA</h3>
+          <p style="color: #9ca3af; margin-bottom: 1rem;">Building a better future through smart real estate investments.</p>
+        </div>
+        <div class="footer-column">
+          <h3>Platform</h3>
+          <ul>
+            <li><a href="#">How It Works</a></li>
+            <li><a href="#">Properties</a></li>
+            <li><a href="#">Pricing</a></li>
+            <li><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Company</h3>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Team</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Press</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Legal</h3>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Disclaimer</a></li>
+            <li><a href="#">Compliance</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h3>Contact</h3>
+          <p style="color: #9ca3af; margin-bottom: 0.5rem;">support@ireva.com</p>
+          <p style="color: #9ca3af; margin-bottom: 0.5rem;">+234 000 0000</p>
+          <p style="color: #9ca3af; margin-bottom: 0.5rem;">Lagos, Nigeria</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; <script>document.write(new Date().getFullYear())</script> iREVA Investment Platform. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

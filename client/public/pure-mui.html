@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pure Material UI Demo</title>
+  
+  <!-- Roboto font is recommended for Material UI -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      background-color: #4F46E5;
+      color: white;
+      padding: 15px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: 500;
+    }
+    
+    .nav-btn {
+      background: transparent;
+      color: white;
+      border: 1px solid white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+      transition: all 0.3s;
+    }
+    
+    .nav-btn:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+    
+    .hero {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .title {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #1a202c;
+    }
+    
+    .subtitle {
+      font-size: 18px;
+      color: #4a5568;
+      margin-bottom: 32px;
+    }
+    
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      width: 320px;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-content {
+      padding: 20px;
+    }
+    
+    .card-title {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #2d3748;
+    }
+    
+    .card-text {
+      font-size: 16px;
+      color: #4a5568;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    
+    .card-actions {
+      display: flex;
+      padding: 0 20px 20px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+    }
+    
+    .btn-primary {
+      background-color: #4F46E5;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #3730A3;
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #4F46E5;
+      color: #4F46E5;
+    }
+    
+    .btn-outline:hover {
+      background-color: rgba(79, 70, 229, 0.1);
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #2d3748;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <nav class="nav">
+      <div class="logo">iREVA</div>
+      <button class="nav-btn">Login</button>
+    </nav>
+  </header>
+  
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1 class="title">Pure Material UI Design</h1>
+        <p class="subtitle">This page uses pure HTML, CSS without any frameworks to demonstrate Material UI design principles</p>
+      </div>
+    </section>
+    
+    <div class="container">
+      <div class="card-container">
+        <div class="card">
+          <div class="card-content">
+            <h2 class="card-title">Material Design</h2>
+            <p class="card-text">
+              This page demonstrates the visual principles of Material Design using only HTML and CSS,
+              without any JavaScript frameworks or libraries.
+            </p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary">Learn More</button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-content">
+            <h2 class="card-title">No Framework</h2>
+            <p class="card-text">
+              By building this without React or Material UI library dependencies, we can isolate
+              styling issues from framework-related problems.
+            </p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-outline">Details</button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-content">
+            <h2 class="card-title">Compatibility Testing</h2>
+            <p class="card-text">
+              This approach lets us verify that the basic Material Design principles work
+              in our environment without any React-specific issues.
+            </p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary">Explore</button>
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="/" style="text-decoration: none;">
+          <button class="btn btn-primary">Back to Home</button>
+        </a>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="footer">
+    <p>iREVA © 2025 - All rights reserved</p>
+  </footer>
+</body>
+</html>
