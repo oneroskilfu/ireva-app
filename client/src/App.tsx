@@ -1,20 +1,12 @@
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme';
-
-import { Route, Switch } from 'wouter';
-import HomePage from './pages/HomePage';
-import MinimalMuiPage from './pages/minimal-mui';
+import React from 'react';
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      
-      <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/minimal-mui" component={MinimalMuiPage} />
-      </Switch>
-    </ThemeProvider>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1>iREVA Real Estate Platform</h1>
+      <p>Welcome to the iREVA platform. Our system is currently under maintenance.</p>
+      <p>Please check back shortly to access your real estate investment dashboard.</p>
+    </div>
   );
 }
 
