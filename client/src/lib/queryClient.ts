@@ -1,115 +1,147 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
+
+// Helper function to get JWT token from localStorage
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('auth_token');
+};
+
+async function throwIfResNotOk(res: Response) {
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    console.error(`API error: ${res.status} ${res.statusText} - ${text}`);
+    throw new Error(`${res.status}: ${text}`);
+  }
+}
 
 interface ApiRequestOptions {
   headers?: Record<string, string>;
-  signal?: AbortSignal;
-  on401?: 'throw' | 'returnNull';
 }
 
-interface GetQueryFnOptions {
-  on401?: 'throw' | 'returnNull';
-}
-
-/**
- * Create a new query client
- */
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-      retry: 1,
-    },
-  },
-});
-
-/**
- * Make an API request
- */
 export async function apiRequest(
   method: string,
   url: string,
-  body?: any,
-  options: ApiRequestOptions = {}
+  data?: unknown | undefined,
+  options?: ApiRequestOptions
 ): Promise<Response> {
+  // Get token from localStorage
+  const token = getAuthToken();
+  
+  // Initialize headers with content type if data is provided
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...options.headers,
+    ...(data ? { "Content-Type": "application/json" } : {}),
+    ...(options?.headers || {})
   };
-
-  // Prepare fetch options
-  const fetchOptions: RequestInit = {
+  
+  // Add Authorization header if token exists
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  const res = await fetch(url, {
     method,
     headers,
-    credentials: 'include',
-    signal: options.signal,
-  };
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include", // Keep this for cookies in case of hybrid auth
+  });
 
-  // Add body for non-GET requests
-  if (method !== 'GET' && body) {
-    if (headers['Content-Type'] === 'application/json') {
-      fetchOptions.body = JSON.stringify(body);
-    } else {
-      fetchOptions.body = body;
-    }
-  }
-
-  // Make the request
-  const response = await fetch(url, fetchOptions);
-
-  // Handle 401 Unauthorized
-  if (response.status === 401 && options.on401 === 'throw') {
-    throw new Error('Unauthorized');
-  }
-
-  return response;
+  await throwIfResNotOk(res);
+  return res;
 }
 
-/**
- * Get a query function for TanStack Query
- */
-export function getQueryFn({ on401 = 'throw' }: GetQueryFnOptions = {}) {
-  return async ({ queryKey }: { queryKey: string[] }) => {
-    const url = queryKey[0];
-    const response = await apiRequest('GET', url, undefined, { on401 });
+type UnauthorizedBehavior = "returnNull" | "throw";
+interface QueryFnOptions {
+  on401: UnauthorizedBehavior;
+  headers?: Record<string, string>;
+}
+
+export const getQueryFn: <T>(options: QueryFnOptions) => QueryFunction<T> =
+  ({ on401: unauthorizedBehavior, headers = {} }) =>
+  async ({ queryKey }) => {
+    // Get token from localStorage
+    const token = getAuthToken();
     
-    // Handle 404 Not Found
-    if (response.status === 404) {
-      throw new Error('Resource not found');
+    // Initialize headers
+    const requestHeaders: Record<string, string> = {
+      ...headers
+    };
+    
+    // Add Authorization header if token exists
+    if (token) {
+      requestHeaders["Authorization"] = `Bearer ${token}`;
     }
     
-    // Handle other error responses
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Something went wrong');
+    // Build URL with query parameters if present
+    const basePath = queryKey[0] as string;
+    
+    let url = basePath;
+    
+    // Handle the params object format - queryKey[1] is an object with filter params
+    if (queryKey.length > 1 && typeof queryKey[1] === 'object') {
+      const params = queryKey[1] as Record<string, any>;
+      const queryParams = new URLSearchParams();
+      
+      for (const [key, value] of Object.entries(params)) {
+        if (value && value !== 'all') {
+          queryParams.append(key, String(value));
+        }
+      }
+      
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url = `${basePath}?${queryString}`;
+      }
+    }
+    // Fallback to old format where queryKey alternates between key and value
+    else if (queryKey.length > 1) {
+      const params = queryKey.slice(1).filter(Boolean);
+      
+      if (params.length > 0) {
+        const queryParams = new URLSearchParams();
+        
+        // Assuming params alternate between key and value
+        for (let i = 0; i < params.length; i += 2) {
+          const key = params[i];
+          const value = params[i + 1];
+          if (key && value && value !== 'all') {
+            queryParams.append(String(key), String(value));
+          }
+        }
+        
+        const queryString = queryParams.toString();
+        if (queryString) {
+          url = `${basePath}?${queryString}`;
+        }
+      }
     }
     
-    // Return null for empty responses
-    if (response.headers.get('Content-Length') === '0') {
+    console.log("Making API request to:", url);
+    
+    const res = await fetch(url, {
+      headers: requestHeaders,
+      credentials: "include", // Keep this for cookies in case of hybrid auth
+    });
+
+    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
     }
-    
-    // Parse and return JSON response
-    return response.json();
-  };
-}
 
-/**
- * Mutation function for TanStack Query
- */
-export function getMutationFn(method: string, url: string) {
-  return async (data: any) => {
-    const response = await apiRequest(method, url, data);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Something went wrong');
-    }
-    
-    // Return null for empty responses
-    if (response.headers.get('Content-Length') === '0') {
-      return null;
-    }
-    
-    return response.json();
+    await throwIfResNotOk(res);
+    const responseData = await res.json();
+    console.log("API response data from:", url, responseData);
+    return responseData;
   };
-}
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      retry: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});

@@ -1,30 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Redirect } from 'wouter';
-import { 
-  CheckCircle,
-  XCircle,
-  Circle,
-  Clock,
-  ArrowRight,
-  Phone,
-  FileCheck,
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { PhoneVerificationForm } from '@/components/auth/PhoneVerification';
-import { KycVerificationForm } from '@/components/auth/KycVerification';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { Redirect, Link } from "wouter";
+import { CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { Layout } from "@/components/layout/Layout";
+import { PhoneVerificationForm } from "@/components/auth/PhoneVerification";
+import { KycVerificationForm } from "@/components/auth/KycVerification";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Steps, StepIndicator, StepSeparator, StepTitle, StepDescription } from "@/components/ui/steps";
+import { apiRequest } from "@/lib/queryClient";
 
-// Define verification status types
-interface VerificationStatus {
+type VerificationStatus = {
   isPhoneVerified: boolean;
-  kycStatus: 'not_started' | 'pending' | 'verified' | 'rejected';
-  kycSubmittedAt?: string;
-  kycVerifiedAt?: string;
-  kycRejectionReason?: string;
-}
+  kycStatus: "not_started" | "pending" | "verified" | "rejected";
+  kycSubmittedAt: string | null;
+  kycVerifiedAt: string | null;
+};
 
 export default function VerificationPage() {
   const { user, isLoading } = useAuth();
@@ -58,9 +50,11 @@ export default function VerificationPage() {
   // Handle loading and unauthenticated states
   if (isLoading || isVerificationLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <Layout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </Layout>
     );
   }
   
@@ -78,208 +72,188 @@ export default function VerificationPage() {
   
   const getStepStatus = (step: number) => {
     if (step === 0) {
-      // Phone verification step
-      if (verificationStatus?.isPhoneVerified) {
-        return { 
-          status: 'completed', 
-          icon: <CheckCircle className="h-8 w-8 text-green-500" /> 
-        };
-      }
-      if (activeStep === 0) {
-        return { 
-          status: 'current', 
-          icon: <Circle className="h-8 w-8 text-blue-500" /> 
-        };
-      }
-      return { 
-        status: 'pending', 
-        icon: <Circle className="h-8 w-8 text-gray-300" /> 
-      };
-    } else if (step === 1) {
-      // KYC verification step
-      if (verificationStatus?.kycStatus === "verified") {
-        return { 
-          status: 'completed', 
-          icon: <CheckCircle className="h-8 w-8 text-green-500" /> 
-        };
-      }
-      if (verificationStatus?.kycStatus === "pending") {
-        return { 
-          status: 'waiting', 
-          icon: <Clock className="h-8 w-8 text-yellow-500" /> 
-        };
-      }
-      if (verificationStatus?.kycStatus === "rejected") {
-        return { 
-          status: 'rejected', 
-          icon: <XCircle className="h-8 w-8 text-red-500" /> 
-        };
-      }
-      if (activeStep === 1) {
-        return { 
-          status: 'current', 
-          icon: <Circle className="h-8 w-8 text-blue-500" /> 
-        };
-      }
-      return { 
-        status: 'pending', 
-        icon: <Circle className="h-8 w-8 text-gray-300" /> 
-      };
-    } else {
-      // Completion step
-      if (activeStep === 2) {
-        return { 
-          status: 'current', 
-          icon: <CheckCircle className="h-8 w-8 text-green-500" /> 
-        };
-      }
-      return { 
-        status: 'pending', 
-        icon: <Circle className="h-8 w-8 text-gray-300" /> 
-      };
+      return verificationStatus?.isPhoneVerified
+        ? "complete"
+        : "current";
     }
+    
+    if (step === 1) {
+      if (verificationStatus?.kycStatus === "verified") {
+        return "complete";
+      }
+      
+      if (verificationStatus?.isPhoneVerified) {
+        return "current";
+      }
+      
+      return "upcoming";
+    }
+    
+    if (step === 2) {
+      if (verificationStatus?.kycStatus === "verified") {
+        return "current";
+      }
+      
+      return "upcoming";
+    }
+    
+    return "upcoming";
   };
   
   return (
-    <div className="container max-w-4xl py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Complete Your Account Setup</h1>
-      
-      {/* Progress Indicator */}
-      <div className="flex items-center justify-center mb-12">
-        <div className="flex items-center">
-          {getStepStatus(0).icon}
-          <span className={`ml-2 mr-4 ${activeStep === 0 ? 'font-bold text-blue-600' : ''}`}>Phone Verification</span>
+    <Layout>
+      <div className="container max-w-4xl px-4 py-8">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold mb-2">Verify Your Account</h1>
+          <p className="text-muted-foreground">
+            Complete these steps to verify your account and gain full access to iREVA.
+          </p>
         </div>
-        <ArrowRight className="mx-2 text-gray-300" />
-        <div className="flex items-center">
-          {getStepStatus(1).icon}
-          <span className={`ml-2 mr-4 ${activeStep === 1 ? 'font-bold text-blue-600' : ''}`}>KYC Verification</span>
+        
+        <div className="mb-8">
+          <Steps activeStep={activeStep} className="mb-10">
+            <div className="flex items-center">
+              <StepIndicator step={0}>1</StepIndicator>
+              <div className="ml-4">
+                <StepTitle>Phone Verification</StepTitle>
+                <StepDescription>Verify your phone number</StepDescription>
+              </div>
+            </div>
+            <StepSeparator />
+            <div className="flex items-center">
+              <StepIndicator step={1}>2</StepIndicator>
+              <div className="ml-4">
+                <StepTitle>Identity Verification</StepTitle>
+                <StepDescription>Submit your KYC documents</StepDescription>
+              </div>
+            </div>
+            <StepSeparator />
+            <div className="flex items-center">
+              <StepIndicator step={2}>3</StepIndicator>
+              <div className="ml-4">
+                <StepTitle>Verification Complete</StepTitle>
+                <StepDescription>Your account is verified</StepDescription>
+              </div>
+            </div>
+          </Steps>
         </div>
-        <ArrowRight className="mx-2 text-gray-300" />
-        <div className="flex items-center">
-          {getStepStatus(2).icon}
-          <span className={`ml-2 ${activeStep === 2 ? 'font-bold text-blue-600' : ''}`}>Completed</span>
-        </div>
+        
+        {activeStep === 0 && (
+          <PhoneVerificationForm 
+            onVerificationComplete={handlePhoneVerified} 
+            initialPhoneNumber={user.phoneNumber || undefined}
+          />
+        )}
+        
+        {activeStep === 1 && (
+          <KycVerificationForm 
+            onVerificationSubmitted={handleKycSubmitted}
+            kycStatus={verificationStatus?.kycStatus}
+          />
+        )}
+        
+        {activeStep === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Verification Complete</CardTitle>
+              <CardDescription>
+                Your account has been fully verified
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center py-6">
+                <div className="bg-green-100 rounded-full p-3 mb-4">
+                  <CheckCircle className="h-12 w-12 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">All Verification Steps Completed</h3>
+                <p className="text-center text-muted-foreground mb-6">
+                  Congratulations! Your account has been fully verified. You now have access to all features of iREVA, including investment opportunities.
+                </p>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <Link href="/dashboard">
+                    <Button variant="default" className="flex items-center">
+                      Go to Dashboard
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href="/properties">
+                    <Button variant="outline" className="flex items-center">
+                      Browse Investment Properties
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {verificationStatus?.kycStatus === "rejected" && (
+          <Card className="mt-6 border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                <CardTitle className="text-red-600">Verification Issue</CardTitle>
+              </div>
+              <CardDescription>
+                There was an issue with your verification documents
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Your KYC verification was rejected. This could be due to issues with document quality, information mismatch, or other verification problems.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">
+                Contact Support
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
       </div>
-      
-      {/* Step Content */}
-      {activeStep === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Phone className="h-5 w-5 mr-2 text-primary" />
-              Phone Verification
-            </CardTitle>
-            <CardDescription>
-              Verify your phone number to enhance your account security
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PhoneVerificationForm 
-              onVerificationComplete={handlePhoneVerified}
-              initialPhoneNumber={user.phoneNumber || ""}
-            />
-          </CardContent>
-        </Card>
-      )}
-      
-      {activeStep === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileCheck className="h-5 w-5 mr-2 text-primary" />
-              KYC Verification
-            </CardTitle>
-            <CardDescription>
-              Complete your identity verification to access all platform features
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {verificationStatus?.kycStatus === "pending" ? (
-              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <h3 className="text-lg font-medium text-yellow-800 flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
-                  Verification in Progress
-                </h3>
-                <p className="mt-2 text-yellow-700">
-                  Your KYC documents have been submitted and are currently under review. 
-                  This process typically takes 1-2 business days.
-                </p>
-                {verificationStatus.kycSubmittedAt && (
-                  <p className="mt-4 text-sm text-yellow-600">
-                    Submitted on: {new Date(verificationStatus.kycSubmittedAt).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            ) : verificationStatus?.kycStatus === "rejected" ? (
-              <div className="p-4 bg-red-50 rounded-lg border border-red-200 mb-4">
-                <h3 className="text-lg font-medium text-red-800 flex items-center">
-                  <XCircle className="h-5 w-5 mr-2" />
-                  Verification Rejected
-                </h3>
-                <p className="mt-2 text-red-700">
-                  Unfortunately, your KYC verification was rejected. Please submit new documents.
-                </p>
-                {verificationStatus.kycRejectionReason && (
-                  <p className="mt-2 text-red-700">
-                    Reason: {verificationStatus.kycRejectionReason}
-                  </p>
-                )}
-              </div>
-            ) : null}
-            
-            {/* Don't show the form if KYC is pending */}
-            {verificationStatus?.kycStatus !== "pending" && (
-              <KycVerificationForm 
-                onVerificationSubmitted={handleKycSubmitted} 
-                kycStatus={verificationStatus?.kycStatus}
-              />
-            )}
-          </CardContent>
-        </Card>
-      )}
-      
-      {activeStep === 2 && (
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-emerald-200">
-          <CardHeader>
-            <CardTitle className="flex items-center text-emerald-800">
-              <CheckCircle className="h-6 w-6 mr-2 text-emerald-600" />
-              Verification Complete
-            </CardTitle>
-            <CardDescription className="text-emerald-700">
-              Congratulations! Your account has been fully verified.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-emerald-700 mb-4">
-              You now have full access to all features on the iREVA platform.
-            </p>
-            <ul className="space-y-2">
-              <li className="flex items-center text-emerald-700">
-                <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" />
-                Invest in all available properties
-              </li>
-              <li className="flex items-center text-emerald-700">
-                <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" />
-                Access to premium investment opportunities
-              </li>
-              <li className="flex items-center text-emerald-700">
-                <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" />
-                Full withdrawal capabilities
-              </li>
-              <li className="flex items-center text-emerald-700">
-                <CheckCircle className="h-4 w-4 mr-2 text-emerald-600" />
-                Participate in exclusive investment events
-              </li>
-            </ul>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={() => window.location.href = '/investor/dashboard'} className="w-full">
-              Go to Your Dashboard
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
+    </Layout>
+  );
+}
+
+function Step({ title, description, status }: { 
+  title: string;
+  description: string;
+  status: "complete" | "current" | "upcoming";
+}) {
+  return (
+    <div className="flex items-center">
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${
+          status === "complete"
+            ? "border-primary bg-primary text-primary-foreground"
+            : status === "current"
+            ? "border-primary text-primary"
+            : "border-muted-foreground text-muted-foreground"
+        }`}
+      >
+        {status === "complete" ? (
+          <CheckCircle className="h-5 w-5" />
+        ) : (
+          <span>{title.charAt(0)}</span>
+        )}
+      </div>
+      <div className="ml-4">
+        <p
+          className={`text-sm font-medium ${
+            status === "upcoming" ? "text-muted-foreground" : ""
+          }`}
+        >
+          {title}
+        </p>
+        <p
+          className={`text-sm ${
+            status === "upcoming" ? "text-muted-foreground/70" : "text-muted-foreground"
+          }`}
+        >
+          {description}
+        </p>
+      </div>
     </div>
   );
 }

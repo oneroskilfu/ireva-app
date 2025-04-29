@@ -5,51 +5,41 @@ import {
   Button, 
   Container, 
   Box, 
-  Paper 
+  Paper,
+  CssBaseline
 } from '@mui/material';
+import { Route, Router, Switch } from 'wouter';
+import HomePage from './pages/HomePage.jsx';
+import DashboardPage from './pages/investor/DashboardPage';
+import Navigation from './components/Navigation';
 
-// Basic App component with minimal MUI elements
+// Basic App component with Router setup
 export default function BasicApp() {
   return (
     <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            iREVA Platform
-          </Typography>
-          <Button color="inherit">Login</Button>
-        </Toolbar>
-      </AppBar>
+      <CssBaseline />
+      <Navigation />
       
-      <Container sx={{ mt: 4 }}>
-        <Box sx={{ my: 4, textAlign: 'center' }}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Welcome to iREVA
-          </Typography>
-          <Typography variant="subtitle1" gutterBottom>
-            Real Estate Investment Platform
-          </Typography>
-          
-          <Box sx={{ mt: 4 }}>
-            <Button variant="contained" color="primary" sx={{ mr: 2 }}>
-              Learn More
-            </Button>
-            <Button variant="outlined" color="secondary">
-              Sign Up
-            </Button>
-          </Box>
-        </Box>
-        
-        <Paper sx={{ p: 3, mt: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            About Us
-          </Typography>
-          <Typography variant="body1">
-            iREVA is a cutting-edge real estate investment platform designed 
-            to make property investment accessible to everyone.
-          </Typography>
-        </Paper>
-      </Container>
+      <Router>
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route path="/investor/dashboard" component={DashboardPage} />
+          <Route path="/:rest*">
+            {(params) => (
+              <Container>
+                <Box sx={{ my: 4, textAlign: 'center' }}>
+                  <Typography variant="h4" component="h1">
+                    Page Not Found
+                  </Typography>
+                  <Typography>
+                    The page {params.rest} could not be found.
+                  </Typography>
+                </Box>
+              </Container>
+            )}
+          </Route>
+        </Switch>
+      </Router>
     </>
   );
 }

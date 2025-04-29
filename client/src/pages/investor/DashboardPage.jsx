@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container } from '@mui/material';
-import ResponsiveDashboard from './ResponsiveDashboard';
+import ResponsiveDashboard from './ResponsiveDashboard.jsx';
 
 /**
  * Main investor dashboard page that wraps the dashboard content
