@@ -1,15 +1,9 @@
 import React from 'react';
-import { Route, Switch, Router } from 'wouter';
 import HomePage from './pages/HomePage.jsx';
 
 function App() {
-  return (
-    <Router>
-      <Switch>
-        <Route path="/" component={HomePage} />
-      </Switch>
-    </Router>
-  );
+  // Directly render the HomePage component to simplify
+  return <HomePage />;
 }
 
 export default App;
