@@ -3,9 +3,24 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
 import SafeThemeProvider from './theme/SafeThemeProvider';
+import ThemeDebugger from './theme/ThemeDebugger';
 import CssBaseline from '@mui/material/CssBaseline';
 import Button from '@mui/material/Button';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+
+// Add Font Links Component to ensure fonts load properly
+const FontLinks = () => (
+  <div style={{ display: 'none' }}>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+  </div>
+);
 
 // Testing component to verify ThemeProvider works properly
 const TestThemeComponent = () => {
@@ -19,13 +34,53 @@ const TestThemeComponent = () => {
   );
 };
 
+// Error boundary to catch theme-related rendering errors
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Theme error caught by boundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ 
+          padding: '20px', 
+          margin: '20px', 
+          border: '1px solid red',
+          borderRadius: '4px',
+          backgroundColor: '#fff8f8'
+        }}>
+          <h2>Theme Error Detected</h2>
+          <p>There was an error with the theme: {this.state.error?.message}</p>
+          <p>Please check the console for more details.</p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <SafeThemeProvider>
-      <CssBaseline />
-      <TestThemeComponent />
-      <App />
-    </SafeThemeProvider>
+    <ErrorBoundary>
+      <SafeThemeProvider>
+        <CssBaseline />
+        <FontLinks />
+        <TestThemeComponent />
+        <ThemeDebugger />
+        <App />
+      </SafeThemeProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
 

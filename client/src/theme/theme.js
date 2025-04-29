@@ -1,7 +1,10 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+
+// Console log to verify theme creation and properties
+console.log('Creating MUI theme with customizations');
 
 // Define your theme colors and typography
-const theme = createTheme({
+let theme = createTheme({
   palette: {
     primary: {
       main: '#2E7D32', // green shade for real estate
@@ -122,5 +125,21 @@ const theme = createTheme({
     },
   },
 });
+
+// Apply responsive font sizes
+theme = responsiveFontSizes(theme);
+
+// Validate theme object
+if (!theme || !theme.palette || !theme.palette.primary) {
+  console.error('❌ THEME VALIDATION FAILED: Missing critical theme properties');
+  // Create a basic fallback theme to avoid crashes
+  theme = createTheme();
+} else {
+  console.log('✅ Theme validation successful', {
+    primary: theme.palette.primary.main,
+    secondary: theme.palette.secondary.main,
+    fontFamily: theme.typography.fontFamily
+  });
+}
 
 export default theme;
