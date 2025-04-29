@@ -5,7 +5,7 @@ import SafeThemeProvider from './components/SafeThemeProvider';
 import CssBaseline from '@mui/material/CssBaseline';
 import HomePage from './pages/HomePage.jsx';
 import SimpleDashboard from './pages/investor/SimpleDashboard';
-import SimpleAdminPage from './pages/admin/SimpleAdminPage.jsx';
+import BasicAdminPanel from './pages/admin/BasicAdminPanel.jsx';
 import Navigation from './components/Navigation';
 
 function MainApp() {
@@ -17,7 +17,7 @@ function MainApp() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/investor/dashboard" component={SimpleDashboard} />
-          <Route path="/admin/dashboard" component={SimpleAdminPage} />
+          <Route path="/admin/dashboard" component={BasicAdminPanel} />
           <Route path="/:rest*">
             {(params) => (
               <Container>
