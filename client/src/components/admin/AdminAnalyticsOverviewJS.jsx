@@ -1,4 +1,4 @@
-// client/src/components/admin/AdminAnalyticsOverview.tsx
+// client/src/components/admin/AdminAnalyticsOverviewJS.jsx
 
 import React from 'react';
 import { Box, Grid, Paper, Typography } from '@mui/material';
@@ -19,12 +19,12 @@ const chartData = [
   { month: 'May', investments: 310 },
 ];
 
-export default function AdminAnalyticsOverview() {
+const AdminAnalyticsOverviewJS = () => {
   return (
     <Box p={3}>
-      <Typography variant="h5" mb={2}>Platform Overview</Typography>
+      <Typography variant="h5" sx={{ mb: 2 }}>Platform Overview</Typography>
 
-      <Grid container spacing={2} mb={4}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
         {metrics.map((item) => (
           <Grid item xs={12} sm={6} md={3} key={item.title}>
             <Paper elevation={3} sx={{ padding: 2 }}>
@@ -37,7 +37,7 @@ export default function AdminAnalyticsOverview() {
         ))}
       </Grid>
 
-      <Typography variant="h6" mb={2}>Monthly Investment Volume</Typography>
+      <Typography variant="h6" sx={{ mb: 2 }}>Monthly Investment Volume</Typography>
       <Paper elevation={3} sx={{ padding: 2, height: 300 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
@@ -50,4 +50,6 @@ export default function AdminAnalyticsOverview() {
       </Paper>
     </Box>
   );
-}
+};
+
+export default AdminAnalyticsOverviewJS;
