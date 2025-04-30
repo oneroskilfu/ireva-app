@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import path from "path";
 import { setupSocketIO } from "./socketio";
 import { setupAuth } from "./auth";
-import { setupJwtAuth, verifyToken, authMiddleware } from "./auth-jwt";
+import authJwt, { verifyToken } from "./auth-jwt";
+const { setupJwtAuth, authMiddleware } = authJwt;
 import { setupVerificationRoutes } from "./auth/verification";
 import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
@@ -78,6 +79,8 @@ import fs from 'fs';
 import adminKycRoutes from './api/admin/kyc';
 import propertiesRouter from './routes/admin/properties';
 import roiRouter from './routes/admin/roi';
+import portfolioRouter from './routes/admin/portfolio';
+import webhookDashboardRouter from './routes/admin/webhooks';
 import investorKycRoutes from './api/investor/kyc';
 
 // Import transaction and wallet routes
@@ -166,6 +169,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up admin ROI management routes
   app.use('/api/admin/roi', roiRouter);
   console.log("Admin ROI management routes registered");
+  
+  // Set up admin portfolio management routes
+  app.use('/api/admin/portfolio', portfolioRouter);
+  console.log("Admin portfolio management routes registered");
+  
+  // Set up admin webhook dashboard routes
+  app.use('/api/admin/webhooks', webhookDashboardRouter);
+  console.log("Admin webhook dashboard routes registered");
   
   // Use user management routes
   app.use('/api/admin/users', userRouter);

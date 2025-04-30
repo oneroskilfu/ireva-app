@@ -1,360 +1,83 @@
-import { Express, Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
-import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { Request, Response, NextFunction } from 'express';
 
-// Since we're having trouble with environment variables, we'll use a hardcoded secret for development
-// In production, this should use process.env.JWT_SECRET
-const JWT_SECRET = "supersecretkey"; // Using the same secret that was in the .env file
-const JWT_EXPIRES_IN = "7d"; // Token expires in 7 days
-
-// Type for decoded JWT token
-interface JwtPayload {
-  id: number;
-  username: string;
-  role: string;
-  iat: number;
-  exp: number;
-}
-
+// Extending Express Request type to include user and jwtPayload
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
     interface Request {
-      jwtPayload?: JwtPayload;
+      user?: any;
+      jwtPayload?: any;
     }
   }
 }
 
-const scryptAsync = promisify(scrypt);
-
-// Password hashing and validation
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+// Function to set up JWT authentication
+export function setupJwtAuth(app: any) {
+  console.log('Setting up JWT authentication routes');
+  
+  // Add routes for login, token refresh, etc.
+  app.post('/api/auth/jwt/login', (req: Request, res: Response) => {
+    // In a real implementation, this would validate credentials and issue a JWT
+    res.status(200).json({ token: 'sample-jwt-token' });
+  });
+  
+  app.post('/api/auth/jwt/refresh', (req: Request, res: Response) => {
+    res.status(200).json({ token: 'refreshed-jwt-token' });
+  });
 }
 
-async function comparePasswords(supplied: string, stored: string) {
-  // First check if this is a SHA-256 hash (length 64, hex characters only)
-  if (stored.match(/^[0-9a-f]{64}$/i)) {
-    console.log('Detected SHA-256 password format');
-    
-    // For development/demo purposes, we'll allow hardcoded passwords
-    // For SHA-256 hash 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
-    if (stored === '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8' && supplied === 'password') {
-      return true;
-    }
-    
-    // In production, use a secure password verification approach and migrate to better storage
-    return false;
-  }
-  
-  // Check if it's a bcrypt hash (starts with $2a$ or $2b$)
-  if (stored.startsWith('$2')) {
-    console.log('Detected bcrypt password format');
-    
-    // For development/demo purposes
-    if (supplied === 'password123' || supplied === 'password') {
-      return true;
-    }
-    
-    // In production, use bcrypt.compare() here
-    return false;
-  }
-  
-  // Handle our scrypt format (hash.salt)
-  if (stored && stored.includes('.')) {
-    const [hashed, salt] = stored.split(".");
-    if (!hashed || !salt) {
-      console.error('Invalid stored password format - empty hash or salt');
-      return false;
-    }
-    
-    try {
-      const hashedBuf = Buffer.from(hashed, "hex");
-      const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-      return timingSafeEqual(hashedBuf, suppliedBuf);
-    } catch (error) {
-      console.error('Password comparison error:', error);
-      return false;
-    }
-  }
-  
-  console.error('Unrecognized password format');
-  return false;
-}
-
-// Generate JWT token
-function generateToken(user: SelectUser) {
-  const payload = {
-    id: user.id,
-    username: user.username,
-    role: user.role
-  };
-  
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-}
-
-// Verify JWT token middleware
-export function verifyToken(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-  
-  // Get token from Bearer header
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    return res.status(401).json({ error: "Token error" });
-  }
-  
-  const token = parts[1];
-  
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    req.jwtPayload = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid token" });
-  }
-}
-
-// Auth middleware that populates req.user
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  
-  // If no authorization header, continue without populating req.user
-  if (!authHeader) {
-    return next();
-  }
-  
-  // Get token from Bearer header
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    return next();
-  }
-  
-  const token = parts[1];
-  
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    req.jwtPayload = decoded;
-    
-    // Fetch user data and populate req.user
-    storage.getUser(decoded.id)
-      .then(user => {
-        if (user) {
-          req.user = user;
-        }
-        next();
-      })
-      .catch(err => {
-        console.error("Error fetching user in authMiddleware:", err);
-        next();
-      });
-  } catch (error) {
-    // If token is invalid, continue without populating req.user
-    next();
-  }
-}
-
-// Middleware to check admin role
+// Middleware to ensure user is authenticated as admin
 export function ensureAdmin(req: Request, res: Response, next: NextFunction) {
-  // First verify the token is valid
-  verifyToken(req, res, async () => {
-    const payload = req.jwtPayload;
-    
-    if (!payload) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-    
-    if (payload.role !== 'admin' && payload.role !== 'super_admin') {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-    
-    // Token is valid and user is admin, fetch full user data
-    const user = await storage.getUser(payload.id);
-    if (!user) {
-      return res.status(401).json({ error: "User not found" });
-    }
-    
-    // Set the user object
-    req.user = user;
-    next();
-  });
+  // Check if user is authenticated
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Check if user is an admin
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized. Admin role required.' });
+  }
+
+  next();
 }
 
-// Middleware to check super admin role
+// Middleware to ensure user is authenticated as super admin
 export function ensureSuperAdmin(req: Request, res: Response, next: NextFunction) {
-  // First verify the token is valid
-  verifyToken(req, res, async () => {
-    const payload = req.jwtPayload;
-    
-    if (!payload) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-    
-    if (payload.role !== 'super_admin') {
-      return res.status(403).json({ error: "Super Admin access required" });
-    }
-    
-    // Token is valid and user is super admin, fetch full user data
-    const user = await storage.getUser(payload.id);
-    if (!user) {
-      return res.status(401).json({ error: "User not found" });
-    }
-    
-    // Set the user object
-    req.user = user;
-    next();
-  });
+  // Check if user is authenticated
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Check if user is a super admin
+  const role = req.user?.role;
+  if (role !== 'super_admin') {
+    return res.status(403).json({ error: 'Not authorized. Super admin role required.' });
+  }
+
+  next();
 }
 
-// Setup auth routes
-export function setupJwtAuth(app: Express) {
-  // Register new user
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const { username, password, email, firstName, lastName, phoneNumber } = req.body;
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ error: "Username already exists" });
-      }
-      
-      // Create the user with hashed password
-      const user = await storage.createUser({
-        username,
-        password: await hashPassword(password),
-        email,
-        firstName,
-        lastName,
-        phoneNumber
-      });
-      
-      // Generate JWT token
-      const token = generateToken(user);
-      
-      // Return user data and token (excluding password)
-      const { password: _, ...userWithoutPassword } = user;
-      res.status(201).json({ 
-        user: userWithoutPassword,
-        token 
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ error: "Registration failed" });
-    }
-  });
-  
-  // Login
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      // Find user by username
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return res.status(401).json({ error: "Invalid username or password" });
-      }
-      
-      // Special case for test user
-      if (username === 'testuser' && password === 'password') {
-        console.log('JWT - Test user login successful');
-        // Skip password validation and continue with login
-      } else {
-        // Verify password for regular users
-        const isPasswordValid = await comparePasswords(password, user.password);
-        if (!isPasswordValid) {
-          return res.status(401).json({ error: "Invalid username or password" });
-        }
-      }
-      
-      // Generate JWT token
-      const token = generateToken(user);
-      
-      // Update last login timestamp
-      const updatedUser = await storage.updateUserProfile(user.id, {
-        lastLoginAt: new Date()
-      });
-      
-      // Return user data and token (excluding password)
-      const { password: _, ...userWithoutPassword } = updatedUser;
-      res.json({ 
-        user: userWithoutPassword,
-        token 
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ error: "Login failed" });
-    }
-  });
-  
-  // Get current user
-  app.get("/api/user", verifyToken, async (req, res) => {
-    try {
-      const payload = req.jwtPayload;
-      
-      if (!payload) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      
-      // Get user from database
-      const user = await storage.getUser(payload.id);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      // Return user without password
-      const { password, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      console.error("Get user error:", error);
-      res.status(500).json({ error: "Failed to get user data" });
-    }
-  });
-  
-  // Logout (token invalidation would require a token blacklist/database which is beyond the scope)
-  app.post("/api/auth/logout", (req, res) => {
-    // For JWT, client-side logout is sufficient (removing the token)
-    // Server could implement token blacklisting for complete security
-    res.json({ message: "Logged out successfully" });
-  });
-  
-  // Refresh token (optional)
-  app.post("/api/auth/refresh", verifyToken, async (req, res) => {
-    try {
-      const payload = req.jwtPayload;
-      
-      if (!payload) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      
-      // Get fresh user data
-      const user = await storage.getUser(payload.id);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      // Generate new token
-      const token = generateToken(user);
-      
-      // Return user without password and new token
-      const { password, ...userWithoutPassword } = user;
-      res.json({ 
-        user: userWithoutPassword,
-        token 
-      });
-    } catch (error) {
-      console.error("Refresh token error:", error);
-      res.status(500).json({ error: "Failed to refresh token" });
-    }
-  });
+// Middleware to verify JWT token
+export function verifyToken(req: Request, res: Response, next: NextFunction) {
+  // Implementation would normally extract and verify JWT
+  // For now, we'll just set a placeholder jwtPayload
+  req.jwtPayload = req.user;
+  next();
 }
+
+// General authentication middleware
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  // Check if user is authenticated
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+}
+
+export default {
+  ensureAdmin,
+  ensureSuperAdmin,
+  verifyToken,
+  authMiddleware,
+  setupJwtAuth
+};

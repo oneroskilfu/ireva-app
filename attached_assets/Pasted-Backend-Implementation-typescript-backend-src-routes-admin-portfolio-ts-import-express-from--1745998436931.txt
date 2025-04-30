@@ -1,0 +1,119 @@
+Backend Implementation**
+```typescript
+// backend/src/routes/admin/portfolio.ts
+import express from 'express';
+import { db } from '../drizzle';
+import { 
+  and, or, eq, between, ilike, 
+  sql, gt, lt, desc 
+} from 'drizzle-orm';
+import { 
+  investments, 
+  users, 
+  properties 
+} from '../../shared/schema';
+
+const router = express.Router();
+
+// Get filtered investments
+router.get('/', adminAuth, async (req, res) => {
+  const { 
+    projectId,
+    userId,
+    status,
+    startDate,
+    endDate,
+    search
+  } = req.query;
+
+  const query = db
+    .select({
+      id: investments.id,
+      amount: investments.amount,
+      status: investments.status,
+      projectedROI: investments.projectedROI,
+      actualROI: investments.actualROI,
+      investedAt: investments.investedAt,
+      maturityDate: investments.maturityDate,
+      user: {
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName
+      },
+      property: {
+        id: properties.id,
+        title: properties.title
+      }
+    })
+    .from(investments)
+    .leftJoin(users, eq(investments.userId, users.id))
+    .leftJoin(properties, eq(investments.propertyId, properties.id))
+    .where(and(
+      projectId ? eq(investments.propertyId, projectId) : undefined,
+      userId ? eq(investments.userId, userId) : undefined,
+      status ? eq(investments.status, status) : undefined,
+      startDate && endDate ? 
+        between(investments.investedAt, new Date(startDate), new Date(endDate)) :
+        undefined,
+      search ? or(
+        ilike(users.email, `%${search}%`),
+        ilike(properties.title, `%${search}%`)
+      ) : undefined
+    ))
+    .orderBy(desc(investments.investedAt));
+
+  try {
+    const result = await query;
+    res.json(result);
+  } catch (error) {
+    handleServerError(res, error, 'Failed to fetch investments');
+  }
+});
+
+// Update investment (manual adjustment)
+router.patch('/:id', adminAuth, async (req, res) => {
+  const allowedFields = ['status', 'actualROI', 'maturityDate'];
+  const updates = pick(req.body, allowedFields);
+
+  try {
+    const updated = await db
+      .update(investments)
+      .set(updates)
+      .where(eq(investments.id, req.params.id))
+      .returning();
+
+    await createAuditLog({
+      userId: req.user.id,
+      action: 'INVESTMENT_UPDATE',
+      targetId: req.params.id,
+      details: updates
+    });
+
+    res.json(updated[0]);
+  } catch (error) {
+    handleServerError(res, error, 'Failed to update investment');
+  }
+});
+
+// Performance comparison endpoint
+router.get('/performance', adminAuth, async (req, res) => {
+  try {
+    const result = await db
+      .select({
+        propertyId: investments.propertyId,
+        title: properties.title,
+        totalInvested: sql<number>`sum(${investments.amount})`,
+        avgProjectedROI: sql<number>`avg(${investments.projectedROI})`,
+        avgActualROI: sql<number>`avg(${investments.actualROI})`,
+        performanceGap: sql<number>`avg(${investments.projectedROI}) - avg(${investments.actualROI})`
+      })
+      .from(investments)
+      .leftJoin(properties, eq(investments.propertyId, properties.id))
+      .groupBy(investments.propertyId, properties.title);
+
+    res.json(result);
+  } catch (error) {
+    handleServerError(res, error, 'Failed to fetch performance data');
+  }
+});
+```

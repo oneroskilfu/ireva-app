@@ -10,7 +10,7 @@ export const kycStatusEnum = pgEnum("kyc_status", ["not_started", "pending", "ap
 export const kycTierEnum = pgEnum("kyc_tier", ["basic", "enhanced", "institutional"]);
 export const propertyTypeEnum = pgEnum("property_type", ["residential", "commercial", "industrial", "mixed_use", "land"]);
 export const investmentTierEnum = pgEnum("investment_tier", ["starter", "growth", "premium", "elite"]);
-export const investmentStatusEnum = pgEnum("investment_status", ["active", "completed", "refunded", "cancelled"]);
+export const investmentStatusEnum = pgEnum("investment_status", ["active", "matured", "withdrawn", "defaulted", "completed", "refunded", "cancelled"]);
 export const accreditationLevelEnum = pgEnum("accreditation_level", ["non_accredited", "accredited", "qualified_purchaser"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "card", "bank_transfer", "crypto"]);
 export const cryptoNetworkEnum = pgEnum("crypto_network", ["ethereum", "binance", "polygon", "solana", "avalanche"]);
@@ -123,12 +123,14 @@ export const properties = pgTable("properties", {
 export const investments = pgTable("investments", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  projectId: uuid("project_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
-  unitsInvested: integer("units_invested").notNull(),
-  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
-  roiEarned: numeric("roi_earned", { precision: 12, scale: 2 }).default("0"),
-  status: text("status").default("active"), // active, completed, refunded
-  investedAt: timestamp("invested_at").defaultNow()
+  propertyId: uuid("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
+  status: investmentStatusEnum("status").notNull().default("active"),
+  projectedROI: numeric("projected_roi", { precision: 5, scale: 2 }).notNull(),
+  actualROI: numeric("actual_roi", { precision: 5, scale: 2 }),
+  investedAt: timestamp("invested_at").notNull().defaultNow(),
+  maturityDate: timestamp("maturity_date"),
+  withdrawnAt: timestamp("withdrawn_at")
 });
 
 // Wallet types enum
@@ -655,8 +657,8 @@ export const investmentsRelations = relations(investments, ({ one }) => ({
     fields: [investments.userId],
     references: [users.id]
   }),
-  project: one(properties, {
-    fields: [investments.projectId],
+  property: one(properties, {
+    fields: [investments.propertyId],
     references: [properties.id]
   })
 }));

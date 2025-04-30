@@ -1,8 +1,11 @@
-import { triggerEvent } from './webhook';
-import { webhookEventEnum } from '@shared/schema';
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
+import { triggerEvent } from "./webhook";
+import { db } from "../db";
+import { webhookEventEnum } from "@shared/schema";
 
-// Define event categories for better organization
+/**
+ * Event categories for business events
+ */
 export enum EventCategory {
   INVESTMENT = 'investment',
   KYC = 'kyc',
@@ -14,93 +17,69 @@ export enum EventCategory {
   SECURITY = 'security',
 }
 
-// Define more specific event types within the categories
+/**
+ * Event types mapping for each category
+ */
 export const EventTypes = {
-  // Investment events
-  INVESTMENT_CREATED: 'investment.created',
-  INVESTMENT_COMPLETED: 'investment.completed',
-  INVESTMENT_CANCELLED: 'investment.cancelled',
-  INVESTMENT_APPROVED: 'investment.approved',
-  INVESTMENT_DECLINED: 'investment.declined',
-  INVESTMENT_REFUNDED: 'investment.refunded',
-  
-  // KYC events
-  KYC_SUBMITTED: 'kyc.submitted',
-  KYC_APPROVED: 'kyc.approved',
-  KYC_REJECTED: 'kyc.rejected',
-  KYC_UPDATED: 'kyc.updated',
-  
-  // Property events
-  PROPERTY_CREATED: 'property.created',
-  PROPERTY_UPDATED: 'property.updated',
-  PROPERTY_FUNDING_MILESTONE: 'property.funding_milestone',
-  PROPERTY_FULLY_FUNDED: 'property.fully_funded',
-  PROPERTY_CONSTRUCTION_UPDATE: 'property.construction_update',
-  
-  // ROI events
-  ROI_CALCULATED: 'roi.calculated',
-  ROI_DISTRIBUTED: 'roi.distributed',
-  ROI_PAYOUT_FAILED: 'roi.payout_failed',
-  
-  // User events
-  USER_REGISTERED: 'user.registered',
-  USER_UPDATED: 'user.updated',
-  USER_DELETED: 'user.deleted',
-  USER_LOGIN: 'user.login',
-  USER_LOGOUT: 'user.logout',
-  USER_TIER_CHANGED: 'user.tier_changed',
-  
-  // Wallet events
-  WALLET_CREATED: 'wallet.created',
-  WALLET_FUNDED: 'wallet.funded',
-  WALLET_WITHDRAWAL: 'wallet.withdrawal',
-  WALLET_TRANSFER: 'wallet.transfer',
-  
-  // System events
-  SYSTEM_ALERT: 'system.alert',
-  SYSTEM_MAINTENANCE: 'system.maintenance',
-  
-  // Security events
-  SECURITY_ALERT: 'security.alert',
-  SUSPICIOUS_ACTIVITY: 'security.suspicious_activity',
+  [EventCategory.INVESTMENT]: {
+    CREATED: 'investment_created' as (typeof webhookEventEnum.enumValues)[number],
+    COMPLETED: 'investment_completed' as (typeof webhookEventEnum.enumValues)[number],
+    CANCELLED: 'investment_cancelled' as (typeof webhookEventEnum.enumValues)[number],
+    APPROVED: 'investment_approved' as (typeof webhookEventEnum.enumValues)[number],
+    DECLINED: 'investment_declined' as (typeof webhookEventEnum.enumValues)[number],
+    REFUNDED: 'investment_refunded' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'investment_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  [EventCategory.KYC]: {
+    SUBMITTED: 'kyc_submitted' as (typeof webhookEventEnum.enumValues)[number],
+    APPROVED: 'kyc_approved' as (typeof webhookEventEnum.enumValues)[number],
+    REJECTED: 'kyc_rejected' as (typeof webhookEventEnum.enumValues)[number],
+    UPDATED: 'kyc_updated' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'kyc_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  [EventCategory.PROPERTY]: {
+    CREATED: 'property_created' as (typeof webhookEventEnum.enumValues)[number],
+    UPDATED: 'property_updated' as (typeof webhookEventEnum.enumValues)[number],
+    FUNDING_MILESTONE: 'property_funding_milestone' as (typeof webhookEventEnum.enumValues)[number],
+    FULLY_FUNDED: 'property_fully_funded' as (typeof webhookEventEnum.enumValues)[number],
+    CONSTRUCTION_UPDATE: 'property_construction_update' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'property_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  [EventCategory.ROI]: {
+    CALCULATED: 'roi_calculated' as (typeof webhookEventEnum.enumValues)[number],
+    DISTRIBUTED: 'roi_distributed' as (typeof webhookEventEnum.enumValues)[number],
+    PAYOUT_FAILED: 'roi_payout_failed' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'roi_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  [EventCategory.USER]: {
+    REGISTERED: 'user_registered' as (typeof webhookEventEnum.enumValues)[number],
+    UPDATED: 'user_updated' as (typeof webhookEventEnum.enumValues)[number],
+    DELETED: 'user_deleted' as (typeof webhookEventEnum.enumValues)[number],
+    LOGIN: 'user_login' as (typeof webhookEventEnum.enumValues)[number],
+    LOGOUT: 'user_logout' as (typeof webhookEventEnum.enumValues)[number],
+    TIER_CHANGED: 'user_tier_changed' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'user_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  [EventCategory.WALLET]: {
+    CREATED: 'wallet_created' as (typeof webhookEventEnum.enumValues)[number],
+    FUNDED: 'wallet_funded' as (typeof webhookEventEnum.enumValues)[number],
+    WITHDRAWAL: 'wallet_withdrawal' as (typeof webhookEventEnum.enumValues)[number],
+    TRANSFER: 'wallet_transfer' as (typeof webhookEventEnum.enumValues)[number],
+    TRANSACTION_PROCESSED: 'transaction_processed' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'wallet_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  [EventCategory.SYSTEM]: {
+    ALERT: 'system_alert' as (typeof webhookEventEnum.enumValues)[number],
+    MAINTENANCE: 'system_maintenance' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'system_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  [EventCategory.SECURITY]: {
+    ALERT: 'security_alert' as (typeof webhookEventEnum.enumValues)[number],
+    SUSPICIOUS_ACTIVITY: 'suspicious_activity' as (typeof webhookEventEnum.enumValues)[number],
+    CATEGORY: 'security_event' as (typeof webhookEventEnum.enumValues)[number],
+  },
+  GENERAL: 'general' as (typeof webhookEventEnum.enumValues)[number],
 };
-
-// Map our event types to webhook event enum values
-const eventTypeToWebhookEvent = new Map<string, typeof webhookEventEnum.enumValues[number]>();
-
-// Populate the map
-Object.values(EventTypes).forEach(eventType => {
-  const category = eventType.split('.')[0];
-  
-  switch(category) {
-    case 'investment':
-      eventTypeToWebhookEvent.set(eventType, 'investment_event');
-      break;
-    case 'kyc':
-      eventTypeToWebhookEvent.set(eventType, 'kyc_event');
-      break;
-    case 'property':
-      eventTypeToWebhookEvent.set(eventType, 'property_event');
-      break;
-    case 'roi':
-      eventTypeToWebhookEvent.set(eventType, 'roi_event');
-      break;
-    case 'user':
-      eventTypeToWebhookEvent.set(eventType, 'user_event');
-      break;
-    case 'wallet':
-      eventTypeToWebhookEvent.set(eventType, 'wallet_event');
-      break;
-    case 'system':
-      eventTypeToWebhookEvent.set(eventType, 'system_event');
-      break;
-    case 'security':
-      eventTypeToWebhookEvent.set(eventType, 'security_event');
-      break;
-    default:
-      eventTypeToWebhookEvent.set(eventType, 'general');
-  }
-});
 
 /**
  * Enrich payload with standard fields
@@ -118,34 +97,57 @@ function enrichPayload(eventType: string, payload: Record<string, any>): Record<
  * Trigger a business event that will be dispatched as webhooks
  */
 export async function triggerBusinessEvent(
-  eventType: string,
+  category: EventCategory,
+  eventType: (typeof webhookEventEnum.enumValues)[number],
   payload: Record<string, any>,
-  options: { userId?: string; ipAddress?: string; userAgent?: string } = {}
+  options: {
+    triggerCategoryEvent?: boolean;
+    priority?: 'high' | 'normal' | 'low';
+    idempotencyKey?: string;
+  } = {}
 ) {
   try {
-    // Get the corresponding webhook event type
-    const webhookEventType = eventTypeToWebhookEvent.get(eventType) || 'general';
+    const { triggerCategoryEvent = true, priority = 'normal', idempotencyKey } = options;
     
-    // Enrich the payload with common information
-    const enrichedPayload = enrichPayload(eventType, {
-      ...payload,
-      ...(options.userId && { user_id: options.userId }),
-      ...(options.ipAddress && { ip_address: options.ipAddress }),
-      ...(options.userAgent && { user_agent: options.userAgent }),
+    // Track event in logs
+    logger.info(`Business event triggered: ${category}/${eventType}`, {
+      category,
+      eventType,
+      priority,
+      idempotencyKey,
+      payloadSize: JSON.stringify(payload).length,
     });
     
-    // Log the event
-    logger.info(`Business event triggered: ${eventType}`, {
-      context: 'event-trigger',
-    });
+    // Enrich the payload with standard fields
+    const enrichedPayload = enrichPayload(eventType, payload);
     
-    // Trigger the webhook event
-    return await triggerEvent(webhookEventType, enrichedPayload);
+    // Trigger the specific event
+    await triggerEvent(eventType, enrichedPayload);
+    
+    // Optionally trigger the category event (e.g., "investment_event" for all investment events)
+    if (triggerCategoryEvent && EventTypes[category]?.CATEGORY) {
+      await triggerEvent(
+        EventTypes[category].CATEGORY,
+        {
+          ...enrichedPayload,
+          event_type: EventTypes[category].CATEGORY,
+          specific_event_type: eventType,
+        }
+      );
+    }
+    
+    // Log successful triggering
+    logger.info(`Business event successfully triggered: ${category}/${eventType}`);
+    
+    return { success: true };
   } catch (error: any) {
-    logger.error(`Failed to trigger business event ${eventType}: ${error?.message}`, {
-      context: 'event-trigger',
+    logger.error(`Error triggering business event ${category}/${eventType}: ${error?.message}`, {
+      error: error?.stack,
+      category,
+      eventType,
     });
-    throw error;
+    
+    return { success: false, error: error?.message };
   }
 }
 
@@ -153,186 +155,137 @@ export async function triggerBusinessEvent(
  * Investment Events
  */
 export const InvestmentEvents = {
-  created: (investmentData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.INVESTMENT_CREATED, investmentData, options),
-    
-  completed: (investmentData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.INVESTMENT_COMPLETED, investmentData, options),
-    
-  cancelled: (investmentData: any, reason: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.INVESTMENT_CANCELLED, { ...investmentData, reason }, options),
-    
-  approved: (investmentData: any, approvedBy: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.INVESTMENT_APPROVED, { ...investmentData, approved_by: approvedBy }, options),
-    
-  declined: (investmentData: any, reason: string, declinedBy: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.INVESTMENT_DECLINED, { 
-      ...investmentData, 
-      reason,
-      declined_by: declinedBy
-    }, options),
+  created: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.INVESTMENT, EventTypes[EventCategory.INVESTMENT].CREATED, payload),
+  
+  completed: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.INVESTMENT, EventTypes[EventCategory.INVESTMENT].COMPLETED, payload),
+  
+  cancelled: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.INVESTMENT, EventTypes[EventCategory.INVESTMENT].CANCELLED, payload),
+  
+  approved: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.INVESTMENT, EventTypes[EventCategory.INVESTMENT].APPROVED, payload),
+  
+  declined: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.INVESTMENT, EventTypes[EventCategory.INVESTMENT].DECLINED, payload),
+  
+  refunded: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.INVESTMENT, EventTypes[EventCategory.INVESTMENT].REFUNDED, payload),
 };
 
 /**
  * KYC Events
  */
 export const KycEvents = {
-  submitted: (kycData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.KYC_SUBMITTED, kycData, options),
-    
-  approved: (kycData: any, approvedBy: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.KYC_APPROVED, { ...kycData, approved_by: approvedBy }, options),
-    
-  rejected: (kycData: any, reason: string, rejectedBy: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.KYC_REJECTED, { 
-      ...kycData, 
-      reason,
-      rejected_by: rejectedBy
-    }, options),
-    
-  updated: (kycData: any, changedFields: string[], options?: any) => 
-    triggerBusinessEvent(EventTypes.KYC_UPDATED, { ...kycData, changed_fields: changedFields }, options),
+  submitted: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.KYC, EventTypes[EventCategory.KYC].SUBMITTED, payload),
+  
+  approved: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.KYC, EventTypes[EventCategory.KYC].APPROVED, payload),
+  
+  rejected: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.KYC, EventTypes[EventCategory.KYC].REJECTED, payload),
+  
+  updated: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.KYC, EventTypes[EventCategory.KYC].UPDATED, payload),
 };
 
 /**
  * Property Events
  */
 export const PropertyEvents = {
-  created: (propertyData: any, createdBy: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.PROPERTY_CREATED, { ...propertyData, created_by: createdBy }, options),
-    
-  updated: (propertyData: any, changedFields: string[], updatedBy: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.PROPERTY_UPDATED, { 
-      ...propertyData, 
-      changed_fields: changedFields,
-      updated_by: updatedBy
-    }, options),
-    
-  fundingMilestone: (propertyData: any, milestone: number, currentAmount: string, goalAmount: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.PROPERTY_FUNDING_MILESTONE, { 
-      ...propertyData, 
-      milestone_percentage: milestone,
-      current_amount: currentAmount,
-      goal_amount: goalAmount
-    }, options),
-    
-  fullyFunded: (propertyData: any, finalAmount: string, investorCount: number, options?: any) => 
-    triggerBusinessEvent(EventTypes.PROPERTY_FULLY_FUNDED, { 
-      ...propertyData, 
-      final_amount: finalAmount,
-      investor_count: investorCount
-    }, options),
-    
-  constructionUpdate: (propertyData: any, updateDetails: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.PROPERTY_CONSTRUCTION_UPDATE, { 
-      ...propertyData, 
-      update_details: updateDetails
-    }, options),
+  created: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.PROPERTY, EventTypes[EventCategory.PROPERTY].CREATED, payload),
+  
+  updated: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.PROPERTY, EventTypes[EventCategory.PROPERTY].UPDATED, payload),
+  
+  fundingMilestone: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.PROPERTY, EventTypes[EventCategory.PROPERTY].FUNDING_MILESTONE, payload),
+  
+  fullyFunded: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.PROPERTY, EventTypes[EventCategory.PROPERTY].FULLY_FUNDED, payload),
+  
+  constructionUpdate: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.PROPERTY, EventTypes[EventCategory.PROPERTY].CONSTRUCTION_UPDATE, payload),
 };
 
 /**
  * ROI Events
  */
 export const RoiEvents = {
-  calculated: (roiData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.ROI_CALCULATED, roiData, options),
-    
-  distributed: (roiData: any, totalAmount: string, investorCount: number, options?: any) => 
-    triggerBusinessEvent(EventTypes.ROI_DISTRIBUTED, { 
-      ...roiData, 
-      total_amount: totalAmount,
-      investor_count: investorCount
-    }, options),
-    
-  payoutFailed: (roiData: any, reason: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.ROI_PAYOUT_FAILED, { ...roiData, reason }, options),
+  calculated: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.ROI, EventTypes[EventCategory.ROI].CALCULATED, payload),
+  
+  distributed: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.ROI, EventTypes[EventCategory.ROI].DISTRIBUTED, payload),
+  
+  payoutFailed: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.ROI, EventTypes[EventCategory.ROI].PAYOUT_FAILED, payload),
 };
 
 /**
  * User Events
  */
 export const UserEvents = {
-  registered: (userData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.USER_REGISTERED, userData, options),
-    
-  updated: (userData: any, changedFields: string[], options?: any) => 
-    triggerBusinessEvent(EventTypes.USER_UPDATED, { ...userData, changed_fields: changedFields }, options),
-    
-  deleted: (userData: any, reason: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.USER_DELETED, { ...userData, reason }, options),
-    
-  login: (userData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.USER_LOGIN, userData, options),
-    
-  logout: (userData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.USER_LOGOUT, userData, options),
-    
-  tierChanged: (userData: any, oldTier: string, newTier: string, reason: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.USER_TIER_CHANGED, { 
-      ...userData, 
-      old_tier: oldTier,
-      new_tier: newTier,
-      reason
-    }, options),
+  registered: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.USER, EventTypes[EventCategory.USER].REGISTERED, payload),
+  
+  updated: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.USER, EventTypes[EventCategory.USER].UPDATED, payload),
+  
+  deleted: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.USER, EventTypes[EventCategory.USER].DELETED, payload),
+  
+  login: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.USER, EventTypes[EventCategory.USER].LOGIN, payload),
+  
+  logout: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.USER, EventTypes[EventCategory.USER].LOGOUT, payload),
+  
+  tierChanged: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.USER, EventTypes[EventCategory.USER].TIER_CHANGED, payload),
 };
 
 /**
  * Wallet Events
  */
 export const WalletEvents = {
-  created: (walletData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.WALLET_CREATED, walletData, options),
-    
-  funded: (walletData: any, amount: string, source: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.WALLET_FUNDED, { 
-      ...walletData, 
-      amount,
-      source
-    }, options),
-    
-  withdrawal: (walletData: any, amount: string, destination: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.WALLET_WITHDRAWAL, { 
-      ...walletData, 
-      amount,
-      destination
-    }, options),
-    
-  transfer: (sourceWallet: any, destinationWallet: any, amount: string, reason: string, options?: any) => 
-    triggerBusinessEvent(EventTypes.WALLET_TRANSFER, { 
-      source_wallet: sourceWallet,
-      destination_wallet: destinationWallet,
-      amount,
-      reason
-    }, options),
+  created: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.WALLET, EventTypes[EventCategory.WALLET].CREATED, payload),
+  
+  funded: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.WALLET, EventTypes[EventCategory.WALLET].FUNDED, payload),
+  
+  withdrawal: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.WALLET, EventTypes[EventCategory.WALLET].WITHDRAWAL, payload),
+  
+  transfer: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.WALLET, EventTypes[EventCategory.WALLET].TRANSFER, payload),
+  
+  transactionProcessed: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.WALLET, EventTypes[EventCategory.WALLET].TRANSACTION_PROCESSED, payload),
 };
 
 /**
  * System Events
  */
 export const SystemEvents = {
-  alert: (alertMessage: string, severity: 'low' | 'medium' | 'high' | 'critical', options?: any) => 
-    triggerBusinessEvent(EventTypes.SYSTEM_ALERT, { 
-      message: alertMessage,
-      severity
-    }, options),
-    
-  maintenance: (maintenanceData: any, options?: any) => 
-    triggerBusinessEvent(EventTypes.SYSTEM_MAINTENANCE, maintenanceData, options),
+  alert: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.SYSTEM, EventTypes[EventCategory.SYSTEM].ALERT, payload),
+  
+  maintenance: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.SYSTEM, EventTypes[EventCategory.SYSTEM].MAINTENANCE, payload),
 };
 
 /**
  * Security Events
  */
 export const SecurityEvents = {
-  alert: (alertMessage: string, severity: 'low' | 'medium' | 'high' | 'critical', options?: any) => 
-    triggerBusinessEvent(EventTypes.SECURITY_ALERT, { 
-      message: alertMessage,
-      severity
-    }, options),
-    
-  suspiciousActivity: (activityData: any, riskScore: number, options?: any) => 
-    triggerBusinessEvent(EventTypes.SUSPICIOUS_ACTIVITY, { 
-      ...activityData,
-      risk_score: riskScore
-    }, options),
+  alert: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.SECURITY, EventTypes[EventCategory.SECURITY].ALERT, payload),
+  
+  suspiciousActivity: (payload: Record<string, any>) => 
+    triggerBusinessEvent(EventCategory.SECURITY, EventTypes[EventCategory.SECURITY].SUSPICIOUS_ACTIVITY, payload),
 };
