@@ -56,6 +56,8 @@ import { cryptoIntegrationRouter } from './routes/crypto-integration-routes';
 import { legalContentRouter } from './routes/legal-content-routes';
 // Import compliance routes
 import { complianceRouter } from './routes/compliance-routes';
+// Import document routes
+import documentRoutes from './routes/documentRoutes';
 // Import admin crypto validation routes
 import { adminCryptoValidateRouter } from './routes/admin-crypto-validate';
 // Import crypto webhook routes
@@ -773,6 +775,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up CRM routes for admin
   app.use('/api/admin/crm', crmRouter);
   console.log("CRM routes registered");
+  
+  // Set up document management routes
+  app.use('/api/documents', documentRoutes);
+  console.log("Document management routes registered");
 
   const httpServer = createServer(app);
   

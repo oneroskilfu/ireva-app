@@ -1,85 +1,52 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '../lib/queryClient';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '../lib/queryClient';
 
-export interface Segment {
-  id: string;
-  name: string;
-  filters: {
-    minInvestment?: number;
-    lastActivityDays?: number;
-    kycStatus?: string[];
-    investorType?: string[];
-    registrationDateFrom?: string;
-    registrationDateTo?: string;
-  };
-  userCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface CreateSegmentData {
-  name: string;
-  filters: Record<string, any>;
-}
-
-export const useSegments = () => {
-  const queryClient = useQueryClient();
-  
-  // Fetch all segments
-  const { data: segments, isLoading, error } = useQuery<Segment[]>({
+export function useSegments() {
+  const { data: segments = [], isLoading: isLoadingSegments } = useQuery({
     queryKey: ['/api/crm/segments'],
-    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/crm/segments');
+      return await response.json();
+    }
   });
 
-  // Create a new segment
-  const createSegment = useMutation({
-    mutationFn: async (data: CreateSegmentData) => {
-      const res = await apiRequest('POST', '/api/crm/segments', data);
-      return res.json();
+  const createSegmentMutation = useMutation({
+    mutationFn: async (segmentData: any) => {
+      const response = await apiRequest('POST', '/api/crm/segments', segmentData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/crm/segments'] });
-    },
+    }
   });
 
-  // Update a segment
-  const updateSegment = useMutation({
-    mutationFn: async ({ id, data }: { id: string, data: Partial<Segment> }) => {
-      const res = await apiRequest('PUT', `/api/crm/segments/${id}`, data);
-      return res.json();
+  const updateSegmentMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiRequest('PUT', `/api/crm/segments/${id}`, data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/crm/segments'] });
-    },
+    }
   });
 
-  // Delete a segment
-  const deleteSegment = useMutation({
+  const deleteSegmentMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest('DELETE', `/api/crm/segments/${id}`);
-      return res.json();
+      await apiRequest('DELETE', `/api/crm/segments/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/crm/segments'] });
-    },
+    }
   });
-
-  // Fetch segment details with user count
-  const getSegmentDetails = (segmentId: string) => {
-    return useQuery<Segment>({
-      queryKey: [`/api/crm/segments/${segmentId}`],
-      enabled: !!segmentId,
-      refetchOnWindowFocus: false,
-    });
-  };
 
   return {
-    segments: segments || [],
-    isLoading,
-    error,
-    createSegment,
-    updateSegment,
-    deleteSegment,
-    getSegmentDetails,
+    segments,
+    isLoadingSegments,
+    createSegment: createSegmentMutation.mutate,
+    updateSegment: updateSegmentMutation.mutate,
+    deleteSegment: deleteSegmentMutation.mutate,
+    isCreatingSegment: createSegmentMutation.isPending,
+    isUpdatingSegment: updateSegmentMutation.isPending,
+    isDeletingSegment: deleteSegmentMutation.isPending
   };
-};
+}

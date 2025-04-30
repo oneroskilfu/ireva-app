@@ -478,9 +478,9 @@ export const getCommunicationLogs = async (req: Request, res: Response) => {
     }
     
     const logs = await db.select()
-      .from(communicationLogs)
-      .where(eq(communicationLogs.communicationId, id))
-      .orderBy(desc(communicationLogs.createdAt));
+      .from(userCommunicationLogs)
+      .where(eq(userCommunicationLogs.communicationId, id))
+      .orderBy(desc(userCommunicationLogs.sentAt));
     
     res.json(logs);
   } catch (error) {

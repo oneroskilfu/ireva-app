@@ -1,445 +1,320 @@
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useSegments } from '../../hooks/useSegments';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Divider,
-  FormControl,
-  FormHelperText,
-  Grid,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip,
-  Typography
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Group as GroupIcon,
-  People as PeopleIcon,
-  PersonAdd as PersonAddIcon,
-  Verified as VerifiedIcon,
-  CalendarToday as CalendarIcon,
-  AttachMoney as MoneyIcon,
-  FilterList as FilterListIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon
-} from '@mui/icons-material';
-import { formatDistanceToNow } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Slider } from '../../components/ui/slider';
+import { Switch } from '../../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Plus, Users, UserPlus, Edit, Trash, Filter } from 'lucide-react';
+import { Badge } from '../../components/ui/badge';
 
-interface SegmentFormData {
-  name: string;
-  filters: {
-    minInvestment?: number | null;
-    lastActivityDays?: number | null;
-    kycStatus?: string[];
-    investorType?: string[];
-    registrationDateFrom?: string | null;
-    registrationDateTo?: string | null;
-  };
-}
+export const SegmentManager = () => {
+  const { 
+    segments, 
+    isLoadingSegments, 
+    createSegment, 
+    updateSegment, 
+    deleteSegment,
+    isCreatingSegment 
+  } = useSegments();
+  const [selectedKycStatus, setSelectedKycStatus] = useState<string[]>([]);
 
-const SegmentManager: React.FC = () => {
-  const { segments, isLoading, createSegment } = useSegments();
-  const [showForm, setShowForm] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<SegmentFormData>({
+  const form = useForm({
     defaultValues: {
       name: '',
-      filters: {
-        minInvestment: null,
-        lastActivityDays: null,
-        kycStatus: [],
-        investorType: [],
-        registrationDateFrom: null,
-        registrationDateTo: null
-      }
+      minInvestment: 0,
+      lastActivityDays: 30,
+      kycApproved: false,
+      kycPending: false,
+      kycRejected: false
     }
   });
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const onSubmit = async (data: SegmentFormData) => {
-    try {
-      // Remove null values from filters
-      const filters = Object.entries(data.filters).reduce((acc, [key, value]) => {
-        if (value !== null && (Array.isArray(value) ? value.length > 0 : value !== '')) {
-          acc[key] = value;
-        }
-        return acc;
-      }, {} as any);
-
-      await createSegment.mutateAsync({
-        name: data.name,
-        filters
-      });
-      reset();
-      setShowForm(false);
-    } catch (error) {
-      console.error('Error creating segment:', error);
-    }
-  };
-
-  const renderFilterSummary = (filters: any) => {
-    if (!filters || Object.keys(filters).length === 0) {
-      return <Typography variant="body2" color="text.secondary">No filters applied</Typography>;
-    }
-
-    return (
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-        {filters.minInvestment && (
-          <Chip
-            icon={<MoneyIcon fontSize="small" />}
-            label={`Min Investment: $${filters.minInvestment}`}
-            size="small"
-            variant="outlined"
-          />
-        )}
-        {filters.lastActivityDays && (
-          <Chip
-            icon={<CalendarIcon fontSize="small" />}
-            label={`Active in last ${filters.lastActivityDays} days`}
-            size="small"
-            variant="outlined"
-          />
-        )}
-        {filters.kycStatus && filters.kycStatus.length > 0 && (
-          <Chip
-            icon={<VerifiedIcon fontSize="small" />}
-            label={`KYC: ${filters.kycStatus.join(', ')}`}
-            size="small"
-            variant="outlined"
-          />
-        )}
-        {filters.investorType && filters.investorType.length > 0 && (
-          <Chip
-            icon={<PersonAddIcon fontSize="small" />}
-            label={`Type: ${filters.investorType.join(', ')}`}
-            size="small"
-            variant="outlined"
-          />
-        )}
-        {filters.registrationDateFrom && (
-          <Chip
-            icon={<CalendarIcon fontSize="small" />}
-            label={`From: ${new Date(filters.registrationDateFrom).toLocaleDateString()}`}
-            size="small"
-            variant="outlined"
-          />
-        )}
-        {filters.registrationDateTo && (
-          <Chip
-            icon={<CalendarIcon fontSize="small" />}
-            label={`To: ${new Date(filters.registrationDateTo).toLocaleDateString()}`}
-            size="small"
-            variant="outlined"
-          />
-        )}
-      </Box>
-    );
+  const onSubmit = (data: any) => {
+    // Transform the form data into the segment filter format
+    const kycStatusArray = [];
+    if (data.kycApproved) kycStatusArray.push('approved');
+    if (data.kycPending) kycStatusArray.push('pending');
+    if (data.kycRejected) kycStatusArray.push('rejected');
+    
+    const segmentData = {
+      name: data.name,
+      filters: {
+        minInvestment: data.minInvestment,
+        lastActivityDays: data.lastActivityDays,
+        kycStatus: kycStatusArray.length > 0 ? kycStatusArray : undefined
+      }
+    };
+    
+    createSegment(segmentData);
+    form.reset();
   };
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                User Segments
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Create and manage segments to target specific user groups
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              startIcon={showForm ? <CancelIcon /> : <AddIcon />}
-              onClick={() => {
-                setShowForm(!showForm);
-                if (!showForm) reset();
-              }}
-            >
-              {showForm ? 'Cancel' : 'New Segment'}
-            </Button>
-          </Grid>
-
-          {showForm && (
-            <Grid item xs={12}>
-              <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <Typography variant="h6">Create New Segment</Typography>
-                      <Divider sx={{ my: 1 }} />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Segment Name"
-                        variant="outlined"
-                        {...register('name', { required: 'Segment name is required' })}
-                        error={!!errors.name}
-                        helperText={errors.name?.message}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Minimum Investment ($)"
-                        variant="outlined"
-                        type="number"
-                        {...register('filters.minInvestment', {
-                          valueAsNumber: true,
-                          min: { value: 0, message: 'Minimum investment must be positive' }
-                        })}
-                        error={!!errors.filters?.minInvestment}
-                        helperText={errors.filters?.minInvestment?.message}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Active in Last X Days"
-                        variant="outlined"
-                        type="number"
-                        {...register('filters.lastActivityDays', {
-                          valueAsNumber: true,
-                          min: { value: 1, message: 'Days must be 1 or more' }
-                        })}
-                        error={!!errors.filters?.lastActivityDays}
-                        helperText={errors.filters?.lastActivityDays?.message}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>KYC Status</InputLabel>
-                        <Controller
-                          name="filters.kycStatus"
-                          control={control}
-                          render={({ field }) => (
-                            <Select
-                              {...field}
-                              label="KYC Status"
-                              multiple
-                              renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                  {(selected as string[]).map((value) => (
-                                    <Chip key={value} label={value} size="small" />
-                                  ))}
-                                </Box>
-                              )}
-                            >
-                              {['pending', 'approved', 'rejected', 'incomplete'].map((status) => (
-                                <MenuItem key={status} value={status}>
-                                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <FormControl fullWidth>
-                        <InputLabel>Investor Type</InputLabel>
-                        <Controller
-                          name="filters.investorType"
-                          control={control}
-                          render={({ field }) => (
-                            <Select
-                              {...field}
-                              label="Investor Type"
-                              multiple
-                              renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                  {(selected as string[]).map((value) => (
-                                    <Chip key={value} label={value} size="small" />
-                                  ))}
-                                </Box>
-                              )}
-                            >
-                              {['retail', 'accredited', 'institutional'].map((type) => (
-                                <MenuItem key={type} value={type}>
-                                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                      </FormControl>
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Registration Date From"
-                        variant="outlined"
-                        type="date"
-                        InputLabelProps={{ shrink: true }}
-                        {...register('filters.registrationDateFrom')}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                      <TextField
-                        fullWidth
-                        label="Registration Date To"
-                        variant="outlined"
-                        type="date"
-                        InputLabelProps={{ shrink: true }}
-                        {...register('filters.registrationDateTo')}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                        <Button
-                          type="submit"
-                          variant="contained"
-                          color="primary"
-                          startIcon={<SaveIcon />}
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? <CircularProgress size={24} /> : 'Save Segment'}
-                        </Button>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </form>
-              </Paper>
-            </Grid>
-          )}
-
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Existing Segments
-            </Typography>
-
-            <TableContainer>
-              <Table sx={{ minWidth: 650 }} size="medium">
-                <TableHead>
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>User Segments</CardTitle>
+            <CardDescription>Create and manage user segments for targeted communications</CardDescription>
+          </div>
+          <Button variant="outline" className="flex items-center gap-1">
+            <Plus className="h-4 w-4" />
+            <span>New Segment</span>
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="segments">
+          <TabsList>
+            <TabsTrigger value="segments">Segments List</TabsTrigger>
+            <TabsTrigger value="create">Create Segment</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="segments">
+            {isLoadingSegments ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : segments.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+                <h3 className="mt-4 text-lg font-medium">No segments created</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create your first segment to target specific user groups.
+                </p>
+                <Button onClick={() => document.querySelector('[data-value="create"]')?.click()} className="mt-4">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create Segment
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Filters</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Filter Criteria</TableHead>
+                    <TableHead>User Count</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                </TableHead>
+                </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                        <CircularProgress size={24} />
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          Loading segments...
-                        </Typography>
+                  {segments.map((segment: any) => (
+                    <TableRow key={segment.id}>
+                      <TableCell className="font-medium">{segment.name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {segment.filters?.minInvestment && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                              Min Investment: ${segment.filters.minInvestment}
+                            </Badge>
+                          )}
+                          {segment.filters?.lastActivityDays && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700">
+                              Active in last {segment.filters.lastActivityDays} days
+                            </Badge>
+                          )}
+                          {segment.filters?.kycStatus?.map((status: string) => (
+                            <Badge key={status} variant="outline" className="bg-purple-50 text-purple-700">
+                              KYC: {status}
+                            </Badge>
+                          ))}
+                          {(!segment.filters || Object.keys(segment.filters).length === 0) && (
+                            <span className="text-muted-foreground">All Users</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge>{segment.userCount || '—'}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => deleteSegment(segment.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ) : segments?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                        <Typography variant="body1">
-                          No segments found
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Create your first segment to target specific user groups
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    segments
-                      ?.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                      .map((segment) => (
-                        <TableRow key={segment.id} hover>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <GroupIcon sx={{ mr: 1, color: 'primary.main' }} />
-                              <Typography variant="body2" fontWeight="medium">
-                                {segment.name}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>{renderFilterSummary(segment.filters)}</TableCell>
-                          <TableCell>
-                            {segment.createdAt ? (
-                              <Tooltip title={new Date(segment.createdAt).toLocaleString()}>
-                                <Typography variant="body2">
-                                  {formatDistanceToNow(new Date(segment.createdAt), { addSuffix: true })}
-                                </Typography>
-                              </Tooltip>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell align="right">
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                              <Tooltip title="View Users">
-                                <IconButton size="small" color="primary">
-                                  <PeopleIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Edit">
-                                <IconButton size="small">
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                  )}
+                  ))}
                 </TableBody>
               </Table>
-            </TableContainer>
-            {segments && segments.length > 0 && (
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={segments.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-              />
             )}
-          </Grid>
-        </Grid>
-      </Paper>
-    </Box>
+          </TabsContent>
+          
+          <TabsContent value="create">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Segment Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter segment name" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        A descriptive name for this user segment
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex items-center">
+                  <Filter className="h-5 w-5 mr-2 text-muted-foreground" />
+                  <h3 className="text-lg font-medium">Filter Criteria</h3>
+                </div>
+                
+                <div className="border rounded-md p-4 space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="minInvestment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex justify-between">
+                          <FormLabel>Minimum Investment</FormLabel>
+                          <span className="text-sm font-medium">${field.value}</span>
+                        </div>
+                        <FormControl>
+                          <Slider
+                            value={[field.value]}
+                            min={0}
+                            max={10000}
+                            step={100}
+                            onValueChange={(value) => field.onChange(value[0])}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Target users with investments above this amount
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="lastActivityDays"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex justify-between">
+                          <FormLabel>Last Activity (Days)</FormLabel>
+                          <span className="text-sm font-medium">{field.value} days</span>
+                        </div>
+                        <FormControl>
+                          <Slider
+                            value={[field.value]}
+                            min={1}
+                            max={180}
+                            step={1}
+                            onValueChange={(value) => field.onChange(value[0])}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Target users who have been active within this time period
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <h4 className="text-sm font-medium">KYC Status</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="kycApproved"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Approved</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="kycPending"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Pending</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="kycRejected"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                              <FormLabel>Rejected</FormLabel>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => form.reset()}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={isCreatingSegment}
+                  >
+                    Create Segment
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
-
-export default SegmentManager;

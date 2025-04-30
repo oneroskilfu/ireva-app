@@ -1,213 +1,322 @@
+import { Link } from 'wouter';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
 import { 
-  Button, 
-  Container, 
-  Typography, 
-  Box, 
-  AppBar, 
-  Toolbar, 
-  Card, 
-  CardContent, 
-  Grid,
-  Paper,
-  Divider,
-  IconButton,
-  Menu,
-  MenuItem,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Tab,
-  Tabs
-} from "@mui/material";
-import { 
-  Menu as MenuIcon, 
-  Notifications, 
-  AccountCircle, 
-  Dashboard, 
-  People, 
-  Business, 
-  Assessment,
-  CreditCard,
-  Settings, 
-  BugReport
-} from "@mui/icons-material";
-import { useState } from "react";
-import { Link } from "wouter";
-import DebugLogin from "../components/DebugLogin";
+  Building, 
+  TrendingUp, 
+  ShieldCheck, 
+  Users, 
+  CreditCard, 
+  BarChart3, 
+  ArrowRight
+} from 'lucide-react';
 
-// Enhanced app with more Material UI components for testing
 export default function HomePage() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
-  
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-  
-  const handleAccountMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAccountMenuAnchor(event.currentTarget);
-  };
-  
-  const handleAccountMenuClose = () => {
-    setAccountMenuAnchor(null);
-  };
-  
-  const adminMenuItems = [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
-    { text: 'User Management', icon: <People />, path: '/admin/users' },
-    { text: 'Properties', icon: <Business />, path: '/admin/properties' },
-    { text: 'Portfolio', icon: <Assessment />, path: '/admin/portfolio' },
-    { text: 'Payments', icon: <CreditCard />, path: '/admin/payments' },
-    { text: 'Settings', icon: <Settings />, path: '/admin/settings' }
-  ];
-  
   return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton 
-            edge="start" 
-            color="inherit" 
-            aria-label="menu" 
-            sx={{ mr: 2 }}
-            onClick={toggleDrawer}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            iREVA Platform
-          </Typography>
-          <IconButton color="inherit">
-            <Notifications />
-          </IconButton>
-          <IconButton 
-            color="inherit"
-            onClick={handleAccountMenuOpen}
-          >
-            <AccountCircle />
-          </IconButton>
-          
-          <Menu
-            anchorEl={accountMenuAnchor}
-            open={Boolean(accountMenuAnchor)}
-            onClose={handleAccountMenuClose}
-          >
-            <MenuItem onClick={handleAccountMenuClose}>Profile</MenuItem>
-            <MenuItem onClick={handleAccountMenuClose}>My Account</MenuItem>
-            <MenuItem onClick={handleAccountMenuClose}>Logout</MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
-      
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-      >
-        <Box
-          sx={{ width: 250 }}
-          role="presentation"
-        >
-          <List>
-            {adminMenuItems.map((item) => (
-              <Link href={item.path} key={item.text}>
-                <ListItem 
-                  onClick={toggleDrawer}
-                  sx={{ 
-                    cursor: 'pointer',
-                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } 
-                  }}
-                >
-                  <ListItemIcon>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItem>
-              </Link>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-      
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Box sx={{ my: 4, textAlign: 'center' }}>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Welcome to iREVA
-          </Typography>
-          <Typography variant="h5" gutterBottom>
-            Real Estate Investment Platform
-          </Typography>
-          
-          <Box sx={{ mt: 4, mb: 6 }}>
-            <Button variant="contained" color="primary" size="large" sx={{ m: 1 }}>
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Section */}
+      <section className="relative py-20 bg-gradient-to-r from-primary/10 to-primary/5">
+        <div className="container px-4 mx-auto">
+          <div className="flex flex-col md:flex-row items-center">
+            <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10">
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+                Invest in Premium Real Estate with <span className="text-primary">iREVA</span>
+              </h1>
+              <p className="text-lg text-muted-foreground mb-8">
+                Access exclusive real estate investment opportunities with as little as ₦50,000.
+                Build wealth through property ownership without the hassle.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="font-medium">
+                  Start Investing Now
+                </Button>
+                <Button size="lg" variant="outline" className="font-medium">
+                  How It Works
+                </Button>
+              </div>
+              <div className="flex items-center gap-8 mt-12">
+                <div>
+                  <p className="text-3xl font-bold">₦500M+</p>
+                  <p className="text-sm text-muted-foreground">Assets Under Management</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-bold">10,000+</p>
+                  <p className="text-sm text-muted-foreground">Investors</p>
+                </div>
+                <div>
+                  <p className="text-3xl font-bold">20+</p>
+                  <p className="text-sm text-muted-foreground">Properties</p>
+                </div>
+              </div>
+            </div>
+            <div className="md:w-1/2 relative">
+              <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
+                <img 
+                  src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80" 
+                  alt="Luxury apartment building" 
+                  className="w-full h-[400px] object-cover"
+                />
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold">Victoria Island Residence</h3>
+                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
+                      13.5% ROI
+                    </span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">75%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                    <div className="bg-primary h-2.5 rounded-full" style={{ width: '75%' }}></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-muted-foreground text-sm">Target</p>
+                      <p className="font-medium">₦120,000,000</p>
+                    </div>
+                    <Button size="sm">
+                      Invest Now
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -bottom-6 -left-6 bg-white rounded-lg shadow-lg p-4 hidden md:block">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="text-green-500 h-5 w-5" />
+                  <div>
+                    <p className="text-sm font-medium">Current Returns</p>
+                    <p className="text-lg font-bold text-green-600">+12.8% YTD</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 bg-white">
+        <div className="container px-4 mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">How iREVA Works</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Our platform makes real estate investing simple, transparent, and accessible to everyone.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="bg-primary/10 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">1. Fund Your Wallet</h3>
+              <p className="text-muted-foreground">
+                Add funds to your iREVA wallet using bank transfer, credit card, or cryptocurrency.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-primary/10 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Building className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">2. Choose Properties</h3>
+              <p className="text-muted-foreground">
+                Browse our curated properties and select investments that match your financial goals.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-primary/10 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">3. Track & Earn</h3>
+              <p className="text-muted-foreground">
+                Monitor your investments in real-time and receive regular rental income and appreciation.
+              </p>
+            </div>
+          </div>
+          <div className="text-center mt-12">
+            <Button size="lg">
               Get Started
             </Button>
-            <Button variant="outlined" color="primary" size="large" sx={{ m: 1 }}>
-              Learn More
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Properties */}
+      <section className="py-20 bg-slate-50">
+        <div className="container px-4 mx-auto">
+          <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Featured Investment Opportunities</h2>
+              <p className="text-muted-foreground">
+                Exclusive properties selected for their strong potential returns
+              </p>
+            </div>
+            <Button variant="outline" className="hidden md:flex items-center gap-2">
+              View All Properties <ArrowRight className="h-4 w-4" />
             </Button>
-          </Box>
-        </Box>
-        
-        <Divider sx={{ mb: 6 }} />
-        
-        <Typography variant="h4" component="h2" gutterBottom>
-          Featured Properties
-        </Typography>
-        
-        <Grid container spacing={3} sx={{ mb: 6 }}>
-          {[1, 2, 3].map((item) => (
-            <Grid item xs={12} md={4} key={item}>
-              <Card elevation={3}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Property {item}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    A high-quality investment opportunity with excellent returns.
-                  </Typography>
-                  <Box sx={{ mt: 2 }}>
-                    <Button size="small" color="primary">
-                      View Details
-                    </Button>
-                  </Box>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((item) => (
+              <Card key={item} className="overflow-hidden">
+                <div className="relative">
+                  <img 
+                    src={`https://images.unsplash.com/photo-155${item}518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80`} 
+                    alt="Property" 
+                    className="w-full h-48 object-cover"
+                  />
+                  <span className="absolute top-4 right-4 bg-black/70 text-white text-xs font-medium px-2 py-1 rounded">
+                    {12 + item}% ROI
+                  </span>
+                </div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold mb-2">
+                    {['Lekki Phase 2 Apartments', 'Ikoyi Terrace Homes', 'Abuja Heights Villas'][item-1]}
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    {['Lagos, Nigeria', 'Lagos, Nigeria', 'Abuja, Nigeria'][item-1]}
+                  </p>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-muted-foreground text-sm">From</span>
+                    <span className="font-medium">₦{50 * item},000</span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-muted-foreground text-sm">Target</span>
+                    <span className="font-medium">₦{80 + (item * 10)}M</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                    <div className="bg-primary h-2 rounded-full" style={{ width: `${50 + (item * 10)}%` }}></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mb-4">
+                    <span>₦{30 + (item * 5)}M Funded</span>
+                    <span>{50 + (item * 10)}%</span>
+                  </div>
+                  <Button className="w-full">Invest Now</Button>
                 </CardContent>
               </Card>
-            </Grid>
-          ))}
-        </Grid>
-        
-        <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            About iREVA
-          </Typography>
-          <Typography variant="body1">
-            iREVA is a cutting-edge real estate investment platform that enables investors
-            to participate in high-quality property investments with minimal capital.
-          </Typography>
-        </Paper>
-        
-        {/* Debug Login Component - For Development Only */}
-        <Paper 
-          elevation={1} 
-          sx={{ 
-            p: 2, 
-            mb: 4, 
-            mt: 6,
-            border: '1px dashed #ccc',
-            backgroundColor: '#f9f9f9'
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <BugReport color="action" sx={{ mr: 1 }} />
-            <Typography variant="h6" color="text.secondary">
-              Developer Tools
-            </Typography>
-          </Box>
-          <DebugLogin />
-        </Paper>
-      </Container>
-    </>
+            ))}
+          </div>
+          <div className="text-center mt-8 md:hidden">
+            <Button variant="outline" className="flex items-center gap-2 mx-auto">
+              View All Properties <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-20 bg-white">
+        <div className="container px-4 mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Why Choose iREVA</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              We make real estate investment accessible, transparent, and profitable
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="p-6 border rounded-lg">
+              <ShieldCheck className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold mb-2">Secure & Compliant</h3>
+              <p className="text-muted-foreground">
+                All investments are backed by real properties and comply with local regulations.
+              </p>
+            </div>
+            <div className="p-6 border rounded-lg">
+              <TrendingUp className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold mb-2">Strong Returns</h3>
+              <p className="text-muted-foreground">
+                Historical annual returns of 12-18% from rental yields and property appreciation.
+              </p>
+            </div>
+            <div className="p-6 border rounded-lg">
+              <Users className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold mb-2">Community</h3>
+              <p className="text-muted-foreground">
+                Join thousands of investors building wealth through real estate in Nigeria.
+              </p>
+            </div>
+            <div className="p-6 border rounded-lg">
+              <Building className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold mb-2">Premium Properties</h3>
+              <p className="text-muted-foreground">
+                Access to high-quality properties in prime locations typically reserved for the wealthy.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-primary text-white">
+        <div className="container px-4 mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Start Your Investment Journey?</h2>
+          <p className="text-white/80 max-w-2xl mx-auto mb-8">
+            Join thousands of investors who are already growing their wealth through real estate on iREVA.
+          </p>
+          <Button size="lg" variant="secondary" className="font-medium">
+            Create Your Free Account
+          </Button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 text-white py-12">
+        <div className="container px-4 mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-2xl font-bold mb-4">iREVA</h3>
+              <p className="text-slate-400 mb-4">
+                The leading real estate investment platform in Nigeria.
+              </p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-white hover:text-primary">
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+                  </svg>
+                </a>
+                <a href="#" className="text-white hover:text-primary">
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                  </svg>
+                </a>
+                <a href="#" className="text-white hover:text-primary">
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-bold text-lg mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-slate-400 hover:text-white">About Us</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white">Our Team</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white">Careers</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white">Press</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-lg mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-slate-400 hover:text-white">Blog</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white">FAQ</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white">Support</a></li>
+                <li><a href="#" className="text-slate-400 hover:text-white">Privacy Policy</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-lg mb-4">Contact</h4>
+              <ul className="space-y-2">
+                <li className="text-slate-400">Victoria Island, Lagos</li>
+                <li className="text-slate-400">info@ireva.com</li>
+                <li className="text-slate-400">+234 800 123 4567</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-400">
+            <p>&copy; 2025 iREVA. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

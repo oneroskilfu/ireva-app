@@ -32,6 +32,8 @@ export const auditActionEnum = pgEnum("audit_action", [
 export const communicationChannelEnum = pgEnum("communication_channel", ["email", "push", "sms"]);
 export const communicationStatusEnum = pgEnum("communication_status", ["draft", "scheduled", "sent", "failed"]);
 
+// We'll use the existing documentTypeEnum defined later in the file
+
 // Property valuation methodology enum
 export const valuationMethodologyEnum = pgEnum("valuation_methodology", ["comps", "income", "cost"]);
 
@@ -1934,6 +1936,27 @@ export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
 
 export type UserSegment = typeof userSegments.$inferSelect;
 export type InsertUserSegment = z.infer<typeof insertUserSegmentSchema>;
+
+// Document versions schema for tracking document history
+export const documentVersions = pgTable('document_versions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  documentId: uuid('document_id').references(() => documents.id),
+  version: integer('version').notNull(),
+  hash: varchar('hash', { length: 64 }).notNull(), // SHA-256
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+export const insertDocumentVersionSchema = createInsertSchema(documentVersions).omit({
+  id: true,
+  createdAt: true
+});
+
+// Export types for Document tables
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+
+export type DocumentVersion = typeof documentVersions.$inferSelect;
+export type InsertDocumentVersion = z.infer<typeof insertDocumentVersionSchema>;
 
 export type UserCommunicationLog = typeof userCommunicationLogs.$inferSelect;
 export type InsertUserCommunicationLog = z.infer<typeof insertUserCommunicationLogSchema>;

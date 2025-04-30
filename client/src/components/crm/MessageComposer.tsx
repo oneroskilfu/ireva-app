@@ -1,384 +1,230 @@
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useSegments } from '../../hooks/useSegments';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '../../lib/queryClient';
-import { 
-  Box, 
-  Button, 
-  Card, 
-  CardContent, 
-  CircularProgress, 
-  FormControl, 
-  FormHelperText, 
-  Grid, 
-  InputLabel, 
-  MenuItem, 
-  Select, 
-  TextField, 
-  Typography, 
-  FormControlLabel,
-  Switch,
-  Tooltip,
-  Chip,
-  Divider,
-  Paper
-} from '@mui/material';
-import { 
-  Schedule as ScheduleIcon,
-  Send as SendIcon, 
-  Save as SaveIcon, 
-  People as PeopleIcon,
-  Email as EmailIcon,
-  Sms as SmsIcon,
-  Notifications as NotificationsIcon,
-  Check as CheckIcon,
-  Cancel as CancelIcon,
-  Info as InfoIcon,
-  Edit as EditNoteIcon,
-  Visibility as VisibilityIcon
-} from '@mui/icons-material';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { add } from 'date-fns';
+import { useCommunications } from '../../hooks/useCommunications';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Calendar } from '../../components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
+import { format } from 'date-fns';
+import { CalendarIcon, Send, Save } from 'lucide-react';
 
-interface FormData {
-  title: string;
-  content: string;
-  channel: 'email' | 'push' | 'sms';
-  segmentId: string;
-  scheduledAt: Date | null;
-  schedule: boolean;
-}
+export const MessageComposer = () => {
+  const { segments, isLoadingSegments } = useSegments();
+  const { createCommunication, isCreatingCommunication } = useCommunications();
+  const [scheduleMessage, setScheduleMessage] = useState(false);
 
-const MessageComposer: React.FC = () => {
-  const { segments, isLoading: segmentsLoading } = useSegments();
-  const queryClient = useQueryClient();
-  const [previewMode, setPreviewMode] = useState(false);
-
-  const { register, handleSubmit, control, watch, formState: { errors }, reset } = useForm<FormData>({
+  const form = useForm({
     defaultValues: {
       title: '',
       content: '',
       channel: 'email',
       segmentId: '',
-      scheduledAt: add(new Date(), { hours: 1 }),
-      schedule: false
+      scheduleDate: null as Date | null
     }
   });
 
-  // Watch form values for preview
-  const formValues = watch();
-  
-  // Create communication mutation
-  const createCommunication = useMutation({
-    mutationFn: async (data: FormData) => {
-      const payload = {
-        title: data.title,
-        content: data.content,
-        channel: data.channel,
-        segmentId: data.segmentId || undefined,
-        scheduledAt: data.schedule ? data.scheduledAt : undefined
-      };
-      
-      const res = await apiRequest('POST', '/api/crm/communications', payload);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/communications'] });
-      reset();
-    }
-  });
+  const onSubmit = async (data: any) => {
+    const payload = {
+      ...data,
+      scheduledAt: data.scheduleDate ? new Date(data.scheduleDate).toISOString() : null
+    };
 
-  // Send communication immediately
-  const sendCommunication = useMutation({
-    mutationFn: async (communicationId: string) => {
-      const res = await apiRequest('POST', `/api/crm/communications/${communicationId}/send`);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/crm/communications'] });
-    }
-  });
-  
-  const onSubmit = async (data: FormData) => {
-    try {
-      const result = await createCommunication.mutateAsync(data);
-      
-      // If not scheduled, send immediately
-      if (!data.schedule && result.id) {
-        await sendCommunication.mutateAsync(result.id);
-      }
-    } catch (error) {
-      console.error('Error saving/sending communication:', error);
-    }
-  };
+    delete payload.scheduleDate;
 
-  // Helper to render channel icon
-  const getChannelIcon = (channel: string) => {
-    switch (channel) {
-      case 'email': return <EmailIcon />;
-      case 'push': return <NotificationsIcon />;
-      case 'sms': return <SmsIcon />;
-      default: return <EmailIcon />;
-    }
+    createCommunication(payload);
+    form.reset();
   };
 
   return (
-    <Box sx={{ maxWidth: '900px', margin: '0 auto', py: 3 }}>
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Typography variant="h5" gutterBottom display="flex" alignItems="center">
-              <SendIcon sx={{ mr: 1 }} /> 
-              Compose Message
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Create and send communications to users based on segments and channels.
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Compose Message</CardTitle>
+        <CardDescription>Create and send messages to user segments</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter message title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Button 
-                variant={previewMode ? "outlined" : "contained"} 
-                color="primary"
-                onClick={() => setPreviewMode(false)}
-                startIcon={<EditNoteIcon />}
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message Content</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter your message content" 
+                      className="min-h-[200px]" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="channel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Channel</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select channel" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="push">Push Notification</SelectItem>
+                        <SelectItem value="sms">SMS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="segmentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>User Segment</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select target segment" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingSegments ? (
+                          <SelectItem value="loading">Loading...</SelectItem>
+                        ) : (
+                          segments.map((segment: any) => (
+                            <SelectItem key={segment.id} value={segment.id}>
+                              {segment.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="schedule" 
+                checked={scheduleMessage}
+                onCheckedChange={(checked) => setScheduleMessage(!!checked)}
+              />
+              <label
+                htmlFor="schedule"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Edit
+                Schedule message for later
+              </label>
+            </div>
+
+            {scheduleMessage && (
+              <FormField
+                control={form.control}
+                name="scheduleDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Schedule Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={`w-[280px] justify-start text-left font-normal ${
+                              !field.value && "text-muted-foreground"
+                            }`}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => form.reset()}
+              >
+                Cancel
               </Button>
               <Button 
-                variant={previewMode ? "contained" : "outlined"} 
-                color="primary"
-                onClick={() => setPreviewMode(true)}
-                startIcon={<VisibilityIcon />}
+                type="submit" 
+                disabled={isCreatingCommunication}
               >
-                Preview
+                {scheduleMessage ? (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save for Later
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Now
+                  </>
+                )}
               </Button>
-            </Box>
-          </Grid>
-
-          {previewMode ? (
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                    {getChannelIcon(formValues.channel)}
-                    <Chip 
-                      label={formValues.channel} 
-                      color="primary" 
-                      size="small" 
-                      sx={{ ml: 1 }} 
-                    />
-                    {formValues.segmentId && (
-                      <Chip 
-                        icon={<PeopleIcon />}
-                        label={segments?.find(s => s.id === formValues.segmentId)?.name || 'All Users'} 
-                        color="secondary" 
-                        size="small" 
-                        sx={{ ml: 1 }} 
-                      />
-                    )}
-                    {formValues.schedule && (
-                      <Chip 
-                        icon={<ScheduleIcon />}
-                        label={formValues.scheduledAt?.toLocaleString() || 'Scheduled'} 
-                        color="info" 
-                        size="small" 
-                        sx={{ ml: 1 }} 
-                      />
-                    )}
-                  </Box>
-                  <Typography variant="h6" gutterBottom>{formValues.title || 'No Title'}</Typography>
-                  <Box sx={{ 
-                    p: 2, 
-                    border: '1px solid #e0e0e0', 
-                    borderRadius: 1,
-                    bgcolor: '#f9f9f9',
-                    minHeight: '200px'
-                  }}>
-                    <Typography variant="body1">
-                      {formValues.content || 'No content'}
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ) : (
-            <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <TextField
-                    fullWidth
-                    label="Title"
-                    variant="outlined"
-                    {...register('title', { required: 'Title is required' })}
-                    error={!!errors.title}
-                    helperText={errors.title?.message}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={4}>
-                  <FormControl fullWidth error={!!errors.channel}>
-                    <InputLabel>Channel</InputLabel>
-                    <Controller
-                      name="channel"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          label="Channel"
-                        >
-                          <MenuItem value="email">
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <EmailIcon sx={{ mr: 1 }} />
-                              Email
-                            </Box>
-                          </MenuItem>
-                          <MenuItem value="push">
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <NotificationsIcon sx={{ mr: 1 }} />
-                              Push Notification
-                            </Box>
-                          </MenuItem>
-                          <MenuItem value="sms">
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <SmsIcon sx={{ mr: 1 }} />
-                              SMS
-                            </Box>
-                          </MenuItem>
-                        </Select>
-                      )}
-                    />
-                    {errors.channel && <FormHelperText>{errors.channel.message}</FormHelperText>}
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Content"
-                    variant="outlined"
-                    multiline
-                    rows={6}
-                    {...register('content', { required: 'Content is required' })}
-                    error={!!errors.content}
-                    helperText={errors.content?.message}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>User Segment</InputLabel>
-                    <Controller
-                      name="segmentId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          label="User Segment"
-                          displayEmpty
-                        >
-                          <MenuItem value="">All Users</MenuItem>
-                          {segmentsLoading ? (
-                            <MenuItem disabled>
-                              <CircularProgress size={20} />
-                              Loading segments...
-                            </MenuItem>
-                          ) : (
-                            segments?.map(segment => (
-                              <MenuItem key={segment.id} value={segment.id}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <PeopleIcon sx={{ mr: 1, fontSize: 20 }} />
-                                  {segment.name}
-                                </Box>
-                              </MenuItem>
-                            ))
-                          )}
-                        </Select>
-                      )}
-                    />
-                    <FormHelperText>
-                      Select a user segment or leave empty to target all users
-                    </FormHelperText>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <FormControlLabel
-                    control={
-                      <Controller
-                        name="schedule"
-                        control={control}
-                        render={({ field: { onChange, value } }) => (
-                          <Switch
-                            checked={value}
-                            onChange={onChange}
-                            color="primary"
-                          />
-                        )}
-                      />
-                    }
-                    label="Schedule for later"
-                  />
-                  
-                  {watch('schedule') && (
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <Controller
-                        name="scheduledAt"
-                        control={control}
-                        render={({ field }) => (
-                          <DateTimePicker
-                            label="Schedule Date & Time"
-                            value={field.value}
-                            onChange={(date) => field.onChange(date)}
-                            disablePast
-                            sx={{ width: '100%', mt: 1 }}
-                          />
-                        )}
-                      />
-                    </LocalizationProvider>
-                  )}
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={() => reset()}
-                      disabled={createCommunication.isPending || sendCommunication.isPending}
-                    >
-                      Reset
-                    </Button>
-                    
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      color="primary"
-                      disabled={createCommunication.isPending || sendCommunication.isPending}
-                      startIcon={watch('schedule') ? <ScheduleIcon /> : <SendIcon />}
-                    >
-                      {createCommunication.isPending || sendCommunication.isPending ? (
-                        <CircularProgress size={24} />
-                      ) : watch('schedule') ? (
-                        'Schedule'
-                      ) : (
-                        'Send Now'
-                      )}
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
-            </form>
-          )}
-        </Grid>
-      </Paper>
-    </Box>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
-
-export default MessageComposer;

@@ -1,335 +1,183 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Button, 
-  Card, 
-  CardContent, 
-  Chip, 
-  CircularProgress, 
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Divider, 
-  Grid, 
-  IconButton, 
-  Paper, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TablePagination, 
-  TableRow, 
-  TextField, 
-  Tooltip, 
-  Typography 
-} from '@mui/material';
-import { 
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Info as InfoIcon,
-  Send as SendIcon,
-  Search as SearchIcon,
-  FilterList as FilterListIcon,
-  Schedule as ScheduleIcon,
-  Email as EmailIcon,
-  Notifications as NotificationsIcon,
-  Sms as SmsIcon,
-  Check as CheckIcon,
-  Cancel as CancelIcon,
-  Warning as WarningIcon
-} from '@mui/icons-material';
-import { useCommunications, Communication, CommunicationFilters } from '../../hooks/useCommunications';
-import { formatDistanceToNow } from 'date-fns';
+import { useCommunications } from '../../hooks/useCommunications';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { format } from 'date-fns';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import {
+  Send,
+  Trash,
+  Edit,
+  Mail,
+  Bell,
+  MessageSquare,
+  Calendar,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Timer
+} from 'lucide-react';
+import { Badge } from '../../components/ui/badge';
 
-interface CommunicationListProps {
-  onEdit?: (communication: Communication) => void;
-}
+export const CommunicationList = () => {
+  const {
+    communications,
+    isLoadingCommunications,
+    sendCommunication,
+    deleteCommunication,
+    isSendingCommunication,
+    isDeletingCommunication
+  } = useCommunications();
 
-const CommunicationList: React.FC<CommunicationListProps> = ({ onEdit }) => {
-  const [filters, setFilters] = useState<CommunicationFilters>({});
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCommunication, setSelectedCommunication] = useState<Communication | null>(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-
-  const { communications, isLoading, sendCommunication } = useCommunications(filters);
-
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleSearch = () => {
-    setFilters(prev => ({
-      ...prev,
-      query: searchQuery
-    }));
-    setPage(0);
-  };
-
-  const handleSendNow = (communication: Communication) => {
-    setSelectedCommunication(communication);
-    setConfirmDialogOpen(true);
-  };
-
-  const confirmSend = async () => {
-    if (selectedCommunication) {
-      await sendCommunication.mutateAsync(selectedCommunication.id);
-      setConfirmDialogOpen(false);
-      setSelectedCommunication(null);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
+  // Helper to get the badge color based on status
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'draft': return 'default';
-      case 'scheduled': return 'info';
-      case 'sent': return 'success';
-      case 'failed': return 'error';
-      default: return 'default';
+      case 'draft':
+        return (
+          <Badge variant="outline" className="bg-slate-100 text-slate-700">
+            <Timer className="w-3 h-3 mr-1" />
+            Draft
+          </Badge>
+        );
+      case 'scheduled':
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-700">
+            <Calendar className="w-3 h-3 mr-1" />
+            Scheduled
+          </Badge>
+        );
+      case 'sent':
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-700">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Sent
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-700">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Failed
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="bg-slate-100 text-slate-700">
+            {status}
+          </Badge>
+        );
     }
   };
 
+  // Helper to get the channel icon
   const getChannelIcon = (channel: string) => {
     switch (channel) {
-      case 'email': return <EmailIcon fontSize="small" />;
-      case 'push': return <NotificationsIcon fontSize="small" />;
-      case 'sms': return <SmsIcon fontSize="small" />;
-      default: return <EmailIcon fontSize="small" />;
+      case 'email':
+        return <Mail className="w-4 h-4" />;
+      case 'push':
+        return <Bell className="w-4 h-4" />;
+      case 'sms':
+        return <MessageSquare className="w-4 h-4" />;
+      default:
+        return null;
     }
   };
 
+  if (isLoadingCommunications) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Box sx={{ width: '100%' }}>
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h5" gutterBottom>
-              Communications
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              View and manage all communications sent to users.
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
-
-          {/* Search and filters */}
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              fullWidth
-              placeholder="Search by title..."
-              variant="outlined"
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <IconButton 
-                    size="small" 
-                    onClick={handleSearch}
-                    edge="end"
-                  >
-                    <SearchIcon />
-                  </IconButton>
-                ),
-              }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-            />
-          </Grid>
-
-          {/* Status filter chips */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {['all', 'draft', 'scheduled', 'sent', 'failed'].map((status) => (
-                <Chip
-                  key={status}
-                  label={status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
-                  onClick={() => setFilters(prev => ({
-                    ...prev,
-                    status: status === 'all' ? undefined : status
-                  }))}
-                  color={filters.status === status ? 'primary' : 'default'}
-                  variant={filters.status === status || (status === 'all' && !filters.status) ? 'filled' : 'outlined'}
-                  size="small"
-                />
+    <Card>
+      <CardHeader>
+        <CardTitle>Communications</CardTitle>
+        <CardDescription>Manage your outgoing messages and campaigns</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {communications.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No communications found</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Create your first communication using the compose panel
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Channel</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Scheduled</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {communications.map((comm: any) => (
+                <TableRow key={comm.id}>
+                  <TableCell className="font-medium">{comm.title}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      {getChannelIcon(comm.channel)}
+                      <span className="ml-2 capitalize">{comm.channel}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(comm.status)}</TableCell>
+                  <TableCell>
+                    {comm.createdAt ? format(new Date(comm.createdAt), 'MMM d, yyyy') : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {comm.scheduledAt ? format(new Date(comm.scheduledAt), 'MMM d, yyyy h:mm a') : 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      {comm.status === 'draft' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => sendCommunication(comm.id)}
+                          disabled={isSendingCommunication}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => deleteCommunication(comm.id)}
+                        disabled={isDeletingCommunication}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </Box>
-          </Grid>
-
-          {/* Table */}
-          <Grid item xs={12}>
-            <TableContainer>
-              <Table sx={{ minWidth: 650 }} aria-label="communications table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Title</TableCell>
-                    <TableCell>Channel</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell>Scheduled</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                        <CircularProgress size={30} />
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          Loading communications...
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : communications.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                        <Typography variant="body1">
-                          No communications found
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Try changing your search or filters
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    communications
-                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                      .map((communication) => (
-                        <TableRow key={communication.id} hover>
-                          <TableCell>
-                            <Typography variant="body2" fontWeight="medium">
-                              {communication.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block', maxWidth: 250 }}>
-                              {communication.content.substring(0, 50)}
-                              {communication.content.length > 50 ? '...' : ''}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              icon={getChannelIcon(communication.channel)}
-                              label={communication.channel}
-                              size="small"
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={communication.status}
-                              size="small"
-                              color={getStatusColor(communication.status)}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {communication.createdAt ? (
-                              <Tooltip title={new Date(communication.createdAt).toLocaleString()}>
-                                <Typography variant="body2">
-                                  {formatDistanceToNow(new Date(communication.createdAt), { addSuffix: true })}
-                                </Typography>
-                              </Tooltip>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {communication.scheduledAt ? (
-                              <Tooltip title={new Date(communication.scheduledAt).toLocaleString()}>
-                                <Typography variant="body2">
-                                  {formatDistanceToNow(new Date(communication.scheduledAt), { addSuffix: true })}
-                                </Typography>
-                              </Tooltip>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell align="right">
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                              {onEdit && (
-                                <Tooltip title="Edit">
-                                  <IconButton 
-                                    size="small" 
-                                    onClick={() => onEdit(communication)}
-                                    disabled={communication.status === 'sent'}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                              
-                              {['draft', 'scheduled'].includes(communication.status) && (
-                                <Tooltip title="Send Now">
-                                  <IconButton 
-                                    size="small" 
-                                    onClick={() => handleSendNow(communication)}
-                                    color="primary"
-                                  >
-                                    <SendIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={communications.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Confirmation Dialog */}
-      <Dialog
-        open={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
-      >
-        <DialogTitle>Send Communication Now?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to send this communication immediately to all recipients? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={confirmSend} 
-            color="primary" 
-            variant="contained"
-            startIcon={<SendIcon />}
-            disabled={sendCommunication.isPending}
-          >
-            {sendCommunication.isPending ? (
-              <CircularProgress size={24} />
-            ) : (
-              'Send Now'
-            )}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 };
-
-export default CommunicationList;
