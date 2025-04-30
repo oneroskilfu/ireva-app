@@ -43,3 +43,11 @@ export function validateRequest(options: ValidateOptions) {
     }
   };
 }
+
+/**
+ * Simple validation middleware that only validates the request body
+ * @param schema The Zod schema to validate the request body against
+ */
+export function validate(schema: z.ZodType<any>) {
+  return validateRequest({ body: schema });
+}

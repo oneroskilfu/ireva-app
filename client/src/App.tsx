@@ -5,6 +5,7 @@ import { Route, Switch } from 'wouter';
 import HomePage from './pages/HomePage';
 import MinimalMuiPage from './pages/minimal-mui';
 import UserManagement from './pages/admin/UserManagement';
+import PortfolioPage from './pages/admin/PortfolioPage';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/" component={HomePage} />
         <Route path="/minimal-mui" component={MinimalMuiPage} />
         <Route path="/admin/users" component={UserManagement} />
+        <Route path="/admin/portfolio" component={PortfolioPage} />
       </Switch>
     </ThemeProvider>
   );
