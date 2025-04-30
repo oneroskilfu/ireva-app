@@ -159,10 +159,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up admin properties routes
   app.use('/api/admin/properties', propertiesRouter);
+  console.log("Admin properties routes registered");
   
   // Set up admin ROI management routes
   app.use('/api/admin/roi', roiRouter);
   console.log("Admin ROI management routes registered");
+  
+  // Import user management routes
+  const userRouter = require('./routes/admin/users').default;
+  app.use('/api/admin/users', userRouter);
+  console.log("Admin user management routes registered");
+  
+  // Import user wallet routes
+  const walletRouter = require('./routes/admin/wallet').default;
+  app.use('/api', walletRouter); // This uses the path prefix defined in the router
+  console.log("Admin wallet management routes registered");
   
   // Set up new investor routes
   app.use('/api/investor', investorRoutes);

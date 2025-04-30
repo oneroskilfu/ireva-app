@@ -1,9 +1,8 @@
 import express, { Request, Response } from 'express';
 import { db } from '../../db';
-import { users } from '../../../shared/schema';
+import { users, transactions } from '../../../shared/schema';
 import { authMiddleware, ensureAdmin } from '../../auth-jwt';
-import { sql, eq, and, ilike, count } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
+import { sql, eq, and, or, like, desc, ilike } from 'drizzle-orm';
 
 export const router = express.Router();
 
@@ -11,33 +10,42 @@ export const router = express.Router();
 router.use(authMiddleware, ensureAdmin);
 
 /**
- * Get all users with filtering capabilities
+ * Get all users with filtering and pagination
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { status, kycStatus, role, search, page = '1', limit = '10' } = req.query;
+    const { 
+      search,
+      status,
+      kycStatus,
+      role,
+      page = '1',
+      limit = '10'
+    } = req.query;
     
-    // Build conditions array for filtering
+    // Build filters
     const conditions = [];
-    
-    if (status) {
-      conditions.push(eq(users.status, status as string));
-    }
-    
-    if (kycStatus) {
-      conditions.push(eq(users.kycStatus, kycStatus as string));
-    }
-    
-    if (role) {
-      conditions.push(eq(users.role, role as string));
-    }
     
     if (search) {
       conditions.push(
-        sql`(${ilike(users.email, `%${search as string}%`)} OR 
-            ${ilike(users.username, `%${search as string}%`)} OR
-            ${ilike(users.fullName, `%${search as string}%`)})`
+        or(
+          ilike(users.email, `%${search}%`),
+          ilike(users.username, `%${search}%`),
+          sql`CONCAT(${users.firstName}, ' ', ${users.lastName}) ILIKE ${`%${search}%`}`
+        )
       );
+    }
+    
+    if (status) {
+      conditions.push(sql`${users.status} = ${status}`);
+    }
+    
+    if (kycStatus) {
+      conditions.push(sql`${users.kycStatus} = ${kycStatus}`);
+    }
+    
+    if (role) {
+      conditions.push(sql`${users.role} = ${role}`);
     }
     
     // Calculate pagination
@@ -45,23 +53,38 @@ router.get('/', async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const offset = (pageNum - 1) * limitNum;
     
-    // Prepare the query with all conditions
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    
-    // Get total count for pagination
+    // Get filtered count
+    const whereClause = conditions.length ? and(...conditions) : undefined;
     const [countResult] = await db
-      .select({ count: count() })
+      .select({ count: sql`COUNT(*)`.mapWith(Number) })
       .from(users)
       .where(whereClause);
     
     // Get paginated results
     const results = await db
-      .select()
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        fullName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        status: users.status,
+        kycStatus: users.kycStatus,
+        role: users.role,
+        walletBalance: sql`COALESCE(${users.balance}, '0')`.mapWith(String),
+        country: users.country,
+        createdAt: users.createdAt,
+        lastLogin: users.lastLoginAt,
+        phone: users.phoneNumber,
+        referralCode: users.referralCode,
+        referredBy: users.referredBy
+      })
       .from(users)
       .where(whereClause)
+      .orderBy(desc(users.createdAt))
       .limit(limitNum)
-      .offset(offset)
-      .orderBy(users.createdAt);
+      .offset(offset);
     
     res.json({
       users: results,
@@ -74,21 +97,38 @@ router.get('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({ message: 'Failed to fetch users' });
+    res.status(500).json({ message: 'Failed to fetch users', error: String(error) });
   }
 });
 
 /**
- * Get user by ID
+ * Get a single user by ID
  */
-router.get('/:userId', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const { id } = req.params;
     
     const [user] = await db
-      .select()
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        fullName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        status: users.status,
+        kycStatus: users.kycStatus,
+        role: users.role,
+        walletBalance: sql`COALESCE(${users.balance}, '0')`.mapWith(String),
+        country: users.country,
+        createdAt: users.createdAt,
+        lastLogin: users.lastLoginAt,
+        phone: users.phoneNumber,
+        referralCode: users.referralCode,
+        referredBy: users.referredBy
+      })
       .from(users)
-      .where(eq(users.id, userId));
+      .where(sql`${users.id} = ${id}`);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -102,110 +142,113 @@ router.get('/:userId', async (req: Request, res: Response) => {
 });
 
 /**
- * Update user details
+ * Update a user
  */
-router.patch('/:userId', async (req: Request, res: Response) => {
+router.patch('/:id', async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    const { email, status, kycStatus, role, fullName, phone } = req.body;
+    const { id } = req.params;
+    const {
+      email,
+      fullName,
+      phone,
+      role,
+      kycStatus
+    } = req.body;
     
-    // Validate input
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
-    }
+    // Verify user exists
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(sql`${users.id} = ${id}`);
     
-    // Update only provided fields
-    const updateData: any = {};
-    
-    if (email !== undefined) updateData.email = email;
-    if (status !== undefined) updateData.status = status;
-    if (kycStatus !== undefined) updateData.kycStatus = kycStatus;
-    if (role !== undefined) updateData.role = role;
-    if (fullName !== undefined) updateData.fullName = fullName;
-    if (phone !== undefined) updateData.phone = phone;
-    
-    // Perform update
-    const [updatedUser] = await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, userId))
-      .returning();
-    
-    if (!updatedUser) {
+    if (!existingUser) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    res.json({
-      message: 'User updated successfully',
-      user: updatedUser
-    });
+    // Parse fullName into firstName and lastName
+    let firstName = existingUser.firstName;
+    let lastName = existingUser.lastName;
+    
+    if (fullName) {
+      const nameParts = fullName.split(' ');
+      firstName = nameParts[0];
+      lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    }
+    
+    // Update user
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        email: email || existingUser.email,
+        firstName: firstName || existingUser.firstName,
+        lastName: lastName || existingUser.lastName,
+        phoneNumber: phone || existingUser.phoneNumber,
+        role: role as any || existingUser.role,
+        kycStatus: kycStatus as any || existingUser.kycStatus
+      })
+      .where(sql`${users.id} = ${id}`)
+      .returning({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        fullName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+        status: users.status,
+        kycStatus: users.kycStatus,
+        role: users.role
+      });
+    
+    res.json(updatedUser);
   } catch (error) {
     console.error('Error updating user:', error);
-    res.status(500).json({ message: 'Failed to update user' });
+    res.status(500).json({ message: 'Failed to update user', error: String(error) });
   }
 });
 
 /**
- * Update user status (activate/deactivate/suspend)
+ * Update user status
  */
-router.patch('/:userId/status', async (req: Request, res: Response) => {
+router.patch('/:id/status', async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const { id } = req.params;
     const { status } = req.body;
     
-    if (!status || !['active', 'inactive', 'suspended'].includes(status)) {
-      return res.status(400).json({ message: 'Valid status is required (active, inactive, or suspended)' });
+    // Validate status
+    const validStatuses = ['active', 'inactive', 'suspended', 'deactivated'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
     }
     
-    const [updatedUser] = await db
-      .update(users)
-      .set({ status })
-      .where(eq(users.id, userId))
-      .returning();
+    // Verify user exists
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(sql`${users.id} = ${id}`);
     
-    if (!updatedUser) {
+    if (!existingUser) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    res.json({
-      message: `User ${status === 'active' ? 'activated' : status === 'inactive' ? 'deactivated' : 'suspended'} successfully`,
-      user: updatedUser
+    // Update status
+    const [updatedUser] = await db
+      .update(users)
+      .set({ status: status as any })
+      .where(sql`${users.id} = ${id}`)
+      .returning();
+    
+    res.json({ 
+      message: `User status updated to ${status}`,
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        status: updatedUser.status
+      }
     });
   } catch (error) {
     console.error('Error updating user status:', error);
     res.status(500).json({ message: 'Failed to update user status' });
-  }
-});
-
-/**
- * Update user role
- */
-router.patch('/:userId/role', async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const { role } = req.body;
-    
-    if (!role || !['user', 'admin', 'super_admin', 'investor'].includes(role)) {
-      return res.status(400).json({ message: 'Valid role is required' });
-    }
-    
-    const [updatedUser] = await db
-      .update(users)
-      .set({ role })
-      .where(eq(users.id, userId))
-      .returning();
-    
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json({
-      message: 'User role updated successfully',
-      user: updatedUser
-    });
-  } catch (error) {
-    console.error('Error updating user role:', error);
-    res.status(500).json({ message: 'Failed to update user role' });
   }
 });
 
