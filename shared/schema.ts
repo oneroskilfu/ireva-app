@@ -527,6 +527,35 @@ export const investorProfiles = pgTable("investor_profiles", {
   lastUpdated: timestamp("last_updated").defaultNow()
 });
 
+// Webhooks schema for developer integrations
+export const webhooks = pgTable("webhooks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  events: webhookEventEnum("events").array().notNull(),
+  secret: text("secret").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastTriggeredAt: timestamp("last_triggered_at"),
+  failureCount: integer("failure_count").default(0),
+  lastError: text("last_error")
+});
+
+// Webhook delivery logs for auditing
+export const webhookDeliveries = pgTable("webhook_deliveries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  webhookId: uuid("webhook_id").notNull().references(() => webhooks.id, { onDelete: "cascade" }),
+  eventType: webhookEventEnum("event_type").notNull(),
+  requestPayload: jsonb("request_payload").notNull(),
+  responseStatus: integer("response_status"),
+  responseBody: text("response_body"),
+  deliveredAt: timestamp("delivered_at").defaultNow(),
+  duration: integer("duration"), // in milliseconds
+  success: boolean("success").default(false),
+  errorMessage: text("error_message")
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   kycSubmissions: many(kycSubmissions),
@@ -550,6 +579,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   assignedIssues: many(issues, { relationName: "assignedIssues" }),
   amlScreenings: many(amlScreenings),
   amlReviews: many(amlScreenings, { relationName: "amlReviews" }),
+  webhooks: many(webhooks),
   financialProfile: one(investorProfiles, {
     fields: [users.id],
     references: [investorProfiles.userId]
@@ -744,6 +774,21 @@ export const documentsRelations = relations(documents, ({ one }) => ({
   })
 }));
 
+export const webhooksRelations = relations(webhooks, ({ one, many }) => ({
+  user: one(users, {
+    fields: [webhooks.userId],
+    references: [users.id]
+  }),
+  deliveries: many(webhookDeliveries)
+}));
+
+export const webhookDeliveriesRelations = relations(webhookDeliveries, ({ one }) => ({
+  webhook: one(webhooks, {
+    fields: [webhookDeliveries.webhookId],
+    references: [webhooks.id]
+  })
+}));
+
 // Create schemas for insertions
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -859,6 +904,40 @@ export const insertComplianceLogSchema = createInsertSchema(complianceLogs).omit
   acceptedAt: true
 });
 
+// Create schema for webhook and webhook deliveries
+export const insertWebhookSchema = createInsertSchema(webhooks).omit({
+  id: true,
+  createdAt: true,
+  lastTriggeredAt: true,
+  failureCount: true,
+  lastError: true
+});
+
+export const insertWebhookDeliverySchema = createInsertSchema(webhookDeliveries).omit({
+  id: true,
+  deliveredAt: true
+});
+
+// Create schema for AML screenings
+export const insertAmlScreeningSchema = createInsertSchema(amlScreenings).omit({
+  id: true,
+  screenedAt: true,
+  reviewedAt: true
+});
+
+// Create schema for investor profiles
+export const insertInvestorProfileSchema = createInsertSchema(investorProfiles).omit({
+  id: true,
+  lastUpdated: true
+});
+
+// Create schema for documents
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+  createdAt: true,
+  lastUpdated: true
+});
+
 // Export the property schema with a new name to match the import in admin-routes.ts
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
@@ -922,6 +1001,21 @@ export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema
 
 export type ComplianceLog = typeof complianceLogs.$inferSelect;
 export type InsertComplianceLog = z.infer<typeof insertComplianceLogSchema>;
+
+export type Webhook = typeof webhooks.$inferSelect;
+export type InsertWebhook = z.infer<typeof insertWebhookSchema>;
+
+export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+export type InsertWebhookDelivery = z.infer<typeof insertWebhookDeliverySchema>;
+
+export type AmlScreening = typeof amlScreenings.$inferSelect;
+export type InsertAmlScreening = z.infer<typeof insertAmlScreeningSchema>;
+
+export type InvestorProfile = typeof investorProfiles.$inferSelect;
+export type InsertInvestorProfile = z.infer<typeof insertInvestorProfileSchema>;
+
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 
 // -----------------------------------
 // ROI Distribution and Payout Schemas
