@@ -465,6 +465,24 @@ export const transferFunds = async (req: Request, res: Response) => {
   }
 };
 
+// Mock data for wallet balance history
+const walletBalanceHistory = [
+  { date: '2025-01-01', main: 10000000, escrow: 6500000, rewards: 250000 },
+  { date: '2025-02-01', main: 10800000, escrow: 7200000, rewards: 300000 },
+  { date: '2025-03-01', main: 11500000, escrow: 8000000, rewards: 350000 },
+  { date: '2025-04-01', main: 12200000, escrow: 8500000, rewards: 400000 },
+  { date: '2025-05-01', main: 12500000, escrow: 8900000, rewards: 450000 },
+];
+
+// Mock data for admin activity logs
+const adminActivityLogs = [
+  { id: 'log-1', adminId: 'admin123', action: 'approve_transaction', target: 'tx-3', details: 'Approved deposit of ₦1,000,000', timestamp: '2025-04-26T10:15:32Z' },
+  { id: 'log-2', adminId: 'admin123', action: 'add_funds', target: 'w-1', details: 'Added ₦500,000 to main wallet', timestamp: '2025-04-27T14:32:10Z' },
+  { id: 'log-3', adminId: 'admin456', action: 'transfer_funds', target: 'w-2 to w-1', details: 'Transferred ₦200,000 from escrow to main wallet', timestamp: '2025-04-28T09:45:22Z' },
+  { id: 'log-4', adminId: 'admin123', action: 'approve_transaction', target: 'tx-7', details: 'Approved withdrawal of ₦450,000', timestamp: '2025-04-29T11:40:15Z' },
+  { id: 'log-5', adminId: 'admin456', action: 'reconcile_wallet', target: 'w-1', details: 'Reconciliation completed - no discrepancies', timestamp: '2025-04-30T16:22:37Z' },
+];
+
 // Get wallet statistics
 export const getWalletStats = async (req: Request, res: Response) => {
   try {
@@ -513,5 +531,186 @@ export const getWalletStats = async (req: Request, res: Response) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to retrieve wallet statistics' });
+  }
+};
+
+// Get wallet balance history for charting
+export const getWalletBalanceHistory = async (req: Request, res: Response) => {
+  try {
+    res.status(200).json(walletBalanceHistory);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve wallet balance history' });
+  }
+};
+
+// Get admin activity logs for the wallet operations
+export const getAdminActivityLogs = async (req: Request, res: Response) => {
+  try {
+    // Filter logs if adminId query param is provided
+    const { adminId } = req.query;
+    let filteredLogs = [...adminActivityLogs];
+    
+    if (adminId) {
+      filteredLogs = filteredLogs.filter(log => log.adminId === adminId);
+    }
+    
+    res.status(200).json(filteredLogs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve admin activity logs' });
+  }
+};
+
+// Export transaction data in various formats
+export const exportTransactions = async (req: Request, res: Response) => {
+  try {
+    const { format = 'json', startDate, endDate, walletId, status } = req.query;
+    
+    // Filter transactions based on query parameters
+    let filteredTransactions = [...transactionData];
+    
+    if (startDate) {
+      const start = new Date(String(startDate));
+      filteredTransactions = filteredTransactions.filter(tx => new Date(tx.date) >= start);
+    }
+    
+    if (endDate) {
+      const end = new Date(String(endDate));
+      filteredTransactions = filteredTransactions.filter(tx => new Date(tx.date) <= end);
+    }
+    
+    if (walletId) {
+      filteredTransactions = filteredTransactions.filter(tx => tx.walletId === walletId);
+    }
+    
+    if (status) {
+      filteredTransactions = filteredTransactions.filter(tx => tx.status === status);
+    }
+    
+    // Generate response based on format
+    switch (format) {
+      case 'csv':
+        // Build CSV string
+        const headers = 'ID,Type,Wallet ID,Amount,Status,Date,Description,Initiated By,Reference\n';
+        const rows = filteredTransactions.map(tx => 
+          `${tx.id},${tx.type},${tx.walletId},${tx.amount},${tx.status},${tx.date},${tx.description || ''},${tx.initiatedBy || ''},${tx.reference || ''}`
+        ).join('\n');
+        
+        const csvData = headers + rows;
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=transactions.csv');
+        res.status(200).send(csvData);
+        break;
+        
+      case 'json':
+      default:
+        res.status(200).json(filteredTransactions);
+        break;
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to export transaction data' });
+  }
+};
+
+// Import transactions from CSV or JSON
+export const importTransactions = async (req: Request, res: Response) => {
+  try {
+    const transactions = req.body.transactions;
+    
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      return res.status(400).json({ error: 'Invalid transaction data format' });
+    }
+    
+    // Validate each transaction and add required fields
+    const newTransactions = transactions.map(tx => {
+      // Validate required fields
+      if (!tx.type || !tx.walletId || tx.amount === undefined) {
+        throw new Error('Missing required fields in transaction data');
+      }
+      
+      // Generate an ID if not provided
+      const id = tx.id || `tx-${uuidv4().substring(0, 8)}`;
+      
+      // Use current timestamp if date not provided
+      const date = tx.date || new Date().toISOString();
+      
+      // Default to pending status if not specified
+      const status = tx.status || 'pending';
+      
+      return {
+        id,
+        type: tx.type,
+        walletId: tx.walletId,
+        amount: Number(tx.amount),
+        status,
+        date,
+        description: tx.description || 'Imported transaction',
+        initiatedBy: tx.initiatedBy || 'System Import',
+        reference: tx.reference || `IMP-${new Date().toISOString().substring(0, 10)}`
+      };
+    });
+    
+    // Add transactions to the existing data
+    transactionData = [...newTransactions, ...transactionData];
+    
+    res.status(201).json({
+      message: `Successfully imported ${newTransactions.length} transactions`,
+      transactions: newTransactions
+    });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to import transactions' });
+  }
+};
+
+// Perform wallet reconciliation check
+export const reconcileWallet = async (req: Request, res: Response) => {
+  try {
+    const { walletId } = req.params;
+    
+    // Find the wallet
+    const wallet = walletData.find(w => w.id === walletId);
+    
+    if (!wallet) {
+      return res.status(404).json({ error: 'Wallet not found' });
+    }
+    
+    // Get all completed transactions for this wallet
+    const walletTransactions = transactionData.filter(tx => 
+      tx.walletId === walletId && tx.status === 'completed'
+    );
+    
+    // Calculate the expected balance based on transactions
+    const depositSum = walletTransactions
+      .filter(tx => tx.type === 'deposit' || tx.type === 'transfer')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    const withdrawalSum = walletTransactions
+      .filter(tx => tx.type === 'withdrawal')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    const expectedBalance = depositSum - withdrawalSum;
+    
+    // Check if the wallet balance matches the expected balance
+    const discrepancy = wallet.balance - expectedBalance;
+    
+    // Create a reconciliation record
+    const reconciliationReport = {
+      walletId,
+      actualBalance: wallet.balance,
+      expectedBalance,
+      discrepancy,
+      transactionCount: walletTransactions.length,
+      timestamp: new Date().toISOString(),
+      status: Math.abs(discrepancy) < 0.01 ? 'balanced' : 'discrepancy_found'
+    };
+    
+    res.status(200).json({
+      message: Math.abs(discrepancy) < 0.01 
+        ? 'Wallet is balanced' 
+        : `Wallet has a discrepancy of ${wallet.currency}${discrepancy.toLocaleString()}`,
+      reconciliation: reconciliationReport
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reconcile wallet' });
   }
 };

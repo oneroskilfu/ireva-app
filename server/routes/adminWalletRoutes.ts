@@ -8,7 +8,12 @@ import {
   approveTransaction,
   addFunds,
   transferFunds,
-  getWalletStats
+  getWalletStats,
+  getWalletBalanceHistory,
+  getAdminActivityLogs,
+  exportTransactions,
+  importTransactions,
+  reconcileWallet
 } from '../controllers/adminWalletController';
 import { adminAuthMiddleware } from '../middleware/adminAuth';
 
@@ -20,6 +25,18 @@ router.use(adminAuthMiddleware);
 // Get wallet statistics and dashboard data
 router.get('/stats', getWalletStats);
 
+// Get wallet balance history for charts
+router.get('/balance-history', getWalletBalanceHistory);
+
+// Get admin activity logs
+router.get('/activity-logs', getAdminActivityLogs);
+
+// Export transactions in various formats
+router.get('/transactions/export', exportTransactions);
+
+// Import transactions
+router.post('/transactions/import', importTransactions);
+
 // Get all platform wallets
 router.get('/', getWallets);
 
@@ -28,6 +45,9 @@ router.get('/:id', getWalletById);
 
 // Get transactions for a specific wallet
 router.get('/:id/transactions', getTransactionsByWalletId);
+
+// Reconcile a specific wallet
+router.post('/:id/reconcile', reconcileWallet);
 
 // Get all platform-level transactions with filtering and pagination
 router.get('/transactions', getTransactions);

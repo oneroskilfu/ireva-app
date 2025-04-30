@@ -36,7 +36,11 @@ import {
   TablePagination,
   Snackbar,
   LinearProgress,
-  Stack
+  Stack,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon
 } from '@mui/material';
 import { 
   AccountBalance as AccountBalanceIcon, 
@@ -57,8 +61,26 @@ import {
   MoreVert as MoreVertIcon,
   Download as DownloadIcon,
   Visibility as VisibilityIcon,
+  History as HistoryIcon,
+  UploadFile as UploadFileIcon,
+  SaveAlt as SaveAltIcon,
+  Balance as BalanceIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { saveAs } from 'file-saver';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
 import { AdminLayout } from './AdminLayout';
 
 // Define the wallet interface
@@ -113,6 +135,35 @@ interface WalletStats {
   currency: string;
 }
 
+// Define wallet balance history interface
+interface WalletBalanceHistory {
+  date: string;
+  main: number;
+  escrow: number;
+  rewards: number;
+}
+
+// Define admin activity log interface
+interface AdminActivityLog {
+  id: string;
+  adminId: string;
+  action: string;
+  target: string;
+  details: string;
+  timestamp: string;
+}
+
+// Define wallet reconciliation interface
+interface WalletReconciliation {
+  walletId: string;
+  actualBalance: number;
+  expectedBalance: number;
+  discrepancy: number;
+  transactionCount: number;
+  timestamp: string;
+  status: 'balanced' | 'discrepancy_found';
+}
+
 // Define available transaction types
 const transactionTypes = ['deposit', 'withdrawal', 'transfer'];
 
@@ -125,6 +176,11 @@ const WalletControlPanel = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
   const [stats, setStats] = useState<WalletStats | null>(null);
+  
+  // State for new features
+  const [balanceHistory, setBalanceHistory] = useState<WalletBalanceHistory[]>([]);
+  const [activityLogs, setActivityLogs] = useState<AdminActivityLog[]>([]);
+  const [reconciliationReport, setReconciliationReport] = useState<WalletReconciliation | null>(null);
   
   // State for pagination
   const [pagination, setPagination] = useState<Pagination>({
@@ -150,6 +206,9 @@ const WalletControlPanel = () => {
   const [walletsLoading, setWalletsLoading] = useState<boolean>(true);
   const [statsLoading, setStatsLoading] = useState<boolean>(true);
   const [transactionsLoading, setTransactionsLoading] = useState<boolean>(true);
+  const [balanceHistoryLoading, setBalanceHistoryLoading] = useState<boolean>(false);
+  const [activityLogsLoading, setActivityLogsLoading] = useState<boolean>(false);
+  const [reconciliationLoading, setReconciliationLoading] = useState<boolean>(false);
   const [processingAction, setProcessingAction] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -157,6 +216,10 @@ const WalletControlPanel = () => {
   const [addFundsDialog, setAddFundsDialog] = useState<boolean>(false);
   const [transferFundsDialog, setTransferFundsDialog] = useState<boolean>(false);
   const [transactionDetailsDialog, setTransactionDetailsDialog] = useState<boolean>(false);
+  const [reconciliationDialog, setReconciliationDialog] = useState<boolean>(false);
+  const [importTransactionsDialog, setImportTransactionsDialog] = useState<boolean>(false);
+  const [activityLogsDialog, setActivityLogsDialog] = useState<boolean>(false);
+  const [balanceHistoryDialog, setBalanceHistoryDialog] = useState<boolean>(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [filtersVisible, setFiltersVisible] = useState<boolean>(false);
   
@@ -175,8 +238,14 @@ const WalletControlPanel = () => {
     description: ''
   });
   
+  const [importTransactionsForm, setImportTransactionsForm] = useState({
+    file: null as File | null,
+    fileFormat: 'json' as 'json' | 'csv'
+  });
+  
   // State for tab selection
   const [tabValue, setTabValue] = useState(0);
+  const [advancedTabValue, setAdvancedTabValue] = useState(0);
   
   // State for notifications
   const [snackbar, setSnackbar] = useState({
