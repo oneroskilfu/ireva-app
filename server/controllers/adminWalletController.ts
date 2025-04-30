@@ -190,11 +190,83 @@ let transactionData: Transaction[] = [
   }
 ];
 
-// Get all wallets
+// Get all wallets with filtering and pagination
 export const getWallets = async (req: Request, res: Response) => {
   try {
-    res.status(200).json(walletData);
+    const {
+      type,
+      minBalance,
+      maxBalance,
+      search,
+      page = '1',
+      limit = '10',
+      sortBy = 'balance',
+      sortDir = 'desc'
+    } = req.query;
+
+    // Clone the wallets array to avoid modifying the original
+    let filteredWallets = [...walletData];
+
+    // Apply filters
+    if (type) {
+      filteredWallets = filteredWallets.filter(wallet => wallet.type === type);
+    }
+
+    if (minBalance) {
+      const min = parseFloat(String(minBalance));
+      filteredWallets = filteredWallets.filter(wallet => wallet.balance >= min);
+    }
+
+    if (maxBalance) {
+      const max = parseFloat(String(maxBalance));
+      filteredWallets = filteredWallets.filter(wallet => wallet.balance <= max);
+    }
+
+    if (search) {
+      const searchTerm = String(search).toLowerCase();
+      filteredWallets = filteredWallets.filter(wallet => 
+        wallet.id.toLowerCase().includes(searchTerm) ||
+        wallet.description?.toLowerCase().includes(searchTerm) ||
+        wallet.type.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Sort wallets
+    const sortDirection = sortDir === 'asc' ? 1 : -1;
+    filteredWallets.sort((a, b) => {
+      if (sortBy === 'balance') {
+        return sortDirection * (a.balance - b.balance);
+      } else if (sortBy === 'lastUpdated') {
+        return sortDirection * (new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime());
+      }
+      // Default to sorting by ID
+      return sortDirection * (a.id.localeCompare(b.id));
+    });
+
+    // Calculate pagination
+    const pageNum = parseInt(String(page), 10);
+    const limitNum = parseInt(String(limit), 10);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = pageNum * limitNum;
+    const paginatedWallets = filteredWallets.slice(startIndex, endIndex);
+
+    // Calculate total balance across all wallets (pre-filtered)
+    const totalBalance = filteredWallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+
+    // Return with pagination metadata and summary statistics
+    res.status(200).json({
+      data: paginatedWallets,
+      meta: {
+        total: filteredWallets.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filteredWallets.length / limitNum),
+        totalBalance: totalBalance,
+        currency: filteredWallets.length > 0 ? filteredWallets[0].currency : '₦'
+      }
+    });
   } catch (error) {
+    console.error('Error retrieving wallet data:', error);
     res.status(500).json({ error: 'Failed to retrieve wallet data' });
   }
 };
@@ -300,14 +372,107 @@ export const getTransactions = async (req: Request, res: Response) => {
   }
 };
 
-// Get transactions for a specific wallet
+// Get transactions for a specific wallet with pagination and filtering
 export const getTransactionsByWalletId = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const transactions = transactionData.filter(tx => tx.walletId === id);
+    const {
+      type,
+      status,
+      search,
+      startDate,
+      endDate,
+      page = '1',
+      limit = '10',
+      sortBy = 'date',
+      sortDir = 'desc'
+    } = req.query;
+
+    // First filter by wallet ID
+    let walletTransactions = transactionData.filter(tx => tx.walletId === id);
     
-    res.status(200).json(transactions);
+    // Apply additional filters
+    if (type) {
+      walletTransactions = walletTransactions.filter(tx => tx.type === type);
+    }
+    
+    if (status) {
+      walletTransactions = walletTransactions.filter(tx => tx.status === status);
+    }
+    
+    if (search) {
+      const searchTerm = String(search).toLowerCase();
+      walletTransactions = walletTransactions.filter(tx => 
+        tx.id.toLowerCase().includes(searchTerm) ||
+        tx.description?.toLowerCase().includes(searchTerm) ||
+        tx.reference?.toLowerCase().includes(searchTerm) ||
+        tx.initiatedBy?.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    if (startDate) {
+      const start = new Date(String(startDate));
+      walletTransactions = walletTransactions.filter(tx => new Date(tx.date) >= start);
+    }
+    
+    if (endDate) {
+      const end = new Date(String(endDate));
+      walletTransactions = walletTransactions.filter(tx => new Date(tx.date) <= end);
+    }
+    
+    // Sort transactions
+    const sortDirection = sortDir === 'asc' ? 1 : -1;
+    walletTransactions.sort((a, b) => {
+      if (sortBy === 'amount') {
+        return sortDirection * (a.amount - b.amount);
+      } else if (sortBy === 'date') {
+        return sortDirection * (new Date(a.date).getTime() - new Date(b.date).getTime());
+      }
+      return 0;
+    });
+    
+    // Calculate pagination
+    const pageNum = parseInt(String(page), 10);
+    const limitNum = parseInt(String(limit), 10);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = pageNum * limitNum;
+    const paginatedTransactions = walletTransactions.slice(startIndex, endIndex);
+    
+    // Calculate transaction statistics
+    const completedTransactions = walletTransactions.filter(tx => tx.status === 'completed');
+    const pendingTransactions = walletTransactions.filter(tx => tx.status === 'pending');
+    
+    const totalDeposits = completedTransactions
+      .filter(tx => tx.type === 'deposit')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+      
+    const totalWithdrawals = completedTransactions
+      .filter(tx => tx.type === 'withdrawal')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    // Get the associated wallet to display its current balance
+    const associatedWallet = walletData.find(w => w.id === id);
+    
+    // Return with pagination metadata and summary statistics
+    res.status(200).json({
+      data: paginatedTransactions,
+      meta: {
+        total: walletTransactions.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(walletTransactions.length / limitNum),
+        statistics: {
+          pendingCount: pendingTransactions.length,
+          completedCount: completedTransactions.length,
+          totalDeposits,
+          totalWithdrawals,
+          walletBalance: associatedWallet?.balance || 0,
+          currency: associatedWallet?.currency || '₦'
+        }
+      }
+    });
   } catch (error) {
+    console.error('Error retrieving wallet transactions:', error);
     res.status(500).json({ error: 'Failed to retrieve wallet transactions' });
   }
 };
@@ -537,25 +702,149 @@ export const getWalletStats = async (req: Request, res: Response) => {
 // Get wallet balance history for charting
 export const getWalletBalanceHistory = async (req: Request, res: Response) => {
   try {
-    res.status(200).json(walletBalanceHistory);
+    const { startDate, endDate, walletType } = req.query;
+    
+    // Clone the data to avoid modifying the original
+    let filteredHistory = [...walletBalanceHistory];
+    
+    // Apply filters if provided
+    if (startDate) {
+      const start = new Date(String(startDate));
+      filteredHistory = filteredHistory.filter(h => new Date(h.date) >= start);
+    }
+    
+    if (endDate) {
+      const end = new Date(String(endDate));
+      filteredHistory = filteredHistory.filter(h => new Date(h.date) <= end);
+    }
+    
+    // If a specific wallet type is requested, transform the data to only include that type
+    if (walletType) {
+      const type = String(walletType);
+      if (['main', 'escrow', 'rewards'].includes(type)) {
+        filteredHistory = filteredHistory.map(h => {
+          const transformedEntry: {date: string, [key: string]: number | string} = {
+            date: h.date,
+          };
+          // Add the specific wallet type balance
+          transformedEntry[type] = h[type as keyof typeof h];
+          return transformedEntry;
+        });
+      }
+    }
+    
+    res.status(200).json({
+      data: filteredHistory,
+      meta: {
+        total: filteredHistory.length,
+        timespan: {
+          start: filteredHistory.length > 0 ? filteredHistory[0].date : null,
+          end: filteredHistory.length > 0 ? filteredHistory[filteredHistory.length - 1].date : null
+        }
+      }
+    });
   } catch (error) {
+    console.error('Error retrieving wallet balance history:', error);
     res.status(500).json({ error: 'Failed to retrieve wallet balance history' });
   }
 };
 
-// Get admin activity logs for the wallet operations
+// Get admin activity logs for the wallet operations with pagination and filtering
 export const getAdminActivityLogs = async (req: Request, res: Response) => {
   try {
-    // Filter logs if adminId query param is provided
-    const { adminId } = req.query;
+    const {
+      adminId,
+      action,
+      startDate,
+      endDate,
+      search,
+      page = '1',
+      limit = '10',
+      sortBy = 'timestamp',
+      sortDir = 'desc'
+    } = req.query;
+    
+    // Start with a copy of all logs
     let filteredLogs = [...adminActivityLogs];
     
+    // Apply filters
     if (adminId) {
       filteredLogs = filteredLogs.filter(log => log.adminId === adminId);
     }
     
-    res.status(200).json(filteredLogs);
+    if (action) {
+      filteredLogs = filteredLogs.filter(log => log.action === action);
+    }
+    
+    if (startDate) {
+      const start = new Date(String(startDate));
+      filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) >= start);
+    }
+    
+    if (endDate) {
+      const end = new Date(String(endDate));
+      filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) <= end);
+    }
+    
+    if (search) {
+      const searchTerm = String(search).toLowerCase();
+      filteredLogs = filteredLogs.filter(log => 
+        log.details.toLowerCase().includes(searchTerm) ||
+        log.target.toLowerCase().includes(searchTerm) ||
+        log.action.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Sort logs
+    const sortDirection = sortDir === 'asc' ? 1 : -1;
+    filteredLogs.sort((a, b) => {
+      if (sortBy === 'timestamp') {
+        return sortDirection * (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      } else if (sortBy === 'action') {
+        return sortDirection * (a.action.localeCompare(b.action));
+      } else if (sortBy === 'adminId') {
+        return sortDirection * (a.adminId.localeCompare(b.adminId));
+      }
+      return 0;
+    });
+    
+    // Calculate pagination
+    const pageNum = parseInt(String(page), 10);
+    const limitNum = parseInt(String(limit), 10);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = pageNum * limitNum;
+    const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+    
+    // Group actions by type for summary
+    const actionSummary = filteredLogs.reduce((summary, log) => {
+      summary[log.action] = (summary[log.action] || 0) + 1;
+      return summary;
+    }, {} as Record<string, number>);
+    
+    // Get unique admin IDs
+    const uniqueAdmins = [...new Set(filteredLogs.map(log => log.adminId))];
+    
+    // Return with pagination metadata and summary statistics
+    res.status(200).json({
+      data: paginatedLogs,
+      meta: {
+        total: filteredLogs.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filteredLogs.length / limitNum),
+        summary: {
+          actionTypes: actionSummary,
+          uniqueAdmins: uniqueAdmins.length,
+          adminList: uniqueAdmins,
+          timespan: {
+            first: filteredLogs.length > 0 ? filteredLogs[filteredLogs.length - 1].timestamp : null,
+            last: filteredLogs.length > 0 ? filteredLogs[0].timestamp : null
+          }
+        }
+      }
+    });
   } catch (error) {
+    console.error('Error retrieving admin activity logs:', error);
     res.status(500).json({ error: 'Failed to retrieve admin activity logs' });
   }
 };
