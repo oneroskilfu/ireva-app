@@ -543,14 +543,18 @@ const PayoutScheduleDialog = ({
   propertyId: string;
   schedule?: PayoutSchedule;
 }) => {
-  const [frequency, setFrequency] = useState(schedule?.frequency || 'monthly');
+  const [frequency, setFrequency] = useState<'monthly' | 'quarterly' | 'annual' | 'custom'>(
+    (schedule?.frequency as 'monthly' | 'quarterly' | 'annual' | 'custom') || 'monthly'
+  );
   const [startDate, setStartDate] = useState<Date | null>(
     schedule ? new Date(schedule.startDate) : new Date()
   );
   const [endDate, setEndDate] = useState<Date | null>(
     schedule?.endDate ? new Date(schedule.endDate) : null
   );
-  const [amountType, setAmountType] = useState(schedule?.amountType || 'percentage');
+  const [amountType, setAmountType] = useState<'fixed' | 'percentage'>(
+    (schedule?.amountType as 'fixed' | 'percentage') || 'percentage'
+  );
   const [amountValue, setAmountValue] = useState(schedule?.amountValue || '');
 
   // Create or update schedule
@@ -617,7 +621,7 @@ const PayoutScheduleDialog = ({
               fullWidth
               margin="normal"
               value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
+              onChange={(e) => setFrequency(e.target.value as 'monthly' | 'quarterly' | 'annual' | 'custom')}
             >
               <MenuItem value="monthly">Monthly</MenuItem>
               <MenuItem value="quarterly">Quarterly</MenuItem>
@@ -644,7 +648,7 @@ const PayoutScheduleDialog = ({
               fullWidth
               margin="normal"
               value={amountType}
-              onChange={(e) => setAmountType(e.target.value)}
+              onChange={(e) => setAmountType(e.target.value as 'fixed' | 'percentage')}
             >
               <MenuItem value="fixed">Fixed Amount</MenuItem>
               <MenuItem value="percentage">Percentage</MenuItem>
