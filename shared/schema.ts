@@ -7,6 +7,7 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum("user_role", ["investor", "admin", "super_admin"]);
 export const userStatusEnum = pgEnum("user_status", ["active", "inactive", "suspended", "deactivated"]);
 export const kycStatusEnum = pgEnum("kyc_status", ["not_started", "pending", "approved", "rejected"]);
+export const kycTierEnum = pgEnum("kyc_tier", ["basic", "enhanced", "institutional"]);
 export const propertyTypeEnum = pgEnum("property_type", ["residential", "commercial", "industrial", "mixed_use", "land"]);
 export const investmentTierEnum = pgEnum("investment_tier", ["starter", "growth", "premium", "elite"]);
 export const investmentStatusEnum = pgEnum("investment_status", ["active", "completed", "refunded", "cancelled"]);
@@ -14,6 +15,18 @@ export const accreditationLevelEnum = pgEnum("accreditation_level", ["non_accred
 export const paymentMethodEnum = pgEnum("payment_method", ["wallet", "card", "bank_transfer", "crypto"]);
 export const cryptoNetworkEnum = pgEnum("crypto_network", ["ethereum", "binance", "polygon", "solana", "avalanche"]);
 export const withdrawalStatusEnum = pgEnum("withdrawal_status", ["pending", "approved", "rejected", "processed", "failed"]);
+export const auditActionEnum = pgEnum("audit_action", [
+  "USER_UPDATE", 
+  "TRANSACTION_APPROVE", 
+  "PAYOUT_TRIGGER", 
+  "KYC_VERIFY", 
+  "PROPERTY_CREATE", 
+  "PROPERTY_UPDATE", 
+  "INVESTMENT_APPROVE",
+  "WITHDRAWAL_APPROVE",
+  "SECURITY_UPDATE",
+  "SETTINGS_UPDATE"
+]);
 
 // User schema
 export const users = pgTable("users", {
@@ -29,6 +42,7 @@ export const users = pgTable("users", {
   bio: text("bio"),
   profileImage: text("profile_image"),
   kycStatus: kycStatusEnum("kyc_status").default("not_started"),
+  kycTier: kycTierEnum("kyc_tier").default("basic"),
   kycDocuments: jsonb("kyc_documents"),
   kycSubmittedAt: timestamp("kyc_submitted_at"),
   kycVerifiedAt: timestamp("kyc_verified_at"),
@@ -115,14 +129,21 @@ export const investments = pgTable("investments", {
   investedAt: timestamp("invested_at").defaultNow()
 });
 
+// Wallet types enum
+export const walletTypeEnum = pgEnum("wallet_type", ["main", "escrow", "investment", "rewards"]);
+
 // Wallets schema
 export const wallets = pgTable("wallets", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  type: walletTypeEnum("type").default("main"),
   balance: numeric("balance", { precision: 12, scale: 2 }).default("0"),
   availableBalance: numeric("available_balance", { precision: 12, scale: 2 }).default("0"),
   pendingDeposits: numeric("pending_deposits", { precision: 12, scale: 2 }).default("0"),
   pendingWithdrawals: numeric("pending_withdrawals", { precision: 12, scale: 2 }).default("0"),
+  baseCurrency: text("base_currency", { length: 3 }).default("USD"),
+  fxRates: jsonb("fx_rates").$type<Record<string, number>>(),
+  conversionHistory: jsonb("conversion_history"),
   lastUpdated: timestamp("last_updated").defaultNow()
 });
 
@@ -253,6 +274,20 @@ export const adminLogs = pgTable("admin_logs", {
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow()
+});
+
+// Audit logs schema with more detailed fields for compliance
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  action: auditActionEnum("action").notNull(),
+  targetId: text("target_id"),
+  entityType: text("entity_type").notNull(), // users, transactions, wallets, etc.
+  adminId: uuid("admin_id").references(() => users.id, { onDelete: "set null" }),
+  ip: text("ip"),
+  metadata: jsonb("metadata"),
+  details: text("details"),
+  status: text("status").default("success"),
+  timestamp: timestamp("timestamp").defaultNow()
 });
 
 // FAQs schema

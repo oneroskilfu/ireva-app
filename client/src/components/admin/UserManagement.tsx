@@ -21,6 +21,7 @@ import { Edit, AccountBalanceWallet, Download, Refresh } from '@mui/icons-materi
 import { StatusToggle } from './StatusToggle';
 import { UserFilters } from './UserFilters';
 import { UserDetailsDialog } from './UserDetailsDialog';
+import UserWalletDialog from './UserWalletDialog';
 import { io } from 'socket.io-client';
 import axios from 'axios';
 
@@ -40,6 +41,7 @@ export const UserManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | number | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -298,8 +300,8 @@ export const UserManagement: React.FC = () => {
                           <IconButton 
                             size="small"
                             onClick={() => {
-                              // Wallet details functionality would go here
-                              console.log('View wallet for user:', user.id);
+                              setSelectedUserId(user.id);
+                              setWalletDialogOpen(true);
                             }}
                           >
                             <AccountBalanceWallet fontSize="small" />
@@ -335,6 +337,14 @@ export const UserManagement: React.FC = () => {
         onClose={() => setDetailsDialogOpen(false)}
         userId={selectedUserId}
       />
+      
+      {selectedUserId && (
+        <UserWalletDialog 
+          open={walletDialogOpen}
+          onClose={() => setWalletDialogOpen(false)}
+          userId={selectedUserId.toString()}
+        />
+      )}
     </Box>
   );
 };
