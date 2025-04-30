@@ -1,121 +1,257 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
-import { SQL, and, desc, eq, inArray, like, lt, gte, sql } from 'drizzle-orm';
 import { 
   communications, 
-  userSegments, 
-  userCommunicationLogs, 
-  users,
+  communicationLogs, 
+  segments, 
+  users 
 } from '@shared/schema';
-import { broadcastToUser, broadcastToAdmins } from '../socketio';
+import { and, eq, inArray, like, gte, lte, sql, desc } from 'drizzle-orm';
 import { sendEmail } from '../services/emailService';
+import { sendPushNotification } from '../services/notificationService';
+import { sendSms } from '../services/smsService';
 
-interface FilterOptions {
-  minInvestment?: number;
-  lastActivityDays?: number;
-  kycStatus?: string[];
-  investorType?: string[];
-  registrationDateFrom?: Date;
-  registrationDateTo?: Date;
-}
+/**
+ * User Segments Controller
+ */
 
-// Get or create user segment for targeted messaging
-export const getUserSegments = async (req: Request, res: Response) => {
+// Get all segments
+export const getAllSegments = async (req: Request, res: Response) => {
   try {
-    const segments = await db.select().from(userSegments).orderBy(desc(userSegments.createdAt));
-    res.json(segments);
-  } catch (error: any) {
-    console.error('Error fetching user segments:', error);
-    res.status(500).json({ error: error.message });
+    const results = await db.select().from(segments).orderBy(desc(segments.createdAt));
+    
+    // For each segment, count the number of users that match the segment criteria
+    const segmentsWithCount = await Promise.all(
+      results.map(async (segment) => {
+        const userCount = await getUserCountForSegment(segment.id);
+        return { ...segment, userCount };
+      })
+    );
+    
+    res.json(segmentsWithCount);
+  } catch (error) {
+    console.error('Error fetching segments:', error);
+    res.status(500).json({ message: 'Failed to fetch segments', error: String(error) });
   }
 };
 
-// Create a new user segment
-export const createUserSegment = async (req: Request, res: Response) => {
+// Get segment by ID
+export const getSegmentById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    
+    if (!segment) {
+      return res.status(404).json({ message: 'Segment not found' });
+    }
+    
+    const userCount = await getUserCountForSegment(id);
+    
+    res.json({ ...segment, userCount });
+  } catch (error) {
+    console.error('Error fetching segment:', error);
+    res.status(500).json({ message: 'Failed to fetch segment', error: String(error) });
+  }
+};
+
+// Create a new segment
+export const createSegment = async (req: Request, res: Response) => {
   try {
     const { name, filters } = req.body;
     
     if (!name) {
-      return res.status(400).json({ error: 'Segment name is required' });
+      return res.status(400).json({ message: 'Segment name is required' });
     }
     
-    const [segment] = await db.insert(userSegments)
+    const [newSegment] = await db.insert(segments)
       .values({
         name,
-        filters
+        filters: filters || {},
       })
       .returning();
     
-    // Notify admins of new segment creation
-    broadcastToAdmins({
-      type: 'segment_created',
-      payload: segment,
-      timestamp: new Date().toISOString(),
-    });
-    
-    res.status(201).json(segment);
-  } catch (error: any) {
-    console.error('Error creating user segment:', error);
-    res.status(500).json({ error: error.message });
+    res.status(201).json(newSegment);
+  } catch (error) {
+    console.error('Error creating segment:', error);
+    res.status(500).json({ message: 'Failed to create segment', error: String(error) });
   }
 };
 
-// Get users by segment filter criteria
-export const getUsersBySegment = async (req: Request, res: Response) => {
+// Update a segment
+export const updateSegment = async (req: Request, res: Response) => {
   try {
-    const { segmentId } = req.params;
+    const { id } = req.params;
+    const { name, filters } = req.body;
     
-    // Get segment
-    const [segment] = await db.select().from(userSegments).where(eq(userSegments.id, segmentId));
+    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
     
     if (!segment) {
-      return res.status(404).json({ error: 'Segment not found' });
+      return res.status(404).json({ message: 'Segment not found' });
     }
     
-    // Get all users matching segment filters
-    const allUsers = await db.select().from(users);
+    const [updatedSegment] = await db.update(segments)
+      .set({
+        name: name || segment.name,
+        filters: filters || segment.filters,
+        updatedAt: new Date(),
+      })
+      .where(eq(segments.id, id))
+      .returning();
     
-    // Simple in-memory filtering since our schema might not match exact fields
-    let matchingUsers = allUsers;
+    res.json(updatedSegment);
+  } catch (error) {
+    console.error('Error updating segment:', error);
+    res.status(500).json({ message: 'Failed to update segment', error: String(error) });
+  }
+};
+
+// Delete a segment
+export const deleteSegment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
     
-    // Apply filters if they exist
-    if (segment.filters) {
-      const filters = segment.filters;
-      
-      // Basic filtering logic 
-      matchingUsers = allUsers.filter(user => {
-        // Registration date filter
-        if (filters.registrationDateFrom && user.createdAt) {
-          const fromDate = new Date(filters.registrationDateFrom);
-          if (new Date(user.createdAt) < fromDate) {
-            return false;
-          }
-        }
-        
-        if (filters.registrationDateTo && user.createdAt) {
-          const toDate = new Date(filters.registrationDateTo);
-          if (new Date(user.createdAt) > toDate) {
-            return false;
-          }
-        }
-        
-        // Last activity filter 
-        if (filters.lastActivityDays && user.lastLoginAt) {
-          const cutoffDate = new Date();
-          cutoffDate.setDate(cutoffDate.getDate() - filters.lastActivityDays);
-          if (new Date(user.lastLoginAt) < cutoffDate) {
-            return false;
-          }
-        }
-        
-        return true;
-      });
+    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    
+    if (!segment) {
+      return res.status(404).json({ message: 'Segment not found' });
     }
     
-    res.json(matchingUsers);
-  } catch (error: any) {
-    console.error('Error fetching users by segment:', error);
-    res.status(500).json({ error: error.message });
+    await db.delete(segments).where(eq(segments.id, id));
+    
+    res.json({ message: 'Segment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting segment:', error);
+    res.status(500).json({ message: 'Failed to delete segment', error: String(error) });
+  }
+};
+
+// Get users for a segment
+export const getUsersForSegment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    
+    if (!segment) {
+      return res.status(404).json({ message: 'Segment not found' });
+    }
+    
+    const segmentUsers = await getUsersBySegment(segment);
+    
+    res.json(segmentUsers);
+  } catch (error) {
+    console.error('Error fetching users for segment:', error);
+    res.status(500).json({ message: 'Failed to fetch users for segment', error: String(error) });
+  }
+};
+
+// Helper function to get users that match segment criteria
+const getUsersBySegment = async (segment: any) => {
+  let query = db.select().from(users);
+  
+  // Apply filters
+  if (segment.filters) {
+    const filters = segment.filters;
+    
+    // Min investment filter
+    if (filters.minInvestment) {
+      query = query.where(gte(users.totalInvestment, filters.minInvestment));
+    }
+    
+    // Last activity days filter
+    if (filters.lastActivityDays) {
+      const dateThreshold = new Date();
+      dateThreshold.setDate(dateThreshold.getDate() - filters.lastActivityDays);
+      query = query.where(gte(users.lastLoginAt, dateThreshold));
+    }
+    
+    // KYC status filter
+    if (filters.kycStatus && filters.kycStatus.length > 0) {
+      query = query.where(inArray(users.kycStatus, filters.kycStatus));
+    }
+    
+    // Investor type filter
+    if (filters.investorType && filters.investorType.length > 0) {
+      query = query.where(inArray(users.investorType, filters.investorType));
+    }
+    
+    // Registration date range filter
+    if (filters.registrationDateFrom) {
+      const fromDate = new Date(filters.registrationDateFrom);
+      query = query.where(gte(users.createdAt, fromDate));
+    }
+    
+    if (filters.registrationDateTo) {
+      const toDate = new Date(filters.registrationDateTo);
+      query = query.where(lte(users.createdAt, toDate));
+    }
+  }
+  
+  return await query;
+};
+
+// Helper function to count users in a segment
+const getUserCountForSegment = async (segmentId: string) => {
+  const [segment] = await db.select().from(segments).where(eq(segments.id, segmentId));
+  
+  if (!segment) {
+    return 0;
+  }
+  
+  const users = await getUsersBySegment(segment);
+  return users.length;
+};
+
+/**
+ * Communications Controller
+ */
+
+// Get all communications with optional filters
+export const getAllCommunications = async (req: Request, res: Response) => {
+  try {
+    const { status, channel, query } = req.query;
+    
+    let queryBuilder = db.select().from(communications);
+    
+    if (status) {
+      queryBuilder = queryBuilder.where(eq(communications.status, status as string));
+    }
+    
+    if (channel) {
+      queryBuilder = queryBuilder.where(eq(communications.channel, channel as string));
+    }
+    
+    if (query) {
+      queryBuilder = queryBuilder.where(
+        sql`${communications.title} ILIKE ${`%${query}%`} OR ${communications.content} ILIKE ${`%${query}%`}`
+      );
+    }
+    
+    const results = await queryBuilder.orderBy(desc(communications.createdAt));
+    
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching communications:', error);
+    res.status(500).json({ message: 'Failed to fetch communications', error: String(error) });
+  }
+};
+
+// Get communication by ID
+export const getCommunicationById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const [communication] = await db.select().from(communications).where(eq(communications.id, id));
+    
+    if (!communication) {
+      return res.status(404).json({ message: 'Communication not found' });
+    }
+    
+    res.json(communication);
+  } catch (error) {
+    console.error('Error fetching communication:', error);
+    res.status(500).json({ message: 'Failed to fetch communication', error: String(error) });
   }
 };
 
@@ -125,259 +261,231 @@ export const createCommunication = async (req: Request, res: Response) => {
     const { title, content, channel, segmentId, scheduledAt } = req.body;
     
     if (!title || !content || !channel) {
-      return res.status(400).json({ error: 'Title, content and channel are required' });
+      return res.status(400).json({ 
+        message: 'Title, content, and channel are required' 
+      });
     }
     
-    // Create the communication
-    const [communication] = await db.insert(communications)
+    // Default status is draft, unless scheduledAt is provided, then it's scheduled
+    const status = scheduledAt ? 'scheduled' : 'draft';
+    
+    const [newCommunication] = await db.insert(communications)
       .values({
         title,
         content,
         channel,
-        segmentId,
+        segmentId: segmentId || null,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        status: scheduledAt ? 'scheduled' : 'draft'
+        status,
       })
       .returning();
     
-    // Notify admins of new communication
-    broadcastToAdmins({
-      type: 'communication_created',
-      payload: communication,
-      timestamp: new Date().toISOString(),
-    });
+    // If scheduledAt is provided, schedule the communication
+    if (scheduledAt) {
+      // In a real implementation, you would use a job scheduler here
+      const scheduledTime = new Date(scheduledAt).getTime();
+      const now = new Date().getTime();
+      const delay = scheduledTime - now;
+      
+      if (delay > 0) {
+        setTimeout(() => {
+          sendCommunication(newCommunication.id)
+            .catch(err => console.error(`Failed to send scheduled communication ${newCommunication.id}:`, err));
+        }, delay);
+      } else {
+        // If the scheduled time is in the past, send immediately
+        await sendCommunication(newCommunication.id);
+      }
+    }
     
-    res.status(201).json(communication);
-  } catch (error: any) {
+    res.status(201).json(newCommunication);
+  } catch (error) {
     console.error('Error creating communication:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: 'Failed to create communication', error: String(error) });
   }
 };
 
-// Get all communications
-export const getCommunications = async (req: Request, res: Response) => {
-  try {
-    const comms = await db.select().from(communications).orderBy(desc(communications.createdAt));
-    res.json(comms);
-  } catch (error: any) {
-    console.error('Error fetching communications:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Helper function to get users matching filter criteria
-const getUsersMatchingFilters = async (filters: any) => {
-  // Get all users first
-  const allUsers = await db.select().from(users);
-  
-  // If no filters, return all users
-  if (!filters) return allUsers;
-  
-  // Simple in-memory filtering
-  return allUsers.filter(user => {
-    // Registration date filter
-    if (filters.registrationDateFrom && user.createdAt) {
-      const fromDate = new Date(filters.registrationDateFrom);
-      if (new Date(user.createdAt) < fromDate) {
-        return false;
-      }
-    }
-    
-    if (filters.registrationDateTo && user.createdAt) {
-      const toDate = new Date(filters.registrationDateTo);
-      if (new Date(user.createdAt) > toDate) {
-        return false;
-      }
-    }
-    
-    // Last activity filter 
-    if (filters.lastActivityDays && user.lastLoginAt) {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - filters.lastActivityDays);
-      if (new Date(user.lastLoginAt) < cutoffDate) {
-        return false;
-      }
-    }
-    
-    return true;
-  });
-};
-
-// Send a communication immediately to users in segment
-export const sendCommunication = async (req: Request, res: Response) => {
-  try {
-    const { communicationId } = req.params;
-    
-    // Get the communication
-    const [communication] = await db.select().from(communications)
-      .where(eq(communications.id, communicationId));
-    
-    if (!communication) {
-      return res.status(404).json({ error: 'Communication not found' });
-    }
-    
-    // Get target users
-    let targetUsers: any[] = [];
-    
-    if (communication.segmentId) {
-      // Get segment
-      const [segment] = await db.select().from(userSegments)
-        .where(eq(userSegments.id, communication.segmentId));
-      
-      if (!segment) {
-        return res.status(404).json({ error: 'Segment not found' });
-      }
-      
-      // Get users matching segment filters
-      targetUsers = await getUsersMatchingFilters(segment.filters);
-    } else {
-      // If no segment specified, send to all users
-      targetUsers = await db.select().from(users);
-    }
-    
-    // Send communication to each user
-    const sent = await Promise.all(targetUsers.map(async (user) => {
-      // Create a log entry for this communication
-      const [log] = await db.insert(userCommunicationLogs)
-        .values({
-          userId: user.id,
-          communicationId: communication.id,
-          status: 'sent',
-          sentAt: new Date()
-        })
-        .returning();
-      
-      // Send based on channel
-      switch (communication.channel) {
-        case 'email':
-          // Send email
-          if (user.email) {
-            await sendEmail({
-              to: user.email,
-              subject: communication.title,
-              html: communication.content
-            });
-          }
-          break;
-        
-        case 'push':
-          // Send push notification via WebSocket
-          broadcastToUser(user.id, {
-            type: 'notification',
-            payload: {
-              title: communication.title,
-              message: communication.content,
-              type: 'crm'
-            },
-            timestamp: new Date().toISOString(),
-          });
-          break;
-        
-        case 'sms':
-          // SMS handling would be here
-          console.log(`SMS to ${user.phoneNumber}: ${communication.title}`);
-          break;
-      }
-      
-      return log;
-    }));
-    
-    // Update communication status
-    await db.update(communications)
-      .set({
-        status: 'sent',
-        updatedAt: new Date()
-      })
-      .where(eq(communications.id, communicationId));
-    
-    res.json({
-      success: true,
-      sentCount: sent.length,
-      logs: sent
-    });
-  } catch (error: any) {
-    console.error('Error sending communication:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Get communication logs
-export const getCommunicationLogs = async (req: Request, res: Response) => {
-  try {
-    const { communicationId } = req.params;
-    
-    const logs = await db.select().from(userCommunicationLogs)
-      .where(eq(userCommunicationLogs.communicationId, communicationId));
-    
-    res.json(logs);
-  } catch (error: any) {
-    console.error('Error fetching communication logs:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Update communication status
+// Update a communication
 export const updateCommunication = async (req: Request, res: Response) => {
   try {
-    const { communicationId } = req.params;
+    const { id } = req.params;
     const { title, content, channel, segmentId, scheduledAt, status } = req.body;
     
-    // Get the communication
-    const [existingComm] = await db.select().from(communications)
-      .where(eq(communications.id, communicationId));
+    const [communication] = await db.select().from(communications).where(eq(communications.id, id));
     
-    if (!existingComm) {
-      return res.status(404).json({ error: 'Communication not found' });
+    if (!communication) {
+      return res.status(404).json({ message: 'Communication not found' });
     }
     
-    // Update the communication
-    const [updatedComm] = await db.update(communications)
+    if (communication.status === 'sent') {
+      return res.status(400).json({ message: 'Cannot update a sent communication' });
+    }
+    
+    let newStatus = status;
+    
+    // If scheduledAt is updated, update the status to scheduled
+    if (scheduledAt && !status) {
+      newStatus = 'scheduled';
+    }
+    
+    const [updatedCommunication] = await db.update(communications)
       .set({
-        title: title || existingComm.title,
-        content: content || existingComm.content,
-        channel: channel || existingComm.channel,
-        segmentId: segmentId || existingComm.segmentId,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : existingComm.scheduledAt,
-        status: status || existingComm.status,
-        updatedAt: new Date()
+        title: title || communication.title,
+        content: content || communication.content,
+        channel: channel || communication.channel,
+        segmentId: segmentId !== undefined ? segmentId : communication.segmentId,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : communication.scheduledAt,
+        status: newStatus || communication.status,
+        updatedAt: new Date(),
       })
-      .where(eq(communications.id, communicationId))
+      .where(eq(communications.id, id))
       .returning();
     
-    res.json(updatedComm);
-  } catch (error: any) {
+    res.json(updatedCommunication);
+  } catch (error) {
     console.error('Error updating communication:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: 'Failed to update communication', error: String(error) });
   }
 };
 
-// Search communications
-export const searchCommunications = async (req: Request, res: Response) => {
+// Delete a communication
+export const deleteCommunication = async (req: Request, res: Response) => {
   try {
-    const { query, channel, status } = req.query;
+    const { id } = req.params;
     
-    // Build where clause
-    let conditions = [];
+    const [communication] = await db.select().from(communications).where(eq(communications.id, id));
     
-    if (query) {
-      conditions.push(like(communications.title, `%${query}%`));
+    if (!communication) {
+      return res.status(404).json({ message: 'Communication not found' });
     }
     
-    if (channel) {
-      conditions.push(eq(communications.channel, channel as string));
+    if (communication.status === 'sent') {
+      return res.status(400).json({ message: 'Cannot delete a sent communication' });
     }
     
-    if (status) {
-      conditions.push(eq(communications.status, status as string));
+    await db.delete(communications).where(eq(communications.id, id));
+    
+    res.json({ message: 'Communication deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting communication:', error);
+    res.status(500).json({ message: 'Failed to delete communication', error: String(error) });
+  }
+};
+
+// Send a communication
+export const sendCommunicationHandler = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    await sendCommunication(id);
+    
+    res.json({ message: 'Communication sent successfully' });
+  } catch (error) {
+    console.error('Error sending communication:', error);
+    res.status(500).json({ message: 'Failed to send communication', error: String(error) });
+  }
+};
+
+// Helper function to send a communication
+export const sendCommunication = async (communicationId: string) => {
+  const [communication] = await db.select().from(communications).where(eq(communications.id, communicationId));
+  
+  if (!communication) {
+    throw new Error('Communication not found');
+  }
+  
+  // Get users to send to based on segment
+  let usersToSend: any[] = [];
+  
+  if (communication.segmentId) {
+    const [segment] = await db.select().from(segments).where(eq(segments.id, communication.segmentId));
+    
+    if (segment) {
+      usersToSend = await getUsersBySegment(segment);
+    }
+  } else {
+    // If no segment is specified, send to all users
+    usersToSend = await db.select().from(users);
+  }
+  
+  // Update communication status to sending
+  await db.update(communications)
+    .set({ status: 'sent', updatedAt: new Date() })
+    .where(eq(communications.id, communicationId));
+  
+  // Send to each user based on the channel
+  const sendPromises = usersToSend.map(async (user) => {
+    try {
+      let success = false;
+      
+      switch (communication.channel) {
+        case 'email':
+          if (user.email) {
+            success = await sendEmail(user.email, communication.title, communication.content);
+          }
+          break;
+        case 'push':
+          if (user.fcmToken) {
+            success = await sendPushNotification(user.fcmToken, communication.title, communication.content);
+          }
+          break;
+        case 'sms':
+          if (user.phone) {
+            success = await sendSms(user.phone, communication.content);
+          }
+          break;
+      }
+      
+      // Log the communication
+      await db.insert(communicationLogs)
+        .values({
+          userId: user.id,
+          communicationId,
+          status: success ? 'sent' : 'failed',
+          sentAt: success ? new Date() : null,
+        });
+      
+      return success;
+    } catch (error) {
+      console.error(`Failed to send communication to user ${user.id}:`, error);
+      
+      // Log the failure
+      await db.insert(communicationLogs)
+        .values({
+          userId: user.id,
+          communicationId,
+          status: 'failed',
+          sentAt: null,
+        });
+      
+      return false;
+    }
+  });
+  
+  await Promise.all(sendPromises);
+  
+  return true;
+};
+
+// Get logs for a communication
+export const getCommunicationLogs = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const [communication] = await db.select().from(communications).where(eq(communications.id, id));
+    
+    if (!communication) {
+      return res.status(404).json({ message: 'Communication not found' });
     }
     
-    const results = conditions.length > 0 
-      ? await db.select().from(communications).where(and(...conditions))
-      : await db.select().from(communications);
+    const logs = await db.select()
+      .from(communicationLogs)
+      .where(eq(communicationLogs.communicationId, id))
+      .orderBy(desc(communicationLogs.createdAt));
     
-    res.json(results);
-  } catch (error: any) {
-    console.error('Error searching communications:', error);
-    res.status(500).json({ error: error.message });
+    res.json(logs);
+  } catch (error) {
+    console.error('Error fetching communication logs:', error);
+    res.status(500).json({ message: 'Failed to fetch communication logs', error: String(error) });
   }
 };

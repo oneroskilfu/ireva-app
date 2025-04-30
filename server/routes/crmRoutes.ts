@@ -1,19 +1,54 @@
 import express from 'express';
+import { verifyToken, ensureAdmin } from '../auth-jwt';
 import * as crmController from '../controllers/crmController';
-import { adminAuth } from '../middleware/auth';
 
-const router = express.Router();
+export const crmRouter = express.Router();
 
-// Protected routes (admin only)
-router.get('/segments', adminAuth, crmController.getUserSegments);
-router.post('/segments', adminAuth, crmController.createUserSegment);
-router.get('/segments/:segmentId/users', adminAuth, crmController.getUsersBySegment);
+// Middleware
+crmRouter.use(verifyToken);
+crmRouter.use(ensureAdmin);
 
-router.get('/communications', adminAuth, crmController.getCommunications);
-router.post('/communications', adminAuth, crmController.createCommunication);
-router.put('/communications/:communicationId', adminAuth, crmController.updateCommunication);
-router.post('/communications/:communicationId/send', adminAuth, crmController.sendCommunication);
-router.get('/communications/:communicationId/logs', adminAuth, crmController.getCommunicationLogs);
-router.get('/communications/search', adminAuth, crmController.searchCommunications);
+/**
+ * Segment Routes
+ */
+// Get all segments
+crmRouter.get('/segments', crmController.getAllSegments);
 
-export default router;
+// Get segment by ID
+crmRouter.get('/segments/:id', crmController.getSegmentById);
+
+// Create a new segment
+crmRouter.post('/segments', crmController.createSegment);
+
+// Update a segment
+crmRouter.put('/segments/:id', crmController.updateSegment);
+
+// Delete a segment
+crmRouter.delete('/segments/:id', crmController.deleteSegment);
+
+// Get users for a segment
+crmRouter.get('/segments/:id/users', crmController.getUsersForSegment);
+
+/**
+ * Communication Routes
+ */
+// Get all communications with optional filters
+crmRouter.get('/communications', crmController.getAllCommunications);
+
+// Get communication by ID
+crmRouter.get('/communications/:id', crmController.getCommunicationById);
+
+// Create a new communication
+crmRouter.post('/communications', crmController.createCommunication);
+
+// Update a communication
+crmRouter.put('/communications/:id', crmController.updateCommunication);
+
+// Delete a communication
+crmRouter.delete('/communications/:id', crmController.deleteCommunication);
+
+// Send a communication
+crmRouter.post('/communications/:id/send', crmController.sendCommunicationHandler);
+
+// Get logs for a communication
+crmRouter.get('/communications/:id/logs', crmController.getCommunicationLogs);

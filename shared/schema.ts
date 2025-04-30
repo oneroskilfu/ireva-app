@@ -28,6 +28,10 @@ export const auditActionEnum = pgEnum("audit_action", [
   "SETTINGS_UPDATE"
 ]);
 
+// CRM Enums
+export const communicationChannelEnum = pgEnum("communication_channel", ["email", "push", "sms"]);
+export const communicationStatusEnum = pgEnum("communication_status", ["draft", "scheduled", "sent", "failed"]);
+
 // Property valuation methodology enum
 export const valuationMethodologyEnum = pgEnum("valuation_methodology", ["comps", "income", "cost"]);
 

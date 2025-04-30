@@ -6,4 +6,6 @@ export const config = {
   uploadDir: 'uploads',
   maxFileSize: 5 * 1024 * 1024, // 5MB
   allowedFileTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
+  isDevelopment: process.env.NODE_ENV === 'development',
+  environment: process.env.NODE_ENV || 'development',
 };
