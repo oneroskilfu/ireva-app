@@ -9,14 +9,30 @@ router.post('/debug-login', async (req, res) => {
   try {
     const { role = 'admin' } = req.body;
     
-    // Create a debug session with admin privileges
-    req.session.user = {
+    // For JWT-based auth also create a JWT token
+    const jwt = require('jsonwebtoken');
+    
+    const user = {
       id: 'debug-user-id',
       email: 'debug@example.com',
       username: 'debug_admin',
       role: role,
       status: 'active'
     };
+    
+    // Create JWT token for APIs that use JWT
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'debug-secret-key',
+      { expiresIn: '24h' }
+    );
+    
+    // Create a debug session with admin privileges for session-based auth
+    req.session.user = user;
+    
+    // Log both authentication methods
+    console.log('Debug login created - Session user:', user);
+    console.log('Debug login created - JWT token generated');
     
     // Save the session
     req.session.save((err) => {
@@ -28,7 +44,8 @@ router.post('/debug-login', async (req, res) => {
       console.log('Debug session created with role:', role);
       return res.status(200).json({ 
         message: 'Debug login successful',
-        user: req.session.user
+        user: req.session.user,
+        token // Include the JWT token in the response
       });
     });
     

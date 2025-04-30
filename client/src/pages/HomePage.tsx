@@ -187,6 +187,26 @@ export default function HomePage() {
             to participate in high-quality property investments with minimal capital.
           </Typography>
         </Paper>
+        
+        {/* Debug Login Component - For Development Only */}
+        <Paper 
+          elevation={1} 
+          sx={{ 
+            p: 2, 
+            mb: 4, 
+            mt: 6,
+            border: '1px dashed #ccc',
+            backgroundColor: '#f9f9f9'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <BugReport color="action" sx={{ mr: 1 }} />
+            <Typography variant="h6" color="text.secondary">
+              Developer Tools
+            </Typography>
+          </Box>
+          <DebugLogin />
+        </Paper>
       </Container>
     </>
   );

@@ -20,6 +20,12 @@ export default function DebugLogin({ onLoginSuccess }: DebugLoginProps) {
       console.log('Debug login successful:', response.data);
       setSuccess(true);
       
+      // Store the JWT token in localStorage for API requests
+      if (response.data.token) {
+        localStorage.setItem('authToken', response.data.token);
+        console.log('Auth token stored in localStorage');
+      }
+      
       if (onLoginSuccess) {
         onLoginSuccess(response.data.user);
       }
