@@ -82,6 +82,7 @@ router.patch('/:id', adminAuth, async (req, res) => {
     const updates = {
       firstName: req.body.firstName,
       lastName: req.body.lastName,
+      phoneNumber: req.body.phoneNumber,
       // Add other fields as needed
     };
 
@@ -90,6 +91,22 @@ router.patch('/:id', adminAuth, async (req, res) => {
       .set(updates)
       .where(eq(users.id, parseInt(req.params.id)))
       .returning();
+
+    // Emit socket event for real-time updates
+    if ((req as any).io) {
+      (req as any).io.emit('user:updated', updatedUser);
+    }
+
+    // Log admin action
+    const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    console.log('Admin audit log: User updated', {
+      adminId: req.user?.id,
+      userId: updatedUser.id,
+      action: 'update_user',
+      details: updates,
+      ipAddress,
+      timestamp: new Date()
+    });
 
     res.json(updatedUser);
   } catch (error) {
@@ -113,7 +130,21 @@ router.post('/:id/status', adminAuth, async (req, res) => {
       .where(eq(users.id, parseInt(req.params.id)))
       .returning();
 
-    // Audit logging would go here in a real app
+    // Emit socket event for real-time updates
+    if ((req as any).io) {
+      (req as any).io.emit('user:updated', updatedUser);
+    }
+
+    // Log admin action
+    const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    console.log('Admin audit log: User status updated', {
+      adminId: req.user?.id,
+      userId: updatedUser.id,
+      action: 'update_user_status',
+      details: { previousStatus: req.body.previousStatus, newStatus: status },
+      ipAddress,
+      timestamp: new Date()
+    });
 
     res.json(updatedUser);
   } catch (error) {
@@ -129,6 +160,86 @@ router.get('/:id/transactions', adminAuth, async (req, res) => {
     res.json([]);
   } catch (error) {
     handleServerError(res, error, 'Failed to fetch transactions');
+  }
+});
+
+// Export users to CSV
+router.get('/export', adminAuth, async (req, res) => {
+  try {
+    const { 
+      status, 
+      kycStatus, 
+      search,
+      createdAfter
+    } = req.query;
+
+    const query = db
+      .select()
+      .from(users)
+      .where(and(
+        status ? eq(users.status, status as string) : undefined,
+        kycStatus ? eq(users.kycStatus, kycStatus as string) : undefined,
+        search ? or(
+          ilike(users.email, `%${search}%`),
+          ilike(users.firstName || '', `%${search}%`),
+          ilike(users.lastName || '', `%${search}%`)
+        ) : undefined,
+        createdAfter ? gt(users.createdAt || new Date(), new Date(createdAfter as string)) : undefined
+      ))
+      .orderBy(desc(users.id));
+
+    const result = await query;
+    
+    // Create CSV header
+    let csv = 'ID,Email,First Name,Last Name,Status,KYC Status,Role,Created At\n';
+    
+    // Add rows
+    result.forEach(user => {
+      const row = [
+        user.id,
+        `"${user.email}"`,
+        `"${user.firstName || ''}"`,
+        `"${user.lastName || ''}"`,
+        user.status,
+        user.kycStatus,
+        user.role,
+        user.createdAt ? new Date(user.createdAt).toISOString() : ''
+      ].join(',');
+      
+      csv += row + '\n';
+    });
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=users-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csv);
+  } catch (error) {
+    handleServerError(res, error, 'Failed to export users');
+  }
+});
+
+// Add audit logging functionality
+router.post('/audit', adminAuth, async (req, res) => {
+  try {
+    const { 
+      userId, 
+      action, 
+      details, 
+      ipAddress 
+    } = req.body;
+    
+    // In a real app, we would save to an audit_logs table
+    console.log('Admin action:', {
+      userId,
+      action,
+      details,
+      ipAddress,
+      timestamp: new Date(),
+      adminId: req.user?.id
+    });
+    
+    res.status(200).json({ success: true });
+  } catch (error) {
+    handleServerError(res, error, 'Failed to log admin action');
   }
 });
 

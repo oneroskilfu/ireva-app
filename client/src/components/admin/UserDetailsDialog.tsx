@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -7,215 +7,245 @@ import {
   Button,
   TextField,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Typography,
-  CircularProgress,
+  Divider,
   Box,
-  Divider
+  CircularProgress,
+  Alert
 } from '@mui/material';
-import { toast } from '../../lib/toast';
+import { StatusToggle } from './StatusToggle';
+import axios from 'axios';
 
-// Define User interface
 interface User {
-  id: string;
+  id: string | number;
   email: string;
-  username: string;
-  fullName?: string;
-  status: 'active' | 'inactive' | 'suspended';
-  kycStatus: 'pending' | 'approved' | 'rejected';
-  role: 'user' | 'admin' | 'super_admin' | 'investor';
-  walletBalance: string;
-  createdAt: string;
-  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  status: string;
+  kycStatus: string;
+  phoneNumber?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
 }
 
 interface UserDetailsDialogProps {
   open: boolean;
   onClose: () => void;
-  user: User;
-  onUpdateUser: (userData: Partial<User> & { id: string }) => void;
-  isUpdating: boolean;
+  userId: string | number | null;
 }
 
-const UserDetailsDialog = ({ 
-  open, 
-  onClose, 
-  user,
-  onUpdateUser,
-  isUpdating
-}: UserDetailsDialogProps) => {
-  // State for editable fields
-  const [email, setEmail] = useState(user.email);
-  const [fullName, setFullName] = useState(user.fullName || '');
-  const [phone, setPhone] = useState(user.phone || '');
-  const [role, setRole] = useState(user.role);
-  const [kycStatus, setKycStatus] = useState(user.kycStatus);
+export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
+  open,
+  onClose,
+  userId
+}) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState<{
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+  }>({});
 
-  // Handle form submission
-  const handleSubmit = () => {
-    // Basic validation
-    if (!email.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Email is required",
-        variant: "destructive"
-      });
-      return;
+  React.useEffect(() => {
+    if (open && userId) {
+      fetchUserDetails();
+    } else {
+      setUser(null);
+      setError(null);
     }
+  }, [open, userId]);
 
-    onUpdateUser({
-      id: user.id,
-      email,
-      fullName: fullName || undefined,
-      phone: phone || undefined,
-      role,
-      kycStatus
-    });
+  const fetchUserDetails = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get(`/api/admin/users/${userId}`);
+      setUser(response.data);
+      setFormData({
+        firstName: response.data.firstName,
+        lastName: response.data.lastName,
+        phoneNumber: response.data.phoneNumber
+      });
+    } catch (err: any) {
+      console.error('Error fetching user details:', err);
+      setError(err.response?.data?.error || 'Failed to fetch user details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.patch(`/api/admin/users/${userId}`, formData);
+      setUser(response.data);
+      setEditing(false);
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      setError(err.response?.data?.error || 'Failed to update user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (userId: string | number, newStatus: string) => {
+    try {
+      const response = await axios.post(`/api/admin/users/${userId}/status`, { status: newStatus });
+      setUser(prev => prev ? { ...prev, status: newStatus } : null);
+      return Promise.resolve();
+    } catch (err: any) {
+      console.error('Error updating user status:', err);
+      setError(err.response?.data?.error || 'Failed to update user status');
+      return Promise.reject(err);
+    }
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Edit User Details
+        User Details
+        {user && (
+          <Typography variant="subtitle1" color="textSecondary">
+            {user.email}
+          </Typography>
+        )}
       </DialogTitle>
       
       <DialogContent>
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" color="text.secondary">
-                User ID: {user.id}
-              </Typography>
-              <Typography variant="caption" display="block" color="text.secondary">
-                Created: {new Date(user.createdAt).toLocaleString()}
-              </Typography>
-            </Grid>
+        {loading && (
+          <Box display="flex" justifyContent="center" p={4}>
+            <CircularProgress />
+          </Box>
+        )}
+        
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        
+        {!loading && user && (
+          <>
+            <Box mb={2}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="First Name"
+                    fullWidth
+                    name="firstName"
+                    value={editing ? formData.firstName || '' : user.firstName || ''}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    margin="normal"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Last Name"
+                    fullWidth
+                    name="lastName"
+                    value={editing ? formData.lastName || '' : user.lastName || ''}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    margin="normal"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Phone Number"
+                    fullWidth
+                    name="phoneNumber"
+                    value={editing ? formData.phoneNumber || '' : user.phoneNumber || ''}
+                    onChange={handleInputChange}
+                    disabled={!editing}
+                    margin="normal"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="KYC Status"
+                    fullWidth
+                    value={user.kycStatus}
+                    disabled
+                    margin="normal"
+                  />
+                </Grid>
+              </Grid>
+            </Box>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Email"
-                fullWidth
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                margin="normal"
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Username"
-                fullWidth
-                value={user.username}
-                disabled
-                margin="normal"
-                helperText="Username cannot be changed"
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Full Name"
-                fullWidth
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                margin="normal"
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Phone Number"
-                fullWidth
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                margin="normal"
-              />
-            </Grid>
+            <Divider sx={{ my: 3 }} />
             
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle1" gutterBottom>
-                Account Settings
-              </Typography>
+            <Typography variant="h6" gutterBottom>
+              Account Status
+            </Typography>
+            
+            <Box mb={2}>
+              <StatusToggle 
+                userId={user.id} 
+                currentStatus={user.status} 
+                onStatusChange={handleStatusChange} 
+              />
+            </Box>
+            
+            <Divider sx={{ my: 3 }} />
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="textSecondary">
+                  Created: {user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A'}
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" color="textSecondary">
+                  Last Login: {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'N/A'}
+                </Typography>
+              </Grid>
             </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Role</InputLabel>
-                <Select
-                  value={role}
-                  label="Role"
-                  onChange={(e) => setRole(e.target.value as User['role'])}
-                >
-                  <MenuItem value="user">User</MenuItem>
-                  <MenuItem value="investor">Investor</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="super_admin">Super Admin</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>KYC Status</InputLabel>
-                <Select
-                  value={kycStatus}
-                  label="KYC Status"
-                  onChange={(e) => setKycStatus(e.target.value as User['kycStatus'])}
-                >
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary">
-                Current Status: <strong>{user.status}</strong> 
-                <br />
-                <em>Note: To change user status, use the status buttons in the user list.</em>
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary">
-                Wallet Balance: <strong>${parseFloat(user.walletBalance).toFixed(2)}</strong> 
-                <br />
-                <em>Note: To see transaction history, use the wallet button in the user list.</em>
-              </Typography>
-            </Grid>
-          </Grid>
-        </Box>
+          </>
+        )}
       </DialogContent>
       
       <DialogActions>
-        <Button onClick={onClose} disabled={isUpdating}>
-          Cancel
-        </Button>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={handleSubmit}
-          disabled={isUpdating}
-        >
-          {isUpdating ? (
-            <CircularProgress size={24} />
-          ) : (
-            'Save Changes'
-          )}
-        </Button>
+        {!loading && user && editing ? (
+          <>
+            <Button onClick={() => setEditing(false)} color="inherit">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} color="primary" variant="contained">
+              Save Changes
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={onClose} color="inherit">
+              Close
+            </Button>
+            {!loading && user && (
+              <Button onClick={() => setEditing(true)} color="primary">
+                Edit
+              </Button>
+            )}
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );
 };
-
-export default UserDetailsDialog;
