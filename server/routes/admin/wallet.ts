@@ -1,245 +1,228 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { db } from '../../db';
-import { wallets, users, walletTransaction } from '../../../shared/schema';
-import { desc, eq, sql } from 'drizzle-orm';
-import { ensureAdmin } from '../../auth-jwt';
+import { users, transactions } from '../../../shared/schema';
+import { authMiddleware, ensureAdmin } from '../../auth-jwt';
+import { sql, eq, and, desc, gt, lt, between } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
-const adminWalletRouter = Router();
+export const router = express.Router();
+
+// Middleware to ensure admin access
+router.use(authMiddleware, ensureAdmin);
 
 /**
- * @route GET /api/admin/wallets
- * @desc Get all user wallets
- * @access Admin only
+ * Get user wallet information
  */
-adminWalletRouter.get('/', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/users/:userId/wallet', async (req: Request, res: Response) => {
   try {
-    // Get all wallets with user information
-    const walletsWithUsers = await db
+    const { userId } = req.params;
+    
+    // Get the user to check wallet balance
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Get total investments
+    const [totalInvestmentsResult] = await db
       .select({
-        id: wallets.id,
-        userId: wallets.userId,
-        balance: wallets.balance,
-        lastUpdated: wallets.lastUpdated,
-        currency: wallets.currency,
-        isActive: wallets.isActive,
-        username: users.username,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
+        total: sql`COALESCE(SUM(${transactions.amount}::numeric), 0)`.mapWith(Number)
       })
-      .from(wallets)
-      .innerJoin(users, eq(wallets.userId, users.id))
-      .orderBy(desc(wallets.balance));
-
-    // Calculate total balance across all wallets
-    const [{ totalBalance }] = await db
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'investment'),
+          eq(transactions.status, 'completed')
+        )
+      );
+    
+    // Get total earnings (ROI + referrals)
+    const [totalEarningsResult] = await db
       .select({
-        totalBalance: sql<number>`SUM(${wallets.balance})`,
+        total: sql`COALESCE(SUM(${transactions.amount}::numeric), 0)`.mapWith(Number)
       })
-      .from(wallets);
-
-    // Format wallet data for response
-    const summary = walletsWithUsers.map(w => ({
-      id: w.id,
-      userId: w.userId,
-      user: {
-        username: w.username,
-        email: w.email,
-        name: `${w.firstName || ''} ${w.lastName || ''}`.trim() || w.username,
-        role: w.role,
-      },
-      balance: w.balance,
-      currency: w.currency,
-      lastUpdated: w.lastUpdated,
-      isActive: w.isActive,
-    }));
-
-    res.json({ 
-      wallets: summary,
-      stats: {
-        totalWallets: summary.length,
-        totalBalance,
-        averageBalance: summary.length > 0 ? totalBalance / summary.length : 0,
-      }
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          sql`${transactions.type} IN ('roi', 'referral')`,
+          eq(transactions.status, 'completed')
+        )
+      );
+    
+    // Get pending balance
+    const [pendingBalanceResult] = await db
+      .select({
+        total: sql`COALESCE(SUM(${transactions.amount}::numeric), 0)`.mapWith(Number)
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          sql`${transactions.type} IN ('deposit', 'roi', 'referral')`,
+          eq(transactions.status, 'pending')
+        )
+      );
+    
+    const totalInvestments = totalInvestmentsResult.total || 0;
+    const totalEarnings = totalEarningsResult.total || 0;
+    const pendingBalance = pendingBalanceResult.total || 0;
+    const availableBalance = parseFloat(user.walletBalance) || 0;
+    
+    res.json({
+      availableBalance: availableBalance.toFixed(2),
+      pendingBalance: pendingBalance.toFixed(2),
+      totalInvestments: totalInvestments.toFixed(2),
+      totalEarnings: totalEarnings.toFixed(2)
     });
   } catch (error) {
-    console.error("Error fetching wallets:", error);
-    res.status(500).json({ 
-      message: "Failed to fetch wallets", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
+    console.error('Error fetching wallet info:', error);
+    res.status(500).json({ message: 'Failed to fetch wallet information' });
   }
 });
 
 /**
- * @route GET /api/admin/wallets/:userId
- * @desc Get specific user wallet
- * @access Admin only
+ * Get user transactions
  */
-adminWalletRouter.get('/:userId', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/users/:userId/transactions', async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const { userId } = req.params;
+    const { page = '1', limit = '10', type, startDate, endDate } = req.query;
     
-    // Get wallet with user information
-    const [walletWithUser] = await db
-      .select({
-        id: wallets.id,
-        userId: wallets.userId,
-        balance: wallets.balance,
-        lastUpdated: wallets.lastUpdated,
-        currency: wallets.currency,
-        isActive: wallets.isActive,
-        username: users.username,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-      })
-      .from(wallets)
-      .innerJoin(users, eq(wallets.userId, users.id))
-      .where(eq(wallets.userId, userId));
-
-    if (!walletWithUser) {
-      return res.status(404).json({ message: "Wallet not found" });
-    }
-
-    // Get recent transactions for this wallet
-    const transactions = await db
+    // Check if user exists
+    const [user] = await db
       .select()
-      .from(walletTransaction)
-      .where(eq(walletTransaction.userId, userId))
-      .orderBy(desc(walletTransaction.createdAt))
-      .limit(10);
-
-    // Format wallet data for response
-    const walletDetails = {
-      id: walletWithUser.id,
-      userId: walletWithUser.userId,
-      user: {
-        username: walletWithUser.username,
-        email: walletWithUser.email,
-        name: `${walletWithUser.firstName || ''} ${walletWithUser.lastName || ''}`.trim() || walletWithUser.username,
-        role: walletWithUser.role,
-      },
-      balance: walletWithUser.balance,
-      currency: walletWithUser.currency,
-      lastUpdated: walletWithUser.lastUpdated,
-      isActive: walletWithUser.isActive,
-      transactions,
-    };
-
-    res.json(walletDetails);
-  } catch (error) {
-    console.error("Error fetching wallet:", error);
-    res.status(500).json({ 
-      message: "Failed to fetch wallet", 
-      error: error instanceof Error ? error.message : String(error) 
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Build conditions for filtering
+    const conditions = [eq(transactions.userId, userId)];
+    
+    if (type) {
+      conditions.push(eq(transactions.type, type as string));
+    }
+    
+    if (startDate && endDate) {
+      conditions.push(
+        between(
+          transactions.createdAt, 
+          new Date(startDate as string), 
+          new Date(endDate as string)
+        )
+      );
+    } else if (startDate) {
+      conditions.push(gt(transactions.createdAt, new Date(startDate as string)));
+    } else if (endDate) {
+      conditions.push(lt(transactions.createdAt, new Date(endDate as string)));
+    }
+    
+    // Calculate pagination
+    const pageNum = parseInt(page as string, 10);
+    const limitNum = parseInt(limit as string, 10);
+    const offset = (pageNum - 1) * limitNum;
+    
+    // Get total count for pagination
+    const [countResult] = await db
+      .select({ count: sql`COUNT(*)`.mapWith(Number) })
+      .from(transactions)
+      .where(and(...conditions));
+    
+    // Get paginated results
+    const results = await db
+      .select()
+      .from(transactions)
+      .where(and(...conditions))
+      .orderBy(desc(transactions.createdAt))
+      .limit(limitNum)
+      .offset(offset);
+    
+    res.json({
+      transactions: results,
+      pagination: {
+        total: countResult.count,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(countResult.count / limitNum)
+      }
     });
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ message: 'Failed to fetch transactions' });
   }
 });
 
 /**
- * @route PATCH /api/admin/wallets/:userId/adjust
- * @desc Adjust user's wallet balance (admin only)
- * @access Admin only
+ * Add manual transaction
  */
-adminWalletRouter.patch('/:userId/adjust', ensureAdmin, async (req: Request, res: Response) => {
+router.post('/users/:userId/transactions', async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const { amount, reason, type } = req.body;
+    const { userId } = req.params;
+    const { amount, type, description } = req.body;
     
-    if (!amount || isNaN(parseInt(amount)) || !reason || !type) {
-      return res.status(400).json({ 
-        message: "Invalid request. Required: amount, reason, type (credit/debit)" 
-      });
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      return res.status(400).json({ message: 'Valid amount is required' });
     }
-
-    // Get user wallet
-    const [wallet] = await db
+    
+    if (!type || !['deposit', 'withdrawal'].includes(type)) {
+      return res.status(400).json({ message: 'Valid transaction type is required (deposit or withdrawal)' });
+    }
+    
+    // Check if user exists
+    const [user] = await db
       .select()
-      .from(wallets)
-      .where(eq(wallets.userId, userId));
-
-    if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found" });
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-
-    const adjustmentAmount = parseInt(amount);
-    let newBalance: number;
-    let transactionType: 'deposit' | 'withdrawal';
-
-    if (type === 'credit') {
-      newBalance = wallet.balance + adjustmentAmount;
-      transactionType = 'deposit';
-    } else if (type === 'debit') {
-      // Check if enough balance for debit
-      if (wallet.balance < adjustmentAmount) {
-        return res.status(400).json({ 
-          message: "Insufficient funds", 
-          balance: wallet.balance,
-          requested: adjustmentAmount
-        });
-      }
-      newBalance = wallet.balance - adjustmentAmount;
-      transactionType = 'withdrawal';
-    } else {
-      return res.status(400).json({ message: "Type must be 'credit' or 'debit'" });
+    
+    // Create transaction
+    const [transaction] = await db
+      .insert(transactions)
+      .values({
+        id: uuidv4(),
+        userId,
+        amount: amount.toString(),
+        type: type as 'deposit' | 'withdrawal',
+        status: 'completed',
+        description: description || `Manual ${type} by admin`,
+        createdAt: new Date(),
+        referenceId: `manual-${uuidv4().slice(0, 8)}`
+      })
+      .returning();
+    
+    // Update user wallet balance
+    const newBalance = type === 'deposit' 
+      ? parseFloat(user.walletBalance) + parseFloat(amount)
+      : parseFloat(user.walletBalance) - parseFloat(amount);
+    
+    if (type === 'withdrawal' && newBalance < 0) {
+      return res.status(400).json({ message: 'Insufficient wallet balance for withdrawal' });
     }
-
-    // Generate reference
-    const reference = `ADMIN-${type.toUpperCase()}-${Date.now()}-${userId}`;
     
-    // Process adjustment in a transaction
-    await db.transaction(async (tx) => {
-      // Record transaction
-      await tx.insert(walletTransaction)
-        .values({
-          userId,
-          amount: adjustmentAmount,
-          type: transactionType,
-          status: "completed",
-          description: `Admin adjustment: ${reason}`,
-          reference,
-          metadata: { 
-            admin: req.jwtPayload?.username || 'unknown', 
-            adminId: req.jwtPayload?.id,
-            reason 
-          }
-        });
-      
-      // Update wallet balance
-      await tx.update(wallets)
-        .set({ 
-          balance: newBalance,
-          lastUpdated: new Date()
-        })
-        .where(eq(wallets.id, wallet.id));
-    });
+    await db
+      .update(users)
+      .set({ walletBalance: newBalance.toFixed(2) })
+      .where(eq(users.id, userId));
     
-    // Get updated wallet
-    const [updatedWallet] = await db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.userId, userId));
-    
-    res.status(200).json({ 
-      message: `Wallet ${type === 'credit' ? 'credited' : 'debited'} successfully`, 
-      wallet: updatedWallet,
-      reference,
-      adjustment: {
-        type,
-        amount: adjustmentAmount,
-        reason
-      }
+    res.status(201).json({
+      message: `Manual ${type} transaction added successfully`,
+      transaction
     });
   } catch (error) {
-    console.error("Error adjusting wallet:", error);
-    res.status(500).json({ 
-      message: "Failed to adjust wallet", 
-      error: error instanceof Error ? error.message : String(error) 
-    });
+    console.error('Error adding transaction:', error);
+    res.status(500).json({ message: 'Failed to add transaction' });
   }
 });
 
-export default adminWalletRouter;
+export default router;
