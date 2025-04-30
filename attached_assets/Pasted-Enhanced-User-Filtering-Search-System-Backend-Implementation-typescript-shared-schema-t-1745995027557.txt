@@ -1,0 +1,68 @@
+Enhanced User Filtering & Search System
+**Backend Implementation:**
+```typescript
+// shared/schema.ts
+export const userStatusEnum = pgEnum('user_status', [
+  'active',
+  'suspended',
+  'deactivated'
+]);
+
+export const kycStatusEnum = pgEnum('kyc_status', [
+  'unverified',
+  'pending',
+  'verified',
+  'rejected'
+]);
+
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: varchar('email', { length: 255 }).unique().notNull(),
+  firstName: varchar('first_name', { length: 100 }),
+  lastName: varchar('last_name', { length: 100 }),
+  status: userStatusEnum('status').notNull().default('active'),
+  kycStatus: kycStatusEnum('kyc_status').notNull().default('unverified'),
+  investorType: varchar('investor_type', { length: 20 }), // 'retail' | 'accredited'
+  lastLogin: timestamp('last_login'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// backend/src/routes/admin/users.ts
+import { and, or, ilike, eq, gt, lt } from 'drizzle-orm';
+
+router.get('/', adminAuth, async (req, res) => {
+  const { 
+    status, 
+    kycStatus, 
+    investorType,
+    search,
+    createdAfter,
+    lastLoginBefore 
+  } = req.query;
+
+  const query = db
+    .select()
+    .from(users)
+    .where(and(
+      status ? eq(users.status, status) : undefined,
+      kycStatus ? eq(users.kycStatus, kycStatus) : undefined,
+      investorType ? eq(users.investorType, investorType) : undefined,
+      createdAfter ? gt(users.createdAt, new Date(createdAfter)) : undefined,
+      lastLoginBefore ? lt(users.lastLogin, new Date(lastLoginBefore)) : undefined,
+      search ? or(
+        ilike(users.email, `%${search}%`),
+        ilike(users.firstName, `%${search}%`),
+        ilike(users.lastName, `%${search}%`)
+      ) : undefined
+    ))
+    .orderBy(desc(users.createdAt));
+
+  try {
+    const result = await query;
+    res.json(result);
+  } catch (error) {
+    handleServerError(res, error, 'Failed to fetch users');
+  }
+});
+```

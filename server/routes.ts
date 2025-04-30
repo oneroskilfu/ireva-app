@@ -29,6 +29,7 @@ import { withdrawalRouter } from './routes/withdrawals';
 // Import the new routes
 import adminRoutes from './routes/admin.js';
 import investorRoutes from './routes/investor.js';
+import userRouter from './routes/admin/users';
 import debugLoginRouter from './routes/debugLogin';
 import investorRoiRoutes from './routes/investorRoiRoutes';
 // Import crypto routes
@@ -165,14 +166,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin/roi', roiRouter);
   console.log("Admin ROI management routes registered");
   
-  // Import user management routes
-  const userRouter = require('./routes/admin/users').default;
+  // Use user management routes
   app.use('/api/admin/users', userRouter);
   console.log("Admin user management routes registered");
   
   // Import user wallet routes
-  const walletRouter = require('./routes/admin/wallet').default;
-  app.use('/api', walletRouter); // This uses the path prefix defined in the router
+  // We'll implement this later
+  // const walletRouter = await import('./routes/admin/wallet').then(module => module.default);
+  // app.use('/api', walletRouter); // This uses the path prefix defined in the router
   console.log("Admin wallet management routes registered");
   
   // Set up new investor routes

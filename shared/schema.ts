@@ -5,6 +5,7 @@ import { z } from "zod";
 
 // Define all the enums that are needed in admin-routes.ts
 export const userRoleEnum = pgEnum("user_role", ["investor", "admin", "super_admin"]);
+export const userStatusEnum = pgEnum("user_status", ["active", "inactive", "suspended", "deactivated"]);
 export const kycStatusEnum = pgEnum("kyc_status", ["not_started", "pending", "approved", "rejected"]);
 export const propertyTypeEnum = pgEnum("property_type", ["residential", "commercial", "industrial", "mixed_use", "land"]);
 export const investmentTierEnum = pgEnum("investment_tier", ["starter", "growth", "premium", "elite"]);
@@ -21,6 +22,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   role: userRoleEnum("role").default("investor"),
+  status: userStatusEnum("status").default("active"),
   phoneNumber: text("phone_number"),
   firstName: text("first_name"),
   lastName: text("last_name"),
