@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { 
-  communications, 
-  communicationLogs, 
-  segments, 
+  communications,
+  userCommunicationLogs,
+  userSegments,
   users 
 } from '@shared/schema';
 import { and, eq, inArray, like, gte, lte, sql, desc } from 'drizzle-orm';
@@ -18,7 +18,7 @@ import { sendSms } from '../services/smsService';
 // Get all segments
 export const getAllSegments = async (req: Request, res: Response) => {
   try {
-    const results = await db.select().from(segments).orderBy(desc(segments.createdAt));
+    const results = await db.select().from(userSegments).orderBy(desc(userSegments.createdAt));
     
     // For each segment, count the number of users that match the segment criteria
     const segmentsWithCount = await Promise.all(
@@ -40,7 +40,7 @@ export const getSegmentById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    const [segment] = await db.select().from(userSegments).where(eq(userSegments.id, id));
     
     if (!segment) {
       return res.status(404).json({ message: 'Segment not found' });
@@ -64,7 +64,7 @@ export const createSegment = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Segment name is required' });
     }
     
-    const [newSegment] = await db.insert(segments)
+    const [newSegment] = await db.insert(userSegments)
       .values({
         name,
         filters: filters || {},
@@ -84,19 +84,18 @@ export const updateSegment = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, filters } = req.body;
     
-    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    const [segment] = await db.select().from(userSegments).where(eq(userSegments.id, id));
     
     if (!segment) {
       return res.status(404).json({ message: 'Segment not found' });
     }
     
-    const [updatedSegment] = await db.update(segments)
+    const [updatedSegment] = await db.update(userSegments)
       .set({
         name: name || segment.name,
-        filters: filters || segment.filters,
-        updatedAt: new Date(),
+        filters: filters || segment.filters
       })
-      .where(eq(segments.id, id))
+      .where(eq(userSegments.id, id))
       .returning();
     
     res.json(updatedSegment);
@@ -111,13 +110,13 @@ export const deleteSegment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    const [segment] = await db.select().from(userSegments).where(eq(userSegments.id, id));
     
     if (!segment) {
       return res.status(404).json({ message: 'Segment not found' });
     }
     
-    await db.delete(segments).where(eq(segments.id, id));
+    await db.delete(userSegments).where(eq(userSegments.id, id));
     
     res.json({ message: 'Segment deleted successfully' });
   } catch (error) {
@@ -131,7 +130,7 @@ export const getUsersForSegment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const [segment] = await db.select().from(segments).where(eq(segments.id, id));
+    const [segment] = await db.select().from(userSegments).where(eq(userSegments.id, id));
     
     if (!segment) {
       return res.status(404).json({ message: 'Segment not found' });
@@ -193,7 +192,7 @@ const getUsersBySegment = async (segment: any) => {
 
 // Helper function to count users in a segment
 const getUserCountForSegment = async (segmentId: string) => {
-  const [segment] = await db.select().from(segments).where(eq(segments.id, segmentId));
+  const [segment] = await db.select().from(userSegments).where(eq(userSegments.id, segmentId));
   
   if (!segment) {
     return 0;
@@ -398,7 +397,7 @@ export const sendCommunication = async (communicationId: string) => {
   let usersToSend: any[] = [];
   
   if (communication.segmentId) {
-    const [segment] = await db.select().from(segments).where(eq(segments.id, communication.segmentId));
+    const [segment] = await db.select().from(userSegments).where(eq(userSegments.id, communication.segmentId));
     
     if (segment) {
       usersToSend = await getUsersBySegment(segment);
@@ -437,7 +436,7 @@ export const sendCommunication = async (communicationId: string) => {
       }
       
       // Log the communication
-      await db.insert(communicationLogs)
+      await db.insert(userCommunicationLogs)
         .values({
           userId: user.id,
           communicationId,
@@ -450,7 +449,7 @@ export const sendCommunication = async (communicationId: string) => {
       console.error(`Failed to send communication to user ${user.id}:`, error);
       
       // Log the failure
-      await db.insert(communicationLogs)
+      await db.insert(userCommunicationLogs)
         .values({
           userId: user.id,
           communicationId,

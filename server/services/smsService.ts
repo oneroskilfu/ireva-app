@@ -1,38 +1,39 @@
-import axios from 'axios';
-import { config } from '../config';
+/**
+ * SMS Service for sending text messages to users
+ * 
+ * This is a placeholder implementation. In a production environment,
+ * you would integrate with an SMS provider like Twilio, MessageBird, etc.
+ */
+
+interface SMSOptions {
+  to: string;
+  message: string;
+  from?: string;
+}
 
 /**
- * Send an SMS message to a phone number
- * 
- * Note: This is a mock service for development. In production, you would use a service like Twilio or Nexmo.
- * 
- * @param phone The phone number to send to
- * @param message The message content
- * @returns true if successful, false otherwise
+ * Send an SMS message
+ * @param options SMS options including recipient, message, and optional sender ID
+ * @returns Promise that resolves to true if successful
  */
-export const sendSms = async (phone: string, message: string): Promise<boolean> => {
+export const sendSms = async (options: SMSOptions): Promise<boolean> => {
   try {
-    // In development mode, just log the message
-    if (config.isDevelopment) {
-      console.log(`[SMS SERVICE] Mock sending SMS to ${phone}: ${message}`);
-      return true;
-    }
-    
-    // In production, you would use a service like Twilio
-    // Example with Twilio:
-    /*
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    const result = await client.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phone
+    // Log the SMS for development purposes
+    console.log('MOCK SMS SENT:', {
+      to: options.to,
+      from: options.from || 'iREVA',
+      message: options.message
     });
-    return !!result.sid;
-    */
     
-    // For now, just simulate success in production
-    console.log(`[SMS SERVICE] Sending SMS to ${phone}`);
+    // In a real implementation, you would call an SMS API here
+    // For example, with Twilio:
+    // return await twilioClient.messages.create({
+    //   body: options.message,
+    //   from: process.env.TWILIO_PHONE_NUMBER,
+    //   to: options.to,
+    // }).then(message => !!message.sid);
     
+    // For now, just return success
     return true;
   } catch (error) {
     console.error('Error sending SMS:', error);
