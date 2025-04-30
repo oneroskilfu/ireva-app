@@ -65,7 +65,8 @@ import {
   UploadFile as UploadFileIcon,
   SaveAlt as SaveAltIcon,
   Balance as BalanceIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
@@ -524,10 +525,7 @@ const WalletControlPanel = () => {
       page: 1
     });
     
-    fetchTransactions(1, {
-      ...filters,
-      limit: newLimit.toString()
-    });
+    fetchTransactions(1, filters);
   };
 
   // Function to apply filters
@@ -564,6 +562,199 @@ const WalletControlPanel = () => {
       ...snackbar,
       open: false
     });
+  };
+
+  // Function to fetch wallet balance history
+  const fetchBalanceHistory = async () => {
+    setBalanceHistoryLoading(true);
+    
+    try {
+      const response = await axios.get('/api/admin/wallets/balance-history');
+      setBalanceHistory(response.data);
+    } catch (err) {
+      console.error('Error fetching balance history:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load balance history data',
+        severity: 'error'
+      });
+    } finally {
+      setBalanceHistoryLoading(false);
+    }
+  };
+
+  // Function to fetch admin activity logs
+  const fetchActivityLogs = async () => {
+    setActivityLogsLoading(true);
+    
+    try {
+      const response = await axios.get('/api/admin/wallets/activity-logs');
+      setActivityLogs(response.data);
+    } catch (err) {
+      console.error('Error fetching activity logs:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load activity logs',
+        severity: 'error'
+      });
+    } finally {
+      setActivityLogsLoading(false);
+    }
+  };
+
+  // Function to perform wallet reconciliation
+  const reconcileWallet = async (walletId: string) => {
+    setReconciliationLoading(true);
+    
+    try {
+      const response = await axios.post(`/api/admin/wallets/${walletId}/reconcile`);
+      setReconciliationReport(response.data.reconciliation);
+      
+      setSnackbar({
+        open: true,
+        message: response.data.message,
+        severity: response.data.reconciliation.status === 'balanced' ? 'success' : 'warning'
+      });
+    } catch (err) {
+      console.error('Error reconciling wallet:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to reconcile wallet',
+        severity: 'error'
+      });
+    } finally {
+      setReconciliationLoading(false);
+    }
+  };
+
+  // Function to export transactions
+  const exportTransactions = async (format: 'json' | 'csv' = 'csv') => {
+    try {
+      // Build query parameters for filtering
+      const params = new URLSearchParams();
+      params.append('format', format);
+      
+      if (filters.walletId) params.append('walletId', filters.walletId);
+      if (filters.type) params.append('type', filters.type);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      
+      // If format is JSON, fetch and download JSON file
+      if (format === 'json') {
+        const response = await axios.get(`/api/admin/wallets/transactions/export?${params.toString()}`);
+        const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+        saveAs(blob, `transactions-export-${new Date().toISOString().split('T')[0]}.json`);
+      } else {
+        // For CSV, use direct download as server sends appropriate headers
+        const response = await axios.get(`/api/admin/wallets/transactions/export?${params.toString()}`, {
+          responseType: 'blob'
+        });
+        
+        saveAs(response.data, `transactions-export-${new Date().toISOString().split('T')[0]}.csv`);
+      }
+      
+      setSnackbar({
+        open: true,
+        message: `Transactions exported successfully as ${format.toUpperCase()}`,
+        severity: 'success'
+      });
+    } catch (err) {
+      console.error('Error exporting transactions:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to export transactions',
+        severity: 'error'
+      });
+    }
+  };
+
+  // Function to handle file import
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setImportTransactionsForm({
+        ...importTransactionsForm,
+        file: event.target.files[0]
+      });
+    }
+  };
+
+  // Function to import transactions
+  const importTransactions = async () => {
+    if (!importTransactionsForm.file) {
+      setSnackbar({
+        open: true,
+        message: 'Please select a file to import',
+        severity: 'warning'
+      });
+      return;
+    }
+    
+    setProcessingAction(true);
+    
+    try {
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        try {
+          if (!e.target || typeof e.target.result !== 'string') {
+            throw new Error('Failed to read file');
+          }
+          
+          let transactions;
+          
+          if (importTransactionsForm.fileFormat === 'json') {
+            transactions = JSON.parse(e.target.result);
+          } else {
+            // For CSV, we would need proper CSV parsing (not implemented here)
+            throw new Error('CSV import not yet implemented');
+          }
+          
+          const response = await axios.post('/api/admin/wallets/transactions/import', {
+            transactions: Array.isArray(transactions) ? transactions : [transactions]
+          });
+          
+          setSnackbar({
+            open: true,
+            message: response.data.message,
+            severity: 'success'
+          });
+          
+          setImportTransactionsDialog(false);
+          setImportTransactionsForm({
+            file: null,
+            fileFormat: 'json'
+          });
+          
+          // Refresh transactions
+          fetchTransactions();
+        } catch (err) {
+          console.error('Error processing file:', err);
+          setSnackbar({
+            open: true,
+            message: 'Failed to process import file',
+            severity: 'error'
+          });
+        } finally {
+          setProcessingAction(false);
+        }
+      };
+      
+      reader.readAsText(importTransactionsForm.file);
+    } catch (err) {
+      console.error('Error importing transactions:', err);
+      setSnackbar({
+        open: true,
+        message: 'Failed to import transactions',
+        severity: 'error'
+      });
+      setProcessingAction(false);
+    }
+  };
+
+  // Function to handle advanced tab change
+  const handleAdvancedTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setAdvancedTabValue(newValue);
   };
 
   // Fetch data on component mount
@@ -716,17 +907,36 @@ const WalletControlPanel = () => {
         {/* Tabs for Wallet and Transactions */}
         <Box sx={{ mb: 3 }}>
           <Paper sx={{ borderRadius: 2 }}>
-            <Tabs
-              value={tabValue}
-              onChange={handleTabChange}
-              variant="fullWidth"
-              indicatorColor="primary"
-              textColor="primary"
-              sx={{ mb: 2 }}
-            >
-              <Tab label="Wallet Management" />
-              <Tab label="Transaction Management" />
-            </Tabs>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                variant="fullWidth"
+                indicatorColor="primary"
+                textColor="primary"
+                sx={{ mb: 2, flex: 1 }}
+              >
+                <Tab label="Wallet Management" />
+                <Tab label="Transaction Management" />
+              </Tabs>
+              <Box sx={{ pr: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<AdminPanelSettingsIcon />}
+                  onClick={() => {
+                    // Initialize data when opening the advanced tools modal
+                    fetchBalanceHistory();
+                    fetchActivityLogs();
+                    setAdvancedTabValue(0);
+                    setBalanceHistoryDialog(true);
+                  }}
+                  sx={{ mr: 1 }}
+                >
+                  Advanced Tools
+                </Button>
+              </Box>
+            </Box>
 
             {/* Wallet Management Tab */}
             {tabValue === 0 && (
@@ -819,7 +1029,8 @@ const WalletControlPanel = () => {
                                 <IconButton 
                                   size="small" 
                                   color="primary"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setFilters({...filters, walletId: wallet.id});
                                     setTabValue(1);
                                     fetchTransactions(1, {...filters, walletId: wallet.id});
@@ -832,12 +1043,26 @@ const WalletControlPanel = () => {
                                 <IconButton 
                                   size="small" 
                                   color="success"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setAddFundsForm({...addFundsForm, walletId: wallet.id});
                                     setAddFundsDialog(true);
                                   }}
                                 >
                                   <AddIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Reconcile Wallet">
+                                <IconButton 
+                                  size="small" 
+                                  color="info"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    reconcileWallet(wallet.id);
+                                    setReconciliationDialog(true);
+                                  }}
+                                >
+                                  <BalanceIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </Box>
@@ -858,6 +1083,26 @@ const WalletControlPanel = () => {
                     Transaction Management
                   </Typography>
                   <Stack direction="row" spacing={1}>
+                    <Tooltip title="Export Transactions">
+                      <Button
+                        variant="outlined"
+                        color="success"
+                        startIcon={<SaveAltIcon />}
+                        onClick={() => exportTransactions('csv')}
+                      >
+                        Export
+                      </Button>
+                    </Tooltip>
+                    <Tooltip title="Import Transactions">
+                      <Button
+                        variant="outlined"
+                        color="info"
+                        startIcon={<UploadFileIcon />}
+                        onClick={() => setImportTransactionsDialog(true)}
+                      >
+                        Import
+                      </Button>
+                    </Tooltip>
                     <Button 
                       variant="outlined" 
                       color="primary"
@@ -1409,6 +1654,361 @@ const WalletControlPanel = () => {
         </DialogActions>
       </Dialog>
       
+      {/* Balance History Dialog */}
+      <Dialog
+        open={balanceHistoryDialog}
+        onClose={() => setBalanceHistoryDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">Advanced Wallet Tools</Typography>
+            <IconButton edge="end" color="inherit" onClick={() => setBalanceHistoryDialog(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Tabs
+            value={advancedTabValue}
+            onChange={handleAdvancedTabChange}
+            aria-label="advanced tools tabs"
+            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab label="Wallet Balance History" icon={<HistoryIcon />} iconPosition="start" />
+            <Tab label="Admin Activity Logs" icon={<AdminPanelSettingsIcon />} iconPosition="start" />
+            <Tab label="Recent Reconciliations" icon={<BalanceIcon />} iconPosition="start" />
+          </Tabs>
+
+          {/* Wallet Balance History Tab */}
+          {advancedTabValue === 0 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Historical Balance Trends
+              </Typography>
+              
+              {balanceHistoryLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Paper elevation={1} sx={{ p: 2, my: 2 }}>
+                  <Box sx={{ height: 400 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={balanceHistory}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <RechartsTooltip 
+                          formatter={(value: number, name: string) => [
+                            `₦${value.toLocaleString()}`, 
+                            name.charAt(0).toUpperCase() + name.slice(1)
+                          ]}
+                        />
+                        <Legend />
+                        <Area type="monotone" dataKey="main" stackId="1" stroke="#4CAF50" fill="#4CAF50" name="Main Wallet" />
+                        <Area type="monotone" dataKey="escrow" stackId="1" stroke="#2196F3" fill="#2196F3" name="Escrow Wallet" />
+                        <Area type="monotone" dataKey="rewards" stackId="1" stroke="#FF9800" fill="#FF9800" name="Rewards Wallet" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                    Chart shows the balance history of all platform wallets over time
+                  </Typography>
+                </Paper>
+              )}
+              
+              <Box sx={{ mt: 3 }}>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<RefreshIcon />} 
+                  onClick={fetchBalanceHistory}
+                  disabled={balanceHistoryLoading}
+                >
+                  Refresh Data
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {/* Admin Activity Logs Tab */}
+          {advancedTabValue === 1 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Admin Activity Logs for Wallet Operations
+              </Typography>
+              
+              {activityLogsLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Paper elevation={1} sx={{ p: 2, my: 2 }}>
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                          <TableCell>Admin ID</TableCell>
+                          <TableCell>Action</TableCell>
+                          <TableCell>Target</TableCell>
+                          <TableCell>Details</TableCell>
+                          <TableCell>Timestamp</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {activityLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>{log.adminId}</TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={log.action.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} 
+                                size="small"
+                                color={
+                                  log.action.includes('approve') ? 'success' :
+                                  log.action.includes('transfer') ? 'info' :
+                                  log.action.includes('reconcile') ? 'warning' : 'default'
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>{log.target}</TableCell>
+                            <TableCell>{log.details}</TableCell>
+                            <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Paper>
+              )}
+              
+              <Box sx={{ mt: 3 }}>
+                <Button 
+                  variant="outlined" 
+                  startIcon={<RefreshIcon />} 
+                  onClick={fetchActivityLogs}
+                  disabled={activityLogsLoading}
+                >
+                  Refresh Logs
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {/* Wallet Reconciliation Tab */}
+          {advancedTabValue === 2 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Wallet Reconciliation
+              </Typography>
+              
+              {reconciliationReport ? (
+                <Paper elevation={1} sx={{ p: 3, my: 2, border: `1px solid ${reconciliationReport.status === 'balanced' ? 'green' : 'orange'}` }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Box sx={{ 
+                      p: 1, 
+                      borderRadius: '50%', 
+                      bgcolor: reconciliationReport.status === 'balanced' ? 'success.light' : 'warning.light',
+                      mr: 2
+                    }}>
+                      {reconciliationReport.status === 'balanced' ? 
+                        <CheckIcon sx={{ color: 'white' }} /> : 
+                        <WarningIcon sx={{ color: 'white' }} />
+                      }
+                    </Box>
+                    <Typography variant="h6">
+                      {reconciliationReport.status === 'balanced' 
+                        ? 'Wallet is Balanced' 
+                        : 'Wallet Discrepancy Found'}
+                    </Typography>
+                  </Box>
+                  
+                  <Grid container spacing={2} sx={{ mt: 2 }}>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="body2" color="text.secondary">Wallet ID</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{reconciliationReport.walletId}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="body2" color="text.secondary">Actual Balance</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>₦{reconciliationReport.actualBalance.toLocaleString()}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="body2" color="text.secondary">Expected Balance</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>₦{reconciliationReport.expectedBalance.toLocaleString()}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="body2" color="text.secondary">Discrepancy</Typography>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          fontWeight: 'medium',
+                          color: Math.abs(reconciliationReport.discrepancy) > 0 ? 'error.main' : 'inherit'
+                        }}
+                      >
+                        ₦{reconciliationReport.discrepancy.toLocaleString()}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="body2" color="text.secondary">Transactions Analyzed</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{reconciliationReport.transactionCount}</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Typography variant="body2" color="text.secondary">Timestamp</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>{new Date(reconciliationReport.timestamp).toLocaleString()}</Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              ) : (
+                <Alert severity="info" sx={{ my: 2 }}>
+                  No recent reconciliation data. Use the reconcile button on any wallet to perform a reconciliation check.
+                </Alert>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Transactions Dialog */}
+      <Dialog
+        open={importTransactionsDialog}
+        onClose={() => setImportTransactionsDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Import Transactions</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Upload a JSON file containing transaction data to import. Each transaction must have at minimum: type, walletId, and amount fields.
+            </Typography>
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Format</InputLabel>
+              <Select
+                value={importTransactionsForm.fileFormat}
+                label="Format"
+                onChange={(e) => setImportTransactionsForm({
+                  ...importTransactionsForm, 
+                  fileFormat: e.target.value as 'json' | 'csv'
+                })}
+              >
+                <MenuItem value="json">JSON</MenuItem>
+                <MenuItem value="csv" disabled>CSV (Coming Soon)</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <Button
+              variant="outlined"
+              component="label"
+              fullWidth
+              startIcon={<UploadFileIcon />}
+              sx={{ mb: 2, py: 1 }}
+            >
+              Select File
+              <input 
+                type="file" 
+                hidden 
+                accept={importTransactionsForm.fileFormat === 'json' ? '.json' : '.csv'} 
+                onChange={handleFileChange} 
+              />
+            </Button>
+            
+            {importTransactionsForm.file && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Selected file: {importTransactionsForm.file.name} ({Math.round(importTransactionsForm.file.size / 1024)} KB)
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImportTransactionsDialog(false)}>Cancel</Button>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={importTransactions}
+            disabled={!importTransactionsForm.file || processingAction}
+          >
+            {processingAction ? <CircularProgress size={24} /> : 'Import'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reconciliation Dialog */}
+      <Dialog
+        open={reconciliationDialog}
+        onClose={() => setReconciliationDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Wallet Reconciliation Results</DialogTitle>
+        <DialogContent>
+          {reconciliationLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : reconciliationReport ? (
+            <Box sx={{ mt: 2 }}>
+              <Alert 
+                severity={reconciliationReport.status === 'balanced' ? 'success' : 'warning'} 
+                sx={{ mb: 3 }}
+              >
+                {reconciliationReport.status === 'balanced' 
+                  ? 'Wallet balances successfully reconciled' 
+                  : `Discrepancy of ₦${reconciliationReport.discrepancy.toLocaleString()} found`}
+              </Alert>
+              
+              <Typography variant="subtitle2" sx={{ mt: 2 }}>Reconciliation Details:</Typography>
+              
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Actual Balance:</Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    ₦{reconciliationReport.actualBalance.toLocaleString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Expected Balance:</Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    ₦{reconciliationReport.expectedBalance.toLocaleString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Transactions Analyzed:</Typography>
+                  <Typography variant="body1">{reconciliationReport.transactionCount}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Reconciliation Time:</Typography>
+                  <Typography variant="body1">{new Date(reconciliationReport.timestamp).toLocaleString()}</Typography>
+                </Grid>
+              </Grid>
+              
+              {reconciliationReport.status !== 'balanced' && (
+                <Box sx={{ mt: 3, bgcolor: '#fff4e5', p: 2, borderRadius: 1 }}>
+                  <Typography variant="subtitle2" color="warning.dark">Action Required</Typography>
+                  <Typography variant="body2">
+                    Please review recent transactions for this wallet and reconcile the discrepancy manually.
+                    Common causes include:
+                    <ul>
+                      <li>Transactions processed outside the platform</li>
+                      <li>Manual balance adjustments</li>
+                      <li>Failed transaction rollbacks</li>
+                    </ul>
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Typography sx={{ mt: 2 }}>No reconciliation data available.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReconciliationDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
