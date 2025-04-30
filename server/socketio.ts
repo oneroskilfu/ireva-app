@@ -8,7 +8,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
 import { Request } from 'express';
 import { parse } from 'url';
-import { verify } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 
 // Define connection types
@@ -18,6 +18,7 @@ interface AuthenticatedWebSocket extends WebSocket {
   isAuthenticated: boolean;
   isAdmin: boolean;
   lastPing: number;
+  ip?: string;
 }
 
 // WebSocket message type
@@ -31,6 +32,13 @@ const clients = new Map<string, AuthenticatedWebSocket>();
 
 // User ID to connection IDs mapping (for multiple device/tab support)
 const userConnections = new Map<string, Set<string>>();
+
+// Room ID to connection IDs mapping
+const rooms = new Map<string, Set<string>>();
+
+// Rate limiting
+const MAX_MESSAGES_PER_SECOND = 10;
+const messageRateLimiter = new Map<string, { count: number, timestamp: number }>();
 
 // Create and configure WebSocket server
 export function setupWebSocketServer(server: Server) {
@@ -58,14 +66,55 @@ export function setupWebSocketServer(server: Server) {
 
     console.log(`WebSocket client connected: ${connectionId}`);
 
-    // Handle incoming messages
+    // Extract client IP from request
+    socket.ip = req.headers['x-forwarded-for']?.toString() || 
+                req.socket.remoteAddress || 
+                'unknown';
+
+    // Handle incoming messages with enhanced error handling
     socket.on('message', (message: string) => {
       try {
-        const parsedMessage: WSMessage = JSON.parse(message);
+        // Validate message is proper JSON
+        let parsedMessage: WSMessage;
+        try {
+          parsedMessage = JSON.parse(message);
+        } catch (e) {
+          console.error('Invalid JSON in WebSocket message:', message.substring(0, 100));
+          sendErrorMessage(socket, 'Invalid JSON format');
+          return;
+        }
+        
+        // Validate message has a type
+        if (!parsedMessage.type || typeof parsedMessage.type !== 'string') {
+          console.error('Missing or invalid message type:', parsedMessage);
+          sendErrorMessage(socket, 'Message must include a valid "type" field');
+          return;
+        }
+        
+        // Rate limiting
+        const now = Date.now();
+        const messageCount = messageRateLimiter.get(socket.id) || { count: 0, timestamp: now };
+        
+        if (now - messageCount.timestamp < 1000) { // 1 second window
+          messageCount.count++;
+          if (messageCount.count > MAX_MESSAGES_PER_SECOND) {
+            console.warn(`Rate limit exceeded for client ${socket.id}`);
+            sendErrorMessage(socket, 'Rate limit exceeded. Please slow down requests.');
+            return;
+          }
+        } else {
+          // Reset counter for new time window
+          messageCount.count = 1;
+          messageCount.timestamp = now;
+        }
+        
+        messageRateLimiter.set(socket.id, messageCount);
+        
+        // Process the message
         handleClientMessage(socket, parsedMessage);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-        sendErrorMessage(socket, 'Invalid message format');
+      } catch (error: any) {
+        console.error('Error processing WebSocket message:', error);
+        sendErrorMessage(socket, `Error: ${error.message || 'Unknown error'}`);
       }
     });
 
@@ -113,58 +162,200 @@ export function setupWebSocketServer(server: Server) {
   return wss;
 }
 
+// Event types clients can subscribe to
+type EventCategory = 
+  | 'investment' 
+  | 'property' 
+  | 'wallet' 
+  | 'transaction' 
+  | 'kyc' 
+  | 'market' 
+  | 'admin' 
+  | 'system';
+
+// Store client subscriptions
+const clientSubscriptions = new Map<string, Set<EventCategory>>();
+
 // Handle messages received from clients
 function handleClientMessage(socket: AuthenticatedWebSocket, message: WSMessage) {
   // Update last ping time
   socket.lastPing = Date.now();
   
-  switch (message.type) {
-    case 'authenticate':
-      authenticateClient(socket, message);
-      break;
-      
-    case 'pong':
-      // Just update the ping time, already done above
-      break;
-      
-    case 'subscribe':
-      // Handle subscription to specific data
-      if (socket.isAuthenticated) {
-        // Store subscription info for the client
-        // This could be extended to support room-based subscriptions
-      } else {
-        sendErrorMessage(socket, 'Authentication required');
-      }
-      break;
-      
-    case 'unsubscribe':
-      // Handle unsubscription
-      break;
-      
-    default:
-      console.log(`Received message of type ${message.type} from ${socket.id}`);
+  try {
+    switch (message.type) {
+      case 'authenticate':
+        authenticateClient(socket, message);
+        break;
+        
+      case 'pong':
+        // Just update the ping time, already done above
+        break;
+        
+      case 'subscribe':
+        handleSubscription(socket, message);
+        break;
+        
+      case 'unsubscribe':
+        handleUnsubscription(socket, message);
+        break;
+        
+      // Event-specific handlers
+      case 'join_room':
+        if (socket.isAuthenticated) {
+          const roomId = message.roomId as string;
+          if (roomId) joinRoom(socket, roomId);
+        } else {
+          sendErrorMessage(socket, 'Authentication required for joining rooms');
+        }
+        break;
+        
+      case 'leave_room':
+        if (socket.isAuthenticated) {
+          const roomId = message.roomId as string;
+          if (roomId) leaveRoom(socket, roomId);
+        }
+        break;
+        
+      default:
+        console.log(`Received message of type ${message.type} from ${socket.id}`);
+        // Send acknowledgment for custom event types
+        sendMessage(socket, {
+          type: 'ack',
+          originalType: message.type,
+          timestamp: new Date().toISOString()
+        });
+    }
+  } catch (error: any) {
+    console.error(`Error handling message ${message.type}:`, error);
+    sendErrorMessage(socket, `Failed to process message: ${error.message || 'Unknown error'}`);
   }
 }
 
-// Authenticate a client connection using JWT or other method
-function authenticateClient(socket: AuthenticatedWebSocket, message: WSMessage) {
-  const { userId, token } = message;
+// Handle subscription to event categories
+function handleSubscription(socket: AuthenticatedWebSocket, message: WSMessage) {
+  if (!socket.isAuthenticated) {
+    sendErrorMessage(socket, 'Authentication required for subscriptions');
+    return;
+  }
   
-  if (!userId) {
-    sendErrorMessage(socket, 'User ID required for authentication');
+  const categories = message.categories as EventCategory[];
+  if (!Array.isArray(categories) || categories.length === 0) {
+    sendErrorMessage(socket, 'Invalid subscription request: categories missing or empty');
+    return;
+  }
+  
+  // Initialize client's subscription set if not exists
+  if (!clientSubscriptions.has(socket.id)) {
+    clientSubscriptions.set(socket.id, new Set());
+  }
+  
+  const subscriptions = clientSubscriptions.get(socket.id)!;
+  let invalidCategories: string[] = [];
+  
+  // Add each category to client's subscriptions
+  categories.forEach(category => {
+    if (['investment', 'property', 'wallet', 'transaction', 'kyc', 'market', 'admin', 'system'].includes(category)) {
+      subscriptions.add(category);
+    } else {
+      invalidCategories.push(category);
+    }
+  });
+  
+  // Send confirmation/error
+  if (invalidCategories.length > 0) {
+    sendMessage(socket, {
+      type: 'subscription_partial',
+      subscribed: Array.from(subscriptions),
+      invalid: invalidCategories,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    sendMessage(socket, {
+      type: 'subscription_success',
+      subscribed: Array.from(subscriptions),
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  console.log(`Client ${socket.id} subscribed to: ${Array.from(subscriptions).join(', ')}`);
+}
+
+// Handle unsubscription from event categories
+function handleUnsubscription(socket: AuthenticatedWebSocket, message: WSMessage) {
+  if (!clientSubscriptions.has(socket.id)) {
+    sendMessage(socket, {
+      type: 'unsubscription_success',
+      subscribed: [],
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+  
+  const categories = message.categories as EventCategory[];
+  const subscriptions = clientSubscriptions.get(socket.id)!;
+  
+  if (Array.isArray(categories) && categories.length > 0) {
+    // Remove specific categories
+    categories.forEach(category => {
+      subscriptions.delete(category);
+    });
+  } else {
+    // If no categories specified, remove all
+    subscriptions.clear();
+  }
+  
+  sendMessage(socket, {
+    type: 'unsubscription_success',
+    subscribed: Array.from(subscriptions),
+    timestamp: new Date().toISOString()
+  });
+  
+  console.log(`Client ${socket.id} updated subscriptions: ${Array.from(subscriptions).join(', ')}`);
+}
+
+// Join a specific room for group messaging
+function joinRoom(socket: AuthenticatedWebSocket, roomId: string) {
+  // We'll implement room management with a Map of roomId -> Set of connection IDs
+  if (!rooms.has(roomId)) {
+    rooms.set(roomId, new Set());
+  }
+  
+  rooms.get(roomId)!.add(socket.id);
+  
+  sendMessage(socket, {
+    type: 'room_joined',
+    roomId,
+    timestamp: new Date().toISOString()
+  });
+  
+  console.log(`Client ${socket.id} joined room: ${roomId}`);
+}
+
+// Authenticate a client connection using JWT token
+function authenticateClient(socket: AuthenticatedWebSocket, message: WSMessage) {
+  const { token } = message;
+  
+  if (!token) {
+    sendErrorMessage(socket, 'Authentication token required');
     return;
   }
   
   try {
-    // Ideally verify a token here
-    // For now, just using the user ID provided
+    // Verify the JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_jwt_secret') as any;
+    
+    if (!decoded || !decoded.userId) {
+      throw new Error('Invalid token payload');
+    }
+    
+    const userId = decoded.userId;
     
     // Update socket with user info
     socket.userId = userId;
     socket.isAuthenticated = true;
     
-    // Check if user is admin (this would be part of token verification)
-    // socket.isAdmin = decoded.role === 'admin';
+    // Check if user is admin based on decoded role
+    socket.isAdmin = decoded.role === 'admin' || decoded.role === 'superadmin';
     
     // Add connection to user's connections list
     if (!userConnections.has(userId)) {
@@ -172,16 +363,25 @@ function authenticateClient(socket: AuthenticatedWebSocket, message: WSMessage) 
     }
     userConnections.get(userId)!.add(socket.id);
     
+    // Send success response with user info and permissions
     sendMessage(socket, {
       type: 'authentication_success',
       userId,
+      isAdmin: socket.isAdmin,
+      expiresAt: decoded.exp * 1000, // Convert to milliseconds
       timestamp: new Date().toISOString(),
     });
     
-    console.log(`Client ${socket.id} authenticated as user ${userId}`);
-  } catch (error) {
-    console.error('Authentication error:', error);
-    sendErrorMessage(socket, 'Authentication failed');
+    console.log(`Client ${socket.id} authenticated as user ${userId} (admin: ${socket.isAdmin})`);
+    
+    // Log user activity for security monitoring
+    // This could be stored in a database for auditing
+    const ipAddress = socket.ip || 'unknown';
+    console.log(`User ${userId} connected via WebSocket from IP: ${ipAddress}`);
+    
+  } catch (error: any) {
+    console.error('Authentication error:', error.message);
+    sendErrorMessage(socket, 'Authentication failed: ' + (error.message || 'Invalid token'));
   }
 }
 
@@ -199,6 +399,20 @@ function handleClientDisconnection(socket: AuthenticatedWebSocket) {
       userConnections.delete(socket.userId);
     }
   }
+  
+  // Remove from all subscriptions
+  clientSubscriptions.delete(socket.id);
+  
+  // Remove from all rooms
+  rooms.forEach((connections, roomId) => {
+    if (connections.has(socket.id)) {
+      connections.delete(socket.id);
+      // Clean up empty rooms
+      if (connections.size === 0) {
+        rooms.delete(roomId);
+      }
+    }
+  });
   
   console.log(`WebSocket client disconnected: ${socket.id}`);
 }
@@ -249,10 +463,43 @@ export function broadcastToAdmins(message: any) {
   });
 }
 
+// Leave a specific room
+function leaveRoom(socket: AuthenticatedWebSocket, roomId: string) {
+  if (!rooms.has(roomId)) {
+    sendMessage(socket, {
+      type: 'room_left',
+      roomId,
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+  
+  rooms.get(roomId)!.delete(socket.id);
+  
+  // Clean up empty rooms
+  if (rooms.get(roomId)!.size === 0) {
+    rooms.delete(roomId);
+  }
+  
+  sendMessage(socket, {
+    type: 'room_left',
+    roomId,
+    timestamp: new Date().toISOString()
+  });
+  
+  console.log(`Client ${socket.id} left room: ${roomId}`);
+}
+
 // Broadcast to specific room (group of users)
-export function broadcastToRoom(room: string, message: any) {
-  // This would require implementing a room subscription system
-  // For now, just a placeholder
+export function broadcastToRoom(roomId: string, message: any) {
+  if (!rooms.has(roomId)) return;
+  
+  rooms.get(roomId)!.forEach(connectionId => {
+    const client = clients.get(connectionId);
+    if (client && client.readyState === WebSocket.OPEN) {
+      sendMessage(client, message);
+    }
+  });
 }
 
 // Broadcast current server statistics to admin clients

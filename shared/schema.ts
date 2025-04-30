@@ -1871,3 +1871,65 @@ export type InsertJurisdictionRestriction = z.infer<typeof insertJurisdictionRes
 
 export type ComplianceException = typeof complianceExceptions.$inferSelect;
 export type InsertComplianceException = z.infer<typeof insertComplianceExceptionSchema>;
+
+// CRM System Schema
+export const communicationChannels = pgEnum('comm_channel', ['email', 'push', 'sms']);
+export const messageStatus = pgEnum('message_status', ['draft', 'scheduled', 'sent', 'failed']);
+
+export const communications = pgTable('communications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: varchar('title', 255).notNull(),
+  content: text('content').notNull(),
+  channel: communicationChannels('channel').notNull(),
+  status: messageStatus('status').notNull().default('draft'),
+  scheduledAt: timestamp('scheduled_at'),
+  segmentId: uuid('segment_id').references(() => userSegments.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+export const userSegments = pgTable('user_segments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', 100).notNull(),
+  filters: jsonb('filters').$type<{
+    minInvestment?: number;
+    lastActivityDays?: number;
+    kycStatus?: string[];
+  }>(),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+export const userCommunicationLogs = pgTable('user_comm_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  communicationId: uuid('comm_id').references(() => communications.id).notNull(),
+  status: messageStatus('status').notNull(),
+  sentAt: timestamp('sent_at'),
+  openedAt: timestamp('opened_at')
+});
+
+// Create insert schemas for CRM tables
+export const insertCommunicationSchema = createInsertSchema(communications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertUserSegmentSchema = createInsertSchema(userSegments).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertUserCommunicationLogSchema = createInsertSchema(userCommunicationLogs).omit({
+  id: true
+});
+
+// Export types for CRM tables
+export type Communication = typeof communications.$inferSelect;
+export type InsertCommunication = z.infer<typeof insertCommunicationSchema>;
+
+export type UserSegment = typeof userSegments.$inferSelect;
+export type InsertUserSegment = z.infer<typeof insertUserSegmentSchema>;
+
+export type UserCommunicationLog = typeof userCommunicationLogs.$inferSelect;
+export type InsertUserCommunicationLog = z.infer<typeof insertUserCommunicationLogSchema>;
