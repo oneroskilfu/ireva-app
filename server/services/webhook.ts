@@ -5,6 +5,11 @@ import axios from "axios";
 import { eq, sql, or, inArray } from "drizzle-orm";
 import { logger } from "../utils/logger";
 
+// Ensure we have crypto available
+if (!crypto || !crypto.createHmac || !crypto.timingSafeEqual) {
+  console.error("Crypto support is required for webhook functionality");
+}
+
 // Define event types for the system
 export type SystemEvent = {
   type: typeof webhookEventEnum.enumValues[number];
@@ -70,8 +75,8 @@ export async function handleEvent(event: SystemEvent) {
         success = response.status >= 200 && response.status < 300;
         responseStatus = response.status;
         responseBody = JSON.stringify(response.data);
-      } catch (error) {
-        errorMessage = error.message || "Unknown error";
+      } catch (error: any) {
+        errorMessage = error?.message || "Unknown error";
         logger.error(`Webhook delivery error: ${errorMessage}`);
       }
 

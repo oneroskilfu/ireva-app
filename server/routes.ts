@@ -71,6 +71,7 @@ import { pushNotificationRouter } from './routes/push-notification-routes';
 import { sendNotificationRouter } from './routes/send-notification-routes';
 import { savePushTokenRouter } from './routes/save-push-token-routes';
 import { pushNotificationSendRouter } from './routes/push-notification-send-routes';
+import webhookRoutes from './routes/webhook';
 import fs from 'fs';
 
 // Import our new TypeScript routes
@@ -737,6 +738,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Smart Contract Escrow routes
   app.use('/api/escrow', escrowRouter);
   console.log("Smart contract escrow routes registered");
+  
+  // Set up Webhook routes
+  app.use('/api', webhookRoutes);
+  console.log("Webhook routes registered");
 
   const httpServer = createServer(app);
   

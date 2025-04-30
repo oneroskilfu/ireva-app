@@ -1,7 +1,7 @@
 import express from "express";
 import { z } from "zod";
 import { db } from "../db";
-import { insertWebhookSchema, webhooks } from "@shared/schema";
+import { insertWebhookSchema, webhooks, webhookDeliveries } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { validateRequest } from "../middleware/validate";
 import { isAdmin, isAuthenticated } from "../middleware/auth";
@@ -12,6 +12,24 @@ import {
   verifySignature,
 } from "../services/webhook";
 import { logger } from "../utils/logger";
+
+type User = {
+  id: string;
+  role?: string;
+}
+
+// Extend Express Request
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+      jwtPayload?: {
+        id: string;
+        role: string;
+      };
+    }
+  }
+}
 
 const router = express.Router();
 
