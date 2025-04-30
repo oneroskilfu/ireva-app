@@ -1230,3 +1230,174 @@ export type InsertSecondaryListing = z.infer<typeof insertSecondaryListingSchema
 
 export type SecondaryBid = typeof secondaryBids.$inferSelect;
 export type InsertSecondaryBid = z.infer<typeof insertSecondaryBidSchema>;
+
+// Pro Rata Distribution System
+export const distributionPriority = pgTable('distribution_priority', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').notNull().references(() => properties.id, { onDelete: 'cascade' }),
+  tier: integer('tier').notNull(),
+  recipientType: varchar('recipient_type', { length: 20 }).notNull(),
+  percentage: numeric('percentage', { precision: 5, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at')
+});
+
+// Distribution records
+export const distributionRecords = pgTable('distribution_records', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').notNull().references(() => properties.id, { onDelete: 'cascade' }),
+  tier: integer('tier').notNull(),
+  amount: numeric('amount', { precision: 15, scale: 2 }).notNull(),
+  recipientType: varchar('recipient_type', { length: 20 }).notNull(),
+  recipientId: uuid('recipient_id').references(() => users.id),
+  distributedAt: timestamp('distributed_at').defaultNow(),
+  status: varchar('status', { length: 20 }).default('completed'),
+  transactionId: uuid('transaction_id').references(() => transactions.id)
+});
+
+// Tax Documents
+export const taxDocuments = pgTable('tax_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  year: integer('year').notNull(),
+  documentType: varchar('document_type', { length: 20 }).notNull(),
+  generatedAt: timestamp('generated_at').defaultNow(),
+  downloadUrl: text('download_url'),
+  status: varchar('status', { length: 20 }).default('pending'),
+  metadata: jsonb('metadata')
+});
+
+// Investor Communication Hub
+export const investorUpdates = pgTable('investor_updates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').notNull().references(() => properties.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  attachments: jsonb('attachments'),
+  scheduledAt: timestamp('scheduled_at'),
+  sentAt: timestamp('sent_at'),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  status: varchar('status', { length: 20 }).default('draft')
+});
+
+// Create insert schemas for the new tables
+export const insertDistributionPrioritySchema = createInsertSchema(distributionPriority).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertDistributionRecordSchema = createInsertSchema(distributionRecords).omit({
+  id: true,
+  distributedAt: true
+});
+
+export const insertTaxDocumentSchema = createInsertSchema(taxDocuments).omit({
+  id: true,
+  generatedAt: true
+});
+
+export const insertInvestorUpdateSchema = createInsertSchema(investorUpdates).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true
+});
+
+// Export types for the new tables
+export type DistributionPriority = typeof distributionPriority.$inferSelect;
+export type InsertDistributionPriority = z.infer<typeof insertDistributionPrioritySchema>;
+
+export type DistributionRecord = typeof distributionRecords.$inferSelect;
+export type InsertDistributionRecord = z.infer<typeof insertDistributionRecordSchema>;
+
+export type TaxDocument = typeof taxDocuments.$inferSelect;
+export type InsertTaxDocument = z.infer<typeof insertTaxDocumentSchema>;
+
+export type InvestorUpdate = typeof investorUpdates.$inferSelect;
+export type InsertInvestorUpdate = z.infer<typeof insertInvestorUpdateSchema>;
+
+// Portfolio Analysis - Exposure Analyzer
+export const portfolioExposures = pgTable('portfolio_exposures', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  exposureType: varchar('exposure_type', { length: 50 }).notNull(), // geographic, asset_class, development_stage
+  category: varchar('category', { length: 100 }).notNull(), // state, property_type, stage
+  value: numeric('value', { precision: 15, scale: 2 }).notNull(),
+  percentage: numeric('percentage', { precision: 7, scale: 4 }).notNull(),
+  calculatedAt: timestamp('calculated_at').defaultNow(),
+  metadata: jsonb('metadata')
+});
+
+// Asset Class Balancer
+export const targetAllocations = pgTable('target_allocations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  allocationType: varchar('allocation_type', { length: 50 }).notNull(), // property_type, investment_vehicle, development_stage
+  category: varchar('category', { length: 100 }).notNull(),
+  targetPercentage: numeric('target_percentage', { precision: 7, scale: 4 }).notNull(),
+  currentPercentage: numeric('current_percentage', { precision: 7, scale: 4 }),
+  updatedAt: timestamp('updated_at'),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+// Scenario Analysis Engine
+export const scenarioTests = pgTable('scenario_tests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  userId: uuid('user_id').references(() => users.id),
+  parameters: jsonb('parameters').notNull(),
+  results: jsonb('results'),
+  ranAt: timestamp('ran_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+  portfolioSnapshot: jsonb('portfolio_snapshot')
+});
+
+// Scenario Templates
+export const scenarioTemplates = pgTable('scenario_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  parameters: jsonb('parameters').notNull(),
+  defaultValues: jsonb('default_values'),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  isPublic: boolean('is_public').default(false)
+});
+
+// Create insert schemas for the new tables
+export const insertPortfolioExposureSchema = createInsertSchema(portfolioExposures).omit({
+  id: true,
+  calculatedAt: true
+});
+
+export const insertTargetAllocationSchema = createInsertSchema(targetAllocations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertScenarioTestSchema = createInsertSchema(scenarioTests).omit({
+  id: true,
+  createdAt: true,
+  ranAt: true
+});
+
+export const insertScenarioTemplateSchema = createInsertSchema(scenarioTemplates).omit({
+  id: true,
+  createdAt: true
+});
+
+// Export types for the new tables
+export type PortfolioExposure = typeof portfolioExposures.$inferSelect;
+export type InsertPortfolioExposure = z.infer<typeof insertPortfolioExposureSchema>;
+
+export type TargetAllocation = typeof targetAllocations.$inferSelect;
+export type InsertTargetAllocation = z.infer<typeof insertTargetAllocationSchema>;
+
+export type ScenarioTest = typeof scenarioTests.$inferSelect;
+export type InsertScenarioTest = z.infer<typeof insertScenarioTestSchema>;
+
+export type ScenarioTemplate = typeof scenarioTemplates.$inferSelect;
+export type InsertScenarioTemplate = z.infer<typeof insertScenarioTemplateSchema>;
