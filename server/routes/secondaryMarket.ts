@@ -1,7 +1,8 @@
 import express from 'express';
-import { ensureAuthenticated } from '../auth-jwt';
-import { ensureAdmin } from '../middleware/roles';
+import authJwt from '../auth-jwt';
 import { validateRequest } from '../middleware/validate';
+
+const { verifyToken: ensureAuthenticated, ensureAdmin } = authJwt;
 import { z } from 'zod';
 import { 
   createListing,

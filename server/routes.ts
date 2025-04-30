@@ -92,6 +92,8 @@ import adminKycRouter from './routes/admin-kyc-routes';
 import kycRouter from './routes/kyc';
 import adminWalletRoutes from './routes/adminWalletRoutes';
 import debugAuthRoutes from './routes/debug-auth';
+import valuationsRoutes from './routes/valuations';
+import secondaryMarketRoutes from './routes/secondaryMarket';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve our static HTML home page at /static-home and at /static
@@ -758,6 +760,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Webhook routes
   app.use('/api', webhookRoutes);
   console.log("Webhook routes registered");
+
+  // Set up Property Valuation routes
+  app.use('/api/valuations', valuationsRoutes);
+  console.log("Property valuation routes registered");
+
+  // Set up Secondary Market routes
+  app.use('/api/secondary-market', secondaryMarketRoutes);
+  console.log("Secondary market routes registered");
 
   const httpServer = createServer(app);
   
