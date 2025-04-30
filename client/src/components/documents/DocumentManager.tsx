@@ -35,10 +35,14 @@ import { useToast } from '../../hooks/use-toast';
 
 export const DocumentManager = () => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [viewerDialogOpen, setViewerDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentTitle, setDocumentTitle] = useState('');
   const [documentType, setDocumentType] = useState('contract');
+  const [currentDocument, setCurrentDocument] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch documents
@@ -50,10 +54,29 @@ export const DocumentManager = () => {
     }
   });
 
-  // Filter documents based on selectedType
-  const filteredDocuments = selectedType
-    ? documents.filter((doc: any) => doc.type === selectedType)
-    : documents;
+  // Apply all filters to documents
+  const filteredDocuments = documents.filter((doc: any) => {
+    // Type filter
+    if (selectedType && doc.type !== selectedType) {
+      return false;
+    }
+    
+    // Status filter
+    if (statusFilter && doc.status !== statusFilter) {
+      return false;
+    }
+    
+    // Search query filter (case insensitive)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        doc.title.toLowerCase().includes(query) || 
+        (doc.content && doc.content.toLowerCase().includes(query))
+      );
+    }
+    
+    return true;
+  });
 
   // Upload document mutation
   const uploadMutation = useMutation({
@@ -65,6 +88,12 @@ export const DocumentManager = () => {
         // Let browser set the appropriate Content-Type with boundary
         credentials: 'include'
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload document');
+      }
+      
       return await response.json();
     },
     onSuccess: () => {
@@ -75,6 +104,7 @@ export const DocumentManager = () => {
       setUploadDialogOpen(false);
       setSelectedFile(null);
       setDocumentTitle('');
+      setDocumentType('contract');
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
     },
     onError: (error: any) => {
@@ -123,20 +153,60 @@ export const DocumentManager = () => {
 
   // Handle document upload
   const handleUpload = async () => {
-    if (!selectedFile || !documentTitle) {
+    // Validate inputs
+    if (!documentTitle.trim()) {
       toast({
         variant: 'destructive',
-        title: 'Missing information',
-        description: 'Please provide a title and select a file.',
+        title: 'Missing title',
+        description: 'Please provide a document title.',
+      });
+      return;
+    }
+    
+    if (!selectedFile) {
+      toast({
+        variant: 'destructive',
+        title: 'No file selected',
+        description: 'Please select a file to upload.',
+      });
+      return;
+    }
+    
+    // Check file size (max 10MB)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File too large',
+        description: 'Maximum file size is 10MB. Please select a smaller file.',
+      });
+      return;
+    }
+    
+    // Check file type
+    const allowedTypes = [
+      'application/pdf', 
+      'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png'
+    ];
+    
+    if (!allowedTypes.includes(selectedFile.type)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid file type',
+        description: 'Only PDF, DOC, DOCX, JPG and PNG files are allowed.',
       });
       return;
     }
 
+    // Create form data
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('title', documentTitle);
+    formData.append('title', documentTitle.trim());
     formData.append('type', documentType);
 
+    // Submit form
     uploadMutation.mutate(formData);
   };
 
@@ -320,11 +390,20 @@ export const DocumentManager = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredDocuments.map((doc: any) => (
-                        <TableRow key={doc.id}>
+                        <TableRow 
+                          key={doc.id}
+                          className={doc.status === 'pending' && doc.type === 'contract' ? 'bg-amber-50' : ''}
+                        >
                           <TableCell className="font-medium">
                             <div className="flex items-center">
                               <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
                               {doc.title}
+                              {doc.status === 'pending' && doc.type === 'contract' && (
+                                <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Action Required
+                                </Badge>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>{getTypeBadge(doc.type)}</TableCell>
@@ -343,12 +422,9 @@ export const DocumentManager = () => {
                                   if (doc.fileUrl) {
                                     window.open(doc.fileUrl, '_blank');
                                   } else if (doc.content) {
-                                    // If we have content but no file, we can display it in a modal
-                                    // This would need a document viewer component
-                                    toast({
-                                      title: 'View Document',
-                                      description: 'Document content view is not yet implemented',
-                                    });
+                                    // Set the current document and open the viewer dialog
+                                    setCurrentDocument(doc);
+                                    setViewerDialogOpen(true);
                                   } else {
                                     toast({
                                       variant: 'destructive',
@@ -428,6 +504,60 @@ export const DocumentManager = () => {
           </TabsContent>
         </Tabs>
       </CardContent>
+      
+      {/* Document Content Viewer Dialog */}
+      <Dialog open={viewerDialogOpen} onOpenChange={setViewerDialogOpen}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {currentDocument?.title || 'Document Viewer'}
+            </DialogTitle>
+            <DialogDescription>
+              {currentDocument?.type && getTypeBadge(currentDocument.type)}
+              {currentDocument?.status && getStatusBadge(currentDocument.status)}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="h-full mt-4 border rounded-md p-4 bg-slate-50">
+            {currentDocument?.content ? (
+              <div className="prose prose-sm max-w-none">
+                {/* Check if content is HTML or plain text */}
+                {currentDocument.content.startsWith('<') ? (
+                  <div dangerouslySetInnerHTML={{ __html: currentDocument.content }} />
+                ) : (
+                  <pre className="whitespace-pre-wrap font-sans">{currentDocument.content}</pre>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                <FileText className="h-12 w-12 mb-4 opacity-30" />
+                <p>No content available for this document</p>
+              </div>
+            )}
+          </ScrollArea>
+          
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setViewerDialogOpen(false)}>
+              Close
+            </Button>
+            {currentDocument?.type === 'contract' && currentDocument?.status !== 'signed' && (
+              <Button 
+                onClick={() => {
+                  // This would call the sign document API
+                  toast({
+                    title: 'Document Signing',
+                    description: 'Signature functionality is implemented on the button in the main table view.',
+                  });
+                }}
+              >
+                <FileSignature className="mr-2 h-4 w-4" />
+                Sign Document
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
