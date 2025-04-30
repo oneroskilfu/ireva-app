@@ -346,11 +346,41 @@ export const DocumentManager = () => {
               </TabsTrigger>
             </TabsList>
             
-            <div className="mt-4 md:mt-0 flex items-center">
-              <Input 
-                placeholder="Search documents..." 
-                className="max-w-xs"
-              />
+            <div className="mt-4 md:mt-0 flex items-center gap-3">
+              <div className="relative">
+                <Input 
+                  placeholder="Search documents..." 
+                  className="w-64 pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <FileText className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                {searchQuery && (
+                  <Button 
+                    variant="ghost" 
+                    className="absolute right-1 top-1 h-6 w-6 p-0" 
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <span className="sr-only">Clear search</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </Button>
+                )}
+              </div>
+              
+              <Select value={statusFilter || ''} onValueChange={(value) => setStatusFilter(value || null)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status: All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="signed">Signed</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -377,6 +407,28 @@ export const DocumentManager = () => {
               </div>
             ) : (
               <div>
+                {(searchQuery || statusFilter) && (
+                  <div className="bg-muted/30 rounded-md p-2 mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        Showing {filteredDocuments.length} result{filteredDocuments.length !== 1 ? 's' : ''} 
+                        {searchQuery && <span> for "<strong>{searchQuery}</strong>"</span>}
+                        {statusFilter && <span> with status <strong>{statusFilter}</strong></span>}
+                      </span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        setSearchQuery('');
+                        setStatusFilter(null);
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  </div>
+                )}
                 <ScrollArea className="h-[500px]">
                   <Table>
                     <TableHeader>
