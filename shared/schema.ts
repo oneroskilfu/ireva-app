@@ -1401,3 +1401,473 @@ export type InsertScenarioTest = z.infer<typeof insertScenarioTestSchema>;
 
 export type ScenarioTemplate = typeof scenarioTemplates.$inferSelect;
 export type InsertScenarioTemplate = z.infer<typeof insertScenarioTemplateSchema>;
+
+// Market Data Integration System
+export const marketComparables = pgTable('market_comparables', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyType: varchar('property_type', { length: 50 }).notNull(),
+  region: varchar('region', { length: 50 }).notNull(),
+  avgCapRate: numeric('cap_rate', { precision: 5, scale: 2 }),
+  avgNOI: numeric('noi', { precision: 15, scale: 2 }),
+  avgSqFtPrice: numeric('avg_sqft_price', { precision: 10, scale: 2 }),
+  transactionCount: integer('transaction_count'),
+  timeframe: varchar('timeframe', { length: 20 }).default('quarterly'),
+  source: varchar('source', { length: 100 }),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  metadata: jsonb('metadata')
+});
+
+// Property AVM (Automated Valuation Model) data
+export const propertyValuationModels = pgTable('property_valuation_models', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').notNull().references(() => properties.id, { onDelete: 'cascade' }),
+  modelType: varchar('model_type', { length: 50 }).notNull(), // 'avm', 'cap_rate', 'discounted_cash_flow', etc.
+  estimatedValue: numeric('estimated_value', { precision: 15, scale: 2 }).notNull(),
+  confidenceScore: numeric('confidence_score', { precision: 5, scale: 2 }),
+  comparableIds: jsonb('comparable_ids'), // Array of market comparable IDs used
+  calculatedAt: timestamp('calculated_at').defaultNow(),
+  parameters: jsonb('parameters'), // Model-specific parameters used
+  createdBy: uuid('created_by').references(() => users.id), // System or user that ran the model
+  metadata: jsonb('metadata')
+});
+
+// Market data sources
+export const marketDataSources = pgTable('market_data_sources', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  apiKey: text('api_key'),
+  apiEndpoint: text('api_endpoint'),
+  dataFormat: text('data_format'),
+  isActive: boolean('is_active').default(true),
+  lastSyncedAt: timestamp('last_synced_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+  credentialsLastUpdatedAt: timestamp('credentials_last_updated_at'),
+  syncFrequency: varchar('sync_frequency', { length: 50 }).default('weekly')
+});
+
+// Market data sync logs
+export const marketDataSyncLogs = pgTable('market_data_sync_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sourceId: uuid('source_id').references(() => marketDataSources.id),
+  startedAt: timestamp('started_at').defaultNow(),
+  completedAt: timestamp('completed_at'),
+  status: varchar('status', { length: 20 }).default('running'),
+  recordsProcessed: integer('records_processed').default(0),
+  recordsUpdated: integer('records_updated').default(0),
+  recordsFailed: integer('records_failed').default(0),
+  errorMessage: text('error_message'),
+  syncType: varchar('sync_type', { length: 20 }).default('scheduled') // 'scheduled', 'manual', 'initial'
+});
+
+// Create insert schemas for the new tables
+export const insertMarketComparableSchema = createInsertSchema(marketComparables).omit({
+  id: true,
+  updatedAt: true
+});
+
+export const insertPropertyValuationModelSchema = createInsertSchema(propertyValuationModels).omit({
+  id: true,
+  calculatedAt: true
+});
+
+export const insertMarketDataSourceSchema = createInsertSchema(marketDataSources).omit({
+  id: true,
+  createdAt: true,
+  lastSyncedAt: true,
+  credentialsLastUpdatedAt: true
+});
+
+export const insertMarketDataSyncLogSchema = createInsertSchema(marketDataSyncLogs).omit({
+  id: true,
+  startedAt: true,
+  completedAt: true
+});
+
+// Export types for the new tables
+export type MarketComparable = typeof marketComparables.$inferSelect;
+export type InsertMarketComparable = z.infer<typeof insertMarketComparableSchema>;
+
+export type PropertyValuationModel = typeof propertyValuationModels.$inferSelect;
+export type InsertPropertyValuationModel = z.infer<typeof insertPropertyValuationModelSchema>;
+
+export type MarketDataSource = typeof marketDataSources.$inferSelect;
+export type InsertMarketDataSource = z.infer<typeof insertMarketDataSourceSchema>;
+
+export type MarketDataSyncLog = typeof marketDataSyncLogs.$inferSelect;
+export type InsertMarketDataSyncLog = z.infer<typeof insertMarketDataSyncLogSchema>;
+
+// ESG Tracking System
+export const energyRatingEnum = pgEnum('energy_rating', ['A', 'B', 'C', 'D', 'E', 'F']);
+export const esgScores = pgTable('esg_scores', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').notNull().references(() => properties.id, { onDelete: 'cascade' }),
+  energyRating: energyRatingEnum('energy_rating'),
+  waterUsage: numeric('water_usage', { precision: 10, scale: 2 }),
+  communityImpactScore: numeric('community_impact_score', { precision: 5, scale: 2 }),
+  governanceRating: numeric('governance_rating', { precision: 5, scale: 2 }),
+  lastAudited: timestamp('last_audited'),
+  auditedBy: uuid('audited_by').references(() => users.id),
+  certifications: jsonb('certifications'),
+  carbonFootprint: numeric('carbon_footprint', { precision: 10, scale: 2 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at')
+});
+
+export const utilityDataRecords = pgTable('utility_data_records', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').notNull().references(() => properties.id, { onDelete: 'cascade' }),
+  recordDate: timestamp('record_date').notNull(),
+  dataType: varchar('data_type', { length: 50 }).notNull(), // electricity, gas, water, etc.
+  consumption: numeric('consumption', { precision: 15, scale: 3 }).notNull(),
+  unit: varchar('unit', { length: 20 }).notNull(), // kWh, therms, gallons, etc.
+  cost: numeric('cost', { precision: 10, scale: 2 }),
+  source: varchar('source', { length: 100 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  metadata: jsonb('metadata')
+});
+
+export const sustainabilityProjects = pgTable('sustainability_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').notNull().references(() => properties.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 200 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 100 }), // energy, water, waste, community, etc.
+  startDate: timestamp('start_date'),
+  completionDate: timestamp('completion_date'),
+  budget: numeric('budget', { precision: 15, scale: 2 }),
+  actualCost: numeric('actual_cost', { precision: 15, scale: 2 }),
+  projectedSavings: numeric('projected_savings', { precision: 15, scale: 2 }),
+  actualSavings: numeric('actual_savings', { precision: 15, scale: 2 }),
+  status: varchar('status', { length: 50 }).default('planned'), // planned, in_progress, completed, cancelled
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at')
+});
+
+// Fraud Detection System
+export const riskAssessments = pgTable('risk_assessments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  assessmentDate: timestamp('assessment_date').defaultNow(),
+  riskScore: integer('risk_score').notNull(),
+  riskLevel: varchar('risk_level', { length: 20 }).notNull(), // low, medium, high, critical
+  factors: jsonb('factors'), // Array of risk factors identified
+  reviewed: boolean('reviewed').default(false),
+  reviewedBy: uuid('reviewed_by').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  notes: text('notes'),
+  automaticActions: jsonb('automatic_actions')
+});
+
+export const transactionAnomalies = pgTable('transaction_anomalies', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  transactionId: uuid('transaction_id').references(() => transactions.id),
+  detectedAt: timestamp('detected_at').defaultNow(),
+  anomalyType: varchar('anomaly_type', { length: 50 }).notNull(), // HIGH_VELOCITY, UNUSUAL_GEO_PATTERN, etc.
+  severity: integer('severity').notNull(),
+  description: text('description'),
+  status: varchar('status', { length: 20 }).default('pending'), // pending, reviewed, false_positive, confirmed
+  reviewedBy: uuid('reviewed_by').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  resolution: text('resolution'),
+  dataSnapshot: jsonb('data_snapshot')
+});
+
+export const fraudRules = pgTable('fraud_rules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  ruleType: varchar('rule_type', { length: 50 }).notNull(), // velocity, pattern, behavioral, etc.
+  parameters: jsonb('parameters').notNull(),
+  severity: integer('severity').notNull().default(5), // 1-10 scale
+  isActive: boolean('is_active').default(true),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at'),
+  lastTriggered: timestamp('last_triggered')
+});
+
+// Investor Exit Management
+export const exitRequestStatusEnum = pgEnum('exit_request_status', ['pending', 'approved', 'rejected', 'completed', 'cancelled']);
+export const exitRequestTypeEnum = pgEnum('exit_request_type', ['secondary_sale', 'early_redemption', 'platform_buyback', 'maturity_extension']);
+
+export const exitRequests = pgTable('exit_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  investmentId: uuid('investment_id').notNull().references(() => investments.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  requestDate: timestamp('request_date').defaultNow(),
+  requestType: exitRequestTypeEnum('request_type').notNull(),
+  requestedAmount: numeric('requested_amount', { precision: 15, scale: 2 }).notNull(),
+  status: exitRequestStatusEnum('status').default('pending'),
+  processingFee: numeric('processing_fee', { precision: 10, scale: 2 }),
+  earlyExitPenalty: numeric('early_exit_penalty', { precision: 10, scale: 2 }),
+  netPayout: numeric('net_payout', { precision: 15, scale: 2 }),
+  reason: text('reason'),
+  reviewedBy: uuid('reviewed_by').references(() => users.id),
+  reviewedAt: timestamp('reviewed_at'),
+  completedAt: timestamp('completed_at'),
+  notes: text('notes'),
+  transactionId: uuid('transaction_id').references(() => transactions.id)
+});
+
+export const secondaryMarketOfferStatusEnum = pgEnum('secondary_market_offer_status', ['active', 'pending', 'accepted', 'rejected', 'expired', 'cancelled']);
+
+export const secondaryMarketOffers = pgTable('secondary_market_offers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  investmentId: uuid('investment_id').notNull().references(() => investments.id, { onDelete: 'cascade' }),
+  sellerId: uuid('seller_id').notNull().references(() => users.id),
+  offerPrice: numeric('offer_price', { precision: 15, scale: 2 }).notNull(),
+  listingDate: timestamp('listing_date').defaultNow(),
+  expirationDate: timestamp('expiration_date'),
+  status: secondaryMarketOfferStatusEnum('status').default('active'),
+  minimumPurchaseAmount: numeric('minimum_purchase_amount', { precision: 15, scale: 2 }),
+  availableAmount: numeric('available_amount', { precision: 15, scale: 2 }).notNull(),
+  platformFee: numeric('platform_fee', { precision: 10, scale: 2 }),
+  description: text('description'),
+  termsAccepted: boolean('terms_accepted').default(false),
+  metadata: jsonb('metadata')
+});
+
+export const secondaryMarketBids = pgTable('secondary_market_bids', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  offerId: uuid('offer_id').notNull().references(() => secondaryMarketOffers.id, { onDelete: 'cascade' }),
+  bidderId: uuid('bidder_id').notNull().references(() => users.id),
+  bidAmount: numeric('bid_amount', { precision: 15, scale: 2 }).notNull(),
+  bidQuantity: numeric('bid_quantity', { precision: 15, scale: 2 }).notNull(),
+  bidDate: timestamp('bid_date').defaultNow(),
+  expirationDate: timestamp('expiration_date'),
+  status: varchar('status', { length: 20 }).default('pending'), // pending, accepted, rejected, expired, cancelled
+  acceptedAt: timestamp('accepted_at'),
+  transactionId: uuid('transaction_id').references(() => transactions.id),
+  message: text('message'),
+  metadata: jsonb('metadata')
+});
+
+// Create insert schemas for the new tables
+export const insertEsgScoreSchema = createInsertSchema(esgScores).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertUtilityDataRecordSchema = createInsertSchema(utilityDataRecords).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertSustainabilityProjectSchema = createInsertSchema(sustainabilityProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertRiskAssessmentSchema = createInsertSchema(riskAssessments).omit({
+  id: true,
+  assessmentDate: true,
+  reviewedAt: true
+});
+
+export const insertTransactionAnomalySchema = createInsertSchema(transactionAnomalies).omit({
+  id: true,
+  detectedAt: true,
+  reviewedAt: true
+});
+
+export const insertFraudRuleSchema = createInsertSchema(fraudRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastTriggered: true
+});
+
+export const insertExitRequestSchema = createInsertSchema(exitRequests).omit({
+  id: true,
+  requestDate: true,
+  reviewedAt: true,
+  completedAt: true
+});
+
+export const insertSecondaryMarketOfferSchema = createInsertSchema(secondaryMarketOffers).omit({
+  id: true,
+  listingDate: true
+});
+
+export const insertSecondaryMarketBidSchema = createInsertSchema(secondaryMarketBids).omit({
+  id: true,
+  bidDate: true,
+  acceptedAt: true
+});
+
+// Export types for the new tables
+export type EsgScore = typeof esgScores.$inferSelect;
+export type InsertEsgScore = z.infer<typeof insertEsgScoreSchema>;
+
+export type UtilityDataRecord = typeof utilityDataRecords.$inferSelect;
+export type InsertUtilityDataRecord = z.infer<typeof insertUtilityDataRecordSchema>;
+
+export type SustainabilityProject = typeof sustainabilityProjects.$inferSelect;
+export type InsertSustainabilityProject = z.infer<typeof insertSustainabilityProjectSchema>;
+
+export type RiskAssessment = typeof riskAssessments.$inferSelect;
+export type InsertRiskAssessment = z.infer<typeof insertRiskAssessmentSchema>;
+
+export type TransactionAnomaly = typeof transactionAnomalies.$inferSelect;
+export type InsertTransactionAnomaly = z.infer<typeof insertTransactionAnomalySchema>;
+
+export type FraudRule = typeof fraudRules.$inferSelect;
+export type InsertFraudRule = z.infer<typeof insertFraudRuleSchema>;
+
+export type ExitRequest = typeof exitRequests.$inferSelect;
+export type InsertExitRequest = z.infer<typeof insertExitRequestSchema>;
+
+export type SecondaryMarketOffer = typeof secondaryMarketOffers.$inferSelect;
+export type InsertSecondaryMarketOffer = z.infer<typeof insertSecondaryMarketOfferSchema>;
+
+export type SecondaryMarketBid = typeof secondaryMarketBids.$inferSelect;
+export type InsertSecondaryMarketBid = z.infer<typeof insertSecondaryMarketBidSchema>;
+
+// Regulatory Compliance System
+export const complianceStatusEnum = pgEnum('compliance_status', ['compliant', 'non_compliant', 'pending_review', 'exempted']);
+export const verificationType = pgEnum('verification_type', ['income', 'net_worth', 'securities_holdings', 'professional_certification', 'third_party']);
+
+export const investorVerifications = pgTable('investor_verifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  verificationType: verificationType('verification_type').notNull(),
+  documentUrls: jsonb('document_urls'),
+  verifiedBy: uuid('verified_by').references(() => users.id),
+  verifiedAt: timestamp('verified_at'),
+  status: varchar('status', { length: 30 }).default('pending'),
+  expiresAt: timestamp('expires_at'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at')
+});
+
+export const investorFinancials = pgTable('investor_financials', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  annualIncome: numeric('annual_income', { precision: 15, scale: 2 }),
+  netWorth: numeric('net_worth', { precision: 15, scale: 2 }),
+  liquidAssets: numeric('liquid_assets', { precision: 15, scale: 2 }),
+  totalInvestments: numeric('total_investments', { precision: 15, scale: 2 }),
+  sourceOfWealth: text('source_of_wealth'),
+  lastVerifiedAt: timestamp('last_verified_at'),
+  verificationDocuments: jsonb('verification_documents'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at')
+});
+
+export const regulatoryLimits = pgTable('regulatory_limits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  jurisdiction: varchar('jurisdiction', { length: 100 }).notNull(),
+  investorType: varchar('investor_type', { length: 50 }).notNull(), // retail, accredited, qualified
+  maxInvestmentAmount: numeric('max_investment_amount', { precision: 15, scale: 2 }),
+  maxInvestmentPercentage: numeric('max_investment_percentage', { precision: 5, scale: 2 }),
+  baseCalculation: varchar('base_calculation', { length: 50 }), // income, net_worth, etc.
+  requiresVerification: boolean('requires_verification').default(true),
+  notes: text('notes'),
+  effectiveDate: timestamp('effective_date').notNull(),
+  expirationDate: timestamp('expiration_date'),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+export const complianceChecks = pgTable('compliance_checks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  investmentId: uuid('investment_id').references(() => investments.id),
+  checkType: varchar('check_type', { length: 50 }).notNull(), // accreditation, investment_limit, kyc, etc.
+  status: complianceStatusEnum('status').default('pending_review'),
+  checkData: jsonb('check_data'),
+  result: jsonb('result'),
+  resultDetails: text('result_details'),
+  performedBy: uuid('performed_by').references(() => users.id),
+  performedAt: timestamp('performed_at').defaultNow(),
+  expiresAt: timestamp('expires_at')
+});
+
+export const jurisdictionRestrictions = pgTable('jurisdiction_restrictions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  country: varchar('country', { length: 100 }).notNull(),
+  state: varchar('state', { length: 100 }),
+  restrictionType: varchar('restriction_type', { length: 50 }).notNull(), // blocked, limited, documentation_required
+  details: text('details'),
+  regulationReference: text('regulation_reference'),
+  effectiveDate: timestamp('effective_date').notNull(),
+  expirationDate: timestamp('expiration_date'),
+  createdBy: uuid('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+export const complianceExceptions = pgTable('compliance_exceptions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  exceptionType: varchar('exception_type', { length: 50 }).notNull(),
+  reason: text('reason').notNull(),
+  documentUrls: jsonb('document_urls'),
+  approvedBy: uuid('approved_by').notNull().references(() => users.id),
+  approvedAt: timestamp('approved_at').defaultNow(),
+  expiresAt: timestamp('expires_at'),
+  status: varchar('status', { length: 30 }).default('active'),
+  revokedBy: uuid('revoked_by').references(() => users.id),
+  revokedAt: timestamp('revoked_at'),
+  notes: text('notes')
+});
+
+// Create insert schemas for the new tables
+export const insertInvestorVerificationSchema = createInsertSchema(investorVerifications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  verifiedAt: true
+});
+
+export const insertInvestorFinancialsSchema = createInsertSchema(investorFinancials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastVerifiedAt: true
+});
+
+export const insertRegulatoryLimitSchema = createInsertSchema(regulatoryLimits).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertComplianceCheckSchema = createInsertSchema(complianceChecks).omit({
+  id: true,
+  performedAt: true
+});
+
+export const insertJurisdictionRestrictionSchema = createInsertSchema(jurisdictionRestrictions).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertComplianceExceptionSchema = createInsertSchema(complianceExceptions).omit({
+  id: true,
+  approvedAt: true,
+  revokedAt: true
+});
+
+// Export types for the new tables
+export type InvestorVerification = typeof investorVerifications.$inferSelect;
+export type InsertInvestorVerification = z.infer<typeof insertInvestorVerificationSchema>;
+
+export type InvestorFinancial = typeof investorFinancials.$inferSelect;
+export type InsertInvestorFinancial = z.infer<typeof insertInvestorFinancialsSchema>;
+
+export type RegulatoryLimit = typeof regulatoryLimits.$inferSelect;
+export type InsertRegulatoryLimit = z.infer<typeof insertRegulatoryLimitSchema>;
+
+export type ComplianceCheck = typeof complianceChecks.$inferSelect;
+export type InsertComplianceCheck = z.infer<typeof insertComplianceCheckSchema>;
+
+export type JurisdictionRestriction = typeof jurisdictionRestrictions.$inferSelect;
+export type InsertJurisdictionRestriction = z.infer<typeof insertJurisdictionRestrictionSchema>;
+
+export type ComplianceException = typeof complianceExceptions.$inferSelect;
+export type InsertComplianceException = z.infer<typeof insertComplianceExceptionSchema>;
