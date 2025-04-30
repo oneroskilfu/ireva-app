@@ -3,7 +3,7 @@ import { ensureAdmin } from '../auth-jwt';
 import { db } from '../db';
 import { notifications, users, insertNotificationSchema } from '../../shared/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { getSocketIo } from '../socketio';
+import { sendNotificationToUser, broadcastToUser } from '../socketio';
 import { zodValidator } from '../utils/validators';
 
 export const adminNotificationRouter = Router();
@@ -50,11 +50,12 @@ adminNotificationRouter.post('/user/:userId', ensureAdmin, async (req: Request, 
       })
       .returning();
 
-    // If WebSocket available, emit event
-    const io = getSocketIo();
-    if (io) {
-      io.to(`user:${userId}`).emit('notification', newNotification);
-    }
+    // Send notification via WebSocket
+    sendNotificationToUser(userId.toString(), {
+      title,
+      message,
+      type: type || 'admin'
+    });
 
     return res.status(201).json(newNotification);
   } catch (error) {
@@ -100,13 +101,14 @@ adminNotificationRouter.post('/broadcast', ensureAdmin, async (req: Request, res
       .values(notificationsToInsert)
       .returning();
 
-    // If WebSocket available, emit event to each user
-    const io = getSocketIo();
-    if (io) {
-      allUsers.forEach((user, index) => {
-        io.to(`user:${user.id}`).emit('notification', newNotifications[index]);
+    // Send WebSocket notifications to each user
+    allUsers.forEach((user) => {
+      sendNotificationToUser(user.id.toString(), {
+        title,
+        message,
+        type: type || 'broadcast'
       });
-    }
+    });
 
     return res.status(201).json({ 
       count: newNotifications.length,
@@ -156,13 +158,14 @@ adminNotificationRouter.post('/property/:propertyId', ensureAdmin, async (req: R
       .values(notificationsToInsert)
       .returning();
 
-    // If WebSocket available, emit event to each user
-    const io = getSocketIo();
-    if (io) {
-      investorIds.forEach((userId, index) => {
-        io.to(`user:${userId}`).emit('notification', newNotifications[index]);
+    // Send WebSocket notifications to each investor
+    investorIds.forEach((userId) => {
+      sendNotificationToUser(userId.toString(), {
+        title,
+        message,
+        type: type || 'property'
       });
-    }
+    });
 
     return res.status(201).json({ 
       count: newNotifications.length,

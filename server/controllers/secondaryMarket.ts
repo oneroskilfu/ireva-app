@@ -6,7 +6,7 @@ import {
   insertSecondaryListingSchema, 
   insertSecondaryBidSchema 
 } from '@shared/schema';
-import { getSocketIo } from '../socketio';
+import { broadcastToAll, broadcastToUser } from '../socketio';
 
 /**
  * Create a new secondary market listing
@@ -59,14 +59,12 @@ export const createListing = async (req: Request, res: Response) => {
     }).returning();
     
     // Notify interested users via WebSocket
-    const io = getSocketIo();
-    if (io) {
-      io.emit('secondaryMarket:newListing', {
-        listingId: listing.id,
-        investmentId: listing.investmentId,
-        askingPrice: listing.askingPrice
-      });
-    }
+    broadcastToAll({
+      type: 'secondaryMarket:newListing',
+      listingId: listing.id,
+      investmentId: listing.investmentId,
+      askingPrice: listing.askingPrice
+    });
     
     return res.status(201).json(listing);
   } catch (error: any) {
@@ -239,21 +237,20 @@ export const updateListingStatus = async (req: Request, res: Response) => {
       .returning();
     
     // Notify via WebSocket
-    const io = getSocketIo();
-    if (io) {
-      // Notify the listing owner
-      io.to(`user:${listing.createdBy}`).emit('secondaryMarket:statusUpdate', {
+    // Notify the listing owner
+    broadcastToUser(listing.createdBy.toString(), {
+      type: 'secondaryMarket:statusUpdate',
+      listingId: listing.id,
+      status: updatedListing.status
+    });
+    
+    // If approved, broadcast to all users
+    if (status === 'active') {
+      broadcastToAll({
+        type: 'secondaryMarket:newActiveListing',
         listingId: listing.id,
-        status: updatedListing.status
+        investmentId: listing.investmentId
       });
-      
-      // If approved, broadcast to all users
-      if (status === 'active') {
-        io.emit('secondaryMarket:newActiveListing', {
-          listingId: listing.id,
-          investmentId: listing.investmentId
-        });
-      }
     }
     
     return res.status(200).json(updatedListing);
@@ -315,14 +312,12 @@ export const placeBid = async (req: Request, res: Response) => {
     }).returning();
     
     // Notify the listing owner via WebSocket
-    const io = getSocketIo();
-    if (io) {
-      io.to(`user:${listing.createdBy}`).emit('secondaryMarket:newBid', {
-        listingId: listing.id,
-        bidId: bid.id,
-        bidAmount: bid.bidPrice
-      });
-    }
+    broadcastToUser(listing.createdBy.toString(), {
+      type: 'secondaryMarket:newBid',
+      listingId: listing.id,
+      bidId: bid.id,
+      bidAmount: bid.bidPrice
+    });
     
     return res.status(201).json(bid);
   } catch (error: any) {
@@ -399,13 +394,11 @@ export const acceptBid = async (req: Request, res: Response) => {
     // This would involve updating the investment record and creating transaction records
     
     // Notify the bidder via WebSocket
-    const io = getSocketIo();
-    if (io) {
-      io.to(`user:${bid.bidderId}`).emit('secondaryMarket:bidAccepted', {
-        listingId: bid.listingId,
-        bidId: bid.id
-      });
-    }
+    broadcastToUser(bid.bidderId.toString(), {
+      type: 'secondaryMarket:bidAccepted',
+      listingId: bid.listingId,
+      bidId: bid.id
+    });
     
     return res.status(200).json({ 
       message: 'Bid accepted successfully',
@@ -463,14 +456,12 @@ export const rejectBid = async (req: Request, res: Response) => {
       .where(eq(secondaryBids.id, bidId));
     
     // Notify the bidder via WebSocket
-    const io = getSocketIo();
-    if (io) {
-      io.to(`user:${bid.bidderId}`).emit('secondaryMarket:bidRejected', {
-        listingId: bid.listingId,
-        bidId: bid.id,
-        reason
-      });
-    }
+    broadcastToUser(bid.bidderId.toString(), {
+      type: 'secondaryMarket:bidRejected',
+      listingId: bid.listingId,
+      bidId: bid.id,
+      reason
+    });
     
     return res.status(200).json({ 
       message: 'Bid rejected successfully',

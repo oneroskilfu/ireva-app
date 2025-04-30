@@ -4,7 +4,7 @@ import { db } from '../db';
 import { notifications, pushSubscriptions } from '@shared/schema';
 import { v4 as uuidv4 } from 'uuid';
 import admin, { messaging } from '../firebase/firebaseAdmin';
-import { getSocketIo } from '../socketio';
+import { sendNotificationToUser } from '../socketio';
 import { eq } from 'drizzle-orm';
 
 export const sendNotificationRouter = express.Router();
@@ -82,18 +82,11 @@ sendNotificationRouter.post('/send-self', authMiddleware, async (req: Request, r
         const failed = results.filter(r => r.status === 'rejected').length;
 
         // Emit socket event for real-time notification
-        const io = getSocketIo();
-        if (io) {
-          io.to(`user:${userId}`).emit('notification', {
-            id: notificationId,
-            title,
-            message,
-            type: 'general',
-            isRead: false,
-            link: link || null,
-            createdAt: new Date()
-          });
-        }
+        sendNotificationToUser(String(userId), {
+          title,
+          message,
+          type: 'general'
+        });
 
         res.status(200).json({ 
           message: 'Notification sent successfully',

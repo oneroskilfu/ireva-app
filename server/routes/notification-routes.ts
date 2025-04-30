@@ -3,7 +3,7 @@ import { authMiddleware } from '../auth-jwt';
 import { db } from '../db';
 import { notifications } from '../../shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
-import { getSocketIo } from '../socketio';
+import { sendNotificationToUser } from '../socketio';
 
 export const notificationRouter = Router();
 
@@ -144,11 +144,12 @@ notificationRouter.post('/', authMiddleware, async (req: Request, res: Response)
       })
       .returning();
 
-    // If WebSocket available, emit event
-    const io = getSocketIo();
-    if (io) {
-      io.to(`user:${userId}`).emit('notification', newNotification[0]);
-    }
+    // Send notification through WebSocket
+    sendNotificationToUser(userId.toString(), {
+      title,
+      message,
+      type: type || 'general'
+    });
 
     return res.status(201).json(newNotification[0]);
   } catch (error) {
@@ -180,13 +181,14 @@ notificationRouter.post('/batch', authMiddleware, async (req: Request, res: Resp
       .values(notificationsToInsert)
       .returning();
 
-    // If WebSocket available, emit event to each user
-    const io = getSocketIo();
-    if (io) {
-      userIds.forEach((userId, index) => {
-        io.to(`user:${userId}`).emit('notification', newNotifications[index]);
+    // Send WebSocket notifications to each user
+    userIds.forEach((userId, index) => {
+      sendNotificationToUser(userId, {
+        title,
+        message,
+        type: type || 'general'
       });
-    }
+    });
 
     return res.status(201).json({ 
       count: newNotifications.length,

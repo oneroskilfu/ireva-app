@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { notifications } from '@shared/schema';
-import { getSocketIo } from '../socketio';
+import { sendNotificationToUser, broadcastToAll, broadcastToAdmins } from '../socketio';
 import { eq, and, sql } from 'drizzle-orm';
 
 interface NotificationPayload {
@@ -26,24 +26,17 @@ export const sendNotification = async (payload: NotificationPayload) => {
         title: payload.title,
         message: payload.message,
         link: payload.link || null,
-        read: false,
-        metadata: payload.metadata || null,
+        isRead: false,
         createdAt: new Date()
       })
       .returning();
     
     // Emit real-time notification through WebSocket
-    const io = getSocketIo();
-    if (io) {
-      io.to(`user-${payload.userId}`).emit('notification', {
-        id: notification.id,
-        type: payload.type,
-        title: payload.title,
-        message: payload.message,
-        link: payload.link,
-        timestamp: new Date().toISOString()
-      });
-    }
+    sendNotificationToUser(payload.userId, {
+      title: payload.title,
+      message: payload.message,
+      type: payload.type
+    });
     
     return notification;
   } catch (error) {
@@ -62,10 +55,10 @@ export const getUnreadCount = async (userId: string): Promise<number> => {
       .from(notifications)
       .where(and(
         eq(notifications.userId, userId),
-        eq(notifications.read, false)
+        eq(notifications.isRead, false)
       ));
     
-    return result[0]?.count || 0;
+    return Number(result[0]?.count) || 0;
   } catch (error) {
     console.error('Error getting unread notification count:', error);
     return 0;
@@ -79,7 +72,7 @@ export const markAsRead = async (notificationId: string): Promise<boolean> => {
   try {
     await db
       .update(notifications)
-      .set({ read: true, updatedAt: new Date() })
+      .set({ isRead: true })
       .where(eq(notifications.id, notificationId));
     
     return true;
@@ -96,10 +89,10 @@ export const markAllAsRead = async (userId: string): Promise<boolean> => {
   try {
     await db
       .update(notifications)
-      .set({ read: true, updatedAt: new Date() })
+      .set({ isRead: true })
       .where(and(
         eq(notifications.userId, userId),
-        eq(notifications.read, false)
+        eq(notifications.isRead, false)
       ));
     
     return true;

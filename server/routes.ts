@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
-import { setupSocketIO } from "./socketio";
+import { setupWebSocketServer } from "./socketio";
 import { setupAuth } from "./auth";
 import authJwt, { verifyToken } from "./auth-jwt";
 const { setupJwtAuth, authMiddleware } = authJwt;
@@ -771,12 +771,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // Set up Socket.io
-  const io = setupSocketIO(httpServer);
-  console.log("Socket.io initialized successfully");
-  
-  // Make socket.io instance available to application
-  app.set('io', io);
+  // Set up WebSocket server
+  setupWebSocketServer(httpServer);
+  console.log("WebSocket server initialized successfully");
   
   return httpServer;
 }

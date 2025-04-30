@@ -3,7 +3,7 @@ import { db } from '../db';
 import { properties, propertyValuations, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { insertPropertyValuationSchema } from '@shared/schema';
-import { getSocketIo } from '../socketio';
+import { broadcastToAdmins } from '../socketio';
 
 /**
  * Add a new property valuation
@@ -31,15 +31,13 @@ export const addPropertyValuation = async (req: Request, res: Response) => {
     }).returning();
     
     // Notify admin users about the new valuation via WebSocket
-    const io = getSocketIo();
-    if (io) {
-      io.to('admin').emit('propertyValuation:new', {
-        propertyId: property.id,
-        propertyName: property.name,
-        valuation: valuation.valuation,
-        valuationDate: valuation.valuationDate
-      });
-    }
+    broadcastToAdmins({
+      type: 'propertyValuation:new',
+      propertyId: property.id,
+      propertyName: property.name,
+      valuation: valuation.valuation,
+      valuationDate: valuation.valuationDate
+    });
     
     return res.status(201).json(valuation);
   } catch (error: any) {

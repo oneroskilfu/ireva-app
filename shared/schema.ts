@@ -154,7 +154,7 @@ export const wallets = pgTable("wallets", {
   availableBalance: numeric("available_balance", { precision: 12, scale: 2 }).default("0"),
   pendingDeposits: numeric("pending_deposits", { precision: 12, scale: 2 }).default("0"),
   pendingWithdrawals: numeric("pending_withdrawals", { precision: 12, scale: 2 }).default("0"),
-  baseCurrency: text("base_currency", { length: 3 }).default("USD"),
+  baseCurrency: text("base_currency").default("USD"),
   fxRates: jsonb("fx_rates").$type<Record<string, number>>(),
   conversionHistory: jsonb("conversion_history"),
   lastUpdated: timestamp("last_updated").defaultNow()
