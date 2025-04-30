@@ -485,13 +485,65 @@ export const amlRiskLevelEnum = pgEnum("aml_risk_level", [
 
 // Webhook event types enum
 export const webhookEventEnum = pgEnum("webhook_event", [
+  // Investment events
+  "investment_event",
   "investment_created", 
   "investment_completed",
+  "investment_cancelled",
+  "investment_approved",
+  "investment_declined",
+  "investment_refunded",
+  
+  // KYC events
+  "kyc_event",
+  "kyc_submitted",
   "kyc_approved",
   "kyc_rejected",
-  "transaction_processed",
+  "kyc_updated",
+  
+  // Property events
+  "property_event",
+  "property_created",
+  "property_updated",
+  "property_funding_milestone",
+  "property_fully_funded",
+  "property_construction_update",
+  
+  // ROI events
+  "roi_event",
+  "roi_calculated",
   "roi_distributed",
+  "roi_payout_failed",
+  
+  // User events
+  "user_event",
   "user_registered",
+  "user_updated",
+  "user_deleted",
+  "user_login",
+  "user_logout",
+  "user_tier_changed",
+  
+  // Wallet/Transaction events
+  "wallet_event",
+  "wallet_created",
+  "wallet_funded",
+  "wallet_withdrawal",
+  "wallet_transfer",
+  "transaction_processed",
+  
+  // System events
+  "system_event",
+  "system_alert",
+  "system_maintenance",
+  
+  // Security events
+  "security_event",
+  "security_alert",
+  "suspicious_activity",
+  
+  // General event (catch-all)
+  "general",
   "all"
 ]);
 
