@@ -58,11 +58,12 @@ export const DocumentManager = () => {
   // Upload document mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await apiRequest('POST', '/api/documents/upload', undefined, {
-        headers: {
-          // Don't set Content-Type header for FormData
-        },
+      // For FormData, we need to use fetch directly instead of apiRequest
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
         body: formData,
+        // Let browser set the appropriate Content-Type with boundary
+        credentials: 'include'
       });
       return await response.json();
     },
@@ -331,18 +332,67 @@ export const DocumentManager = () => {
                             {new Date(doc.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(doc.metadata?.status || 'active')}
+                            {getStatusBadge(doc.status || 'active')}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="icon">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => {
+                                  if (doc.fileUrl) {
+                                    window.open(doc.fileUrl, '_blank');
+                                  } else if (doc.content) {
+                                    // If we have content but no file, we can display it in a modal
+                                    // This would need a document viewer component
+                                    toast({
+                                      title: 'View Document',
+                                      description: 'Document content view is not yet implemented',
+                                    });
+                                  } else {
+                                    toast({
+                                      variant: 'destructive',
+                                      title: 'View failed',
+                                      description: 'No document content available',
+                                    });
+                                  }
+                                }}
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => {
+                                  if (doc.fileUrl) {
+                                    window.open(doc.fileUrl, '_blank');
+                                  } else {
+                                    toast({
+                                      variant: 'destructive',
+                                      title: 'Download failed',
+                                      description: 'No file available for download',
+                                    });
+                                  }
+                                }}
+                              >
                                 <DownloadCloud className="h-4 w-4" />
                               </Button>
-                              {doc.type === 'contract' && !doc.metadata?.signatures && (
-                                <Button variant="ghost" size="icon">
+                              {doc.type === 'contract' && doc.status !== 'signed' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => {
+                                    if (doc.signUrl) {
+                                      window.open(doc.signUrl, '_blank');
+                                    } else {
+                                      toast({
+                                        variant: 'destructive',
+                                        title: 'eSignature',
+                                        description: 'No signature URL available for this document',
+                                      });
+                                    }
+                                  }}
+                                >
                                   <FileSignature className="h-4 w-4" />
                                 </Button>
                               )}

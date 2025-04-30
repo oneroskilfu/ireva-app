@@ -155,7 +155,6 @@ export async function updateDocument(req: Request, res: Response) {
       .set({
         title: title || existingDocument.title,
         status: status || existingDocument.status,
-        metadata: metadata || existingDocument.metadata,
         updatedAt: new Date()
       })
       .where(eq(documents.id, id))
