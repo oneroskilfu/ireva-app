@@ -1,198 +1,160 @@
-import { MailService } from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
-// SendGrid email service
-class EmailService {
-  private sendgrid: MailService;
-  private initialized: boolean = false;
-  private defaultFromEmail: string = 'noreply@ireva.com'; // Update with your verified sender
-  private defaultFromName: string = 'iREVA Real Estate Investments';
+// Check for configured email credentials
+const emailConfigured = process.env.IREVA_EMAIL && process.env.IREVA_EMAIL_PASS;
 
-  constructor() {
-    this.sendgrid = new MailService();
-    this.init();
-  }
-
-  /**
-   * Initialize the SendGrid client
-   */
-  private init() {
-    if (process.env.SENDGRID_API_KEY) {
-      this.sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
-      this.initialized = true;
-      console.log('SendGrid client initialized');
-    } else {
-      console.warn('SENDGRID_API_KEY is not set. Email sending is disabled.');
-      this.initialized = false;
-    }
-  }
-
-  /**
-   * Send a transactional email using a template
-   */
-  public async sendTemplateEmail(
-    to: string,
-    templateId: string,
-    dynamicData: Record<string, any>,
-    options: {
-      fromEmail?: string;
-      fromName?: string;
-      subject?: string;
-      cc?: string[];
-      bcc?: string[];
-    } = {}
-  ): Promise<boolean> {
-    if (!this.initialized) {
-      console.warn('SendGrid not initialized. Email not sent.');
-      return false;
-    }
-
-    try {
-      const msg = {
-        to,
-        from: {
-          email: options.fromEmail || this.defaultFromEmail,
-          name: options.fromName || this.defaultFromName
-        },
-        templateId,
-        dynamicTemplateData: {
-          subject: options.subject,
-          ...dynamicData
-        },
-        cc: options.cc,
-        bcc: options.bcc
-      };
-
-      await this.sendgrid.send(msg);
-      return true;
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Send a simple email without using a template
-   */
-  public async sendEmail(
-    to: string,
-    subject: string,
-    text: string,
-    html: string,
-    options: {
-      fromEmail?: string;
-      fromName?: string;
-      cc?: string[];
-      bcc?: string[];
-    } = {}
-  ): Promise<boolean> {
-    if (!this.initialized) {
-      console.warn('SendGrid not initialized. Email not sent.');
-      return false;
-    }
-
-    try {
-      const msg = {
-        to,
-        from: {
-          email: options.fromEmail || this.defaultFromEmail,
-          name: options.fromName || this.defaultFromName
-        },
-        subject,
-        text,
-        html,
-        cc: options.cc,
-        bcc: options.bcc
-      };
-
-      await this.sendgrid.send(msg);
-      return true;
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Send a welcome email to a new user
-   */
-  public async sendWelcomeEmail(email: string, firstName: string): Promise<boolean> {
-    return this.sendTemplateEmail(
-      email,
-      'welcome-template-1', // Replace with your actual template ID
-      {
-        first_name: firstName,
-        current_year: new Date().getFullYear()
-      },
-      {
-        subject: 'Welcome to iREVA - Your Journey Begins'
+// Create email transporter
+const transporter = emailConfigured 
+  ? nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.IREVA_EMAIL,
+        pass: process.env.IREVA_EMAIL_PASS
       }
-    );
-  }
+    })
+  : null;
 
-  /**
-   * Send a password reset email
-   */
-  public async sendPasswordResetEmail(email: string, resetToken: string): Promise<boolean> {
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://ireva.com'}/reset-password?token=${resetToken}`;
-
-    return this.sendTemplateEmail(
-      email,
-      'password-reset-template', // Replace with your actual template ID
-      {
-        reset_link: resetUrl,
-        expiry_hours: 24,
-        current_year: new Date().getFullYear()
-      },
-      {
-        subject: 'Reset Your iREVA Password'
-      }
-    );
-  }
-
-  /**
-   * Send a KYC verification confirmation email
-   */
-  public async sendKycVerifiedEmail(email: string, firstName: string): Promise<boolean> {
-    return this.sendTemplateEmail(
-      email,
-      'kyc-verified-template', // Replace with your actual template ID
-      {
-        first_name: firstName,
-        current_year: new Date().getFullYear()
-      },
-      {
-        subject: 'Your KYC Verification is Complete'
-      }
-    );
-  }
-
-  /**
-   * Send an investment confirmation email
-   */
-  public async sendInvestmentConfirmationEmail(
-    email: string,
-    firstName: string,
-    propertyName: string,
-    investmentAmount: number,
-    transactionId: string
-  ): Promise<boolean> {
-    return this.sendTemplateEmail(
-      email,
-      'investment-confirmation-template', // Replace with your actual template ID
-      {
-        first_name: firstName,
-        property_name: propertyName,
-        investment_amount: investmentAmount.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }),
-        transaction_id: transactionId,
-        dashboard_link: `${process.env.FRONTEND_URL || 'https://ireva.com'}/investor/dashboard`,
-        current_year: new Date().getFullYear()
-      },
-      {
-        subject: `Investment Confirmation: ${propertyName}`
-      }
-    );
-  }
+// Log email configuration status
+if (transporter) {
+  console.log('Email service initialized with Gmail');
+} else {
+  console.log('IREVA_EMAIL or IREVA_EMAIL_PASS not set. Email sending is disabled.');
 }
 
-// Export a singleton instance
-export const emailService = new EmailService();
+/**
+ * Send email to a user
+ */
+export const sendEmail = async (to: string, subject: string, text: string, html?: string): Promise<boolean> => {
+  // Skip if email service is not configured
+  if (!transporter) {
+    console.log('Email sending skipped: Email service not configured');
+    return false;
+  }
+  
+  try {
+    const mailOptions = {
+      from: process.env.IREVA_EMAIL,
+      to,
+      subject,
+      text,
+      html: html || text
+    };
+    
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent to ${to}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
+};
+
+/**
+ * Send notification email to admin
+ */
+export const sendAdminEmail = async (to: string, subject: string, text: string): Promise<boolean> => {
+  return sendEmail(
+    to,
+    `[iREVA Admin] ${subject}`,
+    text
+  );
+};
+
+/**
+ * Send ROI distribution notification to investor
+ */
+export const sendROINotification = async (
+  to: string, 
+  amount: string, 
+  propertyName: string, 
+  investmentId: string
+): Promise<boolean> => {
+  const subject = `ROI Payment Received: ${propertyName}`;
+  
+  const text = `
+    Dear Investor,
+    
+    We are pleased to inform you that an ROI payment has been credited to your iREVA wallet.
+    
+    Property: ${propertyName}
+    Amount: ${amount}
+    
+    You can view the details of this payment in your iREVA dashboard.
+    
+    Thank you for investing with iREVA.
+    
+    Best regards,
+    The iREVA Team
+  `;
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2c3e50;">ROI Payment Received</h2>
+      <p>Dear Investor,</p>
+      <p>We are pleased to inform you that an ROI payment has been credited to your iREVA wallet.</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Property:</strong> ${propertyName}</p>
+        <p><strong>Amount:</strong> ${amount}</p>
+      </div>
+      
+      <p>You can view the details of this payment in your <a href="${process.env.APP_URL || 'https://ireva.app'}/investments/${investmentId}">iREVA dashboard</a>.</p>
+      
+      <p>Thank you for investing with iREVA.</p>
+      
+      <p>Best regards,<br>
+      The iREVA Team</p>
+    </div>
+  `;
+  
+  return sendEmail(to, subject, text, html);
+};
+
+/**
+ * Send investment maturity notification to investor
+ */
+export const sendMaturityNotification = async (
+  to: string,
+  propertyName: string,
+  investmentAmount: string,
+  maturityDate: string,
+  investmentId: string
+): Promise<boolean> => {
+  const subject = `Investment Matured: ${propertyName}`;
+  
+  const text = `
+    Dear Investor,
+    
+    Your investment in ${propertyName} has matured as of ${maturityDate}.
+    
+    Investment Amount: ${investmentAmount}
+    
+    Please log in to your iREVA dashboard to view the ROI details and manage your matured investment.
+    
+    Thank you for investing with iREVA.
+    
+    Best regards,
+    The iREVA Team
+  `;
+  
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2c3e50;">Investment Matured</h2>
+      <p>Dear Investor,</p>
+      <p>Your investment in <strong>${propertyName}</strong> has matured as of <strong>${maturityDate}</strong>.</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Investment Amount:</strong> ${investmentAmount}</p>
+      </div>
+      
+      <p>Please log in to your <a href="${process.env.APP_URL || 'https://ireva.app'}/investments/${investmentId}">iREVA dashboard</a> to view the ROI details and manage your matured investment.</p>
+      
+      <p>Thank you for investing with iREVA.</p>
+      
+      <p>Best regards,<br>
+      The iREVA Team</p>
+    </div>
+  `;
+  
+  return sendEmail(to, subject, text, html);
+};

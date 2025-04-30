@@ -3,7 +3,6 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import dotenv from "dotenv";
 import { authMiddleware } from "./auth-jwt";
-import { socketIOMiddleware } from "./socketio";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -14,9 +13,6 @@ app.use(express.urlencoded({ extended: false }));
 
 // Apply authMiddleware to all routes
 app.use(authMiddleware);
-
-// Apply socketIOMiddleware to enable real-time updates
-app.use(socketIOMiddleware);
 
 app.use((req, res, next) => {
   const start = Date.now();

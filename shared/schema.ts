@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, boolean, timestamp, numeric, integer, pgEnum, jsonb, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, boolean, timestamp, numeric, integer, pgEnum, jsonb, serial, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -27,6 +27,15 @@ export const auditActionEnum = pgEnum("audit_action", [
   "SECURITY_UPDATE",
   "SETTINGS_UPDATE"
 ]);
+
+// Property valuation methodology enum
+export const valuationMethodologyEnum = pgEnum("valuation_methodology", ["comps", "income", "cost"]);
+
+// Property valuation source enum
+export const valuationSourceEnum = pgEnum("valuation_source", ["internal", "third-party", "zillow", "moodys"]);
+
+// Secondary listing status enum
+export const secondaryListingStatusEnum = pgEnum("secondary_listing_status", ["pending", "active", "sold", "expired", "cancelled"]);
 
 // User schema
 export const users = pgTable("users", {
@@ -1137,3 +1146,87 @@ export type InsertRoiDistribution = z.infer<typeof insertRoiDistributionSchema>;
 
 export type InvestorPayout = typeof investorPayouts.$inferSelect;
 export type InsertInvestorPayout = z.infer<typeof insertInvestorPayoutSchema>;
+
+// Property Valuation Tracker
+export const propertyValuations = pgTable("property_valuations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  propertyId: uuid("property_id").notNull().references(() => properties.id, { onDelete: "cascade" }),
+  valuation: numeric("valuation", { precision: 15, scale: 2 }).notNull(),
+  valuationDate: timestamp("valuation_date").notNull(),
+  methodology: valuationMethodologyEnum("methodology"),
+  source: valuationSourceEnum("source"),
+  reportUrl: text("report_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: uuid("created_by").references(() => users.id),
+  metadata: jsonb("metadata")
+});
+
+// Secondary Market Engine
+export const secondaryListings = pgTable("secondary_listings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  investmentId: uuid("investment_id").notNull().references(() => investments.id, { onDelete: "cascade" }),
+  askingPrice: numeric("asking_price", { precision: 15, scale: 2 }).notNull(),
+  minPrice: numeric("min_price", { precision: 15, scale: 2 }),
+  status: secondaryListingStatusEnum("status").default("pending"),
+  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  soldAt: timestamp("sold_at"),
+  soldTo: uuid("sold_to").references(() => users.id),
+  soldPrice: numeric("sold_price", { precision: 15, scale: 2 }),
+  description: text("description"),
+  terms: jsonb("terms"),
+  fees: numeric("fees", { precision: 10, scale: 2 }),
+  adminApproved: boolean("admin_approved").default(false),
+  adminApprovedBy: uuid("admin_approved_by").references(() => users.id),
+  adminApprovedAt: timestamp("admin_approved_at")
+});
+
+// Secondary Market Bids
+export const secondaryBids = pgTable("secondary_bids", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  listingId: uuid("listing_id").notNull().references(() => secondaryListings.id, { onDelete: "cascade" }),
+  bidderId: uuid("bidder_id").notNull().references(() => users.id),
+  bidPrice: numeric("bid_price", { precision: 15, scale: 2 }).notNull(),
+  status: text("status").default("pending"), // pending, accepted, rejected, expired, withdrawn
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  responseAt: timestamp("response_at"),
+  notes: text("notes")
+});
+
+// Create insert schema for Property Valuations
+export const insertPropertyValuationSchema = createInsertSchema(propertyValuations).omit({
+  id: true,
+  createdAt: true
+});
+
+// Create insert schema for Secondary Listings
+export const insertSecondaryListingSchema = createInsertSchema(secondaryListings).omit({
+  id: true,
+  createdAt: true,
+  soldAt: true,
+  soldTo: true,
+  soldPrice: true,
+  adminApproved: true,
+  adminApprovedBy: true,
+  adminApprovedAt: true
+});
+
+// Create insert schema for Secondary Bids
+export const insertSecondaryBidSchema = createInsertSchema(secondaryBids).omit({
+  id: true,
+  createdAt: true,
+  responseAt: true
+});
+
+// Export types for new tables
+export type PropertyValuation = typeof propertyValuations.$inferSelect;
+export type InsertPropertyValuation = z.infer<typeof insertPropertyValuationSchema>;
+
+export type SecondaryListing = typeof secondaryListings.$inferSelect;
+export type InsertSecondaryListing = z.infer<typeof insertSecondaryListingSchema>;
+
+export type SecondaryBid = typeof secondaryBids.$inferSelect;
+export type InsertSecondaryBid = z.infer<typeof insertSecondaryBidSchema>;
