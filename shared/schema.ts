@@ -94,6 +94,7 @@ export const properties = pgTable("properties", {
   developer: text("developer"),
   developerProfile: text("developer_profile"),
   riskLevel: text("risk_level"),
+  riskRating: integer("risk_rating"),
   targetReturn: numeric("target_return"),
   minimumInvestment: integer("minimum_investment"),
   term: integer("term"),
@@ -114,6 +115,7 @@ export const properties = pgTable("properties", {
   longitude: numeric("longitude"),
   accreditedOnly: boolean("accredited_only"),
   tier: investmentTierEnum("tier"),
+  requiredKycTier: kycTierEnum("required_kyc_tier").default("basic"),
   completionDate: timestamp("completion_date")
 });
 
@@ -372,7 +374,18 @@ export const documentTypeEnum = pgEnum("document_type", [
   "crypto_risk_disclosure",
   "aml_statement",
   "gdpr_commitment",
-  "cookies_policy"
+  "cookies_policy",
+  "investment_contract",
+  "property_disclosure",
+  "escrow_agreement"
+]);
+
+// Document status enum
+export const documentStatusEnum = pgEnum("document_status", [
+  "pending", 
+  "signed", 
+  "expired", 
+  "archived"
 ]);
 
 // Legal versions schema to track document versions
@@ -404,6 +417,116 @@ export const complianceLogs = pgTable("compliance_logs", {
   acceptedAt: timestamp("accepted_at").notNull().defaultNow()
 });
 
+// Notification channels enum
+export const notificationChannelEnum = pgEnum("notification_channel", [
+  "email", 
+  "in_app", 
+  "sms", 
+  "push"
+]);
+
+// Notification templates for the smart notification system
+export const notificationTemplates = pgTable("notification_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // investment_completed, kyc_approved, etc.
+  subject: text("subject"),
+  contentTemplate: text("content_template").notNull(),
+  channels: notificationChannelEnum("channels").array(), // Which channels this template can be used for
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+});
+
+// User notification preferences
+export const userNotificationPreferences = pgTable("user_notification_preferences", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  notificationType: text("notification_type").notNull(), // matches template types
+  channels: notificationChannelEnum("channels").array(),
+  enabled: boolean("enabled").default(true),
+  updatedAt: timestamp("updated_at")
+});
+
+// Document management system tables
+export const documents = pgTable("documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  type: documentTypeEnum("type").notNull(),
+  status: documentStatusEnum("status").default("pending"),
+  content: text("content"),
+  fileUrl: text("file_url"),
+  signUrl: text("sign_url"),
+  parties: jsonb("parties").$type<Array<{ id: string; role: string; signed: boolean }>>(),
+  createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  expiresAt: timestamp("expires_at")
+});
+
+// Notification queue for processing notifications asynchronously
+export const notificationQueue = pgTable("notification_queue", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  eventType: text("event_type").notNull(),
+  eventData: jsonb("event_data").notNull(),
+  status: text("status").default("pending"), // pending, processing, completed, failed
+  attempts: integer("attempts").default(0),
+  lastAttempt: timestamp("last_attempt"),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// AML risk level enum
+export const amlRiskLevelEnum = pgEnum("aml_risk_level", [
+  "low", 
+  "medium", 
+  "high", 
+  "critical"
+]);
+
+// Webhook event types enum
+export const webhookEventEnum = pgEnum("webhook_event", [
+  "investment_created", 
+  "investment_completed",
+  "kyc_approved",
+  "kyc_rejected",
+  "transaction_processed",
+  "roi_distributed",
+  "user_registered",
+  "all"
+]);
+
+// AML screening results schema
+export const amlScreenings = pgTable("aml_screenings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+  transactionId: uuid("transaction_id").references(() => transactions.id, { onDelete: "set null" }),
+  riskScore: integer("risk_score").notNull(),
+  riskLevel: amlRiskLevelEnum("risk_level").notNull(),
+  provider: text("provider").notNull(),
+  rawResponse: jsonb("raw_response"),
+  flaggedFields: jsonb("flagged_fields"),
+  screenedAt: timestamp("screened_at").defaultNow(),
+  reviewedBy: uuid("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+  reviewNotes: text("review_notes"),
+  reviewedAt: timestamp("reviewed_at"),
+  status: text("status").default("pending") // pending, approved, rejected
+});
+
+// Investor financial profile schema for calculating concentration metrics
+export const investorProfiles = pgTable("investor_profiles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  annualIncome: numeric("annual_income", { precision: 12, scale: 2 }),
+  netWorth: numeric("net_worth", { precision: 12, scale: 2 }),
+  liquidNetWorth: numeric("liquid_net_worth", { precision: 12, scale: 2 }),
+  investmentExperience: text("investment_experience"),
+  riskTolerance: text("risk_tolerance"),
+  investmentObjectives: text("investment_objectives"),
+  employmentStatus: text("employment_status"),
+  sourceOfFunds: text("source_of_funds"),
+  lastUpdated: timestamp("last_updated").defaultNow()
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   kycSubmissions: many(kycSubmissions),
@@ -424,7 +547,14 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   feedback: many(userFeedback),
   issues: many(issues),
   issueComments: many(issueComments),
-  assignedIssues: many(issues, { relationName: "assignedIssues" })
+  assignedIssues: many(issues, { relationName: "assignedIssues" }),
+  amlScreenings: many(amlScreenings),
+  amlReviews: many(amlScreenings, { relationName: "amlReviews" }),
+  financialProfile: one(investorProfiles, {
+    fields: [users.id],
+    references: [investorProfiles.userId]
+  }),
+  createdDocuments: many(documents, { relationName: "createdDocuments" })
 }));
 
 export const kycSubmissionsRelations = relations(kycSubmissions, ({ one }) => ({
@@ -457,11 +587,12 @@ export const walletsRelations = relations(wallets, ({ one, many }) => ({
   transactions: many(transactions)
 }));
 
-export const transactionsRelations = relations(transactions, ({ one }) => ({
+export const transactionsRelations = relations(transactions, ({ one, many }) => ({
   wallet: one(wallets, {
     fields: [transactions.walletId],
     references: [wallets.id]
-  })
+  }),
+  amlScreenings: many(amlScreenings)
 }));
 
 export const cryptoWalletsRelations = relations(cryptoWallets, ({ one, many }) => ({
@@ -579,6 +710,37 @@ export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one })
   user: one(users, {
     fields: [pushSubscriptions.userId],
     references: [users.id]
+  })
+}));
+
+export const amlScreeningsRelations = relations(amlScreenings, ({ one }) => ({
+  user: one(users, {
+    fields: [amlScreenings.userId],
+    references: [users.id]
+  }),
+  transaction: one(transactions, {
+    fields: [amlScreenings.transactionId],
+    references: [transactions.id]
+  }),
+  reviewer: one(users, {
+    fields: [amlScreenings.reviewedBy],
+    references: [users.id],
+    relationName: "amlReviews"
+  })
+}));
+
+export const investorProfilesRelations = relations(investorProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [investorProfiles.userId],
+    references: [users.id]
+  })
+}));
+
+export const documentsRelations = relations(documents, ({ one }) => ({
+  creator: one(users, {
+    fields: [documents.createdBy],
+    references: [users.id],
+    relationName: "createdDocuments"
   })
 }));
 
