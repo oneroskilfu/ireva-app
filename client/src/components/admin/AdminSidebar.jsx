@@ -19,7 +19,9 @@ import {
   Settings,
   BarChart,
   Logout,
-  Wallet
+  Wallet,
+  PieChart,
+  Payments
 } from '@mui/icons-material';
 
 export default function AdminSidebar() {
@@ -74,6 +76,13 @@ export default function AdminSidebar() {
             <AccountBalance />
           </ListItemIcon>
           <ListItemText primary="Investment Management" />
+        </ListItemButton>
+        
+        <ListItemButton component={Link} href="/admin/roi-management">
+          <ListItemIcon>
+            <Payments />
+          </ListItemIcon>
+          <ListItemText primary="ROI Management" />
         </ListItemButton>
         
         <ListItemButton component={Link} href="/admin/wallet">

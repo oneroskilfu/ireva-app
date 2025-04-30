@@ -8,6 +8,7 @@ const AdminActivityLogs = lazy(() => import('@/pages/admin/AdminActivityLogs'));
 const KYCManagement = lazy(() => import('@/pages/admin/KYCManagement'));
 const PropertyManagement = lazy(() => import('@/pages/admin/PropertyManagement'));
 const ROIDistribution = lazy(() => import('@/pages/admin/ROIDistribution'));
+const ROIManagement = lazy(() => import('@/pages/admin/ROIManagement'));
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
 
 // Loading component for suspense fallback
@@ -29,6 +30,7 @@ const AdminRoutes: React.FC = () => {
         <Route path="/admin/kyc" component={KYCManagement} />
         <Route path="/admin/properties" component={PropertyManagement} />
         <Route path="/admin/roi" component={ROIDistribution} />
+        <Route path="/admin/roi-management" component={ROIManagement} />
         <Route path="/admin/users" component={UserManagement} />
         {/* Add additional admin routes here */}
       </Switch>
