@@ -75,6 +75,7 @@ import fs from 'fs';
 // Import our new TypeScript routes
 import adminKycRoutes from './api/admin/kyc';
 import propertiesRouter from './routes/admin/properties';
+import roiRouter from './routes/admin/roi';
 import investorKycRoutes from './api/investor/kyc';
 
 // Import transaction and wallet routes
@@ -158,6 +159,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up admin properties routes
   app.use('/api/admin/properties', propertiesRouter);
+  
+  // Set up admin ROI management routes
+  app.use('/api/admin/roi', roiRouter);
+  console.log("Admin ROI management routes registered");
   
   // Set up new investor routes
   app.use('/api/investor', investorRoutes);

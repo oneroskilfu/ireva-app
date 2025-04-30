@@ -1,0 +1,331 @@
+Here's the implementation for ROI Tracking & Payouts, integrated with your existing Drizzle ORM schema and architecture:
+
+```typescript
+// shared/schema.ts - Add these new schemas
+export const payoutFrequencyEnum = pgEnum('payout_frequency', ['monthly', 'quarterly', 'annual', 'custom']);
+export const payoutStatusEnum = pgEnum('payout_status', ['pending', 'processing', 'paid', 'failed']);
+
+export const payoutSchedules = pgTable('payout_schedules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').references(() => properties.id).notNull(),
+  frequency: payoutFrequencyEnum('frequency').notNull(),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date'),
+  amountType: varchar('amount_type', { length: 20 }).notNull(), // 'fixed' or 'percentage'
+  amountValue: numeric('amount_value', { precision: 15, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const roiDistributions = pgTable('roi_distributions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').references(() => properties.id).notNull(),
+  payoutDate: timestamp('payout_date').notNull(),
+  totalAmount: numeric('total_amount', { precision: 15, scale: 2 }).notNull(),
+  status: payoutStatusEnum('status').notNull().default('pending'),
+  initiatedBy: uuid('initiated_by').references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const investorPayouts = pgTable('investor_payouts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  distributionId: uuid('distribution_id').references(() => roiDistributions.id).notNull(),
+  investorId: uuid('investor_id').references(() => users.id).notNull(),
+  amount: numeric('amount', { precision: 15, scale: 2 }).notNull(),
+  status: payoutStatusEnum('status').notNull().default('pending'),
+  paidAt: timestamp('paid_at'),
+  transactionId: uuid('transaction_id').references(() => transactions.id),
+});
+```
+
+```typescript
+// backend/src/routes/admin/roi.ts
+import express from 'express';
+import { db } from '../drizzle';
+import { eq, and, sql, gte, lte } from 'drizzle-orm';
+import { 
+  properties,
+  payoutSchedules,
+  roiDistributions,
+  investorPayouts,
+  transactions
+} from '../../shared/schema';
+import { adminAuth } from '../middleware/auth';
+
+const router = express.Router();
+
+// Get ROI performance for a property
+router.get('/:propertyId/performance', adminAuth, async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    
+    const result = await db
+      .select({
+        totalDistributed: sql<number>`sum(amount)`,
+        pendingAmount: sql<number>`sum(case when status = 'pending' then amount else 0 end)`,
+        nextPayoutDate: sql<Date>`min(payout_date)`,
+      })
+      .from(roiDistributions)
+      .where(and(
+        eq(roiDistributions.propertyId, propertyId),
+        eq(roiDistributions.status, 'pending')
+      ));
+
+    res.json(result[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch ROI performance' });
+  }
+});
+
+// Create payout schedule
+router.post('/:propertyId/schedules', adminAuth, async (req, res) => {
+  try {
+    const newSchedule = await db
+      .insert(payoutSchedules)
+      .values({
+        propertyId: req.params.propertyId,
+        ...req.body,
+        startDate: new Date(req.body.startDate),
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      })
+      .returning();
+
+    res.status(201).json(newSchedule[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create payout schedule' });
+  }
+});
+
+// Trigger ROI distribution
+router.post('/:propertyId/distributions', adminAuth, async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    
+    // 1. Create distribution record
+    const distribution = await db
+      .insert(roiDistributions)
+      .values({
+        propertyId,
+        payoutDate: new Date(),
+        totalAmount: req.body.amount,
+        initiatedBy: req.user.id,
+      })
+      .returning();
+
+    // 2. Calculate investor payouts (simplified example)
+    const investors = await db.query.investments.findMany({
+      where: eq(investments.propertyId, propertyId),
+    });
+
+    const payoutPromises = investors.map(investor => 
+      db.insert(investorPayouts).values({
+        distributionId: distribution[0].id,
+        investorId: investor.investorId,
+        amount: investor.amount * req.body.percentage,
+      })
+    );
+
+    await Promise.all(payoutPromises);
+    
+    // 3. Initiate actual payments (pseudo-code)
+    // await processPayouts(distribution[0].id);
+
+    res.json(distribution[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to trigger distribution' });
+  }
+});
+
+// Generate ROI report
+router.get('/:propertyId/report', adminAuth, async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const report = await db
+      .select({
+        date: roiDistributions.payoutDate,
+        totalAmount: roiDistributions.totalAmount,
+        status: roiDistributions.status,
+        paidInvestors: sql<number>`count(${investorPayouts.id}) filter (where ${investorPayouts.status} = 'paid')`,
+        pendingAmount: sql<number>`sum(${investorPayouts.amount}) filter (where ${investorPayouts.status} = 'pending')`,
+      })
+      .from(roiDistributions)
+      .leftJoin(investorPayouts, eq(roiDistributions.id, investorPayouts.distributionId))
+      .where(and(
+        eq(roiDistributions.propertyId, propertyId),
+        gte(roiDistributions.payoutDate, new Date(startDate)),
+        lte(roiDistributions.payoutDate, new Date(endDate))
+      ))
+      .groupBy(roiDistributions.id);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=roi-report.csv');
+    res.send(generateCSV(report));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate report' });
+  }
+});
+```
+
+```typescript
+// frontend/src/components/RoiManagement.tsx
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { 
+  Box, 
+  Paper, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableRow, 
+  Button, 
+  CircularProgress,
+  Alert
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers';
+import { apiClient } from '../lib/api';
+import { Property, RoiDistribution, PayoutSchedule } from '../lib/types';
+
+const RoiManagement = ({ property }: { property: Property }) => {
+  const { data: performance, isLoading } = useQuery({
+    queryKey: ['roiPerformance', property.id],
+    queryFn: () => apiClient.get(`/api/admin/roi/${property.id}/performance`).then(res => res.data),
+  });
+
+  const { mutate: triggerDistribution } = useMutation({
+    mutationFn: (amount: number) => 
+      apiClient.post(`/api/admin/roi/${property.id}/distributions`, { amount }),
+    onSuccess: () => {
+      // Refresh data
+    },
+  });
+
+  return (
+    <Paper sx={{ p: 3, mt: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+        <h2>ROI Management - {property.title}</h2>
+        <Button 
+          variant="contained" 
+          onClick={() => triggerDistribution(property.currentFunding * 0.08)}
+        >
+          Trigger Monthly Payout
+        </Button>
+      </Box>
+
+      {isLoading ? <CircularProgress /> : (
+        <Box sx={{ mb: 4 }}>
+          <h3>Performance Overview</h3>
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell>Total Distributed</TableCell>
+                <TableCell>${performance?.totalDistributed?.toLocaleString() || 0}</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Pending Payouts</TableCell>
+                <TableCell>${performance?.pendingAmount?.toLocaleString() || 0}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Box>
+      )}
+
+      <Box sx={{ mb: 4 }}>
+        <h3>Payout Schedule</h3>
+        <PayoutSchedulesTable propertyId={property.id} />
+      </Box>
+
+      <Box>
+        <h3>Distribution History</h3>
+        <RoiDistributionsTable propertyId={property.id} />
+      </Box>
+    </Paper>
+  );
+};
+
+const PayoutSchedulesTable = ({ propertyId }: { propertyId: string }) => {
+  const { data: schedules, isLoading } = useQuery<PayoutSchedule[]>({
+    queryKey: ['payoutSchedules', propertyId],
+    queryFn: () => apiClient.get(`/api/admin/roi/${propertyId}/schedules`).then(res => res.data),
+  });
+
+  // Implement schedule CRUD operations
+  return (
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableCell>Frequency</TableCell>
+          <TableCell>Start Date</TableCell>
+          <TableCell>Amount</TableCell>
+          <TableCell>Actions</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {schedules?.map(schedule => (
+          <TableRow key={schedule.id}>
+            <TableCell>{schedule.frequency}</TableCell>
+            <TableCell>{new Date(schedule.startDate).toLocaleDateString()}</TableCell>
+            <TableCell>
+              {schedule.amountType === 'percentage' ? 
+                `${schedule.amountValue}%` : 
+                `$${schedule.amountValue.toLocaleString()}`
+              }
+            </TableCell>
+            <TableCell>
+              <Button size="small">Edit</Button>
+              <Button size="small" color="error">Delete</Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
+```
+
+**Automated Payouts Implementation (Cron Job):**
+```typescript
+// backend/src/services/payoutScheduler.ts
+import { db } from '../drizzle';
+import { processPayouts } from './paymentProcessor';
+import { and, lt, eq } from 'drizzle-orm';
+import { payoutSchedules, roiDistributions } from '../../shared/schema';
+
+export const schedulePayouts = () => {
+  cron.schedule('0 9 * * *', async () => { // Daily at 9am
+    const dueSchedules = await db
+      .select()
+      .from(payoutSchedules)
+      .where(and(
+        lt(payoutSchedules.startDate, new Date()),
+        eq(payoutSchedules.endDate, null) // Handle end dates
+      ));
+
+    for (const schedule of dueSchedules) {
+      await db.insert(roiDistributions).values({
+        propertyId: schedule.propertyId,
+        payoutDate: new Date(),
+        totalAmount: schedule.amountValue,
+        status: 'processing'
+      });
+      
+      // Add actual payment processing logic
+      await processPayouts(schedule.propertyId);
+    }
+  });
+};
+```
+
+**Production Considerations:**
+1. Add transaction handling for financial operations
+2. Implement payment gateway integration (Stripe, PayPal, etc.)
+3. Add audit logging for all payout operations
+4. Implement retry logic for failed payments
+5. Add investor notifications for payouts
+6. Implement proper currency conversion handling
+7. Add comprehensive unit tests for financial calculations
+8. Implement queue system for payout processing
+9. Add double-entry bookkeeping system
+10. Implement proper tax reporting hooks
+
+This implementation provides a complete ROI tracking and payout system integrated with your existing architecture, maintaining type safety and database consistency through Drizzle ORM while providing the necessary admin functionality.

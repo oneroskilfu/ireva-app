@@ -723,3 +723,70 @@ export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema
 
 export type ComplianceLog = typeof complianceLogs.$inferSelect;
 export type InsertComplianceLog = z.infer<typeof insertComplianceLogSchema>;
+
+// -----------------------------------
+// ROI Distribution and Payout Schemas
+// -----------------------------------
+
+// Define payouts related enums
+export const payoutFrequencyEnum = pgEnum('payout_frequency', ['monthly', 'quarterly', 'annual', 'custom']);
+export const payoutStatusEnum = pgEnum('payout_status', ['pending', 'processing', 'paid', 'failed']);
+
+// Payout schedules table for property ROI distributions
+export const payoutSchedules = pgTable('payout_schedules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').references(() => properties.id).notNull(),
+  frequency: payoutFrequencyEnum('frequency').notNull(),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date'),
+  amountType: text('amount_type').notNull(), // 'fixed' or 'percentage'
+  amountValue: numeric('amount_value', { precision: 15, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// ROI distributions table to track payout batches
+export const roiDistributions = pgTable('roi_distributions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  propertyId: uuid('property_id').references(() => properties.id).notNull(),
+  payoutDate: timestamp('payout_date').notNull(),
+  totalAmount: numeric('total_amount', { precision: 15, scale: 2 }).notNull(),
+  status: payoutStatusEnum('status').notNull().default('pending'),
+  initiatedBy: uuid('initiated_by').references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Individual investor payouts tracking
+export const investorPayouts = pgTable('investor_payouts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  distributionId: uuid('distribution_id').references(() => roiDistributions.id).notNull(),
+  investorId: uuid('investor_id').references(() => users.id).notNull(),
+  amount: numeric('amount', { precision: 15, scale: 2 }).notNull(),
+  status: payoutStatusEnum('status').notNull().default('pending'),
+  paidAt: timestamp('paid_at'),
+  transactionId: uuid('transaction_id').references(() => transactions.id),
+});
+
+// Create insert schemas for all payout tables
+export const insertPayoutScheduleSchema = createInsertSchema(payoutSchedules).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertRoiDistributionSchema = createInsertSchema(roiDistributions).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertInvestorPayoutSchema = createInsertSchema(investorPayouts).omit({
+  id: true
+});
+
+// Export types for all payout tables
+export type PayoutSchedule = typeof payoutSchedules.$inferSelect;
+export type InsertPayoutSchedule = z.infer<typeof insertPayoutScheduleSchema>;
+
+export type RoiDistribution = typeof roiDistributions.$inferSelect;
+export type InsertRoiDistribution = z.infer<typeof insertRoiDistributionSchema>;
+
+export type InvestorPayout = typeof investorPayouts.$inferSelect;
+export type InsertInvestorPayout = z.infer<typeof insertInvestorPayoutSchema>;
