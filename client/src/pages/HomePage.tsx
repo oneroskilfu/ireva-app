@@ -10,12 +10,59 @@ import {
   Grid,
   Paper,
   Divider,
-  IconButton
+  IconButton,
+  Menu,
+  MenuItem,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Tab,
+  Tabs
 } from "@mui/material";
-import { Menu as MenuIcon, Notifications, AccountCircle } from "@mui/icons-material";
+import { 
+  Menu as MenuIcon, 
+  Notifications, 
+  AccountCircle, 
+  Dashboard, 
+  People, 
+  Business, 
+  Assessment,
+  CreditCard,
+  Settings, 
+  BugReport
+} from "@mui/icons-material";
+import { useState } from "react";
+import { Link } from "wouter";
+import DebugLogin from "../components/DebugLogin";
 
 // Enhanced app with more Material UI components for testing
 export default function HomePage() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [accountMenuAnchor, setAccountMenuAnchor] = useState<null | HTMLElement>(null);
+  
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+  
+  const handleAccountMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAccountMenuAnchor(event.currentTarget);
+  };
+  
+  const handleAccountMenuClose = () => {
+    setAccountMenuAnchor(null);
+  };
+  
+  const adminMenuItems = [
+    { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
+    { text: 'User Management', icon: <People />, path: '/admin/users' },
+    { text: 'Properties', icon: <Business />, path: '/admin/properties' },
+    { text: 'Portfolio', icon: <Assessment />, path: '/admin/portfolio' },
+    { text: 'Payments', icon: <CreditCard />, path: '/admin/payments' },
+    { text: 'Settings', icon: <Settings />, path: '/admin/settings' }
+  ];
+  
   return (
     <>
       <AppBar position="static">
@@ -25,6 +72,7 @@ export default function HomePage() {
             color="inherit" 
             aria-label="menu" 
             sx={{ mr: 2 }}
+            onClick={toggleDrawer}
           >
             <MenuIcon />
           </IconButton>
@@ -34,11 +82,54 @@ export default function HomePage() {
           <IconButton color="inherit">
             <Notifications />
           </IconButton>
-          <IconButton color="inherit">
+          <IconButton 
+            color="inherit"
+            onClick={handleAccountMenuOpen}
+          >
             <AccountCircle />
           </IconButton>
+          
+          <Menu
+            anchorEl={accountMenuAnchor}
+            open={Boolean(accountMenuAnchor)}
+            onClose={handleAccountMenuClose}
+          >
+            <MenuItem onClick={handleAccountMenuClose}>Profile</MenuItem>
+            <MenuItem onClick={handleAccountMenuClose}>My Account</MenuItem>
+            <MenuItem onClick={handleAccountMenuClose}>Logout</MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
+      
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer}
+      >
+        <Box
+          sx={{ width: 250 }}
+          role="presentation"
+        >
+          <List>
+            {adminMenuItems.map((item) => (
+              <Link href={item.path} key={item.text}>
+                <ListItem 
+                  onClick={toggleDrawer}
+                  sx={{ 
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } 
+                  }}
+                >
+                  <ListItemIcon>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItem>
+              </Link>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
       
       <Container maxWidth="md" sx={{ mt: 4 }}>
         <Box sx={{ my: 4, textAlign: 'center' }}>

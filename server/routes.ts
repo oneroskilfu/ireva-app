@@ -91,6 +91,7 @@ import { adminNotificationRouter } from './routes/admin-notification-routes';
 import adminKycRouter from './routes/admin-kyc-routes';
 import kycRouter from './routes/kyc';
 import adminWalletRoutes from './routes/adminWalletRoutes';
+import debugAuthRoutes from './routes/debug-auth';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Serve our static HTML home page at /static-home and at /static
@@ -365,6 +366,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Debug Login routes
   app.use('/api/auth', debugLoginRouter);
   console.log("Debug login routes registered");
+  
+  // Set up Debug Auth routes
+  app.use('/api/debug', debugAuthRoutes);
+  console.log("Debug auth routes registered");
   
   // Set up Email Campaign routes
   app.use('/api/email-campaigns', emailCampaignRoutes);
