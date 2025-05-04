@@ -1,85 +1,55 @@
-// Super minimal server meant to pass Replit's 20-second timeout check
+// Optimized server startup for Replit with fast port binding
 import express from "express";
 import { createServer } from "http";
 import { log } from "./vite";
+import path from "path";
+import dotenv from "dotenv";
 
+// Load environment variables
+dotenv.config();
+
+console.log("Starting iREVA application...");
+
+// Create express app immediately with minimum configuration
 const app = express();
 app.use(express.json());
 
-// Create a basic server that responds immediately
+// Set up port
 const port = process.env.PORT || 5000;
+
+// Create HTTP server 
 const server = createServer(app);
 
-// Health check endpoint
+// Critical startup endpoints for Replit to detect the open port
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    message: 'iREVA server is running', 
-    timestamp: new Date().toISOString() 
-  });
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Placeholder admin endpoint
-app.post('/api/debug/create-admin', (req, res) => {
-  res.status(200).json({ 
-    message: 'Admin user creation endpoint is ready',
-    success: true
-  });
-});
-
-// Root endpoint for web app
 app.get('/', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>iREVA Platform</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
-          h1 { color: #3182ce; }
-          .container { max-width: 800px; margin: 0 auto; }
-          .card { 
-            border: 1px solid #e2e8f0; 
-            padding: 20px; 
-            border-radius: 8px;
-            margin: 20px 0;
-            background: #f7fafc;
-          }
-          .loading { 
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(0,0,0,0.1);
-            border-radius: 50%;
-            border-top-color: #3182ce;
-            animation: spin 1s ease-in-out infinite;
-          }
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>iREVA Real Estate Crowdfunding Platform</h1>
-          <div class="card">
-            <h2>Server Status</h2>
-            <p>Server is online and ready <span class="loading"></span></p>
-            <p>Time: ${new Date().toLocaleString()}</p>
-          </div>
-          <div class="card">
-            <h2>Admin Access</h2>
-            <p>To create an admin user, use the /api/debug/create-admin endpoint</p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `);
+  res.send(`<!DOCTYPE html><html><head><title>iREVA Platform</title><style>body{font-family:Arial,sans-serif;text-align:center;margin:0;padding:20px;}</style></head><body><h1>iREVA Platform</h1><p>Loading application...</p></body></html>`);
 });
 
-// Start server right away
-server.listen(port, "0.0.0.0", () => {
+// Load the admin routes and debug auth router
+import adminRouter from './routes/admin';
+import debugAuthRouter from './routes/debug-auth';
+
+console.log("Attaching debug auth router");
+
+// Add our routes to the main application
+app.use('/api/admin', adminRouter);
+app.use('/api/debug', debugAuthRouter);
+
+// Add a catch-all route for unknown API endpoints
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ 
+    error: 'Endpoint not found',
+    message: 'The requested API endpoint does not exist or is not yet implemented',
+    path: req.originalUrl
+  });
+});
+
+// Start server immediately - this must happen fast to meet Replit's 20-second limit
+server.listen(Number(port), "0.0.0.0", () => {
   log(`iREVA server running on port ${port}`);
-  
-  // Background initialization can happen here, but for now we'll keep it simple
+  console.log(`Server started successfully at ${new Date().toISOString()}`);
 });
