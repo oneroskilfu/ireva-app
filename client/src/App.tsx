@@ -1,26 +1,54 @@
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme';
+import React from 'react';
+import { Switch, Route } from 'wouter';
+import { AuthProvider } from './hooks/use-auth';
+import RequireRole from './components/auth/RequireRole';
+import UnauthorizedPage from './pages/UnauthorizedPage';
+import './App.css';
 
-import { Route, Switch } from 'wouter';
-import HomePage from './pages/HomePage';
-import MinimalMuiPage from './pages/minimal-mui';
-import UserManagement from './pages/admin/UserManagement';
-import PortfolioPage from './pages/admin/PortfolioPage';
-import DocumentsPage from './pages/DocumentsPage';
+// Placeholder components for demonstration
+const HomePage = () => <div>Home Page (Public)</div>;
+const LoginPage = () => <div>Login Page</div>;
+const AdminDashboard = () => <div>Admin Dashboard (Admin Only)</div>;
+const InvestorDashboard = () => <div>Investor Dashboard (Investor Only)</div>;
+const SettingsPage = () => <div>Settings Page (Authentication Required)</div>;
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      
-      <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/minimal-mui" component={MinimalMuiPage} />
-        <Route path="/admin/users" component={UserManagement} />
-        <Route path="/admin/portfolio" component={PortfolioPage} />
-        <Route path="/documents" component={DocumentsPage} />
-      </Switch>
-    </ThemeProvider>
+    <AuthProvider>
+      <div className="App">
+        <header className="App-header">
+          <h1>iREVA Platform</h1>
+        </header>
+        
+        <main>
+          <Switch>
+            {/* Public routes */}
+            <Route path="/" component={HomePage} />
+            <Route path="/login" component={LoginPage} />
+            <Route path="/unauthorized" component={UnauthorizedPage} />
+            
+            {/* Admin-only route */}
+            <Route path="/admin">
+              <RequireRole role="admin">
+                <AdminDashboard />
+              </RequireRole>
+            </Route>
+            
+            {/* Investor-only route */}
+            <Route path="/investor">
+              <RequireRole role="investor">
+                <InvestorDashboard />
+              </RequireRole>
+            </Route>
+            
+            {/* 404 route */}
+            <Route>
+              <div>Page Not Found</div>
+            </Route>
+          </Switch>
+        </main>
+      </div>
+    </AuthProvider>
   );
 }
 

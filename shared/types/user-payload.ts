@@ -1,14 +1,30 @@
-// types/user-payload.ts
 import { z } from 'zod';
 
+/**
+ * Zod schema for validating UserPayload objects
+ * Used for JWT payload validation and type safety
+ */
 export const userPayloadSchema = z.object({
-  userId: z.string().uuid(),
-  email: z.string().email(),
-  role: z.enum(['investor', 'admin', 'super_admin']),  // Updated to include super_admin
-  fullName: z.string().optional(),
-  isVerified: z.boolean().optional(),
-  avatarUrl: z.string().url().optional().nullable(),
-  phoneNumber: z.string().optional().nullable(),
+  id: z.string().uuid(), // User ID (UUID format)
+  email: z.string().email(), // User email (validated as email format)
+  role: z.enum(['admin', 'investor']), // User role restricted to valid values
+  verified: z.boolean() // Whether the user is verified
 });
 
+/**
+ * Type definition for user payload
+ * This represents the data stored in the JWT token
+ */
 export type UserPayload = z.infer<typeof userPayloadSchema>;
+
+/**
+ * Extend Express Request interface to include user payload
+ * This allows TypeScript to recognize req.user in Express route handlers
+ */
+declare global {
+  namespace Express {
+    interface Request {
+      user?: UserPayload;
+    }
+  }
+}
