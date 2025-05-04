@@ -1,11 +1,15 @@
-// server.js - Full Express application
-// This is loaded by bootstrap.js after the minimal server runs
+// server.js - ESM-compatible
+import express from 'express';
+import http from 'http';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const express = require('express');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const app = express();
-const port = 5000;
+const PORT = 5000;
 
-// Basic middleware
+// Basic middleware and routes
 app.use(express.json());
 
 // Health check endpoint
@@ -62,12 +66,12 @@ app.get('/api/debug/info', (req, res) => {
   res.json({
     serverTime: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    nodeVersion: process.version
+    nodeVersion: process.version,
+    serverType: 'ESM'
   });
 });
 
-// Export the server listener
-module.exports = app.listen(port, () => {
-  console.log(`Full iREVA backend started on port ${port}`);
-  console.log(`Server initialized at ${new Date().toISOString()}`);
+// Create and start the server
+http.createServer(app).listen(PORT, () => {
+  console.log(`iREVA server is listening on port ${PORT}`);
 });

@@ -3,13 +3,14 @@
  * This is the absolute minimum needed to bind a port in Node.js.
  */
 
-const net = require('net');
-const port = 5000;
+import net from 'net';
 
-// Create a minimal TCP server that does nothing but bind to the port
+console.log(`[${new Date().toISOString()}] Starting minimal TCP server...`);
+
+// Create a TCP server that does nothing except bind to the port
 const server = net.createServer();
 
-// Bind to port immediately
-server.listen(port, '0.0.0.0', () => {
-  console.log(`TCP server bound to port ${port}`);
+// Bind to port 5000 immediately
+server.listen(5000, '0.0.0.0', () => {
+  console.log(`[${new Date().toISOString()}] TCP server bound to port 5000`);
 });

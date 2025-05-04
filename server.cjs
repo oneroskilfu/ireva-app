@@ -1,44 +1,73 @@
-/**
- * Ultra-minimal HTTP server for Replit that binds immediately to port 5000
- * and responds to basic HTTP requests. This is even simpler than our
- * Express server to ensure the fastest possible port binding.
- */
+// server.cjs (CommonJS version)
+// This is the one loaded by bootstrap.cjs
 
-const http = require('http');
-const { spawn } = require('child_process');
-const port = 5000;
+const express = require('express');
+const app = express();
 
-// Create a minimal HTTP server
-const server = http.createServer((req, res) => {
-  // Check if request is a health check
-  if (req.url === '/api/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString() 
-    }));
-    return;
-  }
+// Basic middleware and routes
+app.use(express.json());
 
-  // Default response
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('iREVA application is starting...\n');
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    server: 'CommonJS'
+  });
 });
 
-// Bind to port immediately
-console.log(`Starting minimal HTTP server at ${new Date().toISOString()}`);
-server.listen(port, '0.0.0.0', () => {
-  console.log(`HTTP server bound to port ${port} at ${new Date().toISOString()}`);
-  
-  // Start the actual application in the background
-  console.log('Starting the full iREVA application...');
-  const appProcess = spawn('npm', ['run', 'dev'], {
-    stdio: 'inherit',
-    detached: true
+// Simple home route
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>iREVA Platform</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 50px 20px;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+          }
+          h1 {
+            color: #2a52be;
+            margin-bottom: 20px;
+          }
+          .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>iREVA Platform (CJS)</h1>
+          <p>Real Estate Investment Platform</p>
+          <p>Server is running successfully!</p>
+          <p><small>Startup Time: ${new Date().toISOString()}</small></p>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+// Debug route for testing
+app.get('/api/debug/info', (req, res) => {
+  res.json({
+    serverTime: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    nodeVersion: process.version,
+    serverType: 'CommonJS'
   });
-  
-  // Log any errors starting the child process
-  appProcess.on('error', (err) => {
-    console.error('Failed to start application:', err);
-  });
+});
+
+// Start server
+app.listen(5000, () => {
+  console.log('[iREVA] Full CommonJS backend started on port 5000');
 });
