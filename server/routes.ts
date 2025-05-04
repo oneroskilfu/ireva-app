@@ -35,6 +35,8 @@ import investorRoutes from './routes/investor.js';
 import userRouter from './routes/admin/users';
 import debugLoginRouter from './routes/debugLogin';
 import investorRoiRoutes from './routes/investorRoiRoutes';
+// Import auth router for token verification
+import authRouter from './routes/auth-routes';
 // Import crypto routes
 import cryptoWalletRouter from './routes/crypto-wallets';
 import cryptoTransactionRouter from './routes/crypto-transactions';
@@ -370,8 +372,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/projects', projectsRoutes);
   console.log("Projects routes registered");
   
-  // Set up Debug Login routes
-  app.use('/api/auth', debugLoginRouter);
+  // Set up Auth routes with token verification 
+  app.use('/api/auth', authRouter);
+  console.log("Auth routes with token verification registered");
+  
+  // Set up Debug Login routes (keeping for backward compatibility)
+  app.use('/api/debug/auth', debugLoginRouter);
   console.log("Debug login routes registered");
   
   // Set up Debug Auth routes

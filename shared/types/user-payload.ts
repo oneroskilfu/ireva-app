@@ -8,7 +8,8 @@ export const userPayloadSchema = z.object({
   id: z.string().uuid(), // User ID (UUID format)
   email: z.string().email(), // User email (validated as email format)
   role: z.enum(['admin', 'investor']), // User role restricted to valid values
-  verified: z.boolean() // Whether the user is verified
+  verified: z.boolean(), // Whether the user is verified
+  exp: z.number().optional() // JWT expiration timestamp
 });
 
 /**

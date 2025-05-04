@@ -81,11 +81,16 @@ export function generateToken(
     verified
   };
   
-  // Validate payload against schema to ensure type safety
-  userPayloadSchema.parse(payload);
+  try {
+    // Validate payload against schema to ensure type safety
+    userPayloadSchema.parse(payload);
 
-  // Generate and return the token
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    // Generate and return the token
+    return jwt.sign(payload, String(JWT_SECRET), { expiresIn: JWT_EXPIRES_IN });
+  } catch (error) {
+    console.error('Error generating token:', error);
+    throw new Error('Failed to generate authentication token');
+  }
 }
 
 /**
@@ -106,8 +111,8 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
     
     const token = authHeader.split(' ')[1];
     
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET);
+    // Verify token with proper typing
+    const decoded = jwt.verify(token, String(JWT_SECRET));
 
     // Validate the payload structure using Zod
     const validationResult = userPayloadSchema.safeParse(decoded);
@@ -163,6 +168,93 @@ export const authMiddleware = verifyToken;
 export function setupJwtAuth() {
   // Auth middleware is now exported directly
   console.log("JWT Authentication middleware is active");
+}
+
+/**
+ * Token verification endpoint handler
+ * Verifies the JWT token and returns the user payload
+ * Used for auto-login on the client
+ */
+export function verifyTokenHandler(req: Request, res: Response) {
+  try {
+    // Extract token from Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'No token provided'
+      });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token with proper typing
+    const decoded = jwt.verify(token, String(JWT_SECRET));
+
+    // Validate the payload structure using Zod
+    const validationResult = userPayloadSchema.safeParse(decoded);
+    
+    if (!validationResult.success) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token structure' 
+      });
+    }
+
+    const user = validationResult.data;
+    
+    // Check if token is about to expire and should be refreshed
+    const shouldRefresh = isTokenExpiringSoon(decoded as jwt.JwtPayload);
+
+    // Return user data for auto-login
+    return res.status(200).json({
+      success: true,
+      user,
+      // Optionally issue a fresh token if the current one is expiring soon
+      ...(shouldRefresh && {
+        token: generateToken(
+          user.id,
+          user.email,
+          user.role,
+          user.verified
+        )
+      })
+    });
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token'
+      });
+    }
+    
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired'
+      });
+    }
+    
+    console.error('Token verification error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to verify token'
+    });
+  }
+}
+
+/**
+ * Helper function to check if token is expiring soon
+ * Returns true if token will expire within 15 minutes
+ */
+function isTokenExpiringSoon(payload: jwt.JwtPayload): boolean {
+  if (!payload.exp) return false;
+  
+  const expiryTime = payload.exp * 1000; // Convert to milliseconds
+  const currentTime = Date.now();
+  // Token expiry threshold: 15 minutes (900,000 ms)
+  return (expiryTime - currentTime) < 15 * 60 * 1000;
 }
 
 /**

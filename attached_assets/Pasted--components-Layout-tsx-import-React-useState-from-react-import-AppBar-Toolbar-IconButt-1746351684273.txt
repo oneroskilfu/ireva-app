@@ -1,0 +1,91 @@
+// components/Layout.tsx
+import React, { useState } from 'react';
+import { AppBar, Toolbar, IconButton, Typography, Drawer, List, ListItem, ListItemText, Button, useMediaQuery } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Link } from 'wouter';
+import { useAuth } from '../hooks/useAuth';
+
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width:600px)');
+  const { user, logout } = useAuth();
+
+  const commonNav = [
+    { label: 'Home', path: '/' },
+    { label: 'Dashboard', path: '/dashboard' },
+  ];
+
+  const investorNav = [
+    { label: 'Wallet', path: '/wallet' },
+    { label: 'Messages', path: '/messages' },
+  ];
+
+  const adminNav = [
+    { label: 'Admin Panel', path: '/admin' },
+    { label: 'User Management', path: '/admin/users' },
+  ];
+
+  const navItems = [
+    ...commonNav,
+    ...(user?.role === 'investor' ? investorNav : []),
+    ...(user?.role === 'admin' ? adminNav : [])
+  ];
+
+  const drawer = (
+    <List>
+      {navItems.map((item) => (
+        <ListItem button key={item.path} onClick={() => setMobileOpen(false)}>
+          <Link href={item.path}>
+            <ListItemText primary={item.label} />
+          </Link>
+        </ListItem>
+      ))}
+    </List>
+  );
+
+  return (
+    <>
+      <AppBar position="static">
+        <Toolbar>
+          {isMobile && (
+            <IconButton edge="start" color="inherit" onClick={() => setMobileOpen(!mobileOpen)}>
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            iREVA
+          </Typography>
+
+          {user && (
+            <Button color="inherit" onClick={logout}>
+              Logout
+            </Button>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      <nav>
+        <Drawer
+          variant={isMobile ? 'temporary' : 'permanent'}
+          open={isMobile ? mobileOpen : true}
+          onClose={() => setMobileOpen(false)}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: 200,
+              boxSizing: 'border-box',
+              display: isMobile && !mobileOpen ? 'none' : 'block'
+            }
+          }}
+        >
+          {drawer}
+        </Drawer>
+      </nav>
+
+      <main style={{ marginLeft: isMobile ? 0 : 200, padding: 16 }}>
+        {children}
+      </main>
+    </>
+  );
+};
+
+export default Layout;
