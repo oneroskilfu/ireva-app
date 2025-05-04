@@ -3,7 +3,7 @@ import { CryptoPaymentService } from '../services/crypto-payment-service';
 import { v4 as uuidv4 } from 'uuid';
 
 // Initialize the crypto payment service
-const cryptoPaymentService = new CryptoPaymentService();
+const cryptoPaymentService = CryptoPaymentService.getInstance();
 
 // Create a new crypto payment
 export const createCryptoPayment = async (req: Request, res: Response) => {

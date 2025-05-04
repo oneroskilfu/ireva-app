@@ -8,7 +8,7 @@ import { cryptoPayments } from '@shared/schema';
 import { getSocketIo } from '../socketio';
 
 const cryptoDepositRouter = express.Router();
-const cryptoPaymentService = new CryptoPaymentService();
+const cryptoPaymentService = CryptoPaymentService.getInstance();
 
 // Create new deposit request
 cryptoDepositRouter.post('/', authMiddleware, async (req: Request, res: Response) => {

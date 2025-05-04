@@ -1,34 +1,10 @@
-import * as admin from 'firebase-admin';
+import { messaging } from '../firebase/firebaseAdmin';  // Import from centralized location
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { pushSubscriptions } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-// Function to initialize Firebase Admin SDK if not already initialized
-const initializeFirebase = () => {
-  if (!admin.apps.length) {
-    // Check if we have environment variables for Firebase config
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-      try {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-        
-        console.log('Firebase Admin SDK initialized successfully');
-      } catch (error) {
-        console.error('Failed to initialize Firebase Admin SDK:', error);
-        return false;
-      }
-    } else {
-      console.warn('FIREBASE_SERVICE_ACCOUNT environment variable not set. Firebase Admin SDK not initialized.');
-      return false;
-    }
-  }
-  return true;
-};
-
+// Use centralized Firebase Admin initialization
 // Send notification to all users with push tokens
 export const sendNotificationToAll = async (req: Request, res: Response) => {
   try {
@@ -36,13 +12,6 @@ export const sendNotificationToAll = async (req: Request, res: Response) => {
     
     if (!title || !body) {
       return res.status(400).json({ message: 'Title and body are required' });
-    }
-    
-    // Initialize Firebase Admin if not already initialized
-    if (!initializeFirebase()) {
-      return res.status(500).json({ 
-        message: 'Firebase Admin SDK not initialized. Check server configuration.' 
-      });
     }
     
     // Get all push tokens from database
@@ -65,8 +34,8 @@ export const sendNotificationToAll = async (req: Request, res: Response) => {
       tokens,
     };
     
-    // Send the message
-    const response = await admin.messaging().sendMulticast(message);
+    // Send the message using the imported messaging service
+    const response = await messaging.sendMulticast(message);
     
     // Save notification results for reporting
     const adminId = req.user?.id;
@@ -100,13 +69,6 @@ export const sendNotificationToUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'User ID, title and body are required' });
     }
     
-    // Initialize Firebase Admin if not already initialized
-    if (!initializeFirebase()) {
-      return res.status(500).json({ 
-        message: 'Firebase Admin SDK not initialized. Check server configuration.' 
-      });
-    }
-    
     // Get user's push token from database
     const subscriptions = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
     
@@ -127,8 +89,8 @@ export const sendNotificationToUser = async (req: Request, res: Response) => {
       tokens,
     };
     
-    // Send the message
-    const response = await admin.messaging().sendMulticast(message);
+    // Send the message using the imported messaging service
+    const response = await messaging.sendMulticast(message);
     
     // Return the response
     return res.status(200).json({
@@ -158,13 +120,6 @@ export const sendNotificationToSegment = async (req: Request, res: Response) => 
       return res.status(400).json({ message: 'Segment, title and body are required' });
     }
     
-    // Initialize Firebase Admin if not already initialized
-    if (!initializeFirebase()) {
-      return res.status(500).json({ 
-        message: 'Firebase Admin SDK not initialized. Check server configuration.' 
-      });
-    }
-    
     // Logic to get users based on segment would be implemented here
     // For now, we'll just get all users as an example
     const subscriptions = await db.select().from(pushSubscriptions);
@@ -186,8 +141,8 @@ export const sendNotificationToSegment = async (req: Request, res: Response) => 
       tokens,
     };
     
-    // Send the message
-    const response = await admin.messaging().sendMulticast(message);
+    // Send the message using the imported messaging service
+    const response = await messaging.sendMulticast(message);
     
     // Return the response
     return res.status(200).json({

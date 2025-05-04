@@ -5,8 +5,8 @@ import { eq } from 'drizzle-orm';
 import { webhookSignatureVerifier } from '../middleware/webhookSignatureVerifier';
 import { CryptoPaymentService } from '../services/crypto-payment-service';
 
-// Initialize services
-const cryptoPaymentService = new CryptoPaymentService();
+// Initialize services using singleton
+const cryptoPaymentService = CryptoPaymentService.getInstance();
 
 // Create router
 export const cryptoWebhookRouter = express.Router();

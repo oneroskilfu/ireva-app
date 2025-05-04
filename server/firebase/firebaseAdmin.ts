@@ -36,9 +36,26 @@ if (!admin.apps || admin.apps.length === 0) {
 }
 
 // Create a messaging service only if Firebase is properly initialized
-let messagingService;
+// Define a type for our messaging service that matches both real and mock implementations
+type MessagingService = {
+  send: (message: any) => Promise<{ messageId: string }>;
+  sendMulticast: (message: any) => Promise<{ 
+    successCount: number; 
+    failureCount: number;
+    responses: any[];
+  }>;
+};
+
+let messagingService: MessagingService;
 try {
-  messagingService = admin.messaging();
+  // Use the actual Firebase admin messaging service
+  const firebaseMessaging = admin.messaging();
+  
+  // Create a wrapper with consistent interface
+  messagingService = {
+    send: (message) => firebaseMessaging.send(message),
+    sendMulticast: (message) => firebaseMessaging.sendMulticast(message)
+  };
   console.log('Firebase messaging service initialized');
 } catch (error) {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';

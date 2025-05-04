@@ -2,8 +2,8 @@ import express, { Request, Response } from 'express';
 import { authMiddleware, ensureAdmin } from '../auth-jwt';
 import { CryptoPaymentService } from '../services/crypto-payment-service';
 
-// Initialize services
-const cryptoPaymentService = new CryptoPaymentService();
+// Initialize services using singleton
+const cryptoPaymentService = CryptoPaymentService.getInstance();
 
 // Create router
 export const cryptoIntegrationRouter = express.Router();

@@ -65,7 +65,11 @@ authRouter.post('/login', async (req: Request, res: Response) => {
 
     // Create token
     // Note: generateToken function from auth-jwt.ts is imported
-    const token = generateToken(user.id, user.email, user.role, user.verified);
+    // Using kycStatus as verification status
+    // Ensure role is either 'admin' or 'investor' only - handle nullable role correctly
+    const safeRole: 'admin' | 'investor' = 
+      user.role === 'admin' ? 'admin' : 'investor';
+    const token = generateToken(user.id, user.email, safeRole, user.kycStatus === 'approved');
 
     // Return user and token
     return res.status(200).json({
@@ -75,9 +79,10 @@ authRouter.post('/login', async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         username: user.username,
-        fullName: user.fullName,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
-        verified: user.verified,
+        verified: user.kycStatus === 'approved',
         profileImage: user.profileImage
       }
     });
@@ -131,19 +136,22 @@ authRouter.post('/register', async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         username,
-        fullName,
+        firstName: fullName, // Using firstName instead of fullName
         role: 'investor', // Default role
-        verified: false,  // Default verified status
+        kycStatus: 'not_started', // Default KYC status
         createdAt: new Date()
       })
       .returning();
 
     // Create token
+    // Ensure role is either 'admin' or 'investor' only - handle nullable role correctly 
+    const safeRole: 'admin' | 'investor' = 
+      newUser.role === 'admin' ? 'admin' : 'investor';
     const token = generateToken(
       newUser.id,
       newUser.email,
-      newUser.role,
-      newUser.verified
+      safeRole,
+      newUser.kycStatus === 'approved'
     );
 
     // Return user and token
@@ -154,9 +162,10 @@ authRouter.post('/register', async (req: Request, res: Response) => {
         id: newUser.id,
         email: newUser.email,
         username: newUser.username,
-        fullName: newUser.fullName,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
         role: newUser.role,
-        verified: newUser.verified
+        verified: newUser.kycStatus === 'approved'
       }
     });
   } catch (error) {

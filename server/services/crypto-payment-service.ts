@@ -31,12 +31,13 @@ interface CreatePaymentParams {
 }
 
 export class CryptoPaymentService {
+  private static instance: CryptoPaymentService;
   private apiKey: string | undefined;
   private apiUrl: string;
   private useMockData: boolean;
 
-  constructor() {
-    console.log('CryptoPaymentService initialized');
+  // Private constructor for singleton pattern
+  private constructor() {
     this.apiKey = process.env.COINGATE_API_KEY;
     this.apiUrl = 'https://api.coingate.com/v2';
     this.useMockData = !this.apiKey;
@@ -44,6 +45,15 @@ export class CryptoPaymentService {
     if (this.useMockData) {
       console.log('COINGATE_API_KEY is not set. Using mock data for crypto integration.');
     }
+  }
+
+  // Static method to get the single instance
+  public static getInstance(): CryptoPaymentService {
+    if (!CryptoPaymentService.instance) {
+      console.log('CryptoPaymentService initialized');
+      CryptoPaymentService.instance = new CryptoPaymentService();
+    }
+    return CryptoPaymentService.instance;
   }
 
   async getSupportedCurrencies(): Promise<string[]> {
@@ -144,7 +154,7 @@ export class CryptoPaymentService {
     }
   }
 
-  async getUserPayments(userId: number): Promise<any[]> {
+  async getUserPayments(userId: string): Promise<any[]> {
     try {
       const payments = await db.select().from(cryptoPayments).where(eq(cryptoPayments.userId, userId));
       return payments;
@@ -171,7 +181,7 @@ export class CryptoPaymentService {
     }
   }
   
-  async getPropertyCryptoInvestments(propertyId: number): Promise<any> {
+  async getPropertyCryptoInvestments(propertyId: string): Promise<any> {
     try {
       // Get all crypto payments for a specific property
       const payments = await db.select().from(cryptoPayments)
@@ -255,10 +265,10 @@ export class CryptoPaymentService {
     }
   }
 
-  async processSuccessfulPayment(paymentId: string, userId: number, amount: number): Promise<void> {
+  async processSuccessfulPayment(paymentId: string, userId: string, amount: number): Promise<void> {
     try {
       // 1. Update wallet balance
-      const [wallet] = await db.select().from(wallets).where(eq(wallets.userId, userId.toString()));
+      const [wallet] = await db.select().from(wallets).where(eq(wallets.userId, userId));
       
       if (wallet) {
         const newBalance = Number(wallet.balance || 0) + amount;
@@ -273,7 +283,7 @@ export class CryptoPaymentService {
       } else {
         // Create wallet if it doesn't exist
         await db.insert(wallets).values([{
-          userId: userId.toString(),
+          userId: userId,
           balance: amount.toString(),
           availableBalance: amount.toString(),
           pendingDeposits: "0",
@@ -282,7 +292,7 @@ export class CryptoPaymentService {
       }
       
       // Fetch the wallet again to get its ID
-      const [updatedWallet] = await db.select().from(wallets).where(eq(wallets.userId, userId.toString()));
+      const [updatedWallet] = await db.select().from(wallets).where(eq(wallets.userId, userId));
       
       if (!updatedWallet) {
         throw new Error('Failed to create or update wallet');
@@ -291,7 +301,7 @@ export class CryptoPaymentService {
       // 2. Create transaction record
       await db.insert(transactions).values([{
         walletId: updatedWallet.id,
-        userId: userId.toString(),
+        userId: userId,
         type: 'deposit',
         amount: amount.toString(),
         status: 'completed',
@@ -309,7 +319,7 @@ export class CryptoPaymentService {
 
   private async savePaymentToDatabase(payment: {
     id: string;
-    userId: number;
+    userId: string;
     amount: number;
     currency: string;
     status: string;
@@ -317,7 +327,7 @@ export class CryptoPaymentService {
     paymentUrl: string;
     createdAt: Date;
     expiresAt: Date | null;
-    propertyId?: number;
+    propertyId?: string;
   }): Promise<void> {
     try {
       // Convert numeric values to strings for database compatibility
@@ -331,7 +341,7 @@ export class CryptoPaymentService {
         paymentUrl: payment.paymentUrl,
         createdAt: payment.createdAt,
         expiresAt: payment.expiresAt,
-        propertyId: payment.propertyId ? payment.propertyId : undefined
+        propertyId: payment.propertyId
       };
       
       await db.insert(cryptoPayments).values([dbPayment]);

@@ -62,8 +62,8 @@ const KYCSchema: Schema = new Schema(
     },
     userId: {
       type: Number,
-      required: true,
-      index: true
+      required: true
+      // Removed duplicate index: true since schema.index() is used elsewhere
     },
     username: {
       type: String,

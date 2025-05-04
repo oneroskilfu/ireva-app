@@ -3,8 +3,8 @@ import { authMiddleware } from '../auth-jwt';
 import { CryptoPaymentService } from '../services/crypto-payment-service';
 import { db } from '../db';
 
-// Initialize services
-const cryptoPaymentService = new CryptoPaymentService();
+// Initialize services using singleton
+const cryptoPaymentService = CryptoPaymentService.getInstance();
 
 // Create router
 export const cryptoTransactionsRouter = express.Router();

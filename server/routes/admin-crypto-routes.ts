@@ -5,8 +5,8 @@ import { z } from 'zod';
 import { cryptoRefundRequestSchema } from '@shared/crypto-schema';
 import nodemailer from 'nodemailer';
 
-// Initialize services
-const cryptoPaymentService = new CryptoPaymentService();
+// Initialize services using singleton
+const cryptoPaymentService = CryptoPaymentService.getInstance();
 
 // Create router
 export const adminCryptoRouter = express.Router();
