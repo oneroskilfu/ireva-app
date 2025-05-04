@@ -2,7 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import dotenv from "dotenv";
-import { authMiddleware } from "./auth-jwt";
+import { authenticateJWT } from "./middlewares/auth";
+import { warmupDatabase } from "./db";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -19,7 +20,7 @@ app.use('/api', (req, res, next) => {
   }
   
   // Apply auth middleware to protected routes
-  authMiddleware(req, res, next);
+  authenticateJWT(req, res, next);
 });
 
 app.use((req, res, next) => {
@@ -90,14 +91,13 @@ app.use((req, res, next) => {
       try {
         // Measure database connection time
         console.time("DB connection");
-        // Database initialization/connection code here
-        // For example: await connectDB(); or any other database initialization
+        // Warm up database connection
+        await warmupDatabase();
         console.timeEnd("DB connection");
         
         // Measure cache warming time
         console.time("Cache warming");
-        // Cache warming code
-        // For example: await warmupCache();
+        // Add any additional cache warming here if needed
         console.timeEnd("Cache warming");
         
         // Add more performance timing as needed

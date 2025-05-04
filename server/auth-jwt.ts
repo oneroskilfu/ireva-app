@@ -7,25 +7,54 @@ import bcrypt from 'bcrypt';
 
 // JWT Secret (should be in environment variables in production)
 const JWT_SECRET = process.env.JWT_SECRET || 'ireva-development-secret-key';
-const JWT_EXPIRES_IN = '24h';
+const JWT_EXPIRES_IN = '7d'; // Extended to 7 days
 
-// User interface (simplified version)
+// User interface matching database schema
 interface User {
-  id: number;
+  id: string; // UUID format
   username: string;
   email: string;
-  role: "investor" | "admin" | "super_admin" | null;
   password?: string;
-  status?: "active" | "inactive" | "suspended" | "deactivated" | null;
-  [key: string]: any; // Allow for additional properties - Required to work with Drizzle schema
+  role: "investor" | "admin" | "super_admin" | null;
+  status: "active" | "inactive" | "suspended" | "deactivated" | null;
+  phoneNumber?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  bio?: string | null;
+  profileImage?: string | null;
+  kycStatus?: string | null;
+  kycTier?: string | null;
+  kycDocuments?: any | null;
+  kycSubmittedAt?: Date | null;
+  kycVerifiedAt?: Date | null;
+  kycRejectionReason?: string | null;
+  isPhoneVerified?: boolean | null;
+  accreditationLevel?: string | null;
+  accreditationDocuments?: any | null;
+  accreditationVerifiedAt?: Date | null;
+  investmentPreferences?: any | null;
+  totalInvested?: number | null;
+  totalEarnings?: number | null;
+  rewardsPoints?: number | null;
+  badges?: any | null;
+  referredBy?: string | null;
+  referralCode?: string | null;
+  referralBonus?: number | null;
+  referrals?: any | null;
+  referralRewards?: number | null;
+  notificationPreferences?: any | null;
+  directMessageEnabled?: boolean | null;
+  lastLoginAt?: Date | null;
+  lastActiveAt?: Date | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 }
 
-// JWT payload interface
-interface JwtPayload {
-  userId: number;
-  username: string;
-  email: string;
-  role: "investor" | "admin" | "super_admin" | null;
+// Import our shared user payload type
+import { UserPayload } from '../shared/types/user-payload';
+
+// JWT payload interface based on our shared type
+interface JwtPayload extends UserPayload {
   iat?: number;
   exp?: number;
 }
@@ -69,8 +98,12 @@ export function setupJwtAuth(app: any) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       
-      // Generate JWT token
-      const token = generateToken(user);
+      // Generate JWT token with standardized payload
+      const fullName = user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}` 
+        : undefined;
+      
+      const token = generateToken(user.id, user.role, user.email, fullName);
       
       // Return user info and token
       res.status(200).json({
@@ -122,12 +155,38 @@ export function setupJwtAuth(app: any) {
         phoneNumber: '',
         firstName: '',
         lastName: '',
+        bio: null,
+        profileImage: null,
+        kycStatus: 'not_started',
+        kycTier: 'basic',
+        kycDocuments: null,
+        kycSubmittedAt: null,
+        kycVerifiedAt: null,
+        kycRejectionReason: null,
+        isPhoneVerified: false,
+        accreditationLevel: null,
+        accreditationDocuments: null,
+        accreditationVerifiedAt: null,
+        investmentPreferences: null,
+        totalInvested: 0,
+        totalEarnings: 0,
+        rewardsPoints: 0,
+        badges: null,
+        referredBy: null,
+        referralCode: null,
+        referralBonus: 0,
+        referrals: null,
+        referralRewards: 0,
+        notificationPreferences: null,
+        directMessageEnabled: true,
+        lastLoginAt: null,
+        lastActiveAt: null,
         createdAt: now,
         updatedAt: now
       }).returning();
       
-      // Generate JWT token
-      const token = generateToken(newUser);
+      // Generate JWT token with standardized payload
+      const token = generateToken(newUser.id, newUser.role, newUser.email);
       
       // Return user info and token
       res.status(201).json({
@@ -151,8 +210,12 @@ export function setupJwtAuth(app: any) {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Generate a new token
-    const token = generateToken(req.user);
+    // Generate a new token with standardized payload
+    const fullName = req.user.firstName && req.user.lastName 
+      ? `${req.user.firstName} ${req.user.lastName}` 
+      : undefined;
+    
+    const token = generateToken(req.user.id, req.user.role, req.user.email, fullName);
     
     res.status(200).json({ token });
   });
@@ -167,13 +230,13 @@ export function setupJwtAuth(app: any) {
   });
 }
 
-// Generate JWT token
-function generateToken(user: User): string {
-  const payload: JwtPayload = {
-    userId: user.id,
-    username: user.username,
-    email: user.email,
-    role: user.role
+// Generate JWT token using our standardized UserPayload
+export function generateToken(userId: string, role: 'investor' | 'admin' | 'super_admin', email: string, fullName?: string): string {
+  const payload: UserPayload = {
+    userId,
+    role,
+    email,
+    fullName
   };
   
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -185,23 +248,46 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
   if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
     // Set mock user for development with all required fields
     req.user = {
-      id: 1,
+      id: '00000000-0000-0000-0000-000000000001', // UUID format
       username: 'dev_user',
       email: 'dev@example.com',
       role: 'admin',
       password: 'dev_password',
       status: 'active',
-      // Add any other required fields
       phoneNumber: '',
       firstName: 'Dev',
       lastName: 'User',
-      createdAt: new Date()
+      bio: null,
+      profileImage: null,
+      kycStatus: 'approved',
+      kycTier: 'basic',
+      kycDocuments: null,
+      kycSubmittedAt: null,
+      kycVerifiedAt: null,
+      kycRejectionReason: null,
+      isPhoneVerified: false,
+      accreditationLevel: null,
+      accreditationDocuments: null,
+      accreditationVerifiedAt: null,
+      investmentPreferences: null,
+      totalInvested: 0,
+      totalEarnings: 0,
+      rewardsPoints: 0,
+      badges: null,
+      referredBy: null,
+      referralCode: 'DEV123',
+      referralBonus: 0,
+      referrals: null,
+      referralRewards: 0,
+      notificationPreferences: null,
+      directMessageEnabled: true,
+      lastLoginAt: new Date(),
+      lastActiveAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     req.jwtPayload = {
-      userId: 1,
-      username: 'dev_user',
-      email: 'dev@example.com',
-      role: 'admin'
+      userId: '00000000-0000-0000-0000-000000000001' // UUID format
     };
     return next();
   }
@@ -221,21 +307,21 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
     // Set JWT payload on request
     req.jwtPayload = decoded;
     
-    // Set user on request with required fields
-    req.user = {
-      id: decoded.userId,
-      username: decoded.username,
-      email: decoded.email,
-      role: decoded.role,
-      password: 'jwt-secure', // Password isn't included in JWT for security
-      status: 'active',
-      phoneNumber: '',
-      firstName: '',
-      lastName: '',
-      createdAt: new Date()
-    };
-    
-    next();
+    // Fetch user from database
+    db.select()
+      .from(users)
+      .where(eq(users.id, decoded.userId))
+      .then(([user]) => {
+        if (!user) {
+          return res.status(401).json({ error: 'User not found' });
+        }
+        req.user = user;
+        next();
+      })
+      .catch(error => {
+        console.error('Database error:', error);
+        return res.status(500).json({ error: 'Server error' });
+      });
   } catch (error) {
     console.error('Token verification error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });
@@ -248,17 +334,43 @@ export function ensureAdmin(req: Request, res: Response, next: NextFunction) {
   if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
     // Set mock admin user for development with all required fields
     req.user = {
-      id: 1,
+      id: '00000000-0000-0000-0000-000000000002', // UUID format
       username: 'dev_admin',
       email: 'admin@example.com',
       role: 'admin',
       password: 'admin_password',
       status: 'active',
-      // Add any other required fields
       phoneNumber: '',
       firstName: 'Dev',
       lastName: 'Admin',
-      createdAt: new Date()
+      bio: null,
+      profileImage: null,
+      kycStatus: 'approved',
+      kycTier: 'basic',
+      kycDocuments: null,
+      kycSubmittedAt: null,
+      kycVerifiedAt: null,
+      kycRejectionReason: null,
+      isPhoneVerified: false,
+      accreditationLevel: null,
+      accreditationDocuments: null,
+      accreditationVerifiedAt: null,
+      investmentPreferences: null,
+      totalInvested: 0,
+      totalEarnings: 0,
+      rewardsPoints: 0,
+      badges: null,
+      referredBy: null,
+      referralCode: 'ADMIN123',
+      referralBonus: 0,
+      referrals: null,
+      referralRewards: 0,
+      notificationPreferences: null,
+      directMessageEnabled: true,
+      lastLoginAt: new Date(),
+      lastActiveAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     return next();
   }
@@ -312,17 +424,43 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
     // Set mock user for development with all required fields
     req.user = {
-      id: 1,
+      id: '00000000-0000-0000-0000-000000000003', // UUID format
       username: 'dev_user',
       email: 'dev@example.com',
       role: 'admin',
       password: 'dev_password',
       status: 'active',
-      // Add any other required fields
       phoneNumber: '',
       firstName: 'Dev',
       lastName: 'User',
-      createdAt: new Date()
+      bio: null,
+      profileImage: null,
+      kycStatus: 'approved',
+      kycTier: 'basic',
+      kycDocuments: null,
+      kycSubmittedAt: null,
+      kycVerifiedAt: null,
+      kycRejectionReason: null,
+      isPhoneVerified: false,
+      accreditationLevel: null,
+      accreditationDocuments: null,
+      accreditationVerifiedAt: null,
+      investmentPreferences: null,
+      totalInvested: 0,
+      totalEarnings: 0,
+      rewardsPoints: 0,
+      badges: null,
+      referredBy: null,
+      referralCode: 'AUTH123',
+      referralBonus: 0,
+      referrals: null,
+      referralRewards: 0,
+      notificationPreferences: null,
+      directMessageEnabled: true,
+      lastLoginAt: new Date(),
+      lastActiveAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     return next();
   }
@@ -337,23 +475,23 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   
   try {
     // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
     
-    // Set user on request with required fields
-    req.user = {
-      id: decoded.userId,
-      username: decoded.username,
-      email: decoded.email,
-      role: decoded.role,
-      password: 'jwt-secure', // Password isn't included in JWT for security
-      status: 'active',
-      phoneNumber: '',
-      firstName: '',
-      lastName: '',
-      createdAt: new Date()
-    };
-    
-    next();
+    // Fetch user from database
+    db.select()
+      .from(users)
+      .where(eq(users.id, payload.userId))
+      .then(([user]) => {
+        if (!user) {
+          return res.status(401).json({ error: 'User not found' });
+        }
+        req.user = user;
+        next();
+      })
+      .catch(error => {
+        console.error('Database error:', error);
+        return res.status(500).json({ error: 'Server error' });
+      });
   } catch (error) {
     console.error('Authentication middleware error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });

@@ -45,7 +45,7 @@ export const secondaryListingStatusEnum = pgEnum("secondary_listing_status", ["p
 
 // User schema
 export const users = pgTable("users", {
-  id: integer("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
@@ -71,7 +71,7 @@ export const users = pgTable("users", {
   totalEarnings: integer("total_earnings"),
   rewardsPoints: integer("rewards_points"),
   badges: jsonb("badges"),
-  referredBy: integer("referred_by"),
+  referredBy: uuid("referred_by"),
   referralCode: text("referral_code").unique(),
   referralBonus: integer("referral_bonus"),
   referrals: jsonb("referrals"),
@@ -98,7 +98,7 @@ export const kycSubmissions = pgTable("kyc_submissions", {
 
 // Properties schema (renamed to match database)
 export const properties = pgTable("properties", {
-  id: integer("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name"),
   location: text("location"),
   description: text("description"),
@@ -212,7 +212,7 @@ export const cryptoTransactions = pgTable("crypto_transactions", {
 // CoinGate Crypto Payments schema
 export const cryptoPayments = pgTable("crypto_payments", {
   id: text("id").primaryKey(), // CoinGate payment ID
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   amount: text("amount").notNull(), // Store as text to preserve precision for crypto amounts
   currency: text("currency").notNull(), // BTC, ETH, USDT, etc.
   status: text("status").notNull().default("new"), // new, pending, paid, confirmed, invalid, expired, canceled, etc.
@@ -230,7 +230,7 @@ export const cryptoPayments = pgTable("crypto_payments", {
 // Withdrawal Requests schema
 export const withdrawalRequests = pgTable("withdrawal_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   amount: numeric("amount", { precision: 12, scale: 6 }).notNull(),
   currency: text("currency").notNull(), // BTC, ETH, USDT, etc.
   network: cryptoNetworkEnum("network").notNull(),
@@ -238,7 +238,7 @@ export const withdrawalRequests = pgTable("withdrawal_requests", {
   status: withdrawalStatusEnum("status").default("pending"),
   txHash: text("tx_hash"),
   processorNotes: text("processor_notes"),
-  processedBy: integer("processed_by").references(() => users.id, { onDelete: "set null" }),
+  processedBy: uuid("processed_by").references(() => users.id, { onDelete: "set null" }),
   requestedAt: timestamp("requested_at").notNull().defaultNow(),
   processedAt: timestamp("processed_at"),
   feeAmount: numeric("fee_amount", { precision: 12, scale: 6 }),
@@ -417,7 +417,7 @@ export const legalVersions = pgTable("legal_versions", {
 // User legal acceptance schema to track user acceptance of legal documents
 export const userLegalAcceptance = pgTable("user_legal_acceptance", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   documentType: documentTypeEnum("document_type").notNull(),
   version: integer("version").notNull(),
   acceptedAt: timestamp("accepted_at").defaultNow()
