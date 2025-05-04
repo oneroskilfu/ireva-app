@@ -138,15 +138,17 @@ We've already created two valuable diagnostic tools:
 
 ## Implementation Plan
 
-1. **Short Term Fix (Immediate)**:
-   - Use the pre-existing `server/minimal-server.js` as a startup script
-   - Modify the workflow to run this file first before the main application
-   - This will ensure port 5000 is bound and detected quickly
+1. **Short Term Fix (Implemented)**:
+   - Created `replit-starter.cjs` - a CommonJS script that binds to port 5000 immediately
+   - Modified `server/index.ts` to check for the REPLIT_WORKFLOW_STARTER environment variable
+   - When this variable is set, the server uses port 5001 to avoid conflicts
+   - Created `replit-start.sh` to serve as the workflow command
 
-2. **Medium Term Fix (1-2 days)**:
-   - Implement Solution 3 (Combined Two-Server Approach)
-   - Test thoroughly in the Replit environment
-   - Document the approach for future reference
+2. **Key Components**:
+   - `replit-starter.cjs`: Ultra-minimal HTTP server with proper process cleanup
+   - `workflow-starter.js`: Alternative implementation with more detailed logging
+   - Environment variable coordination between starter and main application
+   - Signal handling and process cleanup to ensure proper shutdown
 
 3. **Long Term Fix (When speaking with Replit support)**:
    - Share diagnostic findings

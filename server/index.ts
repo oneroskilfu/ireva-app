@@ -14,33 +14,68 @@ console.log(`[${new Date().toISOString()}] Starting iREVA application...`);
 const app = express();
 app.use(express.json());
 
-const port = process.env.PORT || 5000;
+// Check if we're running under the Replit workflow starter
+const isWorkflowStarter = process.env.REPLIT_WORKFLOW_STARTER === 'true';
+// Use a different port if running under workflow starter (which already binds 5000)
+const port = isWorkflowStarter ? 5001 : (process.env.PORT || 5000);
 const server = createServer(app);
+
+// Enhanced health check endpoints specifically designed for Replit detection
+// Root-level health check for easier detection
+app.get('/health', (req, res) => {
+  res.setHeader('X-Replit-Port-Status', 'active');
+  res.setHeader('X-Replit-Health-Check', 'success');
+  res.status(200).send('OK');
+});
 
 // Essential endpoint for health checks
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.setHeader('X-Replit-Port-Status', 'active');
+  res.setHeader('X-Replit-Health-Check', 'success');
+  res.status(200).json({ 
+    status: 'ok', 
+    port: port,
+    timestamp: new Date().toISOString(),
+    replitReady: true
+  });
 });
 
-// Simple landing page for initial requests
+// Ultra-lightweight landing page for initial requests
+// Using special headers that Replit might be looking for
 app.get('/', (req, res) => {
+  res.setHeader('X-Replit-Port-Status', 'active');
+  res.setHeader('X-Replit-Health-Check', 'success');
+  res.setHeader('X-Port-Binding-Success', 'true');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Cache-Control', 'no-cache');
   res.send(`<!DOCTYPE html><html><head><title>iREVA Platform</title><style>body{font-family:Arial,sans-serif;text-align:center;margin:0;padding:20px;}</style></head><body><h1>iREVA Platform</h1><p>Loading application...</p></body></html>`);
 });
 
+// Log if we're running under workflow starter
+if (isWorkflowStarter) {
+  console.log(`[${new Date().toISOString()}] Running under workflow starter, using port ${port}`);
+}
+
 // Start server IMMEDIATELY - before loading any other components
-// This is the most critical part for Replit to detect the port binding
+// Ensure port is open and detected before proceeding
 server.listen(Number(port), "0.0.0.0", async () => {
-  log(`iREVA server bound to port ${port}`);
-  console.log(`[${new Date().toISOString()}] Server port binding successful`);
+  // Immediately log in a format that might be more detectable by Replit
+  console.log(`SERVER READY ON PORT ${port}`);
+  console.log(`PORT ${port} OPEN AND READY`);
+  console.log(`Listening on port ${port}`);
   
-  // PHASE 2: Now that the port is bound, load the rest of the application
-  // Even if this takes longer than 20 seconds, Replit won't time out
-  try {
-    await loadFullApplication();
-    console.log(`[${new Date().toISOString()}] Full application loaded successfully`);
-  } catch (error) {
-    console.error('Error loading full application:', error);
-  }
+  // Delay loading the full application to ensure port detection
+  setTimeout(async () => {
+    log(`iREVA server bound to port ${port}`);
+    console.log(`[${new Date().toISOString()}] Server port binding successful`);
+    
+    try {
+      await loadFullApplication();
+      console.log(`[${new Date().toISOString()}] Full application loaded successfully`);
+    } catch (error) {
+      console.error('Error loading full application:', error);
+    }
+  }, isWorkflowStarter ? 0 : 3000); // Only delay if not running under workflow starter
 });
 
 // Function to load the full application after port binding
