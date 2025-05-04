@@ -41,8 +41,18 @@ const MAX_MESSAGES_PER_SECOND = 10;
 const messageRateLimiter = new Map<string, { count: number, timestamp: number }>();
 
 // Create and configure WebSocket server
+// Use singleton pattern to ensure WebSocketServer is only initialized once
+let wssInstance: WebSocketServer | null = null;
+
 export function setupWebSocketServer(server: Server) {
-  const wss = new WebSocketServer({ 
+  // Return existing instance if already initialized
+  if (wssInstance) {
+    console.log('WebSocket server already initialized, reusing existing instance');
+    return wssInstance;
+  }
+
+  // Create new instance
+  wssInstance = new WebSocketServer({ 
     server, 
     path: '/ws',
     clientTracking: true,
@@ -51,7 +61,7 @@ export function setupWebSocketServer(server: Server) {
   console.log('WebSocket server initialized');
 
   // Handle client connections
-  wss.on('connection', (ws: WebSocket, req: Request) => {
+  wssInstance.on('connection', (ws: WebSocket, req: Request) => {
     const socket = ws as AuthenticatedWebSocket;
     const connectionId = randomUUID();
     
@@ -159,7 +169,7 @@ export function setupWebSocketServer(server: Server) {
     broadcastServerStats();
   }, 60000); // Every minute
   
-  return wss;
+  return wssInstance;
 }
 
 // Event types clients can subscribe to
