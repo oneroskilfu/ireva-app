@@ -4,6 +4,7 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 import { users } from '../shared/schema';
 import bcrypt from 'bcrypt';
+import { UserPayload, userPayloadSchema } from '../shared/types/user-payload';
 
 // JWT Secret (should be in environment variables in production)
 const JWT_SECRET = process.env.JWT_SECRET || 'ireva-development-secret-key';
@@ -50,8 +51,7 @@ interface User {
   updatedAt?: Date | null;
 }
 
-// Import our shared user payload type
-import { UserPayload } from '../shared/types/user-payload';
+// Remove this duplicate import as we already imported it at the top
 
 // JWT payload interface based on our shared type
 interface JwtPayload extends UserPayload {
@@ -105,15 +105,21 @@ export function setupJwtAuth(app: any) {
       
       const token = generateToken(user.id, user.role, user.email, fullName);
       
-      // Return user info and token
+      // Create a UserPayload object for consistent response format
+      const userPayload: UserPayload = {
+        userId: user.id,
+        email: user.email,
+        role: user.role || 'investor',
+        fullName,
+        isVerified: user.kycStatus === 'approved',
+        avatarUrl: user.profileImage,
+        phoneNumber: user.phoneNumber
+      };
+      
+      // Return consistent payload with token
       res.status(200).json({
         token,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role
-        }
+        user: userPayload
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -188,15 +194,21 @@ export function setupJwtAuth(app: any) {
       // Generate JWT token with standardized payload
       const token = generateToken(newUser.id, newUser.role, newUser.email);
       
-      // Return user info and token
+      // Create a UserPayload object for consistent response format
+      const userPayload: UserPayload = {
+        userId: newUser.id,
+        email: newUser.email,
+        role: newUser.role || 'investor',
+        fullName: undefined,
+        isVerified: false,
+        avatarUrl: null,
+        phoneNumber: newUser.phoneNumber
+      };
+      
+      // Return consistent payload with token
       res.status(201).json({
         token,
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          role: newUser.role
-        }
+        user: userPayload
       });
     } catch (error) {
       console.error('Registration error:', error);
@@ -226,20 +238,49 @@ export function setupJwtAuth(app: any) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     
-    res.status(200).json({ user: req.user });
+    // Generate fullName from first and last name if available
+    const fullName = req.user.firstName && req.user.lastName 
+      ? `${req.user.firstName} ${req.user.lastName}` 
+      : undefined;
+      
+    // Create a UserPayload object for consistent response format
+    const userPayload: UserPayload = {
+      userId: req.user.id,
+      email: req.user.email,
+      role: req.user.role || 'investor',
+      fullName,
+      isVerified: req.user.kycStatus === 'approved',
+      avatarUrl: req.user.profileImage,
+      phoneNumber: req.user.phoneNumber
+    };
+    
+    res.status(200).json({ user: userPayload });
   });
 }
 
 // Generate JWT token using our standardized UserPayload
-export function generateToken(userId: string, role: 'investor' | 'admin' | 'super_admin', email: string, fullName?: string): string {
+export function generateToken(userId: string, role: 'investor' | 'admin' | 'super_admin' | null, email: string, fullName?: string, isVerified?: boolean, avatarUrl?: string | null, phoneNumber?: string | null): string {
+  // Create a strictly typed payload conforming to UserPayload interface
   const payload: UserPayload = {
     userId,
-    role,
     email,
-    fullName
+    // If null, default to 'investor'
+    role: role || 'investor',
+    fullName,
+    isVerified,
+    avatarUrl,
+    phoneNumber
   };
   
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  // Validate payload using Zod schema before signing
+  try {
+    // This will throw if validation fails
+    const validatedPayload = userPayloadSchema.parse(payload);
+    return jwt.sign(validatedPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  } catch (error) {
+    console.error('JWT payload validation failed:', error);
+    throw new Error('Failed to generate token: invalid payload');
+  }
 }
 
 // Middleware to verify JWT token
@@ -287,7 +328,9 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
       updatedAt: new Date()
     };
     req.jwtPayload = {
-      userId: '00000000-0000-0000-0000-000000000001' // UUID format
+      userId: '00000000-0000-0000-0000-000000000001', // UUID format
+      email: 'dev@example.com',
+      role: 'admin'
     };
     return next();
   }
@@ -301,27 +344,51 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
   }
   
   try {
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    // Verify token with JWT
+    const decodedRaw = jwt.verify(token, JWT_SECRET);
     
-    // Set JWT payload on request
-    req.jwtPayload = decoded;
-    
-    // Fetch user from database
-    db.select()
-      .from(users)
-      .where(eq(users.id, decoded.userId))
-      .then(([user]) => {
-        if (!user) {
-          return res.status(401).json({ error: 'User not found' });
-        }
-        req.user = user;
-        next();
-      })
-      .catch(error => {
-        console.error('Database error:', error);
-        return res.status(500).json({ error: 'Server error' });
-      });
+    // Validate the decoded payload against our UserPayload schema
+    try {
+      // Cast to any to check properties before validation
+      const rawPayload = decodedRaw as any;
+      
+      // Add minimal validation for required properties if somehow missing from the token
+      if (!rawPayload.userId || !rawPayload.email || !rawPayload.role) {
+        throw new Error('Token payload missing required fields');
+      }
+      
+      // Validate using Zod schema
+      const validatedPayload = userPayloadSchema.parse(decodedRaw);
+      
+      // Create the full JWT payload with timing info
+      const decoded: JwtPayload = {
+        ...validatedPayload,
+        iat: (decodedRaw as any).iat,
+        exp: (decodedRaw as any).exp
+      };
+      
+      // Set validated JWT payload on request
+      req.jwtPayload = decoded;
+      
+      // Fetch user from database
+      db.select()
+        .from(users)
+        .where(eq(users.id, decoded.userId))
+        .then(([user]) => {
+          if (!user) {
+            return res.status(401).json({ error: 'User not found' });
+          }
+          req.user = user;
+          next();
+        })
+        .catch(error => {
+          console.error('Database error:', error);
+          return res.status(500).json({ error: 'Server error' });
+        });
+    } catch (validationError) {
+      console.error('Token payload validation error:', validationError);
+      return res.status(401).json({ error: 'Invalid token payload' });
+    }
   } catch (error) {
     console.error('Token verification error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });
@@ -474,24 +541,40 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   }
   
   try {
-    // Verify token
-    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    // Verify token and explicitly validate against our schema
+    const rawPayload = jwt.verify(token, JWT_SECRET) as any;
     
-    // Fetch user from database
-    db.select()
-      .from(users)
-      .where(eq(users.id, payload.userId))
-      .then(([user]) => {
-        if (!user) {
-          return res.status(401).json({ error: 'User not found' });
-        }
-        req.user = user;
-        next();
-      })
-      .catch(error => {
-        console.error('Database error:', error);
-        return res.status(500).json({ error: 'Server error' });
-      });
+    // Validate the payload against our schema
+    try {
+      const validatedPayload = userPayloadSchema.parse(rawPayload);
+      const payload: JwtPayload = {
+        ...validatedPayload,
+        iat: rawPayload.iat,
+        exp: rawPayload.exp
+      };
+      
+      // Store the validated payload
+      req.jwtPayload = payload;
+      
+      // Fetch user from database
+      db.select()
+        .from(users)
+        .where(eq(users.id, payload.userId))
+        .then(([user]) => {
+          if (!user) {
+            return res.status(401).json({ error: 'User not found' });
+          }
+          req.user = user;
+          next();
+        })
+        .catch(error => {
+          console.error('Database error:', error);
+          return res.status(500).json({ error: 'Server error' });
+        });
+    } catch (validationError) {
+      console.error('JWT payload validation failed:', validationError);
+      return res.status(401).json({ error: 'Invalid token structure' });
+    }
   } catch (error) {
     console.error('Authentication middleware error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });

@@ -1,21 +1,40 @@
 import React, { createContext, ReactNode, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { UserPayload } from '../../shared/types/user-payload';
+import { 
+  getUserFromToken, 
+  getAuthToken, 
+  setAuthToken, 
+  removeAuthToken, 
+  isTokenExpired,
+  shouldRefreshToken,
+  decodeToken
+} from '../utils/jwt';
 
-// Define User type
-export interface User {
-  id: number;
+// Define extended user type that includes UserPayload fields
+export interface User extends Omit<UserPayload, 'userId'> {
+  id: string; // This corresponds to UserPayload's userId
   username: string;
-  email: string;
-  role: string;
   firstName?: string;
   lastName?: string;
-  phoneNumber?: string;
-  profileImage?: string;
+  profileImage?: string; // This corresponds to UserPayload's avatarUrl
   kycStatus?: string;
   walletBalance?: string;
-  isVerified?: boolean;
   lastLogin?: string;
   createdAt?: string;
+}
+
+// Helper to convert UserPayload to User if needed
+function userPayloadToUser(payload: UserPayload): Partial<User> {
+  return {
+    id: payload.userId,
+    email: payload.email,
+    role: payload.role,
+    phoneNumber: payload.phoneNumber,
+    isVerified: payload.isVerified,
+    profileImage: payload.avatarUrl,
+    fullName: payload.fullName
+  };
 }
 
 // Define AuthContextType
@@ -40,22 +59,108 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
+  // Listen for auth errors from axios interceptor
+  useEffect(() => {
+    const handleAuthError = (event: Event) => {
+      const customEvent = event as CustomEvent<{ status: number, message: string }>;
+      console.log('Auth error event received:', customEvent.detail);
+      
+      // Clear user state and set error
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(customEvent.detail.message);
+      removeAuthToken();
+    };
+    
+    // Add event listener
+    window.addEventListener('auth:error', handleAuthError);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('auth:error', handleAuthError);
+    };
+  }, []);
+
+  // Function to refresh the token
+  const refreshToken = async (): Promise<string | null> => {
+    try {
+      const response = await axios.post('/api/auth/jwt/refresh');
+      if (response.status === 200 && response.data?.token) {
+        const newToken = response.data.token;
+        setAuthToken(newToken);
+        return newToken;
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+    }
+    return null;
+  };
+
   // Check if user is authenticated on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get('/api/user');
         
-        if (response.status === 200 && response.data) {
-          setUser(response.data);
-          setIsAuthenticated(true);
+        // First check if we have a valid token
+        let token = getAuthToken();
+        let jwtPayload = getUserFromToken();
+        
+        // If token exists but needs refreshing, try to refresh it
+        if (token && jwtPayload && !isTokenExpired(token) && shouldRefreshToken(token)) {
+          const newToken = await refreshToken();
+          if (newToken) {
+            token = newToken;
+            jwtPayload = decodeToken(newToken);
+          }
+        }
+        
+        if (token && jwtPayload && !isTokenExpired(token)) {
+          // If token is valid, populate initial user state from it
+          const initialUserState = userPayloadToUser(jwtPayload) as User;
+          
+          // Then fetch complete user details from API
+          try {
+            // Set Authorization header with token
+            const response = await axios.get('/api/auth/jwt/me', {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            
+            if (response.status === 200 && response.data?.user) {
+              // Merge server data with token data - server now returns UserPayload format
+              const userData = response.data.user;
+              setUser({
+                ...initialUserState,
+                // Map UserPayload fields to User fields
+                id: userData.userId,
+                email: userData.email,
+                role: userData.role,
+                fullName: userData.fullName,
+                isVerified: userData.isVerified,
+                profileImage: userData.avatarUrl,
+                phoneNumber: userData.phoneNumber
+              });
+              setIsAuthenticated(true);
+            }
+          } catch (apiError) {
+            // API call failed but token was valid, use data from token
+            console.warn('Failed to fetch complete user data, using token data', apiError);
+            setUser(initialUserState);
+            setIsAuthenticated(true);
+          }
+        } else {
+          // No valid token
+          removeAuthToken(); // Clean up any invalid tokens
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
-        // Not setting error state here as this is just a check
         setUser(null);
         setIsAuthenticated(false);
+        removeAuthToken();
       } finally {
         setIsLoading(false);
       }
@@ -70,11 +175,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(true);
       setError(null);
       
-      const response = await axios.post('/api/login', { username, password });
+      const response = await axios.post('/api/auth/jwt/login', { username, password });
       
       if (response.status === 200 && response.data) {
-        setUser(response.data);
-        setIsAuthenticated(true);
+        // Store token in localStorage
+        const { token, user: userData } = response.data;
+        
+        if (token) {
+          setAuthToken(token);
+          
+          // Get user data from token
+          const jwtPayload = getUserFromToken();
+          
+          if (jwtPayload) {
+            // API now consistently returns UserPayload format
+            const user: User = {
+              // Map UserPayload fields to User fields
+              id: userData.userId,
+              username: userData.username || '', // Add additional fields from API response
+              email: userData.email,
+              role: userData.role,
+              fullName: userData.fullName,
+              isVerified: userData.isVerified,
+              profileImage: userData.avatarUrl,
+              phoneNumber: userData.phoneNumber
+            };
+            
+            setUser(user);
+            setIsAuthenticated(true);
+          } else {
+            // Fallback to just API data if token can't be decoded
+            setUser({
+              ...userData,
+              // If API returns UserPayload, map to User
+              id: userData.userId || userData.id
+            } as User);
+            setIsAuthenticated(true);
+          }
+        } else {
+          setError('No authentication token received');
+          throw new Error('No authentication token received');
+        }
       }
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -91,11 +232,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(true);
       setError(null);
       
-      const response = await axios.post('/api/register', userData);
+      const response = await axios.post('/api/auth/jwt/register', userData);
       
       if (response.status === 201 && response.data) {
-        setUser(response.data);
-        setIsAuthenticated(true);
+        // Similar to login, store token and set user state
+        const { token, user: newUserData } = response.data;
+        
+        if (token) {
+          setAuthToken(token);
+          
+          // Get user data from token
+          const jwtPayload = getUserFromToken();
+          
+          if (jwtPayload) {
+            // API now consistently returns UserPayload format
+            const user: User = {
+              // Map UserPayload fields to User fields
+              id: newUserData.userId,
+              username: newUserData.username || '', // Add additional fields from API response
+              email: newUserData.email,
+              role: newUserData.role,
+              fullName: newUserData.fullName,
+              isVerified: newUserData.isVerified,
+              profileImage: newUserData.avatarUrl,
+              phoneNumber: newUserData.phoneNumber
+            };
+            
+            setUser(user);
+            setIsAuthenticated(true);
+          } else {
+            // Fallback to just API data if token can't be decoded
+            setUser({
+              ...newUserData,
+              // If API returns UserPayload, map to User
+              id: newUserData.userId || newUserData.id
+            } as User);
+            setIsAuthenticated(true);
+          }
+        } else {
+          setError('No authentication token received');
+          throw new Error('No authentication token received');
+        }
       }
     } catch (error: any) {
       console.error('Registration failed:', error);
@@ -110,12 +287,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       setIsLoading(true);
-      await axios.post('/api/logout');
+      
+      // Call logout endpoint but don't depend on its success
+      try {
+        await axios.post('/api/auth/jwt/logout');
+      } catch (logoutError) {
+        console.warn('Logout endpoint error:', logoutError);
+        // Continue with local logout even if server logout fails
+      }
+      
+      // Always remove token and reset state
+      removeAuthToken();
       setUser(null);
       setIsAuthenticated(false);
+      setError(null);
     } catch (error: any) {
       console.error('Logout failed:', error);
       setError(error.response?.data?.message || 'Logout failed. Please try again.');
+      
+      // Still try to remove token on error
+      removeAuthToken();
     } finally {
       setIsLoading(false);
     }
