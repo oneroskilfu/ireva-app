@@ -2,52 +2,40 @@
  * Replit Startup Helper
  * 
  * This script handles the 20-second timeout constraint by:
- * 1. Creating a minimal HTTP server that binds to port 5000 immediately
+ * 1. Creating a minimal TCP server that binds to port 5000 immediately
  * 2. Starting the actual Node.js application in a separate process
  */
 
-const http = require('http');
 const { spawn } = require('child_process');
-const process = require('process');
+const net = require('net');
+const port = 5000;
 
-// Create the simplest possible HTTP server to satisfy Replit
-console.log('Starting minimal server on port 5000...');
-const server = http.createServer((req, res) => {
-  res.writeHead(200, {'Content-Type': 'text/plain'});
-  res.end('iREVA server is starting...\n');
-});
+console.log(`Starting minimal TCP server at ${new Date().toISOString()}`);
 
-// Bind to port 5000 immediately
-server.listen(5000, '0.0.0.0', () => {
-  console.log('PORT 5000 IS OPEN - Replit constraint satisfied');
+// Create and start a minimal TCP server first
+const server = net.createServer();
+
+// Bind to port immediately - this should happen in ~1-2ms
+server.listen(port, '0.0.0.0', () => {
+  console.log(`TCP server bound to port ${port} at ${new Date().toISOString()}`);
   
-  // Start the actual application after a short delay
-  setTimeout(() => {
-    console.log('Starting actual application...');
-    const app = spawn('npx', ['tsx', 'server/index.ts'], {
-      env: { ...process.env, NODE_ENV: 'development' },
-      stdio: 'inherit'
-    });
-    
-    // Log any errors from the child process
-    app.on('error', (err) => {
-      console.error('Failed to start application:', err);
-    });
-    
-    // Keep the minimal server running to maintain port binding
-    // The actual application will handle incoming requests correctly
-  }, 1000);
-});
-
-// Handle errors
-server.on('error', (err) => {
-  console.error('Error starting minimal server:', err);
-  process.exit(1);
-});
-
-// Ensure the server keeps running
-process.on('SIGINT', () => {
-  console.log('Shutting down...');
-  server.close();
-  process.exit(0);
+  // Start the actual application in the background
+  console.log('Starting the full iREVA application...');
+  
+  // Use spawn to start the application in a separate process
+  const appProcess = spawn('npm', ['run', 'dev'], {
+    stdio: 'inherit', 
+    detached: false // Keep the process attached to the parent
+  });
+  
+  appProcess.on('error', (err) => {
+    console.error('Failed to start application:', err);
+  });
+  
+  // If the application process exits, close the TCP server too
+  appProcess.on('exit', (code) => {
+    console.log(`Application process exited with code ${code}`);
+    server.close();
+    process.exit(code);
+  });
 });

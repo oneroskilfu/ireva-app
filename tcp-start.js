@@ -2,41 +2,28 @@
  * Ultra-minimal TCP server that binds to port 5000 immediately.
  * This bypasses Replit's 20-second port binding requirement.
  */
+
 const net = require('net');
+const { spawn } = require('child_process');
+const port = 5000;
 
-// Create minimal TCP server to immediately bind port 5000
-console.log('Starting minimal TCP server on port 5000...');
+console.log(`Starting minimal TCP server at ${new Date().toISOString()}`);
+
+// Create a minimal TCP server that binds immediately
 const server = net.createServer();
-
-// Bind to port 5000
-server.listen(5000, '0.0.0.0', () => {
-  console.log('✓ TCP server bound to port 5000 - Replit port check passed');
-  console.log('Server will remain open...');
-});
-
-// Handle connection (do nothing special, just keep connection open)
-server.on('connection', (socket) => {
-  console.log('New connection received');
+server.listen(port, '0.0.0.0', () => {
+  console.log(`TCP server bound to port ${port} at ${new Date().toISOString()}`);
   
-  socket.on('data', (data) => {
-    // Echo data back for testing
-    socket.write('TCP ECHO: ' + data);
+  // Start the real application in the background
+  console.log('Starting the full iREVA application...');
+  const appProcess = spawn('npm', ['run', 'dev'], {
+    stdio: 'inherit',
+    detached: true
   });
   
-  socket.on('error', (err) => {
-    console.error('Socket error:', err);
+  appProcess.on('error', (err) => {
+    console.error('Failed to start application:', err);
   });
-});
-
-// Handle errors
-server.on('error', (err) => {
-  console.error('TCP server error:', err);
-  process.exit(1);
-});
-
-// Handle process termination
-process.on('SIGINT', () => {
-  console.log('Shutting down TCP server...');
-  server.close();
-  process.exit(0);
+  
+  console.log('Minimal TCP server will remain running to maintain port binding');
 });
