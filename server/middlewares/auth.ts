@@ -80,19 +80,20 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
   // Check from JWT payload first (safer)
   if (!req.userPayload) return res.status(401).json({ message: 'Authentication required' });
   
-  if (req.userPayload.role !== 'admin' && req.userPayload.role !== 'super_admin') {
+  if (req.userPayload.role !== 'admin') {
     return res.status(403).json({ message: 'Admin access required' });
   }
   
   next();
 };
 
+// For backward compatibility, map super_admin to admin since we only have investor and admin now
 export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
   // Check from JWT payload first (safer)
   if (!req.userPayload) return res.status(401).json({ message: 'Authentication required' });
   
-  if (req.userPayload.role !== 'super_admin') {
-    return res.status(403).json({ message: 'Super admin access required' });
+  if (req.userPayload.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' });
   }
   
   next();
