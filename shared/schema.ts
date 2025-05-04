@@ -1083,8 +1083,8 @@ export type InsertAmlScreening = z.infer<typeof insertAmlScreeningSchema>;
 export type InvestorProfile = typeof investorProfiles.$inferSelect;
 export type InsertInvestorProfile = z.infer<typeof insertInvestorProfileSchema>;
 
-export type Document = typeof documents.$inferSelect;
-export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type LegacyDocument = typeof documents.$inferSelect;
+export type InsertLegacyDocument = z.infer<typeof insertDocumentSchema>;
 
 // -----------------------------------
 // ROI Distribution and Payout Schemas
@@ -1952,8 +1952,8 @@ export const insertDocumentVersionSchema = createInsertSchema(documentVersions).
 });
 
 // Export types for Document tables
-export type Document = typeof documents.$inferSelect;
-export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type DocumentRecord = typeof documents.$inferSelect;
+export type InsertDocumentRecord = z.infer<typeof insertDocumentSchema>;
 
 export type DocumentVersion = typeof documentVersions.$inferSelect;
 export type InsertDocumentVersion = z.infer<typeof insertDocumentVersionSchema>;

@@ -53,11 +53,11 @@ export const upload = multer({
 // Get all documents
 export async function getAllDocuments(req: Request, res: Response) {
   try {
-    const documents = await db.query.documents.findMany({
-      orderBy: (documents) => [documents.createdAt.desc()]
+    const allDocuments = await db.query.documents.findMany({
+      orderBy: (docs) => [desc(docs.createdAt)]
     });
     
-    return res.status(200).json(documents);
+    return res.status(200).json(allDocuments);
   } catch (error) {
     console.error('Error fetching documents:', error);
     return res.status(500).json({ message: 'Failed to fetch documents' });
@@ -69,11 +69,9 @@ export async function getDocumentById(req: Request, res: Response) {
   try {
     const { id } = req.params;
     
+    // Fetch document without trying to get versions relation
     const document = await db.query.documents.findFirst({
-      where: eq(documents.id, id),
-      with: {
-        versions: true
-      }
+      where: eq(documents.id, id)
     });
     
     if (!document) {
@@ -113,12 +111,23 @@ export async function uploadDocument(req: Request, res: Response) {
       title,
       type,
       fileUrl,
-      uploadedBy: req.user?.id, // From auth middleware
+      createdBy: req.user?.id || null, // From auth middleware, may be null in dev
       status: 'pending',
     });
     
-    // Insert document
-    const [document] = await db.insert(documents).values(newDocument).returning();
+    // Insert document with explicit type conversion to match schema
+    const [document] = await db.insert(documents)
+      .values({
+        title: newDocument.title,
+        type: newDocument.type,
+        fileUrl: newDocument.fileUrl,
+        createdBy: newDocument.createdBy,
+        status: newDocument.status,
+        parties: [],
+        description: "",
+        expiresAt: null
+      })
+      .returning();
     
     // Insert initial version
     await db.insert(documentVersions).values({
@@ -181,10 +190,12 @@ export async function deleteDocument(req: Request, res: Response) {
       return res.status(404).json({ message: 'Document not found' });
     }
     
-    // Delete file from disk
-    const filePath = path.join(__dirname, '../../', document.fileUrl);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Delete file from disk if fileUrl exists
+    if (document.fileUrl) {
+      const filePath = path.join(__dirname, '../../', document.fileUrl);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
     
     // Delete document versions first (due to foreign key constraint)
@@ -219,30 +230,27 @@ export async function signDocument(req: Request, res: Response) {
       return res.status(404).json({ message: 'Document not found' });
     }
     
-    // Update metadata to add signature
-    const metadata = document.metadata || {};
-    const signatures = metadata.signatures || [];
+    // Add signature to parties array
+    let updatedParties = document.parties ? [...document.parties] : [];
     
     // Check if user already signed
-    const alreadySigned = signatures.some(sig => sig.userId === userId);
+    const alreadySigned = updatedParties.some((party: { id: string; role: string; signed: boolean }) => party.id === userId.toString());
     if (alreadySigned) {
       return res.status(400).json({ message: 'Document already signed by this user' });
     }
     
     // Add signature
-    signatures.push({
-      userId,
-      signedAt: new Date()
+    updatedParties.push({
+      id: userId.toString(),
+      role: req.user?.role || 'investor',
+      signed: true
     });
     
     // Update document with signature and change status to signed
     const [updatedDocument] = await db
       .update(documents)
       .set({
-        metadata: {
-          ...metadata,
-          signatures
-        },
+        parties: updatedParties,
         status: 'signed',
         updatedAt: new Date()
       })

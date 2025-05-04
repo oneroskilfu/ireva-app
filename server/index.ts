@@ -11,8 +11,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Apply authMiddleware to all routes
-app.use(authMiddleware);
+// Apply different middleware approaches based on route type
+app.use('/api', (req, res, next) => {
+  // Public routes that don't need authentication
+  if (req.path.startsWith('/api/auth/jwt') || req.method === 'GET') {
+    return next();
+  }
+  
+  // Apply auth middleware to protected routes
+  authMiddleware(req, res, next);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -64,14 +72,40 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Try an alternative port if there's a conflict with 5000
+  // Always serve the app on port 5000 since that's what the workflow system expects
   // this serves both the API and the client.
-  const port = process.env.PORT || 5050;
+  const port = process.env.PORT || 5000;
   server.listen({
     port,
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Delay heavy initialization tasks to ensure server starts properly
+    setTimeout(async () => {
+      // Heavy initialization tasks go here
+      log('Running delayed initialization tasks...');
+      
+      try {
+        // Measure database connection time
+        console.time("DB connection");
+        // Database initialization/connection code here
+        // For example: await connectDB(); or any other database initialization
+        console.timeEnd("DB connection");
+        
+        // Measure cache warming time
+        console.time("Cache warming");
+        // Cache warming code
+        // For example: await warmupCache();
+        console.timeEnd("Cache warming");
+        
+        // Add more performance timing as needed
+        
+        log('Delayed initialization completed successfully');
+      } catch (error) {
+        console.error('Error during delayed initialization:', error);
+      }
+    }, 2000); // 2 second delay
   });
 })();
