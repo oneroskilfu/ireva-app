@@ -1,5 +1,5 @@
 import express from 'express';
-import authJwt from '../auth-jwt';
+import * as authJwt from '../auth-jwt';
 import { validateRequest } from '../middleware/validate';
 
 const { verifyToken: ensureAuthenticated, ensureAdmin } = authJwt;

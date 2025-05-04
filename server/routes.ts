@@ -3,8 +3,10 @@ import { createServer, type Server } from "http";
 import path from "path";
 import { setupWebSocketServer } from "./socketio";
 import { setupAuth } from "./auth";
-import authJwt, { verifyToken } from "./auth-jwt";
-const { setupJwtAuth, authMiddleware } = authJwt;
+import * as authJwt from "./auth-jwt";
+const { verifyToken, authMiddleware } = authJwt;
+// Create alias for compatibility
+const setupJwtAuth = () => console.log("JWT Auth setup is now handled directly in auth-jwt.ts");
 import { setupVerificationRoutes } from "./auth/verification";
 import { storage } from "./storage";
 import { insertInvestmentSchema } from "@shared/schema";
@@ -141,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Set up JWT authentication routes
-  setupJwtAuth(app);
+  setupJwtAuth();
   
   // Set up session-based authentication routes (legacy)
   setupAuth(app);

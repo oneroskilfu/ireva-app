@@ -123,6 +123,9 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
     // Attach validated user payload to request
     req.user = validationResult.data;
     
+    // Also assign to jwtPayload for compatibility with existing code
+    req.jwtPayload = validationResult.data;
+    
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
@@ -144,6 +147,22 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
       message: 'Authentication failed'
     });
   }
+}
+
+/**
+ * Authentication middleware
+ * Alias for verifyToken middleware for backward compatibility
+ */
+export const authMiddleware = verifyToken;
+
+/**
+ * JWT Authentication setup function
+ * This is a no-op function kept for backward compatibility
+ * The actual authentication middleware is exported directly
+ */
+export function setupJwtAuth() {
+  // Auth middleware is now exported directly
+  console.log("JWT Authentication middleware is active");
 }
 
 /**

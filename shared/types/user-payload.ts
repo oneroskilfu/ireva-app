@@ -25,6 +25,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: UserPayload;
+      jwtPayload?: UserPayload; // For backward compatibility with existing code
     }
   }
 }
