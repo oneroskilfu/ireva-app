@@ -147,7 +147,55 @@ function sendLoadingPage(res) {
 </html>`);
 }
 
-// Create an HTTP server that proxies requests to the main application
+// Create a special server that listens on port 3001 to handle direct webview connections
+// This is necessary because Replit maps port 5001 to external port 3001
+try {
+  const redirectServer = http.createServer((req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const host = req.headers.host || '';
+    
+    console.log(`Redirect server received request on port 3001: ${req.method} ${parsedUrl.pathname}`);
+    
+    // Extract hostname without port
+    const hostname = host.split(':')[0];
+    
+    // Respond with a special redirect page
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.end(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>iREVA Platform - Redirecting</title>
+        <meta http-equiv="refresh" content="0;url=https://${hostname}${parsedUrl.pathname}">
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; }
+          .loader { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #2563eb; animation: spin 1s ease-in-out infinite; margin: 20px 0; }
+          @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+      </head>
+      <body>
+        <h1>iREVA Platform</h1>
+        <p>Redirecting to the correct URL...</p>
+        <div class="loader"></div>
+        <p>If you are not redirected, <a href="https://${hostname}${parsedUrl.pathname}">click here</a>.</p>
+      </body>
+      </html>
+    `);
+  });
+  
+  redirectServer.listen(3001, '0.0.0.0', () => {
+    console.log('Redirect server listening on port 3001');
+  });
+  
+  redirectServer.on('error', (err) => {
+    console.error('Redirect server error:', err.message);
+    // Non-fatal if this server fails - the proxy on port 5000 can still work
+  });
+} catch (err) {
+  console.error('Failed to start redirect server on port 3001:', err);
+}
+
+// Create the main HTTP server that proxies requests to the main application
 const server = http.createServer((req, res) => {
   // Set headers to prevent caching
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -165,6 +213,26 @@ const server = http.createServer((req, res) => {
   
   // Log incoming requests to help debugging
   console.log(`Proxy received request for: ${req.method} ${parsedUrl.pathname}`);
+  
+  // Handle requests from Replit webview with port in URL
+  const host = req.headers.host || '';
+  if (host.includes(':')) {
+    console.log('Detected request with port, redirecting to clean URL');
+    
+    // Extract the hostname without the port
+    const hostname = host.split(':')[0];
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    
+    // Redirect to the same hostname without the port
+    const redirectTo = `${protocol}://${hostname}${parsedUrl.pathname}`;
+    
+    res.writeHead(302, {
+      'Location': redirectTo,
+      'Content-Type': 'text/html'
+    });
+    res.end(`Redirecting to <a href="${redirectTo}">${redirectTo}</a>`);
+    return;
+  }
   
   // Special handling for Replit webview system paths
   if (parsedUrl.pathname === '/__repl') {

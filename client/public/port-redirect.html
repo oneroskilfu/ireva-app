@@ -24,6 +24,7 @@
             background-color: white;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 0 20px;
         }
         h1 {
             color: #2563eb;
@@ -42,74 +43,29 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        .redirect-message {
-            margin-bottom: 20px;
-            font-size: 18px;
-        }
-        .manual-link {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        .manual-link:hover {
-            background-color: #1d4ed8;
-        }
-        .note {
-            margin-top: 30px;
-            font-size: 14px;
-            color: #666;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>iREVA Platform</h1>
-        <p class="redirect-message">Redirecting to the main application on port 5001...</p>
+        <p>Redirecting to the correct URL...</p>
         <div class="loader"></div>
-        <p>If you are not redirected automatically, please click the button below:</p>
-        <a href="#" id="manual-redirect" class="manual-link">Go to iREVA Platform</a>
-        
-        <div class="note">
-            <p>Note: The iREVA platform uses a dual-port architecture in Replit:</p>
-            <ul style="text-align: left; display: inline-block;">
-                <li>Port 5000: Technical port for Replit compatibility</li>
-                <li>Port 5001: Main application with all features</li>
-            </ul>
-        </div>
+        <p>If you're not redirected automatically, <a href="#" id="correctUrl">click here</a>.</p>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Function to get the appropriate redirect URL
-            function getRedirectUrl() {
-                // Get the current hostname and protocol
-                const hostname = window.location.hostname;
-                const protocol = window.location.protocol;
-                const path = window.location.pathname;
-                
-                // Check if we're in Replit
-                if (hostname.includes('replit')) {
-                    return `${protocol}//${hostname}/?port=5001${path === '/' ? '' : path}`;
-                } else {
-                    // For other environments, use port 5001 directly
-                    return `${protocol}//${hostname}:5001${path}`;
-                }
-            }
+            // Get the current URL
+            const currentUrl = window.location.href;
             
-            // Set the manual redirect link
-            const redirectUrl = getRedirectUrl();
-            document.getElementById('manual-redirect').href = redirectUrl;
+            // Create the correct URL (remove the port if present)
+            let correctUrl = currentUrl.replace(/:\d+\/?/, '/');
             
-            // Redirect automatically after a short delay
-            setTimeout(function() {
-                window.location.href = redirectUrl;
-            }, 2000);
+            // Set the href attribute of the link
+            document.getElementById('correctUrl').href = correctUrl;
+            
+            // Redirect automatically
+            window.location.href = correctUrl;
         });
     </script>
 </body>

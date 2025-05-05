@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iREVA Platform - Port Redirect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            padding: 40px 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 0 20px;
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+        .main-content {
+            margin-bottom: 30px;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            margin-top: 20px;
+        }
+        .cta-button:hover {
+            background-color: #1d4ed8;
+        }
+        .code {
+            background-color: #f1f5f9;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: monospace;
+            margin: 20px 0;
+            text-align: left;
+            overflow-x: auto;
+        }
+        .notes {
+            font-size: 0.9em;
+            margin-top: 30px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>iREVA Platform</h1>
+        
+        <div class="main-content">
+            <p>Our application is running, but you need to access it using a specific URL format:</p>
+            
+            <div class="code">
+                https://{repl-id}.{replit-domain}.dev
+            </div>
+            
+            <p>Or you can click the button below to automatically redirect to the correct URL:</p>
+            
+            <a href="#" id="correctUrl" class="cta-button">Go to iREVA Platform</a>
+        </div>
+        
+        <div class="notes">
+            <p><strong>Note:</strong> This application uses a dual-port architecture:</p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>Port 5000: Used for Replit port detection</li>
+                <li>Port 5001: Main application server (mapped to 3001 externally)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the current URL
+            const currentUrl = window.location.href;
+            
+            // Create the correct URL (remove the port if present)
+            let correctUrl = currentUrl.replace(/:\d+\/?$/, '/');
+            
+            // Set the href attribute of the button
+            document.getElementById('correctUrl').href = correctUrl;
+            
+            // Automatically redirect after a short delay
+            setTimeout(function() {
+                window.location.href = correctUrl;
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
