@@ -1,62 +1,82 @@
-# iREVA Platform Access Guide
+# iREVA Platform - How to Access the Application
 
-## Accessing the Application in Replit
+## Quick Start
 
-The iREVA platform is now fully accessible directly through Replit's interface using our new reverse proxy solution. This guide explains how to access and use the application.
+To access the iREVA platform:
 
-### Step 1: Start the Application
+1. Click the "Run" button at the top of the Replit interface
+2. Wait for the application to start (usually takes 10-15 seconds)
+3. You should be automatically redirected to the main application
+4. If not redirected, use one of the access links provided on the loading page
 
-1. In your Replit project, click the **Run** button to start the application
-2. Wait for the application to fully initialize (typically 10-15 seconds)
-3. You should see logs indicating that both servers are running:
-   - Proxy server: `SERVER LISTENING ON PORT 5000`
-   - Main application: `iREVA server bound to port 5001`
+## Access Options
 
-### Step 2: Access through Replit's Webview
+### Method 1: Webview Access (Recommended)
 
-1. Click on the **Webview** tab in Replit's interface
-2. The iREVA platform homepage should load automatically
-3. You can now navigate the application directly in Replit's Webview
+The simplest way to access the application is through Replit's webview:
 
-### Step 3: Using External Access (Optional)
+1. Click the "Run" button
+2. The webview will show a loading page initially
+3. Once the application is ready, you'll be automatically redirected
 
-If you want to access the application outside of Replit's Webview:
+### Method 2: Direct Port Access
 
-1. Use the URL shown in Replit's "Share" menu
-2. The reverse proxy will automatically handle forwarding requests to the main application
+You can access the application directly using port-specific URLs:
 
-## How Our Solution Works
+```
+https://[replit-id]-5001.replit.dev/
+```
 
-Our solution uses a reverse proxy approach that:
+Where `[replit-id]` is your Replit project identifier. This is typically shown on the loading page in the technical details section.
 
-1. Binds immediately to port 5000 (the port Replit looks for)
-2. Forwards all incoming requests to our main application on port 5001
-3. Maintains full application functionality without redirection
+### Method 3: Local Development
+
+When developing locally (outside of Replit), you can access:
+
+- Main application: `http://localhost:5001/`
+- Loading page: `http://localhost:3000/`
 
 ## Troubleshooting
 
-If you encounter any issues:
+If you're having trouble accessing the application:
 
-1. **Application not loading in Webview**:
-   - Check the workflow logs to confirm both servers are running
-   - Make sure the proxy server bound successfully to port 5000
-   - Refresh the Webview tab after the application is fully initialized
+### Application Not Loading
 
-2. **Server errors in console**:
-   - Look for error messages related to port binding
-   - Check if the main application started successfully
-   - Verify the workflow command has executable permissions
+1. Check if the application has finished starting up (look for "application loaded successfully" in the logs)
+2. Try refreshing the page
+3. Clear your browser cache
+4. Use a direct port access URL (see Method 2 above)
 
-3. **Missing UI elements or styles**:
-   - Clear your browser cache
-   - Try accessing in a private/incognito window
-   - Check the browser console for JavaScript errors
+### "Run this app" Message Persists
 
-## Technical Details
+If you still see the "Run this app to see the results here" message:
 
-Our solution consists of two main components:
+1. Make sure you've clicked the "Run" button
+2. Look at the console logs to verify the application has started
+3. Try using a direct port access URL instead
+4. Click the "Stop" button, then click "Run" again to restart the application
 
-1. **proxy-reverse.cjs**: A lightweight HTTP proxy server that forwards requests
-2. **server/index.ts**: The main application server that runs on port 5001
+### URL Access Issues
 
-The proxy server uses Node.js's `http-proxy` library to seamlessly forward all HTTP traffic, maintaining headers and request integrity.
+If the URLs provided don't work:
+
+1. Check your Replit ID in the technical details section on the loading page
+2. Try different URL formats (provided on the loading page)
+3. Ensure you're using the correct domain suffix (usually .replit.dev)
+
+## Need More Help?
+
+If you continue to experience issues:
+
+1. Check the console logs for any error messages
+2. Review the REPLIT-WEBVIEW-SOLUTION.md file for technical details
+3. Restart the Replit environment completely
+
+## Technical Background (Optional)
+
+The iREVA platform uses a dual-port architecture:
+
+- An ultra-minimal server on port 3000 (what Replit expects)
+- The main application running on port 5001 (avoiding port conflicts)
+
+This approach ensures that Replit's workflow system can detect the application is running, while also providing full access to the application's features.

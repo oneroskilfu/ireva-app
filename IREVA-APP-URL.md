@@ -1,51 +1,45 @@
-# iREVA Platform URL Access Guide
+# iREVA Platform - Access URLs
 
-## Primary Access URL
+This guide provides all the ways you can access the iREVA Platform application running in this Replit environment.
 
-The iREVA Platform can be accessed directly at:
+## Primary Access URLs
 
-```
-https://[repl-name].[username].repl.co:5001/
-```
+For direct access to the application, you can use any of these URLs:
 
-This is the most reliable way to access the application as it connects directly to the main application server.
+1. **Main App (Port 5001)**: The main application server
+   - In Replit: https://[replit-id]-5001.replit.dev
 
-## Multi-Port Architecture
+2. **Webview (Port 3000)**: The auto-redirecting webview server 
+   - In Replit: Click "Run" at the top of the page
 
-The platform uses a three-server architecture to ensure reliability:
+## Replit Environment URLs
 
-| Port | Purpose | Access URL |
-|------|---------|------------|
-| 3000 | Proxy server for Replit webview | `https://[repl-name].[username].repl.co:3000/` |
-| 5000 | Direct webview server with redirect | `https://[repl-name].[username].repl.co:5000/` |
-| 5001 | Main application server | `https://[repl-name].[username].repl.co:5001/` |
-
-## Special Access Routes
-
-For troubleshooting or specific access scenarios:
-
-1. **Webview Redirect Page**  
-   `https://[repl-name].[username].repl.co:5000/webview`  
-   A special page with multiple options to connect to the main application.
-
-2. **Force Redirect**  
-   `https://[repl-name].[username].repl.co:5000/force-redirect`  
-   Forces an immediate redirect to the main application on port 5001.
-
-3. **Health Check**  
-   `https://[repl-name].[username].repl.co:5000/health`  
-   Returns the health status of the direct webview server.
-
-4. **Main App Check**  
-   `https://[repl-name].[username].repl.co:5000/check-main-app`  
-   Checks if the main application server on port 5001 is available.
-
-## How to Share URLs
-
-When sharing access to the iREVA platform, provide the direct port 5001 URL:
+Replit has a special URL format for accessing different ports:
 
 ```
-https://[repl-name].[username].repl.co:5001/
+https://[replit-id]-[PORT].[domain]/
 ```
 
-This ensures users bypass the redirection system and connect directly to the main application server.
+For example, if your Replit ID is `abcd1234`, you can access:
+- Port 3000: `https://abcd1234-3000.replit.dev/`
+- Port 5001: `https://abcd1234-5001.replit.dev/`
+
+## Troubleshooting Access Issues
+
+If you're experiencing issues with the application not appearing:
+
+1. **Wait for Initialization**: The application takes a few seconds to fully initialize
+2. **Try Direct Port Access**: Use the port-specific URLs listed above
+3. **Restart the App**: Click "Stop" and then "Run" again 
+4. **Check Console Logs**: Look for any error messages in the console tab
+
+## Technical Notes
+
+The platform runs a multi-server architecture:
+- Port 3000: Ultra-minimal webview server that starts immediately
+- Port 5001: Main application server with full functionality
+
+This architecture solves the "Run this app to see the results here" issue in Replit by ensuring:
+1. Immediate port binding (within milliseconds)
+2. Automatic redirection to the main application when it's ready
+3. Multiple access options for better reliability

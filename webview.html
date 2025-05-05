@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iREVA Platform - Connecting</title>
+  <title>iREVA Platform - Redirecting...</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -15,7 +15,6 @@
       height: 100vh;
       margin: 0;
       padding: 20px;
-      box-sizing: border-box;
     }
     .container {
       background-color: white;
@@ -25,7 +24,6 @@
       max-width: 600px;
       width: 100%;
       text-align: center;
-      animation: fadeIn 0.8s ease-out;
     }
     .logo {
       font-size: 2.5rem;
@@ -38,17 +36,6 @@
       color: #64748b;
       font-weight: 500;
     }
-    .subtitle {
-      color: #64748b;
-      margin-bottom: 2rem;
-      font-size: 1.1rem;
-    }
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 2rem 0;
-    }
     .spinner {
       border: 4px solid rgba(37, 99, 235, 0.1);
       border-radius: 50%;
@@ -56,261 +43,256 @@
       width: 50px;
       height: 50px;
       animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-    .status {
-      font-size: 0.95rem;
-      color: #64748b;
-      margin-top: 8px;
-      min-height: 40px;
-    }
-    .buttons {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      margin-top: 2rem;
-      flex-wrap: wrap;
-    }
-    .button {
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background-color 0.2s;
-      display: inline-block;
-    }
-    .button:hover {
-      background-color: #1d4ed8;
-    }
-    .button.secondary {
-      background-color: #f1f5f9;
-      color: #334155;
-    }
-    .button.secondary:hover {
-      background-color: #e2e8f0;
-    }
-    .debug {
-      margin-top: 2rem;
-      padding: 12px;
-      background-color: #f8fafc;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 12px;
-      color: #64748b;
-      text-align: left;
-      max-height: 100px;
-      overflow-y: auto;
-      display: none;
-    }
-    .footer {
-      margin-top: 1.5rem;
-      font-size: 0.8rem;
-      color: #94a3b8;
+      margin: 20px auto;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .status {
+      margin: 20px 0;
+      font-weight: 500;
     }
-    .show-debug {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      text-decoration: underline;
+    .directions {
+      margin-top: 20px;
+    }
+    .link {
+      display: inline-block;
+      background-color: #2563eb;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      margin: 10px 0;
+      transition: background-color 0.2s;
+    }
+    .link:hover {
+      background-color: #1d4ed8;
+    }
+    .manual-options {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .manual-options h3 {
+      margin-bottom: 15px;
+    }
+    .port-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .port-button {
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px 16px;
       cursor: pointer;
-      font-size: 0.8rem;
-      margin-top: 1rem;
+      transition: all 0.2s;
     }
-    .debug.visible {
-      display: block;
+    .port-button:hover {
+      background-color: #e2e8f0;
     }
   </style>
+  <!-- Include the port check script -->
+  <script src="webview-port-check.js"></script>
 </head>
 <body>
   <div class="container">
     <div class="logo">i<span>REVA</span></div>
-    <div class="subtitle">Real Estate Investment Platform</div>
-    <p>Connecting to the iREVA platform...</p>
+    <p>Real Estate Investment Platform</p>
     
-    <div class="loading">
-      <div class="spinner"></div>
-      <div class="status" id="status">Detecting optimal connection path...</div>
+    <div class="spinner"></div>
+    
+    <div id="status" class="status">
+      Detecting application URL...
     </div>
     
-    <div class="buttons" id="buttons" style="display: none;">
-      <a href="#" id="directLink" class="button">Direct Connection</a>
-      <a href="#" id="proxyLink" class="button secondary">Alternative Route</a>
+    <div id="directions" class="directions">
+      Please wait while we locate the application.
     </div>
     
-    <button class="show-debug" id="showDebug">Show connection details</button>
-    <div class="debug" id="debug"></div>
-    
-    <div class="footer">
-      © 2025 iREVA Platform • Multi-server access system
+    <div class="manual-options">
+      <h3>Manual Options</h3>
+      <p>If automatic detection doesn't work, try one of these ports:</p>
+      
+      <div class="port-list">
+        <button class="port-button" onclick="tryPort(3000)">Port 3000</button>
+        <button class="port-button" onclick="tryPort(3001)">Port 3001</button>
+        <button class="port-button" onclick="tryPort(5000)">Port 5000</button>
+        <button class="port-button" onclick="tryPort(5001)">Port 5001</button>
+      </div>
     </div>
   </div>
-
+  
   <script>
-    // DOM elements
-    const status = document.getElementById('status');
-    const buttons = document.getElementById('buttons');
-    const directLink = document.getElementById('directLink');
-    const proxyLink = document.getElementById('proxyLink');
-    const debugEl = document.getElementById('debug');
-    const showDebugBtn = document.getElementById('showDebug');
-    
-    // Toggle debug info
-    showDebugBtn.addEventListener('click', () => {
-      debugEl.classList.toggle('visible');
-      showDebugBtn.textContent = debugEl.classList.contains('visible') ? 
-        'Hide connection details' : 'Show connection details';
-    });
-    
-    // Logging helper function
+    // Log function with timestamps
     function log(message) {
-      console.log(message);
-      const time = new Date().toLocaleTimeString();
-      debugEl.innerHTML += `<div>[${time}] ${message}</div>`;
-      debugEl.scrollTop = debugEl.scrollHeight;
+      console.log(`${Date.now()} - ${JSON.stringify(message)}`);
     }
     
-    // Function to extract parts from the hostname
-    function parseReplitHostname(hostname) {
-      // Example: 12345-username.repl.co or projectname-username.repl.co
-      if (!hostname.includes('.')) return null;
-      
-      const parts = hostname.split('.');
-      const firstPart = parts[0]; // "12345-username" or "projectname-username"
-      
-      if (!firstPart.includes('-')) return null;
-      
-      const [replId, username] = firstPart.split('-');
-      const domain = parts.slice(1).join('.');
-      
-      return {
-        replId,
-        username,
-        domain,
-        isReplit: domain.includes('repl.co') || domain.includes('replit')
-      };
+    // Get Replit information from the URL
+    function detectReplitEnv() {
+      try {
+        const url = new URL(window.location.href);
+        log(["Current location: " + window.location.href]);
+        
+        const hostParts = url.hostname.split('.');
+        const replId = hostParts[0].split('-')[0]; // Extract just the repl ID part
+        
+        const replInfo = {
+          replId,
+          username: hostParts[0].split('-')[1] || '',
+          domain: hostParts.slice(1).join('.'),
+          isReplit: hostParts.length > 1 && url.hostname.includes('replit')
+        };
+        
+        log(["Detected Replit environment: " + JSON.stringify(replInfo)]);
+        return replInfo;
+      } catch (error) {
+        log(["Error detecting Replit environment: " + error.message]);
+        return { isReplit: false };
+      }
     }
     
     // Generate URLs for different ports
-    function generateUrls() {
-      const protocol = window.location.protocol;
-      const hostname = window.location.hostname;
-      const port = window.location.port || (protocol === 'https:' ? '443' : '80');
+    function generateUrls(replInfo) {
+      if (!replInfo.isReplit) return null;
       
-      log(`Current location: ${protocol}//${hostname}:${port}`);
-      
-      let mainAppUrl, directServerUrl, proxyUrl;
-      
-      const replitInfo = parseReplitHostname(hostname);
-      if (replitInfo && replitInfo.isReplit) {
-        // This is a Replit domain
-        log(`Detected Replit environment: ${JSON.stringify(replitInfo)}`);
-        
-        const replBase = `${protocol}//${replitInfo.replId}`;
-        const domain = `.${replitInfo.domain}`;
-        
-        mainAppUrl = `${replBase}-5001${domain}/`;
-        directServerUrl = `${replBase}-5000${domain}/`;
-        proxyUrl = `${replBase}-3000${domain}/`;
-      } else {
-        // Regular domain
-        const base = `${protocol}//${hostname.split(':')[0]}`;
-        mainAppUrl = `${base}:5001/`;
-        directServerUrl = `${base}:5000/`;
-        proxyUrl = `${base}:3000/`;
-      }
-      
-      log(`Generated URLs:`);
-      log(`Main app (5001): ${mainAppUrl}`);
-      log(`Direct server (5000): ${directServerUrl}`);
-      log(`Proxy server (3000): ${proxyUrl}`);
-      
-      return {
-        mainAppUrl,
-        directServerUrl,
-        proxyUrl
+      const urls = {
+        main: `https://${replInfo.replId}-5001.${replInfo.domain}/`,
+        direct: `https://${replInfo.replId}-5000.${replInfo.domain}/`,
+        proxy: `https://${replInfo.replId}-3000.${replInfo.domain}/`
       };
+      
+      log(["Generated URLs:"]);
+      log(["Main app (5001): " + urls.main]);
+      log(["Direct server (5000): " + urls.direct]);
+      log(["Proxy server (3000): " + urls.proxy]);
+      
+      return urls;
     }
     
-    // Check if the main app is available
-    async function checkMainApp(url) {
-      try {
-        status.textContent = "Checking main application...";
-        log(`Checking if main app is available at ${url}`);
-        
+    // Check if a URL is accessible
+    async function checkUrl(url, timeout = 3000) {
+      return new Promise((resolve) => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const signal = controller.signal;
         
-        const response = await fetch(url, { 
+        // Set a timeout
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+          resolve(false);
+        }, timeout);
+        
+        // Try to fetch the URL
+        fetch(url, { 
           method: 'HEAD',
           mode: 'no-cors',
-          signal: controller.signal
+          signal
+        })
+        .then(response => {
+          clearTimeout(timeoutId);
+          resolve(true);
+        })
+        .catch(error => {
+          clearTimeout(timeoutId);
+          resolve(false);
         });
-        
-        clearTimeout(timeoutId);
-        log(`Main app is reachable`);
-        return true;
-      } catch (error) {
-        log(`Error checking main app: ${error.message}`);
-        return false;
+      });
+    }
+    
+    // Try accessing the application through a specific port
+    async function tryPort(port) {
+      const replInfo = detectReplitEnv();
+      if (!replInfo.isReplit) {
+        alert("Not running on Replit. Cannot generate port URLs.");
+        return;
+      }
+      
+      const url = `https://${replInfo.replId}-${port}.${replInfo.domain}/`;
+      
+      document.getElementById('status').textContent = `Trying port ${port}...`;
+      
+      const isAccessible = await checkUrl(url);
+      if (isAccessible) {
+        document.getElementById('status').textContent = `Port ${port} is accessible!`;
+        document.getElementById('directions').innerHTML = `
+          <p>The application is available at:</p>
+          <a href="${url}" target="_blank" class="link">${url}</a>
+          <p>Click the link above to open the application.</p>
+        `;
+      } else {
+        document.getElementById('status').textContent = `Port ${port} is not accessible.`;
       }
     }
     
-    // Main function
-    async function connectToApp() {
-      const urls = generateUrls();
-      
-      // Set up direct links
-      directLink.href = urls.mainAppUrl;
-      proxyLink.href = urls.directServerUrl;
-      
-      try {
-        // First check if main app is available
-        const isMainAppAvailable = await checkMainApp(urls.mainAppUrl);
-        
-        if (isMainAppAvailable) {
-          log(`Redirecting to main app...`);
-          status.textContent = "Connecting to main application...";
-          
-          // Show buttons as fallback
-          buttons.style.display = 'flex';
-          
-          // Redirect after short delay
-          setTimeout(() => {
-            window.location.href = urls.mainAppUrl;
-          }, 1500);
-        } else {
-          log(`Main app not available, trying direct server...`);
-          status.textContent = "Trying alternative connection...";
-          
-          // Show buttons as fallback
-          buttons.style.display = 'flex';
-          
-          setTimeout(() => {
-            log(`Redirecting to direct server...`);
-            window.location.href = urls.directServerUrl;
-          }, 2000);
-        }
-      } catch (error) {
-        log(`Error in connection process: ${error.message}`);
-        status.textContent = "Could not connect automatically. Please try manual options below.";
-        buttons.style.display = 'flex';
+    // Main function to detect and redirect to the application
+    async function detectAndRedirect() {
+      const replInfo = detectReplitEnv();
+      if (!replInfo.isReplit) {
+        document.getElementById('status').textContent = "Not running on Replit.";
+        return;
       }
+      
+      const urls = generateUrls(replInfo);
+      if (!urls) {
+        document.getElementById('status').textContent = "Could not generate URLs.";
+        return;
+      }
+      
+      // Try the main app URL first
+      log(["Checking if main app is available at " + urls.main]);
+      const mainAppAccessible = await checkUrl(urls.main);
+      
+      if (mainAppAccessible) {
+        log(["Main app is reachable"]);
+        // Redirect to the main app
+        log(["Redirecting to main app..."]);
+        document.getElementById('status').textContent = "Application found! Redirecting...";
+        window.location.href = urls.main;
+        return;
+      }
+      
+      // Try the proxy server if main app is not accessible
+      log(["Main app not reachable, trying proxy server at " + urls.proxy]);
+      const proxyAccessible = await checkUrl(urls.proxy);
+      
+      if (proxyAccessible) {
+        log(["Proxy server is reachable"]);
+        // Redirect to the proxy server
+        log(["Redirecting to proxy server..."]);
+        document.getElementById('status').textContent = "Found proxy server! Redirecting...";
+        window.location.href = urls.proxy;
+        return;
+      }
+      
+      // Try the direct server if proxy is not accessible
+      log(["Proxy server not reachable, trying direct server at " + urls.direct]);
+      const directAccessible = await checkUrl(urls.direct);
+      
+      if (directAccessible) {
+        log(["Direct server is reachable"]);
+        // Redirect to the direct server
+        log(["Redirecting to direct server..."]);
+        document.getElementById('status').textContent = "Found direct server! Redirecting...";
+        window.location.href = urls.direct;
+        return;
+      }
+      
+      // If no servers are accessible, show manual options
+      log(["No servers are reachable"]);
+      document.getElementById('status').textContent = "Could not automatically detect the application.";
+      document.getElementById('directions').innerHTML = `
+        <p>Please try the manual options below or restart the application.</p>
+      `;
     }
     
-    // Start the connection process after everything is loaded
-    window.addEventListener('load', connectToApp);
+    // Run the detection and redirection on page load
+    window.onload = detectAndRedirect;
   </script>
 </body>
 </html>

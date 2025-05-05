@@ -1,87 +1,59 @@
-# Workflow Configuration Guide for Replit
+# Replit Workflow Update Guide
 
-This guide explains how to resolve port binding detection issues in Replit workflows.
+This guide explains how the iREVA platform has been optimized to work effectively with Replit's workflow system.
 
-## Problem
+## Problem Solved
 
-Replit workflows have a 20-second timeout for detecting port binding. If your application doesn't bind to the specified port within this window, the workflow fails with a timeout error. This can happen even if your server successfully binds to the port but Replit fails to detect it.
+We've addressed two key challenges with Replit:
 
-## Solution
+1. **Port Detection Issue**: Replit's workflow system fails to detect port binding even when a server successfully binds to port 5000 within approximately 1 second. This causes workflow failures with the error message "Server didn't open port 5000 after 20000ms."
 
-We've created several optimized scripts that ensure port binding is detected:
+2. **Webview Port Mismatch**: Replit's Webview defaults to ports 3000/3001 instead of port 5000 where our main application runs, causing the "Run this app to see the results here" message to appear instead of the application.
 
-1. **Ultra-Minimal TCP Server** (recommended): `tcp-start.cjs`
-   - Uses raw TCP sockets for immediate port binding
-   - Starts main application after port is bound
-   - Command: `node tcp-start.cjs`
+## Solution Architecture
 
-2. **Express-Based Server**: `express-runner.cjs`
-   - Uses Express for binding port 5000
-   - Starts main application as child process
-   - Command: `node express-runner.cjs`
+We've implemented a multi-server architecture to ensure both reliable port detection and proper webview functionality:
 
-3. **HTTP-Based Server**: `instant-http.cjs`
-   - Uses Node.js HTTP module for binding
-   - Provides minimal HTML response
-   - Command: `node instant-http.cjs`
+1. **Ultra-Minimal Server (Port 3000)**:
+   - Uses CommonJS for maximum compatibility
+   - Binds to port 3000 immediately (within milliseconds)
+   - Serves a simple landing page with auto-redirect capabilities
+   - Provides multiple URL access options if automatic redirection fails
 
-4. **Raw TCP Server**: `ultra-minimal-server.cjs`
-   - Absolute minimal implementation
-   - Does nothing except bind port 5000
-   - Command: `node ultra-minimal-server.cjs`
+2. **Main Application (Port 5001)**:
+   - Runs the actual iREVA platform with full functionality
+   - Avoids port conflicts with Replit's webview port (3000)
+   - Ensures stable operation once the application is fully loaded
 
-## How to Update Your Workflow
+## Implementation Details
 
-1. Go to the Replit dashboard
-2. Click on your project
-3. Go to "Tools" > "Workflows"
-4. Edit the "Start application" workflow
-5. Change the command to one of the following:
-   ```
-   ./workflow-command.sh
-   ```
-   or
-   ```
-   ./express-start.sh
-   ```
-   or
-   ```
-   ./instant-start.sh
-   ```
-   or
-   ```
-   ./startup.sh
-   ```
-   
-6. Save the workflow changes
-7. Run the workflow
+The implementation uses these key files:
+
+- **ultra-minimal-server.cjs**: Ultra-lightweight server that binds immediately to port 3000
+- **workflow-command.sh**: Starts both servers in the correct sequence
+- **IREVA-APP-URL.md**: Documentation of all URL access options
+
+## Technical Approach
+
+1. **Immediate Port Binding**: The ultra-minimal server binds to port 3000 within milliseconds, ensuring Replit detects it within its 10-second timeout window
+2. **Dynamic URL Generation**: Generates multiple URL formats to maximize the chances of successful access
+3. **Auto-Redirect Mechanism**: Automatically redirects users to the main application when it's ready
+4. **Fallback Options**: Provides multiple manual access options if automatic redirection fails
+
+## Usage
+
+When running the application in Replit:
+
+1. Click the "Run" button at the top
+2. The webview will initially show a loading page
+3. Once the main application is ready, you'll be automatically redirected
+4. If not redirected, use one of the manual access links provided on the loading page
 
 ## Troubleshooting
 
-If you're still experiencing issues with port detection:
+If you encounter issues:
 
-1. Make sure the scripts have executable permissions:
-   ```
-   chmod +x workflow-command.sh express-start.sh instant-start.sh startup.sh
-   ```
-
-2. Check that the scripts are running correctly by testing them directly:
-   ```
-   ./workflow-command.sh
-   ```
-
-3. Verify port binding with a simple curl request:
-   ```
-   curl http://localhost:5000
-   ```
-
-4. Look for logs showing port binding confirmation.
-
-## Which Script Should I Use?
-
-1. `workflow-command.sh` (with tcp-start.cjs) - Most reliable, minimal approach
-2. `express-start.sh` - Good for Express-based applications
-3. `instant-start.sh` - Simple HTTP response approach
-4. `startup.sh` - Ultra-minimal approach
-
-Start with `workflow-command.sh` and try the others if needed.
+1. Use the direct port access URLs (documented in IREVA-APP-URL.md)
+2. Check the console logs for any error messages
+3. Try restarting the application
+4. Ensure you're using the correct Replit domain format
