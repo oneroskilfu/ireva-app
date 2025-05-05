@@ -1,17 +1,20 @@
+#!/usr/bin/env node
+
 /**
- * Ultra-lightweight HTTP server for Replit workflow
+ * Ultra-minimal HTTP server that binds to a port immediately
+ * This is the absolute minimum needed to keep Replit happy
  */
 
 const http = require('http');
 const PORT = process.env.PORT || 3000;
 
-// Create a simple HTTP server
+// Create a basic server that responds with a simple message
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/html' });
   res.end(`
     <html>
       <head>
-        <title>iREVA - Real Estate Investment Platform</title>
+        <title>iREVA Authentication System</title>
         <style>
           body {
             font-family: system-ui, -apple-system, sans-serif;
@@ -24,14 +27,13 @@ const server = http.createServer((req, res) => {
           }
           .container {
             text-align: center;
-            max-width: 600px;
+            max-width: 500px;
             padding: 2rem;
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
           }
-          h1 { color: #2563eb; margin-bottom: 10px; }
-          .info { margin: 20px 0; color: #666; }
+          h1 { color: #2563eb; }
           .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #2563eb;
@@ -50,17 +52,20 @@ const server = http.createServer((req, res) => {
       <body>
         <div class="container">
           <h1>iREVA Authentication System</h1>
-          <p>Secure authentication for real estate investments</p>
+          <p>The application is starting...</p>
           <div class="loader"></div>
-          <p class="info">Server running on port ${PORT}</p>
-          <p>Our full application is starting soon...</p>
+          <p>This page will refresh automatically when ready.</p>
+          <script>
+            // Refresh after 5 seconds
+            setTimeout(() => window.location.reload(), 5000);
+          </script>
         </div>
       </body>
     </html>
   `);
 });
 
-// Listen on the specified port and all interfaces
+// Start the server
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
