@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct iREVA Platform Access</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        .loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f0f9ff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e0e7ff;
+            border-top: 5px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        .loading-text {
+            font-size: 18px;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .loading-subtext {
+            font-size: 14px;
+            color: #6b7280;
+            max-width: 80%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .direct-access-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .direct-access-btn:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        .direct-access-btn:active {
+            transform: translateY(0);
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .error-container {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background-color: #fee2e2;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .error-title {
+            color: #b91c1c;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .error-message {
+            color: #7f1d1d;
+            margin-bottom: 20px;
+        }
+        .alternate-link {
+            color: #1d4ed8;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Connecting to iREVA Platform...</div>
+        <div class="loading-subtext">
+            We're redirecting you to the full application running on port 5001.
+            This may take a few moments...
+        </div>
+        <button class="direct-access-btn" id="directAccessBtn">Open Directly</button>
+    </div>
+
+    <div class="error-container" id="errorContainer">
+        <h2 class="error-title">Connection Issue</h2>
+        <p class="error-message">
+            We're having difficulty connecting to the main iREVA application.
+            This could be due to the application not running on port 5001 or 
+            a connectivity issue.
+        </p>
+        <p>
+            <a href="javascript:void(0)" id="tryAgainBtn" class="alternate-link">Try Again</a> or 
+            <a href="/" class="alternate-link">Return to Preview</a>
+        </p>
+    </div>
+    
+    <iframe id="appFrame" style="display:none;"></iframe>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get references to elements
+            const loading = document.getElementById('loading');
+            const errorContainer = document.getElementById('errorContainer');
+            const appFrame = document.getElementById('appFrame');
+            const directAccessBtn = document.getElementById('directAccessBtn');
+            const tryAgainBtn = document.getElementById('tryAgainBtn');
+
+            // Generate the main application URL
+            function generateMainAppUrl() {
+                const hostname = window.location.hostname;
+                const protocol = window.location.protocol;
+                
+                // First attempt: Direct replacement
+                if (hostname.includes('.')) {
+                    const parts = hostname.split('.');
+                    const replName = parts[0].replace(/-\d+$/, '');
+                    return `${protocol}//${replName}-5001.${parts.slice(1).join('.')}`;
+                }
+                
+                // Second attempt: Add port to current hostname
+                return `${protocol}//${hostname.replace(/-\d+$/, '')}-5001.replit.app`;
+            }
+
+            // Initialize the application
+            function initApp() {
+                const mainAppUrl = generateMainAppUrl();
+                console.log('Generated URL:', mainAppUrl);
+                
+                // Show the direct access button after a short delay
+                setTimeout(() => {
+                    directAccessBtn.style.display = 'block';
+                    directAccessBtn.addEventListener('click', () => {
+                        window.open(mainAppUrl, '_blank');
+                    });
+                }, 3000);
+                
+                // Try to load the iframe
+                try {
+                    appFrame.src = mainAppUrl;
+                    appFrame.onload = function() {
+                        // Hide loading screen
+                        loading.style.opacity = '0';
+                        setTimeout(() => {
+                            loading.style.display = 'none';
+                            appFrame.style.display = 'block';
+                        }, 500);
+                    };
+                    
+                    // If loading takes too long, offer direct link
+                    setTimeout(() => {
+                        if (loading.style.display !== 'none') {
+                            loading.querySelector('.loading-text').textContent = 'Still connecting...';
+                            loading.querySelector('.loading-subtext').innerHTML = 
+                                'The application seems to be taking longer than expected to load.<br>' +
+                                'You can try opening it directly in a new tab.';
+                        }
+                    }, 5000);
+                    
+                    // If taking extremely long, show error
+                    setTimeout(() => {
+                        if (loading.style.display !== 'none') {
+                            showError();
+                        }
+                    }, 15000);
+                } catch (error) {
+                    console.error('Error loading app:', error);
+                    showError();
+                }
+            }
+
+            // Show error message
+            function showError() {
+                loading.style.display = 'none';
+                errorContainer.style.display = 'block';
+                appFrame.style.display = 'none';
+            }
+
+            // Try again button
+            tryAgainBtn.addEventListener('click', function() {
+                errorContainer.style.display = 'none';
+                loading.style.opacity = '1';
+                loading.style.display = 'flex';
+                loading.querySelector('.loading-text').textContent = 'Connecting to iREVA Platform...';
+                loading.querySelector('.loading-subtext').textContent = 
+                    'We\'re redirecting you to the full application running on port 5001. This may take a few moments...';
+                initApp();
+            });
+
+            // Start the application
+            initApp();
+        });
+    </script>
+</body>
+</html>

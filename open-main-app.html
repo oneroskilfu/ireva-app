@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening iREVA Platform</title>
+    <!-- Import our enhanced URL generation logic -->
+    <script src="/open-app.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 50px 20px;
+            background-color: #f0f9ff;
+            color: #1e3a8a;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+        p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #475569;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        .button.secondary {
+            background-color: #94a3b8;
+        }
+        .button.secondary:hover {
+            background-color: #64748b;
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2);
+        }
+        .url-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+            color: #334155;
+        }
+        .instructions {
+            text-align: left;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .instructions ol {
+            margin-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 10px;
+            color: #475569;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .notice {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 20px;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            font-size: 0.85rem;
+            color: #4b5563;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-left: 5px;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #e5e7eb;
+        }
+        .flash-message {
+            background-color: #10b981;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); background-color: #1d4ed8; box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="flash-message" id="copy-success">URL copied to clipboard!</div>
+    
+    <div class="container">
+        <h1>Opening iREVA Platform</h1>
+        <p>We're redirecting you to the full iREVA application.</p>
+        <p>If you're not automatically redirected, please click the button below:</p>
+        
+        <div class="url-box" id="app-url">
+            Loading...
+            <button class="copy-btn" id="copy-url-btn">Copy URL</button>
+        </div>
+        
+        <div class="button-group">
+            <a href="#" class="button" id="open-app-button">Open Full Application</a>
+            <a href="#" class="button" id="open-app-new-tab-button">Open in New Tab</a>
+            <a href="/" class="button secondary">Return to Preview</a>
+        </div>
+        
+        <p class="notice">Note: If clicking the buttons doesn't work, you may need to copy the URL above and open it manually in a new browser tab.</p>
+        
+        <div class="instructions">
+            <h3>Troubleshooting Instructions:</h3>
+            <ol>
+                <li>Make sure the application workflow is running</li>
+                <li>If you see "Run this app to see results here" on the next page, return here and try opening in a new tab instead</li>
+                <li>Check that port 5001 is accessible from your network</li>
+                <li>If issues persist, you can manually edit the URL to connect to the main application port (5001)</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Use our enhanced URL generation function from the imported script
+            const mainAppUrl = generateMainAppUrl();
+            
+            // Update the URL display
+            const urlBox = document.getElementById('app-url');
+            urlBox.textContent = mainAppUrl;
+            
+            // Add copy button back after setting text content
+            const copyBtn = document.getElementById('copy-url-btn');
+            urlBox.appendChild(copyBtn);
+            
+            // Setup all buttons
+            document.getElementById('open-app-button').href = mainAppUrl;
+            document.getElementById('open-app-new-tab-button').href = mainAppUrl;
+            document.getElementById('open-app-new-tab-button').setAttribute('target', '_blank');
+            
+            // Copy URL button functionality
+            copyBtn.addEventListener('click', function() {
+                // Copy URL to clipboard
+                navigator.clipboard.writeText(mainAppUrl).then(function() {
+                    // Show success message
+                    const flashMsg = document.getElementById('copy-success');
+                    flashMsg.style.opacity = '1';
+                    
+                    // Hide after 2 seconds
+                    setTimeout(function() {
+                        flashMsg.style.opacity = '0';
+                    }, 2000);
+                });
+            });
+            
+            // Set a click handler for direct navigation
+            document.getElementById('open-app-button').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = mainAppUrl;
+            });
+            
+            // Add pulsing animation to the main button after a delay
+            setTimeout(function() {
+                document.getElementById('open-app-button').style.animation = 'pulse 2s infinite';
+            }, 3000);
+            
+            // Run some tests to help with debugging
+            console.log('=== URL TESTS ===');
+            console.log('Final URL being used:', mainAppUrl);
+            
+            // Log the current domain information
+            console.log('Current domain info:');
+            console.log('- Protocol:', window.location.protocol);
+            console.log('- Hostname:', window.location.hostname);
+            console.log('- Origin:', window.location.origin);
+            console.log('- Full URL:', window.location.href);
+            
+            // Test to see if there might be a CORS issue
+            console.log('Checking if target URL is accessible...');
+            fetch(mainAppUrl, { 
+                mode: 'no-cors',
+                method: 'HEAD'
+            })
+            .then(() => {
+                console.log('Target URL appears to be accessible (no-cors mode)');
+            })
+            .catch(err => {
+                console.warn('May not be able to access target URL:', err);
+            });
+        });
+    </script>
+</body>
+</html>

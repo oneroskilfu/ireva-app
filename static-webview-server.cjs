@@ -217,15 +217,15 @@ const generateHtml = () => {
         <nav class="nav-links">
           <a href="#features" class="nav-link">Features</a>
           <a href="#how-it-works" class="nav-link">How It Works</a>
-          <a href="/investor" class="nav-link">Investor Dashboard</a>
-          <a href="/auth" class="nav-link">Sign In</a>
+          <a href="/open-app" class="nav-link">Investor Dashboard</a>
+          <a href="/open-app" class="nav-link">Sign In</a>
         </nav>
       </header>
       
       <section class="hero">
         <h1>Invest in Real Estate with Confidence</h1>
         <p>iREVA provides secure, accessible real estate investment opportunities with blockchain technology and smart contracts.</p>
-        <a href="/auth" class="cta-button">Start Investing</a>
+        <a href="/open-app" class="cta-button">Start Investing</a>
       </section>
       
       <section class="features" id="features">
@@ -275,23 +275,29 @@ const generateHtml = () => {
       <section class="cta-section" id="how-it-works" style="background-color: #f8fafc; padding: 4rem 2rem; text-align: center;">
         <h2>Ready to Start Your Investment Journey?</h2>
         <p style="max-width: 600px; margin: 0 auto 2rem;">Join thousands of investors who are already growing their wealth with iREVA.</p>
-        <a href="/auth" class="cta-button" style="background-color: #2563eb; color: white;">Create Account</a>
+        <a href="/open-app" class="cta-button" style="background-color: #2563eb; color: white;">Create Account</a>
       </section>
       
       <footer class="footer">
         <p>© 2025 iREVA. All rights reserved.</p>
         <div class="footer-links">
-          <a href="/about" class="footer-link">About</a>
-          <a href="/terms" class="footer-link">Terms of Service</a>
-          <a href="/privacy" class="footer-link">Privacy Policy</a>
-          <a href="/contact" class="footer-link">Contact</a>
+          <a href="/open-app" class="footer-link">About</a>
+          <a href="/open-app" class="footer-link">Terms of Service</a>
+          <a href="/open-app" class="footer-link">Privacy Policy</a>
+          <a href="/open-app" class="footer-link">Contact</a>
         </div>
       </footer>
       
       <div style="background-color: #f1f5f9; padding: 1rem; text-align: center; border-top: 1px solid #e2e8f0;">
         <p style="margin-bottom: 0.5rem; font-weight: bold; color: #334155;">Access Full iREVA Platform</p>
         <p style="margin-bottom: 1rem; color: #64748b;">This is a preview of the iREVA platform. For the complete experience with all features:</p>
-        <a href="https://{{REPL_SLUG}}-5001.{{REPL_DOMAIN}}/" style="display: inline-block; background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; text-decoration: none; font-weight: bold;">Go to Full Application</a>
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+          <a href="/direct" style="display: inline-block; background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; text-decoration: none; font-weight: bold;">Open Main Application</a>
+          <a href="/open-app" style="display: inline-block; background-color: #4f46e5; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; text-decoration: none; font-weight: bold;">Get Direct Link</a>
+        </div>
+        <p style="margin-top: 0.75rem; font-size: 0.8rem; color: #64748b;">
+          If one option doesn't work, please try the other.
+        </p>
       </div>
       
       <script>
@@ -408,6 +414,64 @@ const generateHtml = () => {
   `;
 };
 
+// Read the open-main-app.html file
+let openMainAppHtml = '';
+try {
+  openMainAppHtml = fs.readFileSync(path.join(process.cwd(), 'open-main-app.html'), 'utf8');
+  log('Successfully loaded open-main-app.html');
+} catch (error) {
+  log(`ERROR: Failed to load open-main-app.html: ${error.message}`);
+  // Create a minimal version if file can't be read
+  openMainAppHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Opening iREVA Application</title>
+      <meta charset="UTF-8">
+      <meta http-equiv="refresh" content="0;url=https://REPL_NAME-5001.replit.app/">
+    </head>
+    <body>
+      <p>Redirecting to full application...</p>
+      <script>
+        window.location.href = window.location.href.replace(/:\\/\\/([^-]+)(?:-\\d+)?/, "://$1-5001");
+      </script>
+    </body>
+    </html>
+  `;
+}
+
+// Read the open-app.js file
+let openAppJs = '';
+try {
+  openAppJs = fs.readFileSync(path.join(process.cwd(), 'open-app.js'), 'utf8');
+  log('Successfully loaded open-app.js');
+} catch (error) {
+  log(`ERROR: Failed to load open-app.js: ${error.message}`);
+  // Create a minimal version if file can't be read
+  openAppJs = `
+    function generateMainAppUrl() {
+      const origin = window.location.origin;
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      
+      // Simple URL manipulation to transform current URL to port 5001
+      const parts = hostname.split('.');
+      let replName = parts[0].replace(/-\\d+$/, '');
+      return \`\${protocol}//\${replName}-5001.\${parts.slice(1).join('.')}\`;
+    }
+  `;
+}
+
+// Read the direct-app-access.html file
+let directAppAccessHtml = '';
+try {
+  directAppAccessHtml = fs.readFileSync(path.join(process.cwd(), 'direct-app-access.html'), 'utf8');
+  log('Successfully loaded direct-app-access.html');
+} catch (error) {
+  log(`ERROR: Failed to load direct-app-access.html: ${error.message}`);
+  // We'll handle this in the server request handler
+}
+
 // Create a server to handle requests
 const server = http.createServer((req, res) => {
   log(`Received request: ${req.method} ${req.url}`);
@@ -425,6 +489,48 @@ const server = http.createServer((req, res) => {
       port: 3000,
       timestamp: new Date().toISOString()
     }));
+    return;
+  }
+
+  // Serve the open-app.js file for URL generation
+  if (req.url === '/open-app.js') {
+    log('Serving open-app.js file');
+    res.writeHead(200, { 
+      'Content-Type': 'application/javascript',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(openAppJs);
+    return;
+  }
+
+  // Direct app access with iframe
+  if (req.url === '/direct' || req.url === '/iframe' || req.url === '/direct-access') {
+    log('Serving direct app access page with iframe');
+    if (directAppAccessHtml) {
+      res.writeHead(200, { 
+        'Content-Type': 'text/html',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(directAppAccessHtml);
+    } else {
+      log('Direct app access HTML not available, redirecting to open-app page');
+      res.writeHead(302, { 'Location': '/open-app' });
+      res.end();
+    }
+    return;
+  }
+
+  // Main application redirect page
+  if (req.url === '/open-app' || req.url === '/full-app' || req.url === '/redirect') {
+    log('Serving application redirect page');
+    res.writeHead(200, { 
+      'Content-Type': 'text/html',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(openMainAppHtml);
     return;
   }
   
