@@ -1,2 +1,2 @@
 #!/bin/bash
-node start.js
+node simple-start.cjs
