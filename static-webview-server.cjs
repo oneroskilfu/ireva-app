@@ -207,6 +207,11 @@ const generateHtml = () => {
       </style>
     </head>
     <body>
+      <!-- Top banner for clear user guidance -->
+      <div style="background-color: #fef3c7; color: #92400e; padding: 0.75rem; text-align: center; font-weight: bold; border-bottom: 1px solid #f59e0b;">
+        This is a preview. For full functionality, use the "Go to Full Application" button below.
+      </div>
+      
       <header class="navbar">
         <a href="#" class="logo">i<span>REVA</span></a>
         <nav class="nav-links">
@@ -292,48 +297,109 @@ const generateHtml = () => {
       <script>
         // After page loads, set up the application links
         document.addEventListener('DOMContentLoaded', function() {
-          // Get the current hostname to build proper URLs
+          // Get the current URL information
           const hostname = window.location.hostname;
-          let replSlug, replDomain;
+          const protocol = window.location.protocol;
+          let mainAppUrl = '';
           
-          // Parse hostname to extract repl slug and domain
+          // Function to update all links
+          function updateLinks(url) {
+            // Update the main app link button
+            const appButtons = document.querySelectorAll('.cta-button');
+            appButtons.forEach(button => {
+              // If it's an application link, update it
+              if (button.textContent.includes('Go to Full') || 
+                  button.textContent.includes('Start Investing') ||
+                  button.textContent.includes('Create Account')) {
+                button.href = url;
+                // Add target="_blank" to open in a new tab
+                button.setAttribute('target', '_blank');
+              }
+            });
+            
+            // Update navigation links
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+              const path = link.getAttribute('href');
+              if (path && path.startsWith('/')) {
+                link.href = url + path;
+                link.setAttribute('target', '_blank');
+              }
+            });
+            
+            // Add link info to footer
+            const footer = document.querySelector('.footer');
+            if (footer) {
+              const noteContainer = document.createElement('div');
+              noteContainer.style.marginTop = '2rem';
+              noteContainer.style.fontSize = '0.875rem';
+              noteContainer.style.color = '#94a3b8';
+              
+              noteContainer.innerHTML = 'Direct application link: <a href="' + 
+                url + '" style="color: #94a3b8; text-decoration: underline;">' + 
+                url + '</a>';
+              
+              footer.appendChild(noteContainer);
+            }
+          }
+          
+          // Try different approaches to generate the correct URL
+          
+          // Method 1: Parse hostname for specific Replit patterns
           if (hostname.includes('.')) {
             const parts = hostname.split('.');
             if (parts.length >= 2) {
-              // Handle various formats like:
-              // - slug-5000.replit.app
-              // - slug.replit.app
+              let replSlug;
               
               if (parts[0].includes('-')) {
-                // Extract the base slug without the port suffix
-                replSlug = parts[0].split('-').slice(0, -1).join('-');
+                // Extract the base slug without any port suffix
+                // For example: "my-repl-3000" -> "my-repl"
+                const portMatch = parts[0].match(/^(.+?)(?:-\d+)?$/);
+                replSlug = portMatch ? portMatch[1] : parts[0];
               } else {
                 replSlug = parts[0];
               }
               
               // Get the domain (replit.app, repl.co, etc.)
-              replDomain = parts.slice(1).join('.');
+              const replDomain = parts.slice(1).join('.');
               
-              // Replace placeholders in links
-              document.body.innerHTML = document.body.innerHTML
-                .replace(/{{REPL_SLUG}}/g, replSlug)
-                .replace(/{{REPL_DOMAIN}}/g, replDomain);
-              
-              // Add a proper banner with the link
-              const footer = document.querySelector('.footer');
-              if (footer) {
-                const noteContainer = document.createElement('div');
-                noteContainer.style.marginTop = '2rem';
-                noteContainer.style.fontSize = '0.875rem';
-                noteContainer.style.color = '#94a3b8';
-                
-                noteContainer.innerHTML = 'Direct application link: <a href="https://' + 
-                  replSlug + '-5001.' + replDomain + '/" style="color: #94a3b8; text-decoration: underline;">' + 
-                  'https://' + replSlug + '-5001.' + replDomain + '/</a>';
-                
-                footer.appendChild(noteContainer);
-              }
+              // Construct the URL for port 5001
+              mainAppUrl = protocol + '//' + replSlug + '-5001.' + replDomain;
             }
+          }
+          
+          // Method 2: Try a simpler approach with direct port replacement
+          if (!mainAppUrl && hostname.includes('-')) {
+            // Directly replace any port number in hostname with 5001
+            const newHost = hostname.replace(/-\d+\./, '-5001.');
+            
+            // If no port was found, add the port
+            if (newHost === hostname) {
+              // Add port before the first dot
+              const parts = hostname.split('.');
+              parts[0] = parts[0] + '-5001';
+              mainAppUrl = protocol + '//' + parts.join('.');
+            } else {
+              mainAppUrl = protocol + '//' + newHost;
+            }
+          }
+          
+          // Method 3: Fallback to a simple port suffix if other methods fail
+          if (!mainAppUrl) {
+            if (hostname.includes('.')) {
+              const parts = hostname.split('.');
+              parts[0] = parts[0] + '-5001';
+              mainAppUrl = protocol + '//' + parts.join('.');
+            } else {
+              // Absolute fallback
+              mainAppUrl = protocol + '//' + hostname + '-5001.replit.app';
+            }
+          }
+          
+          // Update all links with our discovered URL
+          if (mainAppUrl) {
+            console.log('Using application URL:', mainAppUrl);
+            updateLinks(mainAppUrl);
           }
         });
       </script>
