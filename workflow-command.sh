@@ -8,28 +8,35 @@ echo "Date: $(date)"
 
 # Display information about the ports
 echo "Port Configuration:"
-echo "- Port 5000: Proxy server (for Replit port detection)"
-echo "- Port 5001: Main application (mapped to external port 3001)"
+echo "- Port 5000: Direct webview server for Replit webview"
+echo "- Port 5001: Main application server (starts afterwards)"
 
-# Special handling for the Replit environment
-if [ -f ./replit_webview_handled ] && [ -s ./replit_webview_handled ]; then
-  echo "Using previously determined port settings..."
-else
-  echo "Setting up for first run..."
-  
-  # Update known hosts
-  echo "OPTIONS='-o ServerAliveInterval=60'" > ~/.ssh/config
-  echo "Creating port indicator file for future runs..."
-  echo "PROXY_PORT=5000" > ./replit_webview_handled
-  echo "MAIN_PORT=5001" >> ./replit_webview_handled
-fi
+echo "Starting direct webview server for fast access..."
 
-echo "Starting reverse proxy server..."
+# Run our server that directly displays the homepage in the webview
+node direct-webview-server.cjs &
+WEBVIEW_SERVER_PID=$!
 
-# Run the reverse proxy server that binds port 5000 immediately
-# and proxies requests to the main application on port 5001
-node proxy-reverse.cjs
+# Start the main application in the background
+echo "Starting main application..."
+# Set PORT environment variable to 5001 for the main application
+export PORT=5001
+export MAIN_APP_PORT=5001
+export USE_PORT_5001=true
+npm run dev &
+MAIN_APP_PID=$!
 
-# This should never be reached as the proxy server stays running
-echo "ERROR: Proxy server exited unexpectedly"
-exit 1
+# Function to handle script termination
+cleanup() {
+  echo "Cleaning up processes..."
+  kill $WEBVIEW_SERVER_PID 2>/dev/null
+  kill $MAIN_APP_PID 2>/dev/null
+  exit 0
+}
+
+# Set up trap for script termination
+trap cleanup EXIT INT TERM
+
+# Keep the script running
+echo "Application startup complete - waiting for termination signals"
+wait $WEBVIEW_SERVER_PID $MAIN_APP_PID
