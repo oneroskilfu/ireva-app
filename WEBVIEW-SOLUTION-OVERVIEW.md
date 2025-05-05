@@ -1,124 +1,65 @@
-# iREVA Platform Webview Solution Overview
+# Replit Webview Solution Overview
 
-This document provides an overview of the Replit webview solution implemented for the iREVA platform.
+## Problem Statement
 
-## Understanding the Webview Challenge
+Replit's webview expects applications to run on port 3000/3001, but our main application requires running on port 5001. This creates a challenge where:
 
-Replit's webview component presents unique challenges for complex applications:
+1. The webview shows "Run this app to see the results here" message instead of our application
+2. We need a dual-port architecture to support both the webview (port 3000) and the main application (port 5001)
+3. Replit has a strict 10-second timeout for port binding during workflow startup
 
-1. **Default Port Expectations**: Replit's webview expects applications to run on port 3000/3001
-2. **Static Message on Alternate Ports**: When applications run on other ports (like 5001), users see "Run this app to see the results here"
-3. **Strict CORS and CSP**: Webview implements strict Cross-Origin Resource Sharing and Content Security Policies
-4. **Proxy Connection Barriers**: Direct proxy connections face various restrictions in the webview environment
+## Implemented Solution
 
-## Our Solution: Multi-Layer Access Strategy
+We've created a multi-layer access strategy:
 
-We've implemented a comprehensive solution with multiple access options:
+### 1. Dual-Port Architecture
 
-### 1. Static Webview Information Portal (Port 3000)
+- **Webview Server (Port 3000)**: Ultra-lightweight HTTP server that binds immediately to port 3000
+- **Main Application (Port 5001)**: Full application with all functionality
 
-A lightweight static server on port 3000 that:
-- Binds immediately for Replit detection
-- Displays a professional interface with clear instructions
-- Provides multiple options to access the main application
+### 2. Workflow Starter
 
-### 2. Access Options for Users
+The `workflow-starter.js` script accomplishes several critical tasks:
 
-Users have three main ways to access the full application:
+- Immediately binds to port 3000 to satisfy Replit's requirements
+- Serves an attractive HTML interface in the webview with direct links to the main application
+- Automatically starts the main application on port 5001
+- Provides clear visual instructions for accessing the full application
+- Handles process signals and graceful shutdown
 
-#### Option A: Direct Link Access
-- Clean links to open the main application in a new tab
-- Clear indication that they're leaving the webview
-- Configuration for various Replit domains
+### 3. User Access Options
 
-#### Option B: Iframe Embedded View
-- Main application embedded directly in the webview page
-- Full functionality without leaving the current tab
-- Proper CORS and CSP handling for seamless integration
+Users can access the application in multiple ways:
 
-#### Option C: Auto-Redirect
-- Automatic redirection to the main application
-- Configurable with user preferences
-- Fallback to manual options if redirection fails
+- **Direct Link**: Access the main application directly through port 5001 (recommended)
+- **Webview Redirect**: Click links in the webview to access the main application
+- **Helper Scripts**: Use the provided scripts to generate the correct URL
 
-## Implementation Files
+## Implementation Details
 
-The solution consists of several key files:
+The implementation includes:
 
-### 1. Static Webview Server (`static-webview-server.cjs`)
-```javascript
-// Ultra-minimal HTTP server that binds to port 3000 immediately
-// Serves static HTML with links to the main application
-```
+1. **`workflow-command.sh`**: Simple script that launches the workflow starter
+2. **`workflow-starter.js`**: Core script that launches both servers with proper environment variables
+3. **`open-main-app.html`**: Attractive interface displayed in the webview with access options
+4. **`open-app.js`**: Helper script for generating application URLs
 
-### 2. Main Portal Page (`open-main-app.html`)
-```html
-<!-- Clean, professional interface with multiple access options -->
-<!-- Clear instructions and branding -->
-```
+## How to Test the Solution
 
-### 3. URL Generation Logic (`open-app.js`)
-```javascript
-// Sophisticated algorithm to generate correct URLs in Replit's environment
-// Handles various Replit domains and URL structures
-```
+1. Start the application using the workflow from Replit
+2. The webview should display the interface with links to the main application
+3. Click on "Open Main Application" to access the full functionality
+4. Both servers should be running and accessible
 
-### 4. Iframe Integration Page (`direct-app-access.html`)
-```html
-<!-- Embeds the main application in an iframe -->
-<!-- Handles CORS and other integration challenges -->
-```
+## Troubleshooting
 
-## User Experience Flow
+If you encounter issues:
 
-1. User opens the Replit webview
-2. Instead of "Run this app" message, they see the iREVA welcome screen
-3. User chooses their preferred access method:
-   - Click "Open in New Tab" to launch in a separate browser tab
-   - Click "View in Current Tab" to see the application in an iframe
-   - Enable auto-redirect for future visits
+1. Check that both servers are running (ports 3000 and 5001)
+2. If the application fails to start, try manually restarting the workflow
+3. Use the helper scripts to generate the correct URLs
+4. Clear browser cache if links don't work as expected
 
-## Technical Implementation Details
+---
 
-### URL Generation Strategy
-
-Our URL generation algorithm handles multiple Replit environments:
-
-1. **Standard Replit Domain**: `https://<repl-name>.<username>.repl.co`
-2. **Custom Domains**: Any custom domains configured in Replit
-3. **Development Environment**: Local development URLs
-4. **Hashed Subdomains**: Special Replit URL formats with hashed identifiers
-
-The algorithm tries multiple URL patterns and validates them to ensure users can always access the application.
-
-### Cross-Origin Challenges
-
-To address cross-origin challenges:
-
-1. **CORS Headers**: Proper headers are set on both servers
-2. **Content Security Policy**: Configured to allow necessary connections
-3. **Cookie Handling**: Special handling for authentication cookies across origins
-
-### Port Binding Strategy
-
-The dual-port architecture ensures:
-
-1. Port 3000 is bound immediately (typically <10ms)
-2. Port 5001 has time to start the full application
-3. No port conflicts between the servers
-4. Clear separation of responsibilities
-
-## Results and Benefits
-
-This solution provides several key benefits:
-
-1. **100% Port Detection Rate**: Replit consistently detects the application port
-2. **Professional User Experience**: No confusing "Run this app" messages
-3. **Multiple Access Options**: Flexibility for different user preferences
-4. **Seamless Integration**: The technical complexity is hidden from users
-5. **No Application Changes**: The main application code remains unchanged
-
-## Further Reading
-
-- [DUAL-PORT-SOLUTION.md](./DUAL-PORT-SOLUTION.md) - Technical details of the port architecture
-- [PORT-CONFIGURATION.md](./PORT-CONFIGURATION.md) - Port configuration and management
+This solution ensures compatibility with Replit's webview while maintaining the main application's required port configuration.
