@@ -1,15 +1,22 @@
 /**
  * Ultra-minimal TCP server for Replit
- * This script does absolutely nothing except bind to port 5000 as quickly as possible
+ * This script does absolutely nothing except bind to a port as quickly as possible
  * using the most minimal approach with raw TCP connections.
  */
 
 const net = require('net');
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+// Define constants directly in this file to avoid module compatibility issues
+// These should match the values in server/config/ports.ts
+const MINIMAL_SERVER_PORT = 5000;
+const MAIN_APP_PORT = 5001;
 
 // Minimal logging
 console.log('REPLIT PORT BINDING INITIALIZATION...');
-console.log('Creating TCP server on port 5000...');
+console.log(`Creating TCP server on port ${MINIMAL_SERVER_PORT}...`);
 
 // Create a raw TCP server - minimal code to bind the port
 const server = net.createServer((socket) => {
@@ -18,15 +25,15 @@ const server = net.createServer((socket) => {
   socket.end();
 });
 
-// Explicitly bind to 0.0.0.0 (all interfaces) on port 5000
-server.listen(5000, '0.0.0.0', () => {
+// Explicitly bind to 0.0.0.0 (all interfaces) on the specified port
+server.listen(MINIMAL_SERVER_PORT, '0.0.0.0', () => {
   // Log multiple variations of success in formats Replit might be searching for
-  console.log('TCP PORT 5000 BOUND');
-  console.log('PORT 5000 OPEN AND READY');
-  console.log('SERVER LISTENING ON PORT 5000');
+  console.log(`TCP PORT ${MINIMAL_SERVER_PORT} BOUND`);
+  console.log(`PORT ${MINIMAL_SERVER_PORT} OPEN AND READY`);
+  console.log(`SERVER LISTENING ON PORT ${MINIMAL_SERVER_PORT}`);
   console.log('PORT BINDING SUCCESSFUL');
-  console.log('Listening on port 5000');
-  console.log('Server ready on port 5000');
+  console.log(`Listening on port ${MINIMAL_SERVER_PORT}`);
+  console.log(`Server ready on port ${MINIMAL_SERVER_PORT}`);
   
   // Start the actual application after a short delay
   setTimeout(() => {

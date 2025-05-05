@@ -71,9 +71,10 @@ try {
 // Check if we're running under the Replit workflow starter
 const isWorkflowStarter = process.env.REPLIT_WORKFLOW_STARTER === 'true';
 
-// Define constants for port selection
-const DEFAULT_PORT = 5000;
-const ALTERNATE_PORT = 5001;
+// Import centralized port configuration
+import { MINIMAL_SERVER_PORT, MAIN_APP_PORT } from './config/ports';
+const DEFAULT_PORT = MINIMAL_SERVER_PORT;
+const ALTERNATE_PORT = MAIN_APP_PORT;
 
 // Check if the minimal server is running from env vars or the coordination file
 // If it is, we assume port 5000 is already in use

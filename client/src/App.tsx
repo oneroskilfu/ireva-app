@@ -6,43 +6,14 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFound from './pages/not-found';
 import AuthPage from './pages/AuthPage';
+import HomePage from './pages/HomePage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import Layout from './components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { 
-  Building, 
-  DollarSign, 
-  FileText
-} from 'lucide-react';
 
 // Import dashboard components
 import AdminDashboardPage from './pages/admin/admin-dashboard';
-
-// Placeholder components - these would be replaced by your actual components
-const HomePage = () => (
-  <div className="p-4">
-    <h1 className="text-3xl font-bold mb-6">Welcome to iREVA Platform</h1>
-    <p className="text-lg mb-4">Your gateway to real estate investments in Nigeria and beyond.</p>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-      <div className="border rounded-lg p-6 bg-card">
-        <Building className="h-10 w-10 text-primary mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Property Investments</h2>
-        <p>Invest in vetted and profitable real estate properties.</p>
-      </div>
-      <div className="border rounded-lg p-6 bg-card">
-        <DollarSign className="h-10 w-10 text-primary mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Secure Returns</h2>
-        <p>Earn consistent ROI with our 5-year maturity investment model.</p>
-      </div>
-      <div className="border rounded-lg p-6 bg-card">
-        <FileText className="h-10 w-10 text-primary mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Smart Contracts</h2>
-        <p>Blockchain-based escrow services with automated milestone releases.</p>
-      </div>
-    </div>
-  </div>
-);
-
-// The AdminDashboard component is now imported from './pages/admin/admin-dashboard'
 
 const InvestorDashboard = () => (
   <div>
@@ -104,6 +75,8 @@ function App() {
           <Route path="/" component={HomePage} />
           <Route path="/auth" component={AuthPage} />
           <Route path="/unauthorized" component={UnauthorizedPage} />
+          <Route path="/privacy" component={PrivacyPolicy} />
+          <Route path="/terms" component={TermsOfService} />
           
           {/* Protected routes using the new ProtectedRoute component */}
           <Route path="/admin" component={() => (

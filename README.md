@@ -70,9 +70,23 @@ npm run db:push
 
 ### Start the development server
 
+#### Local Development
 ```bash
 npm run dev
 ```
+
+#### Replit Deployment
+For Replit deployments, use the workflow command:
+```bash
+./workflow-command.sh
+```
+
+This uses a special port binding strategy to ensure Replit's workflow system detects the application correctly. The application will be accessible on port 5001 (not 5000).
+
+For more details, see:
+- [WORKFLOW_UPDATE_GUIDE.md](./WORKFLOW_UPDATE_GUIDE.md) - Detailed workflow configuration
+- [PORT-CONFIGURATION.md](./PORT-CONFIGURATION.md) - Port setup and usage
+- [QUICK-START-GUIDE.md](./QUICK-START-GUIDE.md) - Quick reference for developers
 
 ## Core Modules
 
