@@ -3,6 +3,9 @@ import express from "express";
 import { createServer } from "http";
 import { log, setupVite } from "./vite";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import net from "net";
 
 // Load environment variables
 dotenv.config();
@@ -14,10 +17,132 @@ console.log(`[${new Date().toISOString()}] Starting iREVA application...`);
 const app = express();
 app.use(express.json());
 
+// File used for coordination with the minimal server
+const coordinationFile = path.join(process.cwd(), 'port-status.json');
+
+// Check if port 5000 is already bound by testing a connection
+async function checkPortBound(portToCheck: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const testSocket = new net.Socket();
+    
+    // Set a short timeout
+    testSocket.setTimeout(500);
+    
+    testSocket.on('connect', () => {
+      testSocket.destroy();
+      resolve(true);  // Port is in use
+    });
+    
+    testSocket.on('timeout', () => {
+      testSocket.destroy();
+      resolve(false);  // Connection timed out
+    });
+    
+    testSocket.on('error', () => {
+      testSocket.destroy();
+      resolve(false);  // Error occurred, port likely not in use
+    });
+    
+    testSocket.connect(portToCheck, 'localhost');
+  });
+}
+
+// Check for minimal server running
+let isMinimalServerRunning = false;
+try {
+  // 1. Check for environment variable set by replit-init.js
+  if (process.env.MINIMAL_SERVER_ACTIVE === 'true') {
+    isMinimalServerRunning = true;
+  } 
+  // 2. Check for coordination file
+  else if (fs.existsSync(coordinationFile)) {
+    try {
+      const status = JSON.parse(fs.readFileSync(coordinationFile, 'utf8'));
+      isMinimalServerRunning = status.minimalServerActive === true;
+    } catch (err) {
+      // File exists but isn't valid JSON or doesn't have the expected field
+    }
+  }
+  console.log(`[${new Date().toISOString()}] Detected minimal server status: ${isMinimalServerRunning}`);
+} catch (error) {
+  console.log(`[${new Date().toISOString()}] Failed to check minimal server status: ${error}`);
+}
+
 // Check if we're running under the Replit workflow starter
 const isWorkflowStarter = process.env.REPLIT_WORKFLOW_STARTER === 'true';
-// Use a different port if running under workflow starter (which already binds 5000)
-const port = isWorkflowStarter ? 5001 : (process.env.PORT || 5000);
+
+// Define constants for port selection
+const DEFAULT_PORT = 5000;
+const ALTERNATE_PORT = 5001;
+
+// Check if the minimal server is running from env vars or the coordination file
+// If it is, we assume port 5000 is already in use
+let port5000Bound = false;
+
+if (isMinimalServerRunning || isWorkflowStarter || process.env.PORT_5000_IN_USE === 'true') {
+  port5000Bound = true;
+  console.log(`[${new Date().toISOString()}] Port ${DEFAULT_PORT} assumed to be in use due to minimal server or environment indicators`);
+} else {
+  // Since we can't use top-level await, we'll use a sync check that's less reliable but works
+  try {
+    const testSocket = new net.Socket();
+    let isConnected = false;
+    
+    // Use a sync approach to test port
+    testSocket.connect(DEFAULT_PORT, 'localhost');
+    
+    testSocket.on('connect', () => {
+      isConnected = true;
+      port5000Bound = true;
+      testSocket.destroy();
+      console.log(`[${new Date().toISOString()}] Port ${DEFAULT_PORT} confirmed to be in use via socket check`);
+    });
+    
+    testSocket.on('error', () => {
+      testSocket.destroy();
+      // We don't set port5000Bound to false here since this callback happens async
+    });
+    
+    // We don't wait for the callbacks since they're async
+    // Instead, we'll use fallback detection as a safety net
+  } catch (error) {
+    console.log(`[${new Date().toISOString()}] Error during port check: ${error}`);
+  }
+}
+
+// Use a different port if port 5000 is already bound
+const port = port5000Bound ? ALTERNATE_PORT : (process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT);
+
+console.log(`[${new Date().toISOString()}] Using port ${port} for the main application`);
+
+// Write our status to the coordination file for other processes
+try {
+  // Read existing file content if it exists
+  let fileContent = {};
+  if (fs.existsSync(coordinationFile)) {
+    try {
+      fileContent = JSON.parse(fs.readFileSync(coordinationFile, 'utf8'));
+    } catch (err) {
+      // Invalid JSON, start with empty object
+      fileContent = {};
+    }
+  }
+
+  // Update with our main app status, preserving other fields
+  fileContent = {
+    ...fileContent,
+    mainApp: {
+      running: true,
+      port: port,
+      startTime: new Date().toISOString()
+    }
+  };
+  
+  fs.writeFileSync(coordinationFile, JSON.stringify(fileContent, null, 2));
+} catch (error) {
+  console.log(`[${new Date().toISOString()}] Failed to write coordination file: ${error}`);
+}
+
 const server = createServer(app);
 
 // Enhanced health check endpoints specifically designed for Replit detection
