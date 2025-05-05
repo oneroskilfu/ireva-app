@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Platform - Connecting</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8fafc;
+      color: #334155;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .container {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+      animation: fadeIn 0.8s ease-out;
+    }
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #2563eb;
+      letter-spacing: -0.05em;
+    }
+    .logo span {
+      color: #64748b;
+      font-weight: 500;
+    }
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 2rem 0;
+    }
+    .spinner {
+      border: 4px solid rgba(37, 99, 235, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #2563eb;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    .status {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-top: 8px;
+      min-height: 40px;
+    }
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s;
+      display: inline-block;
+    }
+    .button:hover {
+      background-color: #1d4ed8;
+    }
+    .button.secondary {
+      background-color: #f1f5f9;
+      color: #334155;
+    }
+    .button.secondary:hover {
+      background-color: #e2e8f0;
+    }
+    .debug {
+      margin-top: 2rem;
+      padding: 12px;
+      background-color: #f8fafc;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #64748b;
+      text-align: left;
+      max-height: 100px;
+      overflow-y: auto;
+      display: none;
+    }
+    .footer {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .show-debug {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 0.8rem;
+      margin-top: 1rem;
+    }
+    .debug.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">i<span>REVA</span></div>
+    <div class="subtitle">Real Estate Investment Platform</div>
+    <p>Connecting to the iREVA platform...</p>
+    
+    <div class="loading">
+      <div class="spinner"></div>
+      <div class="status" id="status">Detecting optimal connection path...</div>
+    </div>
+    
+    <div class="buttons" id="buttons" style="display: none;">
+      <a href="#" id="directLink" class="button">Direct Connection</a>
+      <a href="#" id="proxyLink" class="button secondary">Alternative Route</a>
+    </div>
+    
+    <button class="show-debug" id="showDebug">Show connection details</button>
+    <div class="debug" id="debug"></div>
+    
+    <div class="footer">
+      © 2025 iREVA Platform • Multi-server access system
+    </div>
+  </div>
+
+  <script>
+    // DOM elements
+    const status = document.getElementById('status');
+    const buttons = document.getElementById('buttons');
+    const directLink = document.getElementById('directLink');
+    const proxyLink = document.getElementById('proxyLink');
+    const debugEl = document.getElementById('debug');
+    const showDebugBtn = document.getElementById('showDebug');
+    
+    // Toggle debug info
+    showDebugBtn.addEventListener('click', () => {
+      debugEl.classList.toggle('visible');
+      showDebugBtn.textContent = debugEl.classList.contains('visible') ? 
+        'Hide connection details' : 'Show connection details';
+    });
+    
+    // Logging helper function
+    function log(message) {
+      console.log(message);
+      const time = new Date().toLocaleTimeString();
+      debugEl.innerHTML += `<div>[${time}] ${message}</div>`;
+      debugEl.scrollTop = debugEl.scrollHeight;
+    }
+    
+    // Function to extract parts from the hostname
+    function parseReplitHostname(hostname) {
+      // Example: 12345-username.repl.co or projectname-username.repl.co
+      if (!hostname.includes('.')) return null;
+      
+      const parts = hostname.split('.');
+      const firstPart = parts[0]; // "12345-username" or "projectname-username"
+      
+      if (!firstPart.includes('-')) return null;
+      
+      const [replId, username] = firstPart.split('-');
+      const domain = parts.slice(1).join('.');
+      
+      return {
+        replId,
+        username,
+        domain,
+        isReplit: domain.includes('repl.co') || domain.includes('replit')
+      };
+    }
+    
+    // Generate URLs for different ports
+    function generateUrls() {
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname;
+      const port = window.location.port || (protocol === 'https:' ? '443' : '80');
+      
+      log(`Current location: ${protocol}//${hostname}:${port}`);
+      
+      let mainAppUrl, directServerUrl, proxyUrl;
+      
+      const replitInfo = parseReplitHostname(hostname);
+      if (replitInfo && replitInfo.isReplit) {
+        // This is a Replit domain
+        log(`Detected Replit environment: ${JSON.stringify(replitInfo)}`);
+        
+        const replBase = `${protocol}//${replitInfo.replId}`;
+        const domain = `.${replitInfo.domain}`;
+        
+        mainAppUrl = `${replBase}-5001${domain}/`;
+        directServerUrl = `${replBase}-5000${domain}/`;
+        proxyUrl = `${replBase}-3000${domain}/`;
+      } else {
+        // Regular domain
+        const base = `${protocol}//${hostname.split(':')[0]}`;
+        mainAppUrl = `${base}:5001/`;
+        directServerUrl = `${base}:5000/`;
+        proxyUrl = `${base}:3000/`;
+      }
+      
+      log(`Generated URLs:`);
+      log(`Main app (5001): ${mainAppUrl}`);
+      log(`Direct server (5000): ${directServerUrl}`);
+      log(`Proxy server (3000): ${proxyUrl}`);
+      
+      return {
+        mainAppUrl,
+        directServerUrl,
+        proxyUrl
+      };
+    }
+    
+    // Check if the main app is available
+    async function checkMainApp(url) {
+      try {
+        status.textContent = "Checking main application...";
+        log(`Checking if main app is available at ${url}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch(url, { 
+          method: 'HEAD',
+          mode: 'no-cors',
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        log(`Main app is reachable`);
+        return true;
+      } catch (error) {
+        log(`Error checking main app: ${error.message}`);
+        return false;
+      }
+    }
+    
+    // Main function
+    async function connectToApp() {
+      const urls = generateUrls();
+      
+      // Set up direct links
+      directLink.href = urls.mainAppUrl;
+      proxyLink.href = urls.directServerUrl;
+      
+      try {
+        // First check if main app is available
+        const isMainAppAvailable = await checkMainApp(urls.mainAppUrl);
+        
+        if (isMainAppAvailable) {
+          log(`Redirecting to main app...`);
+          status.textContent = "Connecting to main application...";
+          
+          // Show buttons as fallback
+          buttons.style.display = 'flex';
+          
+          // Redirect after short delay
+          setTimeout(() => {
+            window.location.href = urls.mainAppUrl;
+          }, 1500);
+        } else {
+          log(`Main app not available, trying direct server...`);
+          status.textContent = "Trying alternative connection...";
+          
+          // Show buttons as fallback
+          buttons.style.display = 'flex';
+          
+          setTimeout(() => {
+            log(`Redirecting to direct server...`);
+            window.location.href = urls.directServerUrl;
+          }, 2000);
+        }
+      } catch (error) {
+        log(`Error in connection process: ${error.message}`);
+        status.textContent = "Could not connect automatically. Please try manual options below.";
+        buttons.style.display = 'flex';
+      }
+    }
+    
+    // Start the connection process after everything is loaded
+    window.addEventListener('load', connectToApp);
+  </script>
+</body>
+</html>

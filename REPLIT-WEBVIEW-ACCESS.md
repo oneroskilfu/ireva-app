@@ -1,48 +1,57 @@
-# iREVA Platform - Accessing the Application on Replit
+# iREVA Platform: Replit Webview Access Guide
 
-## URL Pattern for Accessing the Application
+## Overview
 
-The iREVA Platform uses a dual-port architecture to accommodate Replit's requirements:
+This document explains how to access the iREVA Platform through Replit's Webview tab, which is now fully supported through our multi-port solution.
 
-- **Port 5000**: Used by the proxy server for Replit's port detection
-- **Port 5001**: Where the main application runs (mapped to external port 3001)
+## Access Methods
 
-## How to Access the Application
+### Method 1: Direct Webview Access (Recommended)
+The simplest way to access the application:
+1. Start the "Start application" workflow
+2. Click the "Webview" tab in Replit
+3. The application should automatically display
 
-### Option 1: Using the Default Webview Button
-1. Click on the **Webview** button in Replit
-2. This will open the application in a new tab with the URL:
-   `https://[repl-id].[replit-domain].dev:3001`
-3. The application will automatically redirect you to the correct URL without the port number
+### Method 2: Port-Specific Access
+If the direct webview doesn't work, you can try accessing specific ports:
 
-### Option 2: Manually Remove the Port from URL
-If you're seeing an empty page or a connection error:
-1. Remove the `:3001` from the end of the URL in your browser
-2. Press Enter to navigate to the clean URL
+| Port | URL | Purpose |
+|------|-----|---------|
+| 3000 | `https://[repl-name].[username].repl.co:3000` | Proxy server (optimized for webview) |
+| 5000 | `https://[repl-name].[username].repl.co:5000` | Direct webview server with redirect |
+| 5001 | `https://[repl-name].[username].repl.co:5001` | Main application server |
 
-### Option 3: Open a Custom Webview
-1. In the Replit Shell, run:
-   ```
-   open https://[repl-id].[replit-domain].dev
-   ```
-2. This will open a custom webview without the port number
+### Method 3: Special Routes
+For troubleshooting, you can use special routes:
+
+1. `/webview` - Direct access path on port 5000: `https://[repl-name].[username].repl.co:5000/webview`
+2. `/force-redirect` - Force a redirect to port 5001: `https://[repl-name].[username].repl.co:5000/force-redirect`
+3. `/health` - Check server health: `https://[repl-name].[username].repl.co:5000/health`
+
+## How It Works
+
+Our solution uses a three-server architecture to overcome Replit's constraints:
+
+1. **Port 3000 Server**: A proxy server that runs on Replit's default webview port and forwards requests to the main application
+2. **Port 5000 Server**: Binds immediately for Replit's port detection and provides redirection services
+3. **Port 5001 Server**: Runs the full iREVA platform application
+
+This architecture ensures:
+- Immediate port binding (satisfied within Replit's 20-second requirement)
+- Proper webview support (through multiple access paths)
+- Full application functionality (by keeping the main app isolated)
 
 ## Troubleshooting
 
-If you encounter any issues accessing the application:
+If you cannot access the application through the webview tab:
 
-1. **Check the Workflow Status**: Make sure the "Start application" workflow is running
-2. **Clear Browser Cache**: Sometimes the browser cache can cause issues with redirects
-3. **Try Incognito/Private Mode**: Open the application in an incognito or private window
-4. **Check Console Logs**: Look for any error messages in the browser console
+1. **Check Application Status**: All three servers should be running. Look for these logs:
+   - "DIRECT WEBVIEW SERVER LISTENING ON PORT 5000"
+   - "iREVA PROXY SERVER ON PORT 3000"
+   - "iREVA server bound to port 5001"
 
-## Technical Background
+2. **Try Direct Port Access**: Sometimes accessing port 5001 directly works best.
 
-The platform implements a reverse proxy server that:
-1. Binds to port 5000 to satisfy Replit's port detection requirements
-2. Proxies requests to the main application running on port 5001
-3. Includes special handling for port redirection to ensure a seamless user experience
+3. **Use the Diagnostic Tool**: Run `node webview-diagnostic.js` to check which ports are accessible and identify the best one to use.
 
----
-
-For developers: More technical details can be found in `proxy-reverse.cjs`.
+4. **Clear Cache**: Sometimes Replit's webview caches old responses. Try reloading or using a private/incognito browser window.

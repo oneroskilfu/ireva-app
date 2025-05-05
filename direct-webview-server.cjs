@@ -26,8 +26,21 @@ function log(message) {
   console.log(message);
 }
 
-// Load homepage HTML
+// Load HTML files
 let homepageHtml;
+let redirectHtml;
+let webviewHtml;
+
+// Try loading our main webview file
+try {
+  webviewHtml = fs.readFileSync(path.join(__dirname, 'webview.html'), 'utf8');
+  log('Webview HTML file loaded successfully');
+} catch (err) {
+  log(`Error loading webview HTML file: ${err.message}`);
+  // Will set a fallback later
+}
+
+// Load homepage HTML
 try {
   homepageHtml = fs.readFileSync(path.join(__dirname, 'webview-homepage.html'), 'utf8');
   log('Homepage file loaded successfully');
@@ -52,6 +65,20 @@ try {
     </body>
     </html>
   `;
+}
+
+// Load redirect HTML
+try {
+  redirectHtml = fs.readFileSync(path.join(__dirname, 'webview-redirect.html'), 'utf8');
+  log('Redirect file loaded successfully');
+} catch (err) {
+  log(`Error loading redirect file: ${err.message}`);
+  redirectHtml = homepageHtml;
+}
+
+// If webview HTML wasn't loaded, use redirect HTML as fallback
+if (!webviewHtml) {
+  webviewHtml = redirectHtml;
 }
 
 // Check if a port is in use
@@ -105,9 +132,39 @@ app.get('/webview-ready', (req, res) => {
 app.get('/webview', (req, res) => {
   log('Direct webview access request received');
   
-  // Redirect to the main application immediately
-  const targetUrl = `http://${req.hostname}:${MAIN_APP_PORT}/`;
-  log(`Webview redirect to: ${targetUrl}`);
+  // Serve our specialized webview HTML file
+  log('Serving webview HTML for direct access');
+  res.send(webviewHtml);
+});
+
+// Force redirect route (used by webview for direct access)
+app.get('/force-redirect', (req, res) => {
+  log('Force redirect request received');
+  
+  // Log hostname for debugging
+  const host = req.headers.host || req.hostname || '';
+  log(`Request host header: ${host}`);
+  
+  // Handle different hostname formats for Replit
+  let targetUrl;
+  if (host.includes('replit') || host.includes('repl.co')) {
+    // Special handling for Replit domains
+    // Extract the repl ID and owner from hostname if possible
+    const parts = host.split('.');
+    if (parts.length >= 2) {
+      // Format: [repl-id]-[owner-username].replit.app or similar
+      const replId = parts[0].split('-')[0]; // Get the repl ID portion
+      targetUrl = `https://${replId}-${MAIN_APP_PORT}.${parts.slice(1).join('.')}/`;
+    } else {
+      // Fallback to standard format with port
+      targetUrl = `https://${host.split(':')[0]}:${MAIN_APP_PORT}/`;
+    }
+  } else {
+    // Standard format for local or non-Replit domains
+    targetUrl = `http://${req.hostname}:${MAIN_APP_PORT}/`;
+  }
+  
+  log(`Force redirecting to: ${targetUrl}`);
   res.redirect(targetUrl);
 });
 
@@ -121,7 +178,7 @@ app.get('/check-main-app', async (req, res) => {
   }
 });
 
-// Handle the root path - direct redirect to main app
+// Handle the root path - serve webview HTML for direct access
 app.get('/', (req, res) => {
   // Check the host header to determine if this is a webview request
   const host = req.headers.host || '';
@@ -129,12 +186,22 @@ app.get('/', (req, res) => {
   // Log the incoming request
   log(`Incoming request from host: ${host}`);
   
-  // Verify main app is available before redirecting
+  // Check if this appears to be a webview request (Replit domain)
+  const isWebviewRequest = host.includes('repl.co') || host.includes('replit');
+  
+  // Verify main app is available
   isPortInUse(MAIN_APP_PORT)
     .then(isAvailable => {
       if (isAvailable) {
-        log(`Main app detected on port ${MAIN_APP_PORT}, redirecting...`);
-        // Redirect to the main application
+        log(`Main app detected on port ${MAIN_APP_PORT}`);
+        
+        // If this appears to be a webview request, serve our specialized webview HTML
+        if (isWebviewRequest) {
+          log('Serving webview HTML for direct access');
+          return res.send(webviewHtml);
+        }
+        
+        // Otherwise redirect directly
         const targetUrl = `http://${req.hostname}:${MAIN_APP_PORT}/`;
         log(`Redirecting to: ${targetUrl}`);
         return res.redirect(targetUrl);

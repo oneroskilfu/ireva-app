@@ -8,12 +8,17 @@ echo "Date: $(date)"
 
 # Display information about the ports
 echo "Port Configuration:"
-echo "- Port 5000: Direct webview server for Replit webview"
-echo "- Port 5001: Main application server (starts afterwards)"
+echo "- Port 3000: Proxy server for Replit webview"
+echo "- Port 5000: Direct webview server (backup)"
+echo "- Port 5001: Main application server"
 
-echo "Starting direct webview server for fast access..."
+# Start the proxy server for port 3000 (Replit Webview)
+echo "Starting proxy server on port 3000 for Replit webview..."
+node server.cjs &
+PROXY_SERVER_PID=$!
 
-# Run our server that directly displays the homepage in the webview
+# Run direct webview server as a backup
+echo "Starting direct webview server as backup..."
 node direct-webview-server.cjs &
 WEBVIEW_SERVER_PID=$!
 
@@ -29,6 +34,7 @@ MAIN_APP_PID=$!
 # Function to handle script termination
 cleanup() {
   echo "Cleaning up processes..."
+  kill $PROXY_SERVER_PID 2>/dev/null
   kill $WEBVIEW_SERVER_PID 2>/dev/null
   kill $MAIN_APP_PID 2>/dev/null
   exit 0
@@ -39,4 +45,4 @@ trap cleanup EXIT INT TERM
 
 # Keep the script running
 echo "Application startup complete - waiting for termination signals"
-wait $WEBVIEW_SERVER_PID $MAIN_APP_PID
+wait $PROXY_SERVER_PID $WEBVIEW_SERVER_PID $MAIN_APP_PID

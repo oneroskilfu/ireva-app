@@ -119,36 +119,74 @@
             const statusMessage = document.getElementById('statusMessage');
             const manualLink = document.getElementById('manualLink');
             
-            // Function to get base URL without port
-            function getBaseUrl() {
+            // Generate a proper Replit URL for different ports
+            function getReplitUrl(port) {
                 const protocol = window.location.protocol;
                 const hostname = window.location.hostname;
-                return `${protocol}//${hostname}`;
+                
+                // If it's a replit domain 
+                if (hostname.includes('replit') || hostname.includes('repl.co')) {
+                    // Handle special Replit domain format for different ports
+                    // Format is typically something like 'replname-username.repl.co'
+                    const parts = hostname.split('.');
+                    const domainSuffix = parts.slice(1).join('.');
+                    
+                    // Extract the repl ID from the first part of the hostname
+                    let replPrefix;
+                    if (parts[0].includes('-')) {
+                        // It's likely already in the format: 'replid-username'
+                        const subParts = parts[0].split('-');
+                        replPrefix = subParts[0];
+                    } else {
+                        // Use the entire first part as the replPrefix
+                        replPrefix = parts[0];
+                    }
+                    
+                    // Construct proper Replit URL for the specified port
+                    return `${protocol}//${replPrefix}-${port}.${domainSuffix}/`;
+                }
+                
+                // Fallback for local development or non-Replit hosts
+                return `${protocol}//${hostname}:${port}/`;
             }
             
-            // Set up the direct link
-            const mainAppUrl = `${getBaseUrl()}:5001/`;
-            manualLink.href = mainAppUrl;
+            // Generate URLs for all our ports
+            const port5001Url = getReplitUrl(5001);
+            const port5000Url = getReplitUrl(5000);
+            const port3000Url = getReplitUrl(3000);
+            
+            // Set up the direct links
+            manualLink.href = port5001Url;
+            
+            // Add debug info to console
+            console.log(`Main app URL (5001): ${port5001Url}`);
+            console.log(`Direct server URL (5000): ${port5000Url}`);
+            console.log(`Proxy server URL (3000): ${port3000Url}`);
             
             // Update status message
             function updateStatus(message) {
                 statusMessage.textContent = message;
+                console.log(message);
             }
             
             // Show the manual link after a delay
             setTimeout(() => {
                 manualLink.style.display = 'inline-block';
                 manualLink.classList.add('fade-in');
-            }, 5000);
-            
-            // Redirect after timeout
-            setTimeout(() => {
-                updateStatus('Redirecting to application...');
-                window.location.href = mainAppUrl;
+                updateStatus('Ready for manual connection');
             }, 3000);
             
+            // Attempt connection to all ports in sequence
+            updateStatus('Checking main application...');
+            
+            // First try to access port 5001 directly (main app)
+            setTimeout(() => {
+                updateStatus('Connecting to main application...');
+                window.location.href = port5001Url;
+            }, 5000);
+            
             // Start with checking connection
-            updateStatus('Connecting to iREVA Platform...');
+            updateStatus('Checking iREVA Platform ports...');
         });
     </script>
 </body>

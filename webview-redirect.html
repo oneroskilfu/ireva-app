@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>iREVA Platform - Redirecting</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      text-align: center;
+      padding: 50px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .container {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      padding: 40px;
+    }
+    h1 {
+      color: #2563eb;
+    }
+    .loader {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(37, 99, 235, 0.1);
+      border-radius: 50%;
+      border-top-color: #2563eb;
+      animation: spin 1s ease-in-out infinite;
+      margin: 20px 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .buttons {
+      margin-top: 20px;
+    }
+    .button {
+      display: inline-block;
+      background-color: #2563eb;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      margin: 0 10px;
+      font-weight: bold;
+    }
+    .button:hover {
+      background-color: #1d4ed8;
+    }
+    #debug {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 20px;
+      text-align: left;
+      background: #f1f5f9;
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>iREVA Platform</h1>
+    <p>Welcome to the iREVA platform! We're connecting you to the application...</p>
+    <div class="loader"></div>
+    
+    <div class="buttons">
+      <a href="#" id="mainLink" class="button">Access Main App</a>
+      <a href="#" id="forceRedirectLink" class="button">Force Redirect</a>
+    </div>
+    
+    <p>If automatic connection fails, try clicking one of the buttons above.</p>
+    
+    <div id="debug"></div>
+  </div>
+
+  <script>
+    // Debug function
+    function debug(message) {
+      const debugElement = document.getElementById('debug');
+      debugElement.innerHTML += message + '<br>';
+    }
+    
+    // Generate a proper Replit URL for different ports
+    function getReplitUrl(port) {
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname;
+      
+      // If it's a replit domain 
+      if (hostname.includes('replit') || hostname.includes('repl.co')) {
+        // Handle special Replit domain format for different ports
+        // Format is typically something like 'replname-username.repl.co'
+        const parts = hostname.split('.');
+        const domainSuffix = parts.slice(1).join('.');
+        
+        // Extract the repl ID from the first part of the hostname
+        let replPrefix;
+        if (parts[0].includes('-')) {
+          // It's likely already in the format: 'replid-username'
+          const subParts = parts[0].split('-');
+          replPrefix = subParts[0];
+        } else {
+          // Use the entire first part as the replPrefix
+          replPrefix = parts[0];
+        }
+        
+        // Construct proper Replit URL for the specified port
+        const targetDomain = `${replPrefix}-${port}.${domainSuffix}`;
+        debug(`Generated Replit domain for port ${port}: ${targetDomain}`);
+        
+        return `${protocol}//${targetDomain}/`;
+      }
+      
+      // Fallback for local development or non-Replit hosts
+      return `${protocol}//${hostname}:${port}/`;
+    }
+
+    // Handle connection to main app
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get current location info
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname;
+      const currentPort = window.location.port || (protocol === 'https:' ? '443' : '80');
+      
+      debug(`Current location: ${protocol}//${hostname}:${currentPort}`);
+      
+      // Setup direct links
+      const mainLink = document.getElementById('mainLink');
+      const forceRedirectLink = document.getElementById('forceRedirectLink');
+      
+      // Generate URLs for different ports
+      const port5001Url = getReplitUrl(5001);
+      const port5000Url = getReplitUrl(5000);
+      const port3000Url = getReplitUrl(3000);
+      
+      debug(`Main app URL (5001): ${port5001Url}`);
+      debug(`Direct server URL (5000): ${port5000Url}`);
+      debug(`Proxy server URL (3000): ${port3000Url}`);
+      
+      // Set up link targets
+      mainLink.href = port5001Url;
+      forceRedirectLink.href = `${port5000Url}force-redirect`;
+      
+      debug('Setting up links complete');
+      
+      // Try port 5000 first (direct webview server)
+      fetch(`${port5000Url}check-main-app`)
+        .then(response => response.json())
+        .then(data => {
+          debug(`Main app check (via port 5000): ${JSON.stringify(data)}`);
+          if (data.available) {
+            debug('Main app is available, redirecting to port 5001...');
+            window.location.href = port5001Url;
+          } else {
+            debug('Trying proxy server on port 3000...');
+            
+            // Try port 3000 (proxy server)
+            setTimeout(() => {
+              debug('Redirecting to proxy server (port 3000)...');
+              window.location.href = port3000Url;
+            }, 2000);
+          }
+        })
+        .catch(error => {
+          debug(`Error checking port 5000: ${error.message}`);
+          debug('Trying direct access to port 5001...');
+          
+          // Try port 5001 directly (main app)
+          setTimeout(() => {
+            window.location.href = port5001Url;
+          }, 2000);
+        });
+    });
+  </script>
+</body>
+</html>
