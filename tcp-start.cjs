@@ -1,10 +1,11 @@
 /**
- * Ultra-minimal TCP server for Replit
- * This script does absolutely nothing except bind to a port as quickly as possible
- * using the most minimal approach with raw TCP connections.
+ * Ultra-minimal server for Replit
+ * This script binds to port 5000 as quickly as possible and serves
+ * a redirect page to port 5001 where the main application runs.
  */
 
 const net = require('net');
+const http = require('http');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -18,11 +19,34 @@ const MAIN_APP_PORT = 5001;
 console.log('REPLIT PORT BINDING INITIALIZATION...');
 console.log(`Creating TCP server on port ${MINIMAL_SERVER_PORT}...`);
 
-// Create a raw TCP server - minimal code to bind the port
-const server = net.createServer((socket) => {
-  // Just send back a minimal response
-  socket.write('PORT ACTIVE\r\n');
-  socket.end();
+// Path to the redirect HTML file
+const redirectHtmlPath = path.join(process.cwd(), 'client', 'public', 'port-redirect.html');
+
+// Create an HTTP server that binds immediately and serves a redirect page
+const server = http.createServer((req, res) => {
+  res.writeHead(200, {'Content-Type': 'text/html'});
+  
+  // Check if redirect file exists
+  if (fs.existsSync(redirectHtmlPath)) {
+    // Serve the redirect HTML file
+    fs.createReadStream(redirectHtmlPath).pipe(res);
+  } else {
+    // Fallback to a simple redirect
+    res.end(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>iREVA Platform - Redirecting</title>
+          <meta http-equiv="refresh" content="0;url=http://${req.headers.host.split(':')[0]}:${MAIN_APP_PORT}${req.url}">
+        </head>
+        <body>
+          <h1>Redirecting to iREVA Platform</h1>
+          <p>Please wait while we redirect you to the main application...</p>
+          <p>If you are not redirected automatically, <a href="http://${req.headers.host.split(':')[0]}:${MAIN_APP_PORT}${req.url}">click here</a>.</p>
+        </body>
+      </html>
+    `);
+  }
 });
 
 // Explicitly bind to 0.0.0.0 (all interfaces) on the specified port
