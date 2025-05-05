@@ -1,52 +1,89 @@
 import { Router, Request, Response } from 'express';
-import { 
-  verifyToken, 
-  verifyTokenHandler, 
-  refreshToken,
-  generateToken
-} from '../auth-jwt';
-import { db } from '../db';
-import { users } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
+import { storage } from '../storage';
 import { z } from 'zod';
+import { 
+  generateToken, 
+  authenticateJWT, 
+  verifyToken 
+} from '../middlewares/auth-middleware';
+import { UserPayload } from '../../shared/types/user-payload';
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
+import { rateLimit } from 'express-rate-limit';
 
-const authRouter = Router();
+const router = Router();
+const scryptAsync = promisify(scrypt);
 
-// Login schema
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
+// Rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { 
+    success: false, 
+    message: 'Too many login attempts, please try again later'
+  }
 });
 
-// Register schema
+// Login validation schema
+const loginSchema = z.object({
+  email: z.string().email('Valid email is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
+});
+
+// Registration validation schema
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  username: z.string().min(3),
-  fullName: z.string().optional()
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  email: z.string().email('Valid email is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
 });
 
 /**
- * @route POST /api/auth/login
- * @desc Login user and return JWT token
- * @access Public
+ * Hash a password using scrypt
  */
-authRouter.post('/login', async (req: Request, res: Response) => {
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex');
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString('hex')}.${salt}`;
+}
+
+/**
+ * Compare a password against a stored hash
+ */
+async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
   try {
+    const [hashed, salt] = stored.split('.');
+    const hashedBuf = Buffer.from(hashed, 'hex');
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
+}
+
+/**
+ * @route   POST /api/auth/login
+ * @desc    Authenticate user & get token
+ * @access  Public
+ */
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
+  try {
+    // Validate request body
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid request data',
-        errors: validation.error.format()
+        message: 'Validation failed',
+        errors: validation.error.errors
       });
     }
 
     const { email, password } = validation.data;
 
-    // Check if user exists
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    // Find the user by email
+    const user = await storage.getUserByEmail(email);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -55,117 +92,121 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     }
 
     // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    const isMatch = await comparePasswords(password, user.password);
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Create token
-    // Note: generateToken function from auth-jwt.ts is imported
-    // Using kycStatus as verification status
-    // Ensure role is either 'admin' or 'investor' only - handle nullable role correctly
-    const safeRole: 'admin' | 'investor' = 
-      user.role === 'admin' ? 'admin' : 'investor';
-    const token = generateToken(user.id, user.email, safeRole, user.kycStatus === 'approved');
+    // Create user payload for token
+    const payload: UserPayload = {
+      id: user.id.toString(),
+      username: user.username,
+      email: user.email,
+      role: user.role as 'admin' | 'investor',
+      verified: Boolean(user.isPhoneVerified) // Using phone verification status
+    };
 
-    // Return user and token
+    // Generate token
+    const token = generateToken(payload);
+
+    // Return token and user info
     return res.status(200).json({
       success: true,
       token,
       user: {
         id: user.id,
-        email: user.email,
         username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        email: user.email,
         role: user.role,
-        verified: user.kycStatus === 'approved',
-        profileImage: user.profileImage
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        profileImage: user.profileImage || '',
+        verified: user.isPhoneVerified
       }
     });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: 'Server error during authentication'
     });
   }
 });
 
 /**
- * @route POST /api/auth/register
- * @desc Register a new user
- * @access Public
+ * @route   POST /api/auth/register
+ * @desc    Register a new user
+ * @access  Public
  */
-authRouter.post('/register', async (req: Request, res: Response) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
+    // Validate request body
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid request data',
-        errors: validation.error.format()
+        message: 'Validation failed',
+        errors: validation.error.errors
       });
     }
 
-    const { email, password, username, fullName } = validation.data;
+    const { username, email, password } = validation.data;
 
-    // Check if user already exists
-    const existingUser = await db.select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    if (existingUser.length > 0) {
+    // Check if email already exists
+    const existingEmail = await storage.getUserByEmail(email);
+    if (existingEmail) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: 'Email already registered'
+      });
+    }
+
+    // Check if username already exists
+    const existingUsername = await storage.getUserByUsername(username);
+    if (existingUsername) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username already taken'
       });
     }
 
     // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await hashPassword(password);
 
     // Create new user
-    const [newUser] = await db.insert(users)
-      .values({
-        email,
-        password: hashedPassword,
-        username,
-        firstName: fullName, // Using firstName instead of fullName
-        role: 'investor', // Default role
-        kycStatus: 'not_started', // Default KYC status
-        createdAt: new Date()
-      })
-      .returning();
+    const newUser = await storage.createUser({
+      username,
+      email,
+      password: hashedPassword,
+      role: 'investor', // Default role for new users
+      status: 'active'
+    });
 
-    // Create token
-    // Ensure role is either 'admin' or 'investor' only - handle nullable role correctly 
-    const safeRole: 'admin' | 'investor' = 
-      newUser.role === 'admin' ? 'admin' : 'investor';
-    const token = generateToken(
-      newUser.id,
-      newUser.email,
-      safeRole,
-      newUser.kycStatus === 'approved'
-    );
+    // Create user payload for token
+    const payload: UserPayload = {
+      id: newUser.id.toString(),
+      username: newUser.username,
+      email: newUser.email,
+      role: 'investor',
+      verified: false
+    };
 
-    // Return user and token
+    // Generate token
+    const token = generateToken(payload);
+
+    // Return token and user info (excluding password)
     return res.status(201).json({
       success: true,
       token,
       user: {
         id: newUser.id,
-        email: newUser.email,
         username: newUser.username,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
+        email: newUser.email,
         role: newUser.role,
-        verified: newUser.kycStatus === 'approved'
+        verified: false
       }
     });
   } catch (error) {
@@ -178,31 +219,106 @@ authRouter.post('/register', async (req: Request, res: Response) => {
 });
 
 /**
- * @route GET /api/auth/verify
- * @desc Verify JWT token and return user data
- * @access Public
+ * @route   GET /api/auth/me
+ * @desc    Get current user info
+ * @access  Private
  */
-authRouter.get('/verify', verifyTokenHandler);
+router.get('/me', authenticateJWT, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
 
-/**
- * @route POST /api/auth/refresh
- * @desc Refresh JWT token
- * @access Private
- */
-authRouter.post('/refresh', verifyToken, refreshToken);
+    // Get user from database using the ID from token
+    const user = await storage.getUser(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
 
-/**
- * @route POST /api/auth/logout
- * @desc Logout user (client-side only operation in JWT)
- * @access Public
- */
-authRouter.post('/logout', (req: Request, res: Response) => {
-  // JWT logout happens on the client-side by removing the token
-  // This endpoint exists for compatibility and can be used for analytics
-  return res.status(200).json({
-    success: true,
-    message: 'Logged out successfully'
-  });
+    // Return user info (excluding password)
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        profileImage: user.profileImage || '',
+        kycStatus: user.kycStatus || 'not_started',
+        isPhoneVerified: user.isPhoneVerified || false
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
 });
 
-export default authRouter;
+/**
+ * @route   POST /api/auth/verify
+ * @desc    Verify a token is valid
+ * @access  Public
+ */
+router.post('/verify', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token is required'
+      });
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token'
+      });
+    }
+
+    // Get fresh user data from database
+    const user = await storage.getUser(payload.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Return user info (excluding password)
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        profileImage: user.profileImage || '',
+        verified: user.isPhoneVerified || false
+      }
+    });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+export default router;

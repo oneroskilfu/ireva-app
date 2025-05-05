@@ -1,252 +1,196 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { createContext, ReactNode, useContext } from "react";
+import {
+  useQuery,
+  useMutation,
+  UseMutationResult,
+} from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
-// Types
-export type UserRole = "admin" | "investor";
-
-export interface User {
+/**
+ * Represents the payload data for JWT tokens
+ * Contains essential user information for authentication and authorization
+ */
+export interface UserPayload {
   id: string;
   email: string;
   username: string;
-  role: UserRole;
-  fullName?: string;
-  verified?: boolean;
-  profileImage?: string;
+  role: "admin" | "investor" | "super_admin" | null;
+  createdAt?: Date;
 }
 
-interface LoginCredentials {
-  email: string;
-  password: string;
+// API request utility
+async function apiRequest(
+  method: string,
+  endpoint: string,
+  data?: any
+): Promise<Response> {
+  return fetch(endpoint, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
 }
 
-interface RegisterData {
-  email: string;
-  username: string;
-  password: string;
-  fullName?: string;
-}
+// Helper function to handle the query
+const getQueryFn = (options?: { 
+  on401?: "throw" | "returnNull" 
+}) => async ({ queryKey }: { queryKey: string[] }) => {
+  const [url] = queryKey;
+  const response = await fetch(url, {
+    credentials: "include",
+  });
 
-interface AuthContextType {
-  user: User | null;
+  if (response.status === 401) {
+    if (options?.on401 === "returnNull") {
+      return null;
+    }
+    throw new Error("Unauthorized");
+  }
+
+  if (!response.ok) {
+    throw new Error("An error occurred while fetching data");
+  }
+
+  return response.json();
+};
+
+// Types for the authentication context
+type AuthContextType = {
+  user: UserPayload | null;
   isLoading: boolean;
   error: Error | null;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => Promise<void>;
-  isAuthenticated: boolean;
-  hasRole: (role: UserRole | UserRole[]) => boolean;
-}
+  loginMutation: UseMutationResult<UserPayload, Error, LoginData>;
+  logoutMutation: UseMutationResult<void, Error, void>;
+  registerMutation: UseMutationResult<UserPayload, Error, RegisterData>;
+};
 
-// Create the auth context
-const AuthContext = createContext<AuthContextType | null>(null);
+// Types for login and registration data
+type LoginData = {
+  email: string;
+  password: string;
+};
 
-// JWT token management
-const getToken = () => localStorage.getItem("token");
-const setToken = (token: string) => localStorage.setItem("token", token);
-const removeToken = () => localStorage.removeItem("token");
+type RegisterData = {
+  username: string;
+  email: string;
+  password: string;
+  role: "admin" | "investor" | "super_admin" | null;
+};
 
-// Create a custom axios instance for API requests
-const api = axios.create({
-  baseURL: "/api",
-});
+// Create the authentication context
+export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Add an interceptor to include the JWT token in all requests
-api.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Auth provider component
+// AuthProvider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [, setLocation] = useLocation();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Query for auto-login on app startup
-  const { data: autoLoginData, isLoading: autoLoginLoading } = useQuery({
-    queryKey: ["auth", "verify"],
-    queryFn: async () => {
-      const token = getToken();
-      if (!token) {
-        return null;
-      }
-      try {
-        const response = await api.get("/auth/verify");
-        return response.data.user;
-      } catch (err) {
-        // Don't show an error message for auth verification failures
-        console.log("Auto-login failed or token expired");
-        removeToken();
-        return null;
-      }
-    },
+  // Query to get the current user data
+  const {
+    data: user,
+    error,
+    isLoading,
+    refetch,
+  } = useQuery<UserPayload | null, Error>({
+    queryKey: ["/api/auth/verify"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
   });
 
-  // Update user state when auto-login completes
-  useEffect(() => {
-    if (!autoLoginLoading) {
-      setUser(autoLoginData || null);
-      setIsLoading(false);
-    }
-  }, [autoLoginData, autoLoginLoading]);
-
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginCredentials) => {
-      const response = await api.post("/auth/login", credentials);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      setToken(data.token);
-      setUser(data.user);
-      queryClient.invalidateQueries({ queryKey: ["auth", "verify"] });
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.user.username}!`,
-      });
-      setLocation("/");
-    },
-    onError: (err: Error) => {
-      setError(err);
-      toast({
-        title: "Login failed",
-        description: "Invalid email or password",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Register mutation
-  const registerMutation = useMutation({
-    mutationFn: async (data: RegisterData) => {
-      const response = await api.post("/auth/register", data);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      setToken(data.token);
-      setUser(data.user);
-      queryClient.invalidateQueries({ queryKey: ["auth", "verify"] });
-      toast({
-        title: "Registration successful",
-        description: `Welcome, ${data.user.username}!`,
-      });
-      setLocation("/");
-    },
-    onError: (err: Error) => {
-      setError(err);
-      toast({
-        title: "Registration failed",
-        description: "This email might already be in use",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      // Server logout is just a formality for analytics since JWT is stateless
-      await api.post("/auth/logout");
+  // Mutation for login
+  const loginMutation = useMutation<UserPayload, Error, LoginData>({
+    mutationFn: async (credentials: LoginData) => {
+      const res = await apiRequest("POST", "/api/auth/login", credentials);
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Login failed");
+      }
+      
+      return await res.json();
     },
     onSuccess: () => {
-      removeToken();
-      setUser(null);
-      queryClient.invalidateQueries();
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully",
-      });
-      setLocation("/auth");
+      refetch(); // Refresh user data after login
     },
-    onError: (err: Error) => {
-      setError(err);
-      // Even if server logout fails, we still want to clear local state
-      removeToken();
-      setUser(null);
-      queryClient.invalidateQueries();
+    onError: (error: Error) => {
       toast({
-        title: "Logout failed",
-        description: "But you've been logged out locally",
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
       });
-      setLocation("/auth");
     },
   });
 
-  // Token refresh interval
-  useEffect(() => {
-    if (!user) return;
-
-    const refreshToken = async () => {
-      try {
-        const response = await api.post("/auth/refresh");
-        if (response.data.token) {
-          setToken(response.data.token);
-        }
-      } catch (error) {
-        console.error("Token refresh failed:", error);
+  // Mutation for registration
+  const registerMutation = useMutation<UserPayload, Error, RegisterData>({
+    mutationFn: async (userData: RegisterData) => {
+      const res = await apiRequest("POST", "/api/auth/register", userData);
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Registration failed");
       }
-    };
-
-    // Check token every 10 minutes
-    const interval = setInterval(refreshToken, 10 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [user]);
-
-  // Auth context value
-  const value: AuthContextType = {
-    user,
-    isLoading,
-    error,
-    login: loginMutation.mutateAsync,
-    register: registerMutation.mutateAsync,
-    logout: logoutMutation.mutateAsync,
-    isAuthenticated: !!user,
-    hasRole: (role: UserRole | UserRole[]) => {
-      if (!user) return false;
-      return Array.isArray(role)
-        ? role.includes(user.role)
-        : user.role === role;
+      
+      return await res.json();
     },
-  };
+    onSuccess: () => {
+      refetch(); // Refresh user data after registration
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Mutation for logout
+  const logoutMutation = useMutation<void, Error, void>({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/auth/logout");
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Logout failed");
+      }
+    },
+    onSuccess: () => {
+      // Clear user data after logout
+      refetch();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user: user || null,
+        isLoading,
+        error,
+        loginMutation,
+        logoutMutation,
+        registerMutation,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-// Custom hook to use auth context
+// Custom hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
-
-// Helper functions for external use
-export function getCurrentUser(): User | null {
-  const context = useContext(AuthContext);
-  return context?.user || null;
-}
-
-export function getUserRole(): UserRole | null {
-  const user = getCurrentUser();
-  return user?.role || null;
-}
-
-export function hasRole(role: UserRole | UserRole[]): boolean {
-  const context = useContext(AuthContext);
-  if (!context?.user) return false;
-  
-  return Array.isArray(role)
-    ? role.includes(context.user.role)
-    : context.user.role === role;
 }

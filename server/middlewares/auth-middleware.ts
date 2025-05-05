@@ -1,17 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { UserPayload } from '../../shared/types/user-payload';
 
 // Define UserPayload schema with Zod for validation
 const userPayloadSchema = z.object({
   id: z.string().uuid(), // Ensures the ID is a valid UUID
+  username: z.string().min(1), // Username is required
   email: z.string().email(), // Validates proper email format
   role: z.enum(['admin', 'investor']), // Restricts to only valid roles
   verified: z.boolean() // Makes sure verified is a boolean
 });
 
-// Type definition using Zod inference
-export type UserPayload = z.infer<typeof userPayloadSchema>;
+// JWT configuration
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const JWT_EXPIRATION = '24h';
 
 // Extend Express Request interface to include user payload
 declare global {
@@ -21,9 +24,6 @@ declare global {
     }
   }
 }
-
-// Configuration options
-const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_change_in_production';
 
 /**
  * Middleware to authenticate requests using JWT tokens
@@ -36,7 +36,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
   if (!authHeader) {
     return res.status(401).json({ 
       success: false, 
-      message: 'Authentication required. No token provided.' 
+      message: 'Authentication required' 
     });
   }
 
@@ -59,93 +59,29 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
     const validationResult = userPayloadSchema.safeParse(decoded);
     
     if (!validationResult.success) {
-      // Token payload doesn't match our expected structure
-      console.error('JWT payload validation failed:', validationResult.error.format());
       return res.status(401).json({ 
         success: false, 
-        message: 'Invalid token payload structure' 
+        message: 'Invalid token payload' 
       });
     }
     
-    // Add the validated user payload to the request
+    // Attach validated user to request
     req.user = validationResult.data;
-    
-    // Continue to the next middleware/route handler
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ 
         success: false, 
         message: 'Token expired', 
-        expired: true 
-      });
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid token' 
-      });
-    } else {
-      console.error('JWT verification error:', error);
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Internal authentication error' 
+        code: 'TOKEN_EXPIRED' 
       });
     }
-  }
-}
-
-/**
- * Middleware to check if user has required role
- * Must be used after authenticateJWT middleware
- */
-export function requireRole(role: UserPayload['role'] | UserPayload['role'][]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    // First check if user exists (authenticateJWT middleware should be run first)
-    if (!req.user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
-      });
-    }
-
-    // Check if user has the required role
-    const roles = Array.isArray(role) ? role : [role];
     
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: `Access denied. Required role: ${Array.isArray(role) ? role.join(' or ') : role}` 
-      });
-    }
-
-    // User has required role, proceed
-    next();
-  };
-}
-
-/**
- * Middleware to check if user is verified
- * Must be used after authenticateJWT middleware
- */
-export function requireVerified(req: Request, res: Response, next: NextFunction) {
-  // First check if user exists (authenticateJWT middleware should be run first)
-  if (!req.user) {
     return res.status(401).json({ 
       success: false, 
-      message: 'Authentication required' 
+      message: 'Invalid token' 
     });
   }
-
-  // Check if user is verified
-  if (!req.user.verified) {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Account verification required to access this resource' 
-    });
-  }
-
-  // User is verified, proceed
-  next();
 }
 
 /**
@@ -188,3 +124,52 @@ export function optionalJWT(req: Request, res: Response, next: NextFunction) {
     next();
   }
 }
+
+/**
+ * Middleware to check if user has required role
+ * @param role Required role or array of roles
+ */
+export function requireRole(requiredRoles: string | string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required' 
+      });
+    }
+
+    const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+    
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Permission denied' 
+      });
+    }
+
+    next();
+  };
+}
+
+/**
+ * Generate a JWT token for a user
+ */
+export function generateToken(user: UserPayload): string {
+  return jwt.sign(user, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+}
+
+/**
+ * Verify a JWT token
+ */
+export function verifyToken(token: string): UserPayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as unknown;
+    const validationResult = userPayloadSchema.safeParse(decoded);
+    return validationResult.success ? validationResult.data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Re-export for external use
+export { userPayloadSchema };
