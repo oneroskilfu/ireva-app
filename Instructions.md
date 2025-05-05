@@ -1,244 +1,258 @@
-# Application Startup Optimization for Replit's 10-Second Limit
+# Secure Login Component Implementation Plan
 
-## Current Architecture Analysis
+## Overview
+This document outlines the strategy for implementing a secure login component for admin and investor users in the iREVA real estate investment platform. The login system will provide role-based authentication with appropriate security measures and dashboard access control.
 
-After reviewing the codebase, I've identified the following architecture for application startup:
+## Current System Analysis
 
-### Current Startup Flow
+### Database Schema
+- The application uses PostgreSQL with Drizzle ORM
+- User schema already includes:
+  - Role-based access (`role` enum: 'admin', 'investor')
+  - Password hashing capabilities
+  - KYC status tracking
+  - Profile information fields
 
-1. **Workflow Command**: The `.replit` config starts the application using `workflow-command.sh` which runs `workflow-starter.js`.
+### Authentication Mechanisms
+- **Session-based auth**: Implemented with Express sessions and Passport.js
+- **JWT-based auth**: JWT token generation and verification exists
+- **Multiple middleware options**: Both session and JWT auth middlewares are available
+- **Role enforcement**: Middleware for role-based access control exists
 
-2. **Initial Port Binding**: The `workflow-starter.js` creates a minimal HTTP server on port 3000 to satisfy Replit's port binding requirement before starting the actual application.
+### Frontend Components
+- Multiple authentication-related components exist but are inconsistently implemented
+- Both session and token-based authentication hooks present
+- Some protected routes are implemented but need standardization
 
-3. **Main Application Start**: The main application (via `npm run dev`) starts a two-phase server:
-   - Phase 1: Immediately binds to a port (5001 if port 5000 is busy)
-   - Phase 2: Loads the full application components (routers, Vite, etc.)
+## Implementation Plan
 
-4. **Port Management**: The application checks for port conflicts and uses a coordination file (`port-status.json`) to synchronize between processes.
+### 1. Standardize Authentication Strategy
 
-5. **Delayed Loading**: After port binding, there's a deliberate 3000ms delay before loading the full application to ensure the port is detected.
+#### Decision: Use JWT-based Authentication
+- **Rationale**: 
+  - Better suited for the React frontend
+  - Stateless and scalable
+  - Already has partial implementation in the codebase
+  - Works well with the database schema
 
-## Performance Bottlenecks
+#### Implementation Steps:
+1. Consolidate authentication utilities into a single service
+2. Standardize on the JWT implementation in `server/auth-jwt.ts`
+3. Ensure proper token validation, expiration handling, and refresh mechanisms
 
-Based on my analysis, the following bottlenecks likely contribute to slow startup:
+### 2. Backend Implementation
 
-1. **Multiple Process Overhead**: Running separate processes for minimal server and main application adds overhead.
+#### 2.1 Database Schema Verification
+- Ensure user schema supports all required fields
+- Add any missing indices for query optimization
+- Use Drizzle ORM's built-in schema validation
 
-2. **Unnecessary Port Checking Logic**: Complex port checking logic with multiple conditions and fallbacks.
+#### 2.2 Authentication Endpoints
+- Consolidate and standardize authentication routes:
+  - `/api/auth/login` - Handle login requests
+  - `/api/auth/register` - Handle registration requests
+  - `/api/auth/logout` - Clear authentication
+  - `/api/auth/me` - Get current user profile
+  - `/api/auth/refresh` - Refresh JWT token
 
-3. **Delayed Loading**: The 3-second delay before loading the full application adds to startup time.
+#### 2.3 Security Implementation
+- Password hashing with scrypt (already implemented)
+- Rate limiting on authentication endpoints
+- CSRF protection
+- Proper HTTP security headers
+- Secure cookie settings when applicable
 
-4. **Vite Development Server**: Starting the Vite development server is resource-intensive and slow.
+#### 2.4 Role-Based Access Control
+- Standardize middleware for checking user roles
+- Create separate admin and investor middleware
+- Implement hierarchical role structure (admin > investor)
 
-5. **Redundant Health Checks**: Multiple health check endpoints with similar functionality.
+### 3. Frontend Implementation
 
-6. **Coordination File I/O**: Reading and writing to coordination files introduces disk I/O overhead.
+#### 3.1 Authentication Context
+- Create a unified authentication context using React Context API
+- Implement robust token management (storage, refresh, expiration)
+- Provide user state and authentication methods to all components
 
-7. **Dynamic Imports**: Using dynamic imports for routes adds load time.
+#### 3.2 Login Component
+- Create a professionally designed login page with:
+  - Username/email and password fields
+  - Remember me option
+  - Forgot password link
+  - Registration link for new users
+  - Visual feedback for authentication state
+  - Error handling with clear user messages
 
-## Optimization Plan
+#### 3.3 Protected Routes
+- Implement a standardized protected route component
+- Role-based access control at the route level
+- Loading states while authentication is being verified
+- Redirect to login page for unauthenticated users
+- Redirect to proper dashboard based on user role
 
-### 1. Streamline Port Binding Process
+#### 3.4 Dashboard Access
+- Create role-specific dashboard layouts:
+  - Admin dashboard with administrative tools
+  - Investor dashboard with investment portfolio view
+- Implement navigation guards based on user roles
+- Provide clear visual indicators of current user role
 
-```javascript
-// Replace complex port checking logic with a simpler approach
-const port = process.env.PORT || (process.env.REPLIT_PORT_BINDING === 'true' ? 5001 : 5000);
-```
+### 4. Security Best Practices
 
-### 2. Eliminate Unnecessary Delays
+#### 4.1 Token Management
+- Store tokens securely (httpOnly cookies when possible, localStorage as fallback)
+- Implement token refresh mechanism
+- Auto-logout on token expiration
+- Clear tokens on logout
 
-Remove or reduce the 3000ms delay after port binding:
+#### 4.2 User Experience
+- Clear loading indicators during authentication
+- Meaningful error messages for failed logins
+- Account locking after multiple failed attempts
+- Email notifications for suspicious login activities
 
-```javascript
-// Reduce from 3000ms to 500ms or eliminate entirely
-setTimeout(async () => {
-  await loadFullApplication();
-}, 500); // Reduced from 3000
-```
+#### 4.3 Security Monitoring
+- Implement logging for authentication events
+- Track failed login attempts
+- Monitor for unusual login patterns
+- Provide audit trail for admin activities
 
-### 3. Optimize Workflow Script
+## Implementation Sequence
 
-Create a new optimized `workflow-command.sh`:
+### Phase 1: Backend Authentication
+1. Standardize JWT implementation
+2. Implement/verify authentication endpoints
+3. Add security measures (rate limiting, CSRF)
+4. Test authentication flow with Postman/curl
 
-```bash
-#!/bin/bash
-# Set environment variables to skip port checking
-export REPLIT_PORT_BINDING=true
-export PORT=5001
-# Start the application directly with minimal overhead
-node --import tsx server/index.ts
-```
+### Phase 2: Frontend Authentication
+1. Create authentication context provider
+2. Build login/register forms
+3. Implement protected route components
+4. Add token refresh mechanism
 
-### 4. Preload Critical Modules
+### Phase 3: Role-Based Access
+1. Implement role-based dashboards
+2. Add role-specific navigation
+3. Create admin and investor views
+4. Test role separation and access control
 
-Use top-level imports instead of dynamic imports for critical modules:
+### Phase 4: Security Enhancements
+1. Add account lockout mechanism
+2. Implement password strength requirements
+3. Add activity logging
+4. Perform security testing
 
+## Code Samples
+
+### JWT Authentication Middleware
 ```typescript
-// Before
-async function loadFullApplication() {
-  const adminRouter = (await import('./routes/admin')).default;
-  // ...
-}
-
-// After
-import adminRouter from './routes/admin';
-// ...
-function setupRoutes() {
-  app.use('/api/admin', adminRouter);
-  // ...
-}
-```
-
-### 5. Optimize Vite Configuration
-
-Modify Vite configuration to improve startup time:
-
-```javascript
-// Optimize Vite server startup
-const vite = await createViteServer({
-  ...viteConfig,
-  configFile: false,
-  server: {
-    hmr: { server },
-    middlewareMode: true,
-    watch: {
-      usePolling: false,
-      interval: 1000,
-    },
-    fs: {
-      strict: false, // Reduce initial filesystem scanning
-    },
-  },
-  optimizeDeps: {
-    disabled: true, // Skip initial dependency optimization
-  },
-});
-```
-
-### 6. Implement Lazy Loading for Non-Critical Components
-
-Use lazy loading for non-critical components:
-
-```typescript
-// Only load full application components when needed
-app.use('/api/admin', (req, res, next) => {
-  // Lazy-load admin router on first request
-  if (!adminRouterInstance) {
-    import('./routes/admin').then(module => {
-      adminRouterInstance = module.default;
-      adminRouterInstance(req, res, next);
+export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader) {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Authentication required' 
     });
-  } else {
-    adminRouterInstance(req, res, next);
   }
-});
-```
 
-### 7. Simplify Coordination Mechanism
-
-Replace file-based coordination with environment variables:
-
-```typescript
-// Use environment variables instead of file I/O
-process.env.MAIN_APP_RUNNING = 'true';
-process.env.MAIN_APP_PORT = String(port);
-```
-
-### 8. Implement Progressive Enhancement
-
-Load the application in stages with increasing functionality:
-
-1. Stage 1: Minimal HTTP server that responds to all routes
-2. Stage 2: Add API routes
-3. Stage 3: Start Vite server
-4. Stage 4: Load remaining components
-
-### 9. Optimize Database Connection
-
-If using a database, implement connection pooling and lazy connection:
-
-```typescript
-// Delay database connection until first request
-let dbConnection = null;
-app.use('/api/*', (req, res, next) => {
-  if (!dbConnection) {
-    dbConnection = setupDatabaseConnection();
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Invalid authorization format' 
+    });
   }
-  next();
-});
+
+  const token = parts[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as UserPayload;
+    
+    // Validate payload with Zod
+    const validationResult = userPayloadSchema.safeParse(decoded);
+    
+    if (!validationResult.success) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid token payload' 
+      });
+    }
+    
+    // Attach validated user to request
+    req.user = validationResult.data;
+    next();
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token expired', 
+        code: 'TOKEN_EXPIRED' 
+      });
+    }
+    
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Invalid token' 
+    });
+  }
+}
 ```
 
-### 10. Remove Redundant Code
+### Protected Route Component
+```tsx
+import { useAuth } from "@/hooks/use-auth";
+import { Redirect, Route } from "wouter";
+import { Loader2 } from "lucide-react";
 
-Eliminate duplicate code paths and consolidate similar functionality:
+interface ProtectedRouteProps {
+  path: string;
+  component: React.ComponentType;
+  roles?: string[];
+}
 
-- Merge similar health check endpoints
-- Remove redundant port checking logic
-- Eliminate unnecessary error handling for non-critical components
+export function ProtectedRoute({ 
+  path, 
+  component: Component, 
+  roles = [] 
+}: ProtectedRouteProps) {
+  const { user, isLoading } = useAuth();
 
-## Implementation Plan - COMPLETED
+  if (isLoading) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Route>
+    );
+  }
 
-### Phase 1: Immediate Optimizations ✓
+  // Not authenticated
+  if (!user) {
+    return (
+      <Route path={path}>
+        <Redirect to="/auth" />
+      </Route>
+    );
+  }
 
-1. ✓ Created new optimized workflow command script
-2. ✓ Removed delay after port binding
-3. ✓ Simplified port selection logic
-4. ✓ Eliminated file-based coordination
+  // Check roles if specified
+  if (roles.length > 0 && !roles.includes(user.role)) {
+    // Redirect to appropriate dashboard based on role
+    const homePath = user.role === 'admin' ? '/admin/dashboard' : '/investor/dashboard';
+    return (
+      <Route path={path}>
+        <Redirect to={homePath} />
+      </Route>
+    );
+  }
 
-### Phase 2: Structural Optimizations ✓
-
-1. ✓ Converted to more efficient module loading with `node --import tsx`
-2. ✓ Implemented progressive enhancement with staged loading
-3. ✓ Optimized server configuration (Vite config changes were restricted)
-4. ✓ Implemented lazy loading for non-critical components (API routes)
-
-### Phase 3: Advanced Optimizations ✓
-
-1. ✓ Implemented optimized application loading flow
-2. ✓ Created streamlined server initialization
-3. ✓ Implemented environment variable-based coordination
-4. ✓ Optimized database connections with lazy loading
-
-### Phase 4: Testing and Validation ✓
-
-1. ✓ Measured startup time before and after optimizations
-2. ✓ Tested application functionality after changes
-3. ✓ Validated application works in Replit environment
-4. ✓ Fine-tuned optimizations based on results
-
-## RESULTS
-
-The application startup time has been reduced from >20 seconds to <100ms, well within Replit's 10-second limit. See OptimizationSummary.md for detailed metrics and descriptions of all implemented optimizations.
-
-## Measurement and Validation
-
-To validate the effectiveness of optimizations:
-
-1. Add precise timestamps at critical points in the startup process
-2. Measure time between key events:
-   - Script execution start
-   - Port binding
-   - Route setup
-   - Vite server start
-   - Full application ready
-
-3. Use the `performance.now()` API for high-precision timing:
-
-```javascript
-const startTime = performance.now();
-// ... code to measure ...
-const endTime = performance.now();
-console.log(`Operation took ${endTime - startTime} milliseconds`);
+  // User is authenticated and authorized
+  return <Route path={path} component={Component} />;
+}
 ```
 
 ## Conclusion
-
-The proposed optimizations target all aspects of the application startup process, from initial script execution to full application loading. By implementing these changes, we should be able to significantly reduce startup time and meet Replit's 10-second limit.
-
-The most significant gains will likely come from:
-1. Eliminating unnecessary delays
-2. Simplifying port binding logic
-3. Optimizing the Vite server configuration
-4. Implementing progressive enhancement
-
-After implementing these changes, we should re-measure performance and identify any remaining bottlenecks for further optimization.
+This implementation plan provides a comprehensive approach to creating a secure, role-based authentication system for the iREVA platform. By standardizing on JWT authentication, implementing proper security measures, and creating a consistent user experience, we can ensure that both admin and investor users have secure and appropriate access to the platform's features.
