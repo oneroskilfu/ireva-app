@@ -203,10 +203,37 @@ function generateHtml(replInfo) {
     <html>
     <head>
       <title>iREVA Platform</title>
-      <meta http-equiv="refresh" content="5">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; background-color: #f5f7fa; }
-        .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body { 
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+          text-align: center; 
+          padding: 0; 
+          margin: 0;
+          background-color: #f5f7fa; 
+          overflow: hidden;
+          height: 100vh;
+          width: 100vw;
+        }
+        #app-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 1;
+        }
+        .container { 
+          max-width: 800px; 
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-color: white; 
+          padding: 30px; 
+          border-radius: 10px; 
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
         .logo { font-size: 2rem; font-weight: bold; color: #2563eb; margin-bottom: 20px; }
         .logo span { color: #64748b; }
         .loader { border: 8px solid #f3f3f3; border-top: 8px solid #2563eb; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; margin: 20px auto; }
@@ -230,6 +257,27 @@ function generateHtml(replInfo) {
         .detail-item { padding: 8px; background-color: white; border-radius: 4px; border: 1px solid #e2e8f0; }
         .detail-label { font-weight: bold; color: #64748b; margin-right: 5px; }
         .detail-value { font-family: monospace; color: #334155; }
+        
+        /* Embedded iframe styling */
+        iframe {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          border: none;
+          z-index: 1000;
+        }
+        
+        /* Fade-in animation for iframe */
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        .fade-in {
+          animation: fadeIn 0.5s ease-in-out;
+        }
       </style>
       <script>
         // Check if the main app is ready
@@ -241,10 +289,82 @@ function generateHtml(replInfo) {
           fetch(mainUrl, { mode: 'no-cors' })
             .then(() => {
               console.log("Main app is responding! Redirecting...");
-              window.location.href = mainUrl;
+              
+              // Create iframe instead of redirecting
+              const container = document.getElementById('app-container');
+              if (container) {
+                console.log("Creating iframe for seamless experience");
+                container.innerHTML = '';
+                const iframe = document.createElement('iframe');
+                iframe.src = mainUrl;
+                iframe.className = 'fade-in';
+                iframe.style.width = '100%';
+                iframe.style.height = '100vh';
+                iframe.style.border = 'none';
+                iframe.style.position = 'fixed';
+                iframe.style.top = '0';
+                iframe.style.left = '0';
+                iframe.style.zIndex = '9999';
+                document.body.style.margin = '0';
+                document.body.style.padding = '0';
+                document.body.style.overflow = 'hidden';
+                
+                // Add loading feedback
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.id = 'iframe-loading-overlay';
+                loadingOverlay.style.position = 'fixed';
+                loadingOverlay.style.top = '0';
+                loadingOverlay.style.left = '0';
+                loadingOverlay.style.width = '100%';
+                loadingOverlay.style.height = '100%';
+                loadingOverlay.style.backgroundColor = 'rgba(255,255,255,0.8)';
+                loadingOverlay.style.display = 'flex';
+                loadingOverlay.style.justifyContent = 'center';
+                loadingOverlay.style.alignItems = 'center';
+                loadingOverlay.style.zIndex = '10001';
+                loadingOverlay.innerHTML = '<div style="text-align: center;"><div class="loader"></div><p>Loading iREVA Platform...</p></div>';
+                document.body.appendChild(loadingOverlay);
+                
+                // Hide loading overlay when iframe is loaded
+                iframe.onload = function() {
+                  const overlay = document.getElementById('iframe-loading-overlay');
+                  if (overlay) {
+                    overlay.style.opacity = '0';
+                    overlay.style.transition = 'opacity 0.5s ease-in-out';
+                    setTimeout(() => {
+                      overlay.style.display = 'none';
+                    }, 500);
+                  }
+                };
+                
+                container.appendChild(iframe);
+                
+                // Hide loading elements
+                const loader = document.getElementById('loader-container');
+                if (loader) {
+                  loader.style.display = 'none';
+                }
+                
+                // Hide manual links section
+                const manualLinks = document.getElementById('manual-links-section');
+                if (manualLinks) {
+                  manualLinks.style.display = 'none';
+                }
+                
+                // Add direct link as fallback
+                const fallbackLink = document.createElement('div');
+                fallbackLink.innerHTML = 
+                  '<div style="position: fixed; bottom: 10px; right: 10px; z-index: 10000; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px;">' +
+                  '<a href="' + mainUrl + '" target="_blank" style="color: #2563eb; font-size: 12px;">Open in new tab</a></div>';
+                document.body.appendChild(fallbackLink);
+              } else {
+                // Fallback to redirect if container not found
+                window.location.href = mainUrl;
+              }
             })
             .catch(error => {
               console.log("Main app not ready yet, will check again: " + error);
+              setTimeout(checkMainApp, 2000); // Check again in 2 seconds
             });
         }
         
@@ -262,19 +382,23 @@ function generateHtml(replInfo) {
       </script>
     </head>
     <body>
-      <div class="container">
-        <div class="logo">i<span>REVA</span></div>
-        <h1>Starting iREVA Platform</h1>
-        <div class="loader"></div>
-        <p>The application is initializing...</p>
-        <p>This page will automatically refresh and redirect when ready.</p>
-        <a href="${mainUrl}" class="link">Click here if not redirected</a>
-        
-        ${manualLinks}
-        
-        <div style="margin-top: 30px; font-size: 12px; color: #94a3b8;">
-          <p>Is this the right URL? <span id="debug-info">Checking...</span></p>
-          <p>Your access URL: <script>document.write(window.location.href)</script></p>
+      <div id="app-container" style="width:100%;height:100vh;position:relative;">
+        <div id="loader-container" class="container">
+          <div class="logo">i<span>REVA</span></div>
+          <h1>Welcome to iREVA Platform</h1>
+          <div class="loader"></div>
+          <p>The application is initializing...</p>
+          <p>You will be automatically redirected to the main application when it's ready.</p>
+          <a href="${mainUrl}" class="link">Click here if not redirected</a>
+          
+          <div id="manual-links-section">
+            ${manualLinks}
+          </div>
+          
+          <div style="margin-top: 30px; font-size: 12px; color: #94a3b8;">
+            <p>Is this the right URL? <span id="debug-info">Checking...</span></p>
+            <p>Your access URL: <script>document.write(window.location.href)</script></p>
+          </div>
         </div>
       </div>
     </body>
