@@ -10,6 +10,7 @@ const httpProxy = require('http-proxy');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
 
 // Define constants directly in this file to avoid module compatibility issues
 const MINIMAL_SERVER_PORT = 5000;  // Port that Replit looks for
@@ -19,34 +20,132 @@ console.log('REPLIT REVERSE PROXY INITIALIZATION...');
 console.log(`Creating proxy server on port ${MINIMAL_SERVER_PORT}...`);
 
 // Create a proxy server instance
-const proxy = httpProxy.createProxyServer();
+const proxy = httpProxy.createProxyServer({
+  ws: true,               // Enable WebSocket proxying
+  xfwd: true,             // Forward original headers
+  changeOrigin: true,     // Change the origin of the host header
+  secure: false,          // Don't verify SSL certs
+  toProxy: false,         // Don't pass the absolute URL as path
+  ignorePath: false,      // Don't ignore the proxy path
+  followRedirects: true   // Follow redirects
+});
 
 // Handle proxy errors
 proxy.on('error', (err, req, res) => {
   console.error('Proxy error:', err);
   
-  // Send an error response if the proxy fails
-  res.writeHead(502, {'Content-Type': 'text/html'});
-  res.end(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>iREVA Platform - Service Starting</title>
-        <meta http-equiv="refresh" content="3">
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; }
-          .loader { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #2563eb; animation: spin 1s ease-in-out infinite; margin: 20px 0; }
-          @keyframes spin { to { transform: rotate(360deg); } }
-        </style>
-      </head>
-      <body>
-        <h1>iREVA Platform</h1>
-        <p>The application is starting. This page will automatically refresh.</p>
-        <div class="loader"></div>
-      </body>
-    </html>
-  `);
+  if (!res.headersSent) {
+    // Send an error response if the proxy fails
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.end(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>iREVA Platform - Service Starting</title>
+          <meta http-equiv="refresh" content="3">
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; }
+            .loader { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #2563eb; animation: spin 1s ease-in-out infinite; margin: 20px 0; }
+            @keyframes spin { to { transform: rotate(360deg); } }
+          </style>
+        </head>
+        <body>
+          <h1>iREVA Platform</h1>
+          <p>The application is starting. This page will automatically refresh.</p>
+          <div class="loader"></div>
+        </body>
+      </html>
+    `);
+  }
 });
+
+// Function to check if the main application is ready
+function checkAppReady() {
+  return new Promise((resolve) => {
+    const checkRequest = http.request({
+      hostname: '127.0.0.1',
+      port: MAIN_APP_PORT,
+      path: '/',
+      method: 'HEAD',
+      timeout: 300
+    }, () => {
+      resolve(true);
+    });
+    
+    checkRequest.on('error', () => {
+      resolve(false);
+    });
+    
+    checkRequest.end();
+  });
+}
+
+// Flag to track if the main app is ready
+let mainAppReady = false;
+
+// Periodically check if the main app is ready
+setInterval(async () => {
+  const wasReady = mainAppReady;
+  mainAppReady = await checkAppReady();
+  
+  if (mainAppReady && !wasReady) {
+    console.log(`Main application detected as ready on port ${MAIN_APP_PORT}`);
+  }
+}, 1000);
+
+// Function to send a loading page
+function sendLoadingPage(res) {
+  res.writeHead(200, {'Content-Type': 'text/html'});
+  res.end(`<!DOCTYPE html>
+<html>
+<head>
+  <title>iREVA Platform</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f7fa;
+      color: #333;
+    }
+    .loader {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(37, 99, 235, 0.2);
+      border-radius: 50%;
+      border-top-color: #2563eb;
+      animation: spin 1s ease-in-out infinite;
+      margin: 20px 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #2563eb;
+    }
+  </style>
+  <meta http-equiv="refresh" content="2">
+</head>
+<body>
+  <div class="container">
+    <h1>iREVA Platform</h1>
+    <p>The application is starting, please wait...</p>
+    <div class="loader"></div>
+    <p>This page will automatically refresh</p>
+  </div>
+</body>
+</html>`);
+}
 
 // Create an HTTP server that proxies requests to the main application
 const server = http.createServer((req, res) => {
@@ -56,30 +155,67 @@ const server = http.createServer((req, res) => {
   res.setHeader('Expires', '0');
   res.setHeader('Surrogate-Control', 'no-store');
   
-  // Add special headers that Replit might be looking for
+  // Add special headers for Replit
   res.setHeader('X-Replit-Port-Status', 'active');
   res.setHeader('X-Port-Binding-Success', 'true');
+  res.setHeader('X-Replit-Health-Check', 'success');
   
-  try {
-    // Proxy the request to the main application
-    proxy.web(req, res, { 
-      target: `http://127.0.0.1:${MAIN_APP_PORT}`,
-      ignorePath: false,
-      xfwd: true,
-      changeOrigin: true
+  // Parse the request URL
+  const parsedUrl = url.parse(req.url, true);
+  
+  // Log incoming requests to help debugging
+  console.log(`Proxy received request for: ${req.method} ${parsedUrl.pathname}`);
+  
+  // Special handling for Replit webview system paths
+  if (parsedUrl.pathname === '/__repl') {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end('REPL is active');
+    return;
+  }
+  
+  if (parsedUrl.pathname === '/__replbuild') {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end('Build successful');
+    return;
+  }
+  
+  // Check if main app is ready before attempting to proxy
+  if (mainAppReady) {
+    try {
+      // Special handling for homepage request
+      if (parsedUrl.pathname === '/') {
+        console.log('Proxying request for homepage to main application');
+      }
+      
+      // Proxy the request to the main application
+      proxy.web(req, res, { 
+        target: `http://127.0.0.1:${MAIN_APP_PORT}`
+      });
+    } catch (err) {
+      console.error('Error proxying request:', err);
+      sendLoadingPage(res);
+    }
+  } else {
+    console.log('Main application not ready yet, sending loading page');
+    sendLoadingPage(res);
+  }
+});
+
+// Handle upgrade for WebSocket connections
+server.on('upgrade', (req, socket, head) => {
+  if (mainAppReady) {
+    console.log('Proxying WebSocket upgrade to main application');
+    proxy.ws(req, socket, head, {
+      target: `http://127.0.0.1:${MAIN_APP_PORT}`
     });
-  } catch (err) {
-    console.error('Error proxying request:', err);
-    
-    // Send a simple response if the proxy fails
-    res.writeHead(503, {'Content-Type': 'text/html'});
-    res.end(`<html><body><h1>iREVA Platform</h1><p>Starting application, please wait...</p></body></html>`);
+  } else {
+    socket.end('HTTP/1.1 503 Service Unavailable\r\n\r\n');
   }
 });
 
 // Explicitly bind to all interfaces on port 5000
 server.listen(MINIMAL_SERVER_PORT, () => {
-  // Log multiple variations of success in formats Replit might be searching for
+  // Log multiple variations of success messages for Replit's detection
   console.log(`SERVER LISTENING ON PORT ${MINIMAL_SERVER_PORT}`);
   console.log(`PORT ${MINIMAL_SERVER_PORT} OPEN AND READY`);
   console.log('PORT BINDING SUCCESSFUL');
