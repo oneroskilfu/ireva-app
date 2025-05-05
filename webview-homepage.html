@@ -3,186 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iREVA Platform</title>
+    <title>iREVA Platform - Loading</title>
     <style>
-        body, html {
+        body {
             margin: 0;
             padding: 0;
-            height: 100%;
-            overflow: hidden;
-        }
-        .loading-container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            background-color: #f5f7fa;
-            font-family: Arial, sans-serif;
+            color: #1e293b;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 40px;
             text-align: center;
-            color: #333;
+            max-width: 500px;
+            width: 90%;
         }
-        .loader {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(37, 99, 235, 0.2);
-            border-radius: 50%;
-            border-top-color: #2563eb;
-            animation: spin 1s ease-in-out infinite;
-            margin: 30px 0;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        
         .logo {
             font-size: 2.5rem;
             font-weight: bold;
             color: #2563eb;
             margin-bottom: 10px;
         }
-        .loading-text {
-            position: relative;
-            font-weight: bold;
-            margin-top: 20px;
+        
+        .logo span {
+            color: #475569;
         }
-        .loading-text:after {
-            content: '...';
-            position: absolute;
-            width: 20px;
-            text-align: left;
-            animation: dots 2s infinite;
+        
+        .title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #334155;
         }
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
+        
+        .description {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 1rem;
+            line-height: 1.5;
         }
-        .status-message {
+        
+        .loader {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(37, 99, 235, 0.1);
+            border-radius: 50%;
+            border-top-color: #2563eb;
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px 0;
+        }
+        
+        .status {
             margin-top: 20px;
             font-size: 0.9rem;
-            color: #666;
+            color: #64748b;
         }
-        .iframe-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            z-index: 10;
+        
+        .manual-link {
             display: none;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        .manual-link:hover {
+            background-color: #1d4ed8;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
         }
     </style>
 </head>
 <body>
-    <div class="loading-container" id="loadingContainer">
-        <div class="logo">iREVA</div>
-        <p>Real Estate Investment Platform</p>
+    <div class="container">
+        <div class="logo">i<span>REVA</span></div>
+        <div class="title">Real Estate Investment Platform</div>
+        <div class="description">
+            Connecting to the iREVA Platform. You will be redirected automatically in a few moments.
+        </div>
         <div class="loader"></div>
-        <p class="loading-text">Loading application</p>
-        <p class="status-message">Connecting to property investment platform...</p>
+        <div class="status" id="statusMessage">Initializing connection...</div>
+        <a href="#" id="manualLink" class="manual-link">Open Application Directly</a>
     </div>
-    
-    <iframe id="appFrame" class="iframe-container" allowfullscreen></iframe>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const loadingContainer = document.getElementById('loadingContainer');
-            const appFrame = document.getElementById('appFrame');
+            const statusMessage = document.getElementById('statusMessage');
+            const manualLink = document.getElementById('manualLink');
             
-            // Function to get the base URL without port
+            // Function to get base URL without port
             function getBaseUrl() {
                 const protocol = window.location.protocol;
                 const hostname = window.location.hostname;
                 return `${protocol}//${hostname}`;
             }
             
-            // Define potential URLs to try
-            const baseUrl = getBaseUrl();
-            const urls = [
-                `${baseUrl}:3001/`,  // Try port 3001 first (webview default)
-                `${baseUrl}:5001/`,  // Try port 5001 (main app)
-                `${baseUrl}:5000/`,  // Try port 5000 (proxy server)
-                `${baseUrl}/`        // Try without port
-            ];
-            
-            let currentUrlIndex = 0;
+            // Set up the direct link
+            const mainAppUrl = `${getBaseUrl()}:5001/`;
+            manualLink.href = mainAppUrl;
             
             // Update status message
             function updateStatus(message) {
-                const statusEl = document.querySelector('.status-message');
-                if (statusEl) {
-                    statusEl.textContent = message;
-                }
+                statusMessage.textContent = message;
             }
             
-            // Function to try loading the next URL
-            function tryNextUrl() {
-                if (currentUrlIndex >= urls.length) {
-                    // If all URLs failed, show a message
-                    loadingContainer.innerHTML = `
-                        <div class="logo">iREVA</div>
-                        <p>Connection Issue</p>
-                        <p style="max-width: 400px; margin: 20px auto;">
-                            We're having trouble connecting to the application.
-                            Please make sure the application workflow is running and try again.
-                        </p>
-                        <button onclick="location.reload()" style="
-                            padding: 12px 24px;
-                            background-color: #2563eb;
-                            color: white;
-                            border: none;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            margin-top: 20px;
-                            font-weight: bold;
-                        ">Retry Connection</button>
-                    `;
-                    return;
-                }
-                
-                // Try the current URL
-                console.log("Trying URL:", urls[currentUrlIndex]);
-                
-                // Update status message based on which URL we're trying
-                const portName = urls[currentUrlIndex].includes(':3001') ? 'Webview port (3001)' :
-                                urls[currentUrlIndex].includes(':5001') ? 'Application port (5001)' :
-                                urls[currentUrlIndex].includes(':5000') ? 'Proxy port (5000)' : 'Default port';
-                                
-                updateStatus(`Connecting to ${portName}...`);
-                
-                // Load the URL in the iframe
-                appFrame.src = urls[currentUrlIndex];
-                
-                // Set a timeout for this attempt
-                setTimeout(() => {
-                    currentUrlIndex++;
-                    tryNextUrl();
-                }, 3000);
-            }
+            // Show the manual link after a delay
+            setTimeout(() => {
+                manualLink.style.display = 'inline-block';
+                manualLink.classList.add('fade-in');
+            }, 5000);
             
-            // Handle iframe load event
-            appFrame.addEventListener('load', function() {
-                try {
-                    // Check if the iframe content is accessible
-                    const iframeContent = appFrame.contentWindow.document.body;
-                    
-                    // If we can access the content, show the iframe
-                    loadingContainer.style.display = 'none';
-                    appFrame.style.display = 'block';
-                    
-                    console.log("Successfully loaded URL:", appFrame.src);
-                } catch (error) {
-                    // If we can't access the content (CORS error), try next URL
-                    console.error("Failed to load:", appFrame.src, error);
-                    currentUrlIndex++;
-                    tryNextUrl();
-                }
-            });
+            // Redirect after timeout
+            setTimeout(() => {
+                updateStatus('Redirecting to application...');
+                window.location.href = mainAppUrl;
+            }, 3000);
             
-            // Start trying URLs
-            tryNextUrl();
+            // Start with checking connection
+            updateStatus('Connecting to iREVA Platform...');
         });
     </script>
 </body>

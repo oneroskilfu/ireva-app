@@ -1,64 +1,53 @@
-# Replit WebView Solution for iREVA Platform
+# iREVA Replit Webview Access Solution
 
-## Problem Overview
+## Accessing the Application
 
-Replit's WebView functionality has a limitation where it only connects to port 5000, while our iREVA application runs on port 5001. This creates challenges when trying to view the application directly in Replit's interface.
+The iREVA platform is now accessible through Replit's Webview system. We've implemented a robust two-server architecture to handle the constraints of Replit's environment:
 
-## Technical Solution
+1. **Direct Webview Server (Port 5000)**: Binds immediately for Replit's port detection
+2. **Main Application Server (Port 5001)**: Runs the actual iREVA platform
 
-We've implemented a reverse proxy solution that:
+## How to Access the Application
 
-1. Binds to port 5000 immediately (for Replit port detection)
-2. Forwards all requests from port 5000 to the main application on port 5001
-3. Maintains all application functionality without changing the core application code
+### Method 1: Direct URL Access
+The main application is accessible at port 5001. You can access it by:
+- Clicking the Webview option in Replit (automatic redirect will happen)
+- Manually entering the URL with port 5001 in your browser
 
-The solution uses the following components:
+### Method 2: Webview Access
+When you access the application through Replit's Webview tab:
+1. Our direct webview server on port 5000 receives the request
+2. It checks if the main application is running on port 5001
+3. Once verified, it automatically redirects you to the main application
 
-- **proxy-reverse.cjs**: A lightweight HTTP proxy server that:
-  - Binds immediately to port 5000 (for Replit detection)
-  - Proxies all incoming requests to port 5001
-  - Handles error conditions gracefully
-  - Starts the main application as a child process
+### Method 3: Special Webview Route
+You can also use our special webview direct access route:
+- `/webview` - This route will immediately redirect to the main application
 
-- **workflow-command.sh**: Updated to launch the proxy server instead of the minimal TCP server
+## Troubleshooting Access Issues
+
+If you experience any issues accessing the application:
+
+1. **Ensure the workflow is running**: The "Start application" workflow must be active
+2. **Check both servers are running**: Look for "PORT 5000 OPEN AND READY" and "PORT 5001 OPEN AND READY" in logs
+3. **Try direct access**: Access the application using the port 5001 directly in your URL
+4. **Use the special routes**: Try accessing `/webview` via port 5000
+
+## Port Configuration
+
+| Port | Service | Purpose |
+|------|---------|---------|
+| 5000 | Direct Webview Server | Immediate port binding for Replit detection |
+| 5001 | Main Application | The actual iREVA platform with all features |
 
 ## How It Works
 
-1. When the Replit workflow starts, it launches the `proxy-reverse.cjs` server
-2. This server binds to port 5000 immediately
-3. After port binding, it starts the main application on port 5001
-4. When you access the Webview in Replit, it connects to port 5000
-5. The proxy server forwards your request to the application on port 5001
-6. You see the full application in Replit's Webview without needing to manually change ports
+Our solution addresses two key challenges with Replit's environment:
 
-## Benefits of This Approach
+1. **Port Detection Challenge**: Replit requires a server to bind to port 5000 within 20 seconds
+   - Solution: Direct webview server binds immediately to port 5000
 
-- **Seamless User Experience**: Access the application directly in Replit's Webview
-- **Reliable Port Detection**: Ensures Replit detects the bound port within its timeout window
-- **No URL Manipulation**: No need to manually change URLs or add port parameters
-- **Full Application Access**: Complete access to all application features including:
-  - Homepage
-  - Admin Dashboard
-  - Investor Dashboard
-  - Privacy Policy
-  - Terms of Service
+2. **Webview Access Challenge**: Replit Webview tries to access port 3001 by default
+   - Solution: Smart redirect system that routes all traffic to port 5001 where the main app runs
 
-## Viewing the Application
-
-To access the iREVA platform, simply:
-
-1. Click the "Run" button in Replit to start the workflow
-2. Wait for the application to start (typically 10-15 seconds)
-3. Click the "Webview" button in Replit's interface
-4. The application will load directly in Replit's Webview
-
-## Technical Implementation Details
-
-The reverse proxy implementation uses Node.js's `http-proxy` package to:
-
-1. Listen on port 5000 for incoming requests
-2. Proxy those requests to the main application on port 5001
-3. Preserve all HTTP headers and request data
-4. Handle errors gracefully with appropriate fallback pages
-
-This provides a seamless experience while maintaining the architectural advantages of our dual-port approach.
+This dual-server architecture ensures reliable access while maintaining full application functionality.

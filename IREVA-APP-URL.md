@@ -1,19 +1,39 @@
-# iREVA Platform Access URL
+# iREVA Application URL Access Guide
 
-## Important: The iREVA application is running on port 5001
+This document provides quick access information for the iREVA Platform.
 
-Due to our dual-port solution:
-1. Port 5000 is used by a minimal server for Replit's port detection
-2. Port 5001 is where the actual iREVA application is running
+## Direct Application URLs
 
-## To access the iREVA platform:
+| Service | URL | Notes |
+|---------|-----|-------|
+| **Main Application** | `https://[repl-name].[username].repl.co:5001/` | The main iREVA platform |
+| **Webview Server** | `https://[repl-name].[username].repl.co:5000/` | Redirects to main application |
+| **Direct Webview** | `https://[repl-name].[username].repl.co:5000/webview` | Fast redirect to main app |
 
-- Within Replit webview: Click on this URL: [iREVA on port 5001](https://{{REPL_SLUG}}.{{REPL_OWNER}}.repl.co/?port=5001)
-- External browser: Use https://{{REPL_SLUG}}.{{REPL_OWNER}}.repl.co:5001
+## Special Routes
 
-## Primary URLs for the application:
+| Route | Purpose |
+|-------|---------|
+| `/webview` | Direct access to main application |
+| `/health` | Check if the servers are running |
+| `/check-main-app` | Verify if main application is available |
 
-- Home page: https://{{REPL_SLUG}}.{{REPL_OWNER}}.repl.co:5001/
-- Privacy Policy: https://{{REPL_SLUG}}.{{REPL_OWNER}}.repl.co:5001/privacy
-- Terms of Service: https://{{REPL_SLUG}}.{{REPL_OWNER}}.repl.co:5001/terms
-- Authentication: https://{{REPL_SLUG}}.{{REPL_OWNER}}.repl.co:5001/auth
+## Access Tips
+
+1. The most reliable way to access iREVA is through the direct app URL (port 5001)
+2. If you're using Replit's Webview tab, you'll be automatically redirected to the main application
+3. All paths and routes from the main application are fully supported
+
+## Webview Testing
+
+To test that the application is working correctly:
+
+1. Start the "Start application" workflow
+2. Open the Webview tab in Replit
+3. You should be automatically redirected to the main application
+
+If you see any errors or blank screens, try refreshing or directly accessing port 5001.
+
+---
+
+*Note: Replace '[repl-name].[username]' with your actual Replit identifier*
