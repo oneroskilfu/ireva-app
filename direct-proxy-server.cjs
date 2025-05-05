@@ -1,24 +1,71 @@
 /**
- * Direct Proxy Server for Replit Webview
+ * Enhanced Direct Proxy Server for Replit Webview
  * 
  * This server acts as a direct reverse proxy between port 3000 (webview port)
- * and port 5001 (application port). Instead of using iframe or redirect,
- * it fetches the content directly and serves it, ensuring the webview
- * always displays the actual homepage.
+ * and port 5001 (application port). It includes advanced health checking and
+ * request handling to ensure the iREVA homepage is properly displayed.
  */
 
 const http = require('http');
 const https = require('https');
 const { createProxyServer } = require('http-proxy');
+const net = require('net');
 
-// Create a proxy server instance
+// Track application readiness
+let mainAppReady = false;
+let checkCount = 0;
+const MAX_CHECKS = 60; // Maximum health checks before giving up
+
+// Create a proxy server instance with better options
 const proxy = createProxyServer({
-  target: {
-    host: 'localhost',
-    port: 5001
-  },
-  ws: true // Support WebSockets
+  target: 'http://localhost:5001',  // Simplified target format
+  ws: true,                         // Support WebSockets
+  secure: false,                    // Don't verify SSL certs
+  changeOrigin: true,               // Changes the origin of the host header
+  xfwd: true,                       // Adds x-forwarded headers
+  ignorePath: false,                // Don't ignore the path
+  toProxy: false,                   // Don't pass the absolute URL as path
+  prependPath: true,                // Prepend target path to request path
+  autoRewrite: true                 // Rewrites the location header
 });
+
+// Function to check if the main application is ready
+function checkMainAppReady() {
+  const socket = new net.Socket();
+  
+  socket.setTimeout(1000);
+  
+  socket.on('connect', function() {
+    console.log('Main application is now available on port 5001');
+    mainAppReady = true;
+    socket.destroy();
+  });
+  
+  socket.on('error', function(err) {
+    checkCount++;
+    if (checkCount % 5 === 0) {
+      console.log(`Main app still not ready (attempt ${checkCount}/${MAX_CHECKS}): ${err.message}`);
+    }
+    socket.destroy();
+    
+    if (checkCount < MAX_CHECKS) {
+      setTimeout(checkMainAppReady, 1000);
+    } else {
+      console.log('Reached maximum check attempts. Setting app as ready anyway.');
+      mainAppReady = true;
+    }
+  });
+  
+  socket.on('timeout', function() {
+    socket.destroy();
+    setTimeout(checkMainAppReady, 1000);
+  });
+  
+  socket.connect(5001, 'localhost');
+}
+
+// Start checking the main application
+checkMainAppReady();
 
 // Handle proxy errors
 proxy.on('error', (err, req, res) => {
@@ -138,28 +185,54 @@ proxy.on('error', (err, req, res) => {
         }
       </style>
       <script>
-        // Auto-refresh the page every 3 seconds until the app is ready
+        // More intelligent refresh system that checks app status
         let refreshCount = 0;
-        const maxRefreshes = 20;
+        const maxRefreshes = 30;
         
-        function refreshPage() {
-          refreshCount++;
-          if (refreshCount <= maxRefreshes) {
-            // Update progress percentage
-            const progressPercentage = Math.min(95, Math.floor((refreshCount / maxRefreshes) * 100));
+        async function checkAppStatus() {
+          try {
+            const response = await fetch('/app-status');
+            const data = await response.json();
+            
+            // Update progress percentage based on actual server status
+            const progressPercentage = Math.min(95, Math.floor((data.checks / data.maxChecks) * 100));
             const percentEl = document.getElementById('progress-percentage');
             if (percentEl) {
               percentEl.textContent = progressPercentage + '%';
             }
             
-            // Schedule next refresh
-            setTimeout(() => {
+            // If the app is ready, reload the page to show the real app
+            if (data.ready) {
+              console.log('Application is ready! Reloading page...');
               window.location.reload();
-            }, 3000);
+              return;
+            }
+          } catch (error) {
+            console.log('Error checking app status:', error);
+          }
+          
+          // App isn't ready, schedule another check
+          refreshCount++;
+          if (refreshCount <= maxRefreshes) {
+            // Schedule next check
+            setTimeout(checkAppStatus, 2000);
+          } else {
+            // Force reload after max attempts
+            window.location.reload();
           }
         }
         
-        window.onload = refreshPage;
+        // Periodically force reload to ensure we eventually load the real app
+        function forceReloadTimer() {
+          setTimeout(() => {
+            window.location.reload();
+          }, 30000); // Force reload after 30 seconds regardless of status
+        }
+        
+        window.onload = function() {
+          checkAppStatus();
+          forceReloadTimer();
+        };
       </script>
     </head>
     <body>
@@ -189,7 +262,7 @@ const server = http.createServer((req, res) => {
   // Add CORS headers to allow embedding
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // Special handling for status routes that Replit uses to check port binding
   if (req.url === '/health' || req.url === '/__health' || req.url === '/__repl') {
@@ -197,19 +270,35 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ status: 'ok' }));
     return;
   }
+  
+  // Check for direct access to app status endpoint
+  if (req.url === '/app-status') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      ready: mainAppReady, 
+      checks: checkCount,
+      maxChecks: MAX_CHECKS
+    }));
+    return;
+  }
 
-  // Try to proxy the request directly
-  // This simplifies the process and reduces extra checks
+  // If the app isn't ready yet and this isn't an asset request, show loading page
+  if (!mainAppReady && 
+      !req.url.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
+    console.log(`App not ready yet, showing loading page for: ${req.url}`);
+    proxy.emit('error', new Error('App not ready yet'), req, res);
+    return;
+  }
+
+  // Try to proxy the request to the main app
   try {
-    proxy.web(req, res, {}, (err) => {
-      if (err) {
-        console.log('Error proxying request:', err.message);
-        // Show loading page when proxy fails
-        proxy.emit('error', err, req, res);
-      }
-    });
+    console.log(`Proxying request to main app: ${req.url}`);
+    
+    // Use the simple proxy method with no additional options
+    // This is more reliable and avoids potential errors with headers
+    proxy.web(req, res);
   } catch (error) {
-    console.log('Exception while proxying:', error.message);
+    console.log(`Exception while proxying ${req.url}: ${error.message}`);
     proxy.emit('error', error, req, res);
   }
 });
