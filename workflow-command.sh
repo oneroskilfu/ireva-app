@@ -5,12 +5,12 @@
 
 echo "==== IREVA PLATFORM STARTUP ===="
 echo "Date: $(date)"
-echo "Starting TCP port binding..."
+echo "Starting reverse proxy server..."
 
-# Run the ultra-minimal TCP server that binds port 5000 immediately
-# This ensures Replit can detect the port binding within 20 seconds
-node tcp-start.cjs
+# Run the reverse proxy server that binds port 5000 immediately
+# and proxies requests to the main application on port 5001
+node proxy-reverse.cjs
 
-# This should never be reached as the TCP server stays running
-echo "ERROR: TCP server exited unexpectedly"
+# This should never be reached as the proxy server stays running
+echo "ERROR: Proxy server exited unexpectedly"
 exit 1
