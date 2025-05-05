@@ -149,50 +149,102 @@ function sendLoadingPage(res) {
 
 // Create a special server that listens on port 3001 to handle direct webview connections
 // This is necessary because Replit maps port 5001 to external port 3001
+// This ensures the application can be accessed through Replit's webview
 try {
-  const redirectServer = http.createServer((req, res) => {
+  // Create a secondary proxy server on port 3001 that simply proxies to the main app on port 5001
+  // This ensures Replit Webview can access the application directly
+  const secondaryProxy = httpProxy.createProxyServer({
+    ws: true,
+    xfwd: true,
+    changeOrigin: true,
+    secure: false
+  });
+  
+  secondaryProxy.on('error', (err, req, res) => {
+    console.error('Secondary proxy error:', err);
+    if (!res.headersSent) {
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>iREVA Platform - Loading</title>
+            <meta http-equiv="refresh" content="2">
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; }
+              .loader { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #2563eb; animation: spin 1s ease-in-out infinite; margin: 20px 0; }
+              @keyframes spin { to { transform: rotate(360deg); } }
+            </style>
+          </head>
+          <body>
+            <h1>iREVA Platform</h1>
+            <p>Loading the application, please wait...</p>
+            <div class="loader"></div>
+          </body>
+        </html>
+      `);
+    }
+  });
+  
+  const port3001Server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
-    const host = req.headers.host || '';
+    console.log(`Port 3001 server received request: ${req.method} ${parsedUrl.pathname}`);
     
-    console.log(`Redirect server received request on port 3001: ${req.method} ${parsedUrl.pathname}`);
+    // Add special headers for Replit
+    res.setHeader('X-Replit-Port-Status', 'active');
+    res.setHeader('X-Port-Binding-Success', 'true');
     
-    // Extract hostname without port
-    const hostname = host.split(':')[0];
-    
-    // Respond with a special redirect page
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.end(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>iREVA Platform - Redirecting</title>
-        <meta http-equiv="refresh" content="0;url=https://${hostname}${parsedUrl.pathname}">
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; }
-          .loader { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #2563eb; animation: spin 1s ease-in-out infinite; margin: 20px 0; }
-          @keyframes spin { to { transform: rotate(360deg); } }
-        </style>
-      </head>
-      <body>
-        <h1>iREVA Platform</h1>
-        <p>Redirecting to the correct URL...</p>
-        <div class="loader"></div>
-        <p>If you are not redirected, <a href="https://${hostname}${parsedUrl.pathname}">click here</a>.</p>
-      </body>
-      </html>
-    `);
+    // Check if main app is ready before attempting to proxy
+    if (mainAppReady) {
+      // Directly proxy to the main application without redirection
+      secondaryProxy.web(req, res, { 
+        target: `http://127.0.0.1:${MAIN_APP_PORT}`
+      });
+    } else {
+      // Show loading page while waiting for main app to start
+      console.log('Main app not ready yet, showing loading page on port 3001');
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>iREVA Platform - Loading</title>
+            <meta http-equiv="refresh" content="2">
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 40px 20px; }
+              .loader { display: inline-block; width: 30px; height: 30px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: #2563eb; animation: spin 1s ease-in-out infinite; margin: 20px 0; }
+              @keyframes spin { to { transform: rotate(360deg); } }
+            </style>
+          </head>
+          <body>
+            <h1>iREVA Platform</h1>
+            <p>The application is starting, please wait...</p>
+            <div class="loader"></div>
+            <p>This page will automatically refresh</p>
+          </body>
+        </html>
+      `);
+    }
   });
   
-  redirectServer.listen(3001, '0.0.0.0', () => {
-    console.log('Redirect server listening on port 3001');
+  // Handle WebSocket connections on port 3001
+  port3001Server.on('upgrade', (req, socket, head) => {
+    console.log('WebSocket upgrade received on port 3001');
+    secondaryProxy.ws(req, socket, head, {
+      target: `http://127.0.0.1:${MAIN_APP_PORT}`
+    });
   });
   
-  redirectServer.on('error', (err) => {
-    console.error('Redirect server error:', err.message);
+  port3001Server.listen(3001, '0.0.0.0', () => {
+    console.log('Secondary proxy server listening on port 3001');
+  });
+  
+  port3001Server.on('error', (err) => {
+    console.error('Port 3001 server error:', err.message);
     // Non-fatal if this server fails - the proxy on port 5000 can still work
   });
 } catch (err) {
-  console.error('Failed to start redirect server on port 3001:', err);
+  console.error('Failed to start server on port 3001:', err);
 }
 
 // Create the main HTTP server that proxies requests to the main application
