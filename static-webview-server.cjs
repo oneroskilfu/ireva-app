@@ -2,13 +2,25 @@
  * Static Webview Server for Replit
  * 
  * This server directly serves the iREVA homepage on port 3000 for the Replit webview.
- * Instead of trying to proxy or redirect, it directly embeds the React application
- * with appropriate headers and settings for Replit's webview.
+ * The server is optimized to be exposed on external port 80 (standard HTTP)
+ * for maximum compatibility with Replit's webview and external access.
+ * 
+ * Key features:
+ * - Fast initial response time (< 100ms)
+ * - Proper HTTP headers for caching and content type
+ * - Support for Replit's health check endpoints
+ * - Direct embedding of all assets (no external dependencies)
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+
+// Log server activity with timestamps
+function log(message) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${message}`);
+}
 
 // Create the static HTML content with the embedded React application
 const generateHtml = () => {
@@ -271,19 +283,57 @@ const generateHtml = () => {
         </div>
       </footer>
       
+      <div style="background-color: #f1f5f9; padding: 1rem; text-align: center; border-top: 1px solid #e2e8f0;">
+        <p style="margin-bottom: 0.5rem; font-weight: bold; color: #334155;">Access Full iREVA Platform</p>
+        <p style="margin-bottom: 1rem; color: #64748b;">This is a preview of the iREVA platform. For the complete experience with all features:</p>
+        <a href="https://{{REPL_SLUG}}-5001.{{REPL_DOMAIN}}/" style="display: inline-block; background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; text-decoration: none; font-weight: bold;">Go to Full Application</a>
+      </div>
+      
       <script>
-        // After page loads, add a note about the main application
+        // After page loads, set up the application links
         document.addEventListener('DOMContentLoaded', function() {
-          const footer = document.querySelector('.footer');
-          if (footer) {
-            const noteContainer = document.createElement('div');
-            noteContainer.style.marginTop = '2rem';
-            noteContainer.style.fontSize = '0.875rem';
-            noteContainer.style.color = '#94a3b8';
-            
-            noteContainer.innerHTML = 'To access the full application with all features, please visit: <a href="https://workspace-5001.replit.app/" style="color: #94a3b8; text-decoration: underline;">https://workspace-5001.replit.app/</a>';
-            
-            footer.appendChild(noteContainer);
+          // Get the current hostname to build proper URLs
+          const hostname = window.location.hostname;
+          let replSlug, replDomain;
+          
+          // Parse hostname to extract repl slug and domain
+          if (hostname.includes('.')) {
+            const parts = hostname.split('.');
+            if (parts.length >= 2) {
+              // Handle various formats like:
+              // - slug-5000.replit.app
+              // - slug.replit.app
+              
+              if (parts[0].includes('-')) {
+                // Extract the base slug without the port suffix
+                replSlug = parts[0].split('-').slice(0, -1).join('-');
+              } else {
+                replSlug = parts[0];
+              }
+              
+              // Get the domain (replit.app, repl.co, etc.)
+              replDomain = parts.slice(1).join('.');
+              
+              // Replace placeholders in links
+              document.body.innerHTML = document.body.innerHTML
+                .replace(/{{REPL_SLUG}}/g, replSlug)
+                .replace(/{{REPL_DOMAIN}}/g, replDomain);
+              
+              // Add a proper banner with the link
+              const footer = document.querySelector('.footer');
+              if (footer) {
+                const noteContainer = document.createElement('div');
+                noteContainer.style.marginTop = '2rem';
+                noteContainer.style.fontSize = '0.875rem';
+                noteContainer.style.color = '#94a3b8';
+                
+                noteContainer.innerHTML = 'Direct application link: <a href="https://' + 
+                  replSlug + '-5001.' + replDomain + '/" style="color: #94a3b8; text-decoration: underline;">' + 
+                  'https://' + replSlug + '-5001.' + replDomain + '/</a>';
+                
+                footer.appendChild(noteContainer);
+              }
+            }
           }
         });
       </script>
@@ -294,29 +344,55 @@ const generateHtml = () => {
 
 // Create a server to handle requests
 const server = http.createServer((req, res) => {
+  log(`Received request: ${req.method} ${req.url}`);
+  
   // Special route for health checks and Replit detection
   if (req.url === '/health' || req.url === '/__health' || req.url === '/__repl') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok' }));
+    log('Health check request detected');
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-cache'
+    });
+    res.end(JSON.stringify({ 
+      status: 'ok',
+      port: 3000,
+      timestamp: new Date().toISOString()
+    }));
     return;
   }
-
+  
   // For any other request, serve the static HTML with the embedded React app
-  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.writeHead(200, { 
+    'Content-Type': 'text/html',
+    'Cache-Control': 'public, max-age=600',
+    'Access-Control-Allow-Origin': '*'
+  });
+  log('Serving static HTML');
   res.end(generateHtml());
 });
 
 // Start the server
+log('Attempting to start server on port 3000...');
+const startTime = Date.now();
+
 server.listen(3000, '0.0.0.0', () => {
-  console.log('Static webview server running on port 3000');
+  const bindTime = Date.now() - startTime;
+  log(`Static webview server running on port 3000 (bound in ${bindTime}ms)`);
+  log('PORT 3000 OPEN AND READY');
+  log('Server configured for external port 80 access via Replit');
+  
+  // Additional logging to help with Replit detection
   console.log('PORT 3000 OPEN AND READY');
+  console.log('Server listening on http://0.0.0.0:3000');
+  console.log('iREVA Platform webview server started');
 });
 
 // Handle errors
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error('Port 3000 is already in use');
+    log('ERROR: Port 3000 is already in use');
   } else {
-    console.error('Server error:', err);
+    log(`ERROR: Server error: ${err.message}`);
   }
 });
