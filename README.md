@@ -87,6 +87,29 @@ For more details, see:
 - [WORKFLOW_UPDATE_GUIDE.md](./WORKFLOW_UPDATE_GUIDE.md) - Detailed workflow configuration
 - [PORT-CONFIGURATION.md](./PORT-CONFIGURATION.md) - Port setup and usage
 - [QUICK-START-GUIDE.md](./QUICK-START-GUIDE.md) - Quick reference for developers
+- [PRODUCTION-DEPLOYMENT-GUIDE.md](./PRODUCTION-DEPLOYMENT-GUIDE.md) - Production build and deployment guide
+
+### Production Build
+
+To create a production build of the iREVA platform:
+
+```bash
+# Run the production build workflow
+./workflow-production-build.sh
+```
+
+This will create optimized production files in the `dist/` directory.
+
+### Starting in Production Mode
+
+To start the application in production mode:
+
+```bash
+# Run the production start workflow
+./workflow-production-start.sh
+```
+
+The production server will run on port 5001.
 
 ## Core Modules
 

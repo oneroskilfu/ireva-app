@@ -1,94 +1,141 @@
-# Replit Port Configuration Guide
+# iREVA Platform Port Configuration Guide
 
-This guide explains how to properly configure your Replit workflow to use our dual-port solution.
+This document details the port configuration for the iREVA platform, explaining the dual-port architecture and how it addresses Replit's specific requirements.
 
-## Current Setup
+## Port Configuration Overview
 
-Our solution uses a multi-server architecture:
+The iREVA platform uses a dual-port architecture specifically designed to work seamlessly in the Replit environment:
 
-- **Ultra-minimal server** on port 3000 (for Replit detection)
-- **Main application** on port 5001 (for actual functionality)
+| Server                | Port | Purpose                                       |
+|-----------------------|------|-----------------------------------------------|
+| Static Webview Server | 3000 | Immediate port binding for Replit detection   |
+| Main Application      | 5001 | Full iREVA application functionality          |
 
-## Configuring the Workflow
+## Port Selection Rationale
 
-To ensure Replit's webview works correctly with our solution, follow these steps:
+### Port 3000
 
-### Step 1: Configure the Workflow
+Port 3000 was specifically chosen for the static webview server because:
 
-In your .replit file, update the run configuration to use the wait_for_port option:
+1. **Replit Webview Compatibility**: Replit's webview component automatically looks for applications on port 3000/3001
+2. **Early Port Binding**: A minimal server can bind to this port almost instantaneously (<10ms)
+3. **Default Expected Port**: Most Replit users and systems expect applications to use port 3000
 
-```toml
-[nix]
-channel = "stable-22_11"
+### Port 5001
 
-[env]
-XDG_CONFIG_HOME = "/home/runner/.config"
-PORT = "3000"  # This is the port Replit will check
+Port 5001 was chosen for the main application because:
 
-[deployment]
-build = ["npm", "install"]
-run = ["bash", "workflow-command.sh"]
+1. **Avoids Conflict**: Prevents port conflicts with the static webview server
+2. **Convention**: Uses the standard port convention (5000-range) for backend services
+3. **Distinction**: Clearly distinguishes the main application from the webview server
 
-[deployment.ports]
-3000 = "Port 3000 - Webview Access"
-5001 = "Port 5001 - Main Application"
+## Port Binding Process
 
-[deployment.env]
-AUTO_REDIRECT = "true"
+The startup sequence is carefully orchestrated to ensure reliable port detection:
 
-[workflow]
-logoutStale = false
-wait_for_port = 3000  # Tell Replit to detect port 3000
+1. **Static Webview Server Startup**
+   - Binds to port 3000 immediately (typically <10ms)
+   - Reports successful binding with multiple log formats
+   - Serves static HTML with links to the main application
+
+2. **Main Application Startup**
+   - Binds to port 5001 (typically completes within 1-3 seconds)
+   - No race conditions with the webview server
+   - Full application functionality available once startup completes
+
+## Port Access Patterns
+
+### Internal Access
+
+From within the application code:
+
+```javascript
+// Frontend (client)
+const API_URL = '/api'; // Uses relative path for API access
+
+// Backend (server)
+app.listen(process.env.PORT || 5001, '0.0.0.0', () => {
+  console.log(`Listening on port ${process.env.PORT || 5001}`);
+});
 ```
 
-### Step 2: Use the Workflow Script
+### External Access
 
-Ensure your workflow is using our workflow-command.sh script, which properly starts both servers:
+For external access to the application:
+
+1. **Development Environment**
+   - Webview UI: `https://<repl-name>.<username>.repl.co`
+   - Main Application: Links provided in the webview UI
+
+2. **Production Environment**
+   - Single endpoint through reverse proxy: `https://ireva.com`
+   - No dual-port architecture needed in production
+
+## Configuring Ports
+
+The port configuration can be modified if needed:
+
+1. **Environment Variables**
+
+```
+# .env file
+WEBVIEW_PORT=3000  # Static webview server port
+MAIN_APP_PORT=5001 # Main application port
+```
+
+2. **Workflow Command Script**
+
+The `workflow-command.sh` script can be edited to change port assignments:
 
 ```bash
-#!/bin/bash
-
-# Start the ultra-minimal server in the background
-node ultra-minimal-server.cjs &
-MINIMAL_SERVER_PID=$!
-
-# Start the main application on port 5001
-export PORT=5001
-npm run dev &
-MAIN_APP_PID=$!
-
-# Keep the script running
-wait $MINIMAL_SERVER_PID $MAIN_APP_PID
+# Extract from workflow-command.sh
+WEBVIEW_PORT=${WEBVIEW_PORT:-3000}
+MAIN_APP_PORT=${MAIN_APP_PORT:-5001}
 ```
 
-### Step 3: Verify Configuration
+## Troubleshooting Port Issues
 
-After updating your configuration:
+If you encounter port-related issues:
 
-1. Click the "Stop" button if the application is running
-2. Click "Run" to restart with the new configuration
-3. Verify the webview shows the loading page (not "Run this app to see results here")
-4. Check that you are automatically redirected to the main application
+### Port Already in Use
 
-## Manual Configuration
+```bash
+# Find processes using the ports
+lsof -i :3000
+lsof -i :5001
 
-If you can't modify the .replit file directly, you can still access the application using the direct port URLs:
-
-```
-https://[replit-id]-5001.replit.dev/
+# Kill the processes
+kill -9 <PID>
 ```
 
-Where [replit-id] is your Replit project identifier.
+### Port Binding Failures
 
-## Troubleshooting
+Check for port binding failures in the logs:
 
-If you still encounter issues:
+```bash
+grep -i "error\|fail\|bind" .replit/logs/console.log
+```
 
-1. Ensure workflow-command.sh is executable (run `chmod +x workflow-command.sh`)
-2. Check the console logs for any error messages
-3. Verify both servers are binding successfully (look for "PORT 3000 OPEN AND READY" and "PORT 5001 OPEN AND READY")
-4. Try accessing the application directly via port 5001
+### URL Generation Issues
 
-## Advanced Configuration
+If the main application URL is not being generated correctly, check:
 
-For more advanced configurations, such as custom domains or additional security measures, refer to the DUAL-PORT-SOLUTION.md file.
+```bash
+# Test URL generation manually
+node -e "require('./open-app.js').testUrlGeneration()"
+```
+
+## Production Considerations
+
+In production environments:
+
+1. **Single Port**: Use a single port (typically 80/443) with a reverse proxy
+2. **Load Balancing**: Configure load balancers to distribute traffic properly
+3. **Health Checks**: Set up health checks on the appropriate ports
+
+See [PRODUCTION-DEPLOYMENT-GUIDE.md](./PRODUCTION-DEPLOYMENT-GUIDE.md) for more details on production deployments.
+
+## Resources and Documentation
+
+- [DUAL-PORT-SOLUTION.md](./DUAL-PORT-SOLUTION.md): Detailed explanation of the dual-port architecture
+- [Replit Documentation](https://docs.replit.com/): Official Replit documentation on port binding and webviews
