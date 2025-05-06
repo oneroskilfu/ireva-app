@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import createMemoryStore from "memorystore";
 
 declare global {
   namespace Express {
@@ -28,14 +29,24 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Create a dedicated initialization function to support staged loading
+export function initializeAuth(app: Express) {
+  return setupAuth(app);
+}
+
 export function setupAuth(app: Express) {
+  // Use in-memory session store for development to reduce startup time
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'ireva-real-estate-secret',
     resave: false,
     saveUninitialized: false,
-    store: storage.sessionStore,
+    store: isProduction ? storage.sessionStore : new (createMemoryStore(session))({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
   };

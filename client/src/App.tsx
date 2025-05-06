@@ -5,8 +5,9 @@ import HomePage from "./pages/home-page";
 import AuthPage from "./pages/auth-page";
 import AuthTestPage from "./pages/auth-test";
 import UnauthorizedPage from "./pages/unauthorized-page";
-import { ProtectedRoute, AdminRoute } from "./lib/protected-route";
+import { ProtectedRoute, AdminRoute, InvestorRoute } from "./lib/protected-route";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
+import InvestorDashboardPage from "./pages/investor/investor-dashboard";
 import { AuthProvider } from "./hooks/use-auth";
 
 function App() {
@@ -20,8 +21,11 @@ function App() {
             <Route path="/auth-test" component={AuthTestPage} />
             <Route path="/unauthorized" component={UnauthorizedPage} />
             
-            {/* Protected routes */}
+            {/* Protected admin routes */}
             <AdminRoute path="/admin/dashboard" component={AdminDashboardPage} />
+            
+            {/* Protected investor routes */}
+            <ProtectedRoute path="/investor/dashboard" component={InvestorDashboardPage} />
             
             {/* Home route */}
             <Route path="/" component={HomePage} />

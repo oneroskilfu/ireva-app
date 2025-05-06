@@ -87,9 +87,18 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
+    // Ensure all required fields are present and have default values if missing
     const user: User = { 
       id, 
-      ...insertUser, 
+      username: insertUser.username,
+      password: insertUser.password,
+      email: insertUser.email,
+      role: insertUser.role || 'user',
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      phoneNumber: insertUser.phoneNumber || null,
+      profileImage: insertUser.profileImage || null,
+      bio: insertUser.bio || null,
       createdAt: new Date()
     };
     this.users.set(id, user);
@@ -102,17 +111,40 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true
-    });
-    
-    // Initialize the database when storage is created
-    this.initializeDatabase().then(() => {
-      console.log("Database initialization completed successfully");
-    }).catch((error) => {
-      console.error("Failed to initialize database:", error);
-    });
+    // For faster startup, use memory store in development initially
+    if (process.env.NODE_ENV === 'development' && process.env.STAGED_LOADING === 'true') {
+      // Use in-memory session store for faster startup during development
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+      });
+      
+      // Schedule database initialization to happen after server startup
+      setTimeout(() => {
+        this.initializeDatabase().then(() => {
+          console.log("Database initialization completed successfully");
+          // Switch to PostgreSQL session store after database is ready
+          this.sessionStore = new PostgresSessionStore({
+            pool,
+            createTableIfMissing: true
+          });
+        }).catch((error) => {
+          console.error("Failed to initialize database:", error);
+        });
+      }, 1000); // Delay database initialization by 1 second
+    } else {
+      // In production, use PostgreSQL session store from the start
+      this.sessionStore = new PostgresSessionStore({
+        pool,
+        createTableIfMissing: true
+      });
+      
+      // Initialize the database when storage is created
+      this.initializeDatabase().then(() => {
+        console.log("Database initialization completed successfully");
+      }).catch((error) => {
+        console.error("Failed to initialize database:", error);
+      });
+    }
   }
 
   // User methods

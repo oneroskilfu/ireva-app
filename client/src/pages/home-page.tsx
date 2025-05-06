@@ -32,6 +32,9 @@ export default function HomePage() {
                     Admin Dashboard
                   </Link>
                 )}
+                <Link href="/investor/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
+                  Investor Dashboard
+                </Link>
                 <div className="flex items-center gap-2 border rounded-full px-3 py-1">
                   <User className="h-4 w-4" />
                   <span className="text-sm">{user.username}</span>

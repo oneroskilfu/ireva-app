@@ -1,30 +1,128 @@
 import express from "express";
-import { registerRoutes } from "./routes";
+import cors from "cors";
+import { createServer } from "http";
+import { registerRoutes, registerEssentialRoutes, registerAuthenticatedRoutes } from "./routes";
 import { storage } from "./storage";
-import { db } from "./db";
+import { initializeDb, db } from "./db";
+import { initializeAuth } from "./auth";
+
+// Determine if we should use staged loading for faster startup
+const useStaging = process.env.STAGED_LOADING === 'true';
+const startTime = Date.now();
+
+// Log with timestamp for performance tracking
+const logWithTime = (message: string) => {
+  const elapsed = Date.now() - startTime;
+  console.log(`[${elapsed}ms] ${message}`);
+};
+
+logWithTime('Starting server with' + (useStaging ? ' staged loading...' : 'out staged loading...'));
 
 // Create Express application
 const app = express();
 
-// Register routes and get HTTP server
-const server = registerRoutes(app);
+// Apply essential middleware immediately
+app.use(express.json());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 
-// Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Register essential routes that don't depend on auth/db
+registerEssentialRoutes(app);
+
+let server: any;
+
+// Use different initialization approaches based on staging flag
+if (useStaging) {
+  // Staged approach: Start server immediately, then initialize features progressively
+  
+  // Start server immediately to bind the port
+  const PORT = process.env.PORT || 5000;
+  server = createServer(app);
+  
+  server.listen(PORT, '0.0.0.0', () => {
+    logWithTime(`Server is running on port ${PORT} - Stage 1 complete`);
+    
+    // Stage 2: Initialize authentication (doesn't require DB)
+    setTimeout(async () => {
+      try {
+        logWithTime('Initializing authentication...');
+        initializeAuth(app);
+        logWithTime('Authentication initialized');
+        
+        // Stage 3: Initialize database after another short delay
+        setTimeout(async () => {
+          try {
+            logWithTime('Initializing database...');
+            await initializeDb();
+            logWithTime('Database initialized');
+            
+            // Stage 4: Register all remaining routes
+            registerAuthenticatedRoutes(app);
+            logWithTime('All routes registered - Server fully initialized');
+          } catch (err) {
+            console.error('Error during database initialization:', err);
+          }
+        }, 500); // 0.5 second delay before DB init
+      } catch (err) {
+        console.error('Error during authentication initialization:', err);
+      }
+    }, 100); // 0.1 second delay before auth init
+  });
+} else {
+  // Traditional approach: Initialize everything before starting the server
+  logWithTime('Using traditional initialization approach');
+  
+  // Initialize auth
+  initializeAuth(app);
+  
+  // Register all routes
+  server = registerRoutes(app);
+  
+  // Initialize database
+  initializeDb().then(() => {
+    logWithTime('Database initialized');
+  }).catch(err => {
+    console.error('Error initializing database:', err);
+  });
+  
+  // Start server
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, '0.0.0.0', () => {
+    logWithTime(`Server is running on port ${PORT}`);
+  });
+}
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('Shutting down gracefully...');
+  logWithTime('Shutting down gracefully...');
   
   // Close the server
   server.close(() => {
-    console.log('Server closed');
+    logWithTime('Server closed');
     
-    // Close database connection
-    db.client.release();
+    // Close database connection if initialized
+    if (db.client && typeof db.client.release === 'function') {
+      db.client.release();
+    }
+    
+    process.exit(0);
+  });
+});
+
+// Also handle SIGINT for local development
+process.on('SIGINT', async () => {
+  logWithTime('SIGINT received, shutting down...');
+  
+  // Close the server
+  server.close(() => {
+    logWithTime('Server closed');
+    
+    // Close database connection if initialized
+    if (db.client && typeof db.client.release === 'function') {
+      db.client.release();
+    }
     
     process.exit(0);
   });
