@@ -41,34 +41,47 @@ if (useStaging) {
   const PORT = process.env.PORT || 5000;
   server = createServer(app);
   
-  server.listen(PORT, '0.0.0.0', () => {
+  server.listen(PORT, '0.0.0.0', async () => {
     logWithTime(`Server is running on port ${PORT} - Stage 1 complete`);
     
-    // Stage 2: Initialize authentication (doesn't require DB)
-    setTimeout(async () => {
+    // Stage 2: Initialize authentication and database in parallel
+    logWithTime('Initializing core services in parallel...');
+    
+    // Start both processes simultaneously 
+    const authPromise = (async () => {
       try {
-        logWithTime('Initializing authentication...');
+        logWithTime('Starting authentication setup...');
         initializeAuth(app);
         logWithTime('Authentication initialized');
-        
-        // Stage 3: Initialize database after another short delay
-        setTimeout(async () => {
-          try {
-            logWithTime('Initializing database...');
-            await initializeDb();
-            logWithTime('Database initialized');
-            
-            // Stage 4: Register all remaining routes
-            registerAuthenticatedRoutes(app);
-            logWithTime('All routes registered - Server fully initialized');
-          } catch (err) {
-            console.error('Error during database initialization:', err);
-          }
-        }, 500); // 0.5 second delay before DB init
+        return true;
       } catch (err) {
         console.error('Error during authentication initialization:', err);
+        return false;
       }
-    }, 100); // 0.1 second delay before auth init
+    })();
+    
+    const dbPromise = (async () => {
+      try {
+        logWithTime('Starting database initialization...');
+        await initializeDb();
+        logWithTime('Database initialized');
+        return true;
+      } catch (err) {
+        console.error('Error during database initialization:', err);
+        return false;
+      }
+    })();
+    
+    // Wait for both to complete
+    const [authSuccess, dbSuccess] = await Promise.all([authPromise, dbPromise]);
+    
+    // Only register authenticated routes if both auth and db initialized successfully
+    if (authSuccess && dbSuccess) {
+      registerAuthenticatedRoutes(app);
+      logWithTime('All routes registered - Server fully initialized');
+    } else {
+      logWithTime('WARNING: Some services failed to initialize properly');
+    }
   });
 } else {
   // Traditional approach: Initialize everything before starting the server

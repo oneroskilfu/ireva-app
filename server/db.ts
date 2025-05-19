@@ -27,12 +27,13 @@ export const initializeDb = async () => {
   console.log('Initializing database connection...');
   
   try {
-    // Use pooled connections for better performance
+    // Optimize pooled connections for faster startup
     pool = new Pool({ 
       connectionString: process.env.DATABASE_URL,
-      max: 20, // Maximum number of clients
+      max: 10, // Reduced maximum clients for startup efficiency
       idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 2000 // Return an error after 2 seconds if connection not established
+      connectionTimeoutMillis: 1000, // Faster timeout for startup
+      allowExitOnIdle: true // Allow clean shutdown
     });
     
     // Initialize Drizzle ORM with our schema

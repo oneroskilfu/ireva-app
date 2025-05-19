@@ -118,19 +118,19 @@ export class DatabaseStorage implements IStorage {
         checkPeriod: 86400000 // prune expired entries every 24h
       });
       
-      // Schedule database initialization to happen after server startup
-      setTimeout(() => {
-        this.initializeDatabase().then(() => {
-          console.log("Database initialization completed successfully");
-          // Switch to PostgreSQL session store after database is ready
+      // Initialize database immediately but don't block server startup
+      this.initializeDatabase().then(() => {
+        console.log("Database initialization completed successfully");
+        // Only switch to PostgreSQL session store in production
+        if (process.env.NODE_ENV === 'production') {
           this.sessionStore = new PostgresSessionStore({
             pool,
             createTableIfMissing: true
           });
-        }).catch((error) => {
-          console.error("Failed to initialize database:", error);
-        });
-      }, 1000); // Delay database initialization by 1 second
+        }
+      }).catch((error) => {
+        console.error("Failed to initialize database:", error);
+      });
     } else {
       // In production, use PostgreSQL session store from the start
       this.sessionStore = new PostgresSessionStore({
