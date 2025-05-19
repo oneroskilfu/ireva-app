@@ -37,7 +37,7 @@ async function apiRequest(
 // Helper function to handle the query
 const getQueryFn = (options?: { 
   on401?: "throw" | "returnNull" 
-}) => async ({ queryKey }: { queryKey: string[] }) => {
+}) => async ({ queryKey }: any): Promise<UserPayload | null> => {
   const [url] = queryKey;
   const response = await fetch(url, {
     credentials: "include",
@@ -93,9 +93,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     isLoading,
     refetch,
-  } = useQuery<UserPayload | null, Error>({
+  } = useQuery({
     queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async ({ queryKey }) => {
+      const [url] = queryKey;
+      const response = await fetch(url.toString(), {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error("An error occurred while fetching data");
+      }
+
+      return await response.json() as UserPayload;
+    },
     retry: false,
   });
 

@@ -15,8 +15,8 @@ import { Building, ArrowRight, ShieldCheck, Users, DollarSign } from "lucide-rea
 // Login form validation schema
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters",
+  password: z.string().min(1, {
+    message: "Password is required",
   }),
 });
 
@@ -26,11 +26,14 @@ const registerSchema = z.object({
     message: "Username must be at least 3 characters",
   }),
   email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters",
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters",
   }),
   confirmPassword: z.string(),
   role: z.enum(["investor", "admin"]),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phoneNumber: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -75,17 +78,27 @@ export default function AuthPage() {
       password: "",
       confirmPassword: "",
       role: "investor",
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
     },
   });
 
   // Login form submission handler
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data, {
-      onSuccess: () => {
+      onSuccess: (userData) => {
         toast({
           title: "Login successful",
           description: "You have been logged in successfully",
         });
+        
+        // Redirect based on user role
+        if (userData.role === "admin" || userData.role === "super_admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/investor/dashboard");
+        }
       },
       onError: (error) => {
         toast({
@@ -101,11 +114,18 @@ export default function AuthPage() {
   const onRegisterSubmit = (data: RegisterFormValues) => {
     const { confirmPassword, ...registerData } = data;
     registerMutation.mutate(registerData, {
-      onSuccess: () => {
+      onSuccess: (userData) => {
         toast({
           title: "Registration successful",
           description: "Your account has been created successfully",
         });
+        
+        // Redirect based on user role
+        if (userData.role === "admin" || userData.role === "super_admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/investor/dashboard");
+        }
       },
       onError: (error) => {
         toast({
@@ -232,6 +252,49 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={registerForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="John" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+1234567890" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
                     <FormField
                       control={registerForm.control}
                       name="role"
