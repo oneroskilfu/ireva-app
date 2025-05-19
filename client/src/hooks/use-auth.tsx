@@ -117,23 +117,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Mutation for login
   const loginMutation = useMutation<UserPayload, Error, LoginData>({
     mutationFn: async (credentials: LoginData) => {
-      // Map email to username for server compatibility
-      const serverCredentials = {
-        username: credentials.email,
-        password: credentials.password
-      };
-      
-      const res = await apiRequest("POST", "/api/login", serverCredentials);
-      
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error || "Login failed");
+      try {
+        // Map email to username for server compatibility
+        const serverCredentials = {
+          username: credentials.email,
+          password: credentials.password
+        };
+        
+        const res = await apiRequest("POST", "/api/login", serverCredentials);
+        
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error("Invalid username or password");
+          }
+          const error = await res.text();
+          throw new Error(error || "Login failed");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Login error:", error);
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("An unexpected error occurred during login");
       }
-      
-      return await res.json();
     },
     onSuccess: () => {
       refetch(); // Refresh user data after login
+      toast({
+        title: "Login successful",
+        description: "Welcome to the iREVA platform",
+      });
     },
     onError: (error: Error) => {
       toast({
