@@ -81,17 +81,35 @@ const emptyDb = {
     initializeDb();
     return db.insert();
   },
-  sql: {},
-  or: () => {},
-  eq: () => {}
+  sql: (strings: any, ...values: any[]) => ({
+    toString: () => '1'
+  }),
+  or: (...conditions: any[]) => ({}),
+  eq: (column: any, value: any) => ({})
+};
+
+// Empty pool object with required methods
+const emptyPool = {
+  query: async (text: string, params?: any[]) => {
+    console.warn('Pool not initialized yet, initializing now...');
+    await initializeDb();
+    return pool.query(text, params);
+  }
 };
 
 // Define proxy objects for lazy database initialization
 // These provide transparent access while deferring actual initialization
-const poolProxy = new Proxy({} as any, {
+const poolProxy = new Proxy(emptyPool as any, {
   get: (target, prop) => {
-    if (!dbInitialized) {
+    if (!dbInitialized && prop !== 'then') {
       console.warn(`Database not initialized yet. Initializing now to access '${String(prop)}'`);
+      
+      // If the prop is in our empty pool stub, return that first
+      if (prop in target) {
+        return target[prop as keyof typeof target];
+      }
+      
+      // Otherwise initialize and try to return the real prop
       initializeDb();
     }
     return pool ? pool[prop as keyof typeof pool] : null;

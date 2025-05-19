@@ -192,8 +192,9 @@ export class DatabaseStorage implements IStorage {
     try {
       // Skip extensive checks if we're in minimal startup mode
       if (process.env.MINIMAL_STARTUP === 'true') {
-        // Just validate connection and defer seeding
-        await db.select({ value: db.sql`1` }).limit(1);
+        // Simplified connection test
+        const query = 'SELECT 1 as value';
+        await pool.query(query);
         
         // Schedule user seeding to happen after startup is complete
         setTimeout(() => this.seedTestUserAsync(), 2000);
@@ -228,14 +229,31 @@ export class DatabaseStorage implements IStorage {
   // Create test users with known passwords for testing
   private async seedTestUser() {
     try {
-      // Use a simpler approach to inserting test users
-      // First check if they exist with a single query
-      const existingUsers = await db.select({
-        username: users.username
-      }).from(users).where(db.or(
-        db.eq(users.username, 'testuser'),
-        db.eq(users.username, 'admin')
-      ));
+      let existingUsers: Array<{username: string}>;
+      
+      // Use different approaches based on startup mode
+      if (process.env.MINIMAL_STARTUP === 'true') {
+        // In minimal startup mode, use direct SQL for better compatibility
+        try {
+          const { rows } = await pool.query(
+            'SELECT username FROM users WHERE username IN ($1, $2)',
+            ['testuser', 'admin']
+          );
+          existingUsers = rows;
+        } catch (err) {
+          console.log('Error querying users table, it may not exist yet:', err);
+          // If table doesn't exist, assume no users
+          existingUsers = [];
+        }
+      } else {
+        // Standard ORM approach for normal mode
+        existingUsers = await db.select({
+          username: users.username
+        }).from(users).where(db.or(
+          db.eq(users.username, 'testuser'),
+          db.eq(users.username, 'admin')
+        ));
+      }
       
       const usersToCreate: InsertUser[] = [];
       const existingUsernames = new Set(existingUsers.map((u: { username: string }) => u.username));
@@ -265,9 +283,32 @@ export class DatabaseStorage implements IStorage {
         });
       }
       
-      // Create all needed users in a single batch
+      // Create all needed users
       if (usersToCreate.length > 0) {
-        await db.insert(users).values(usersToCreate);
+        if (process.env.MINIMAL_STARTUP === 'true') {
+          // In minimal mode, use direct SQL for user creation
+          for (const user of usersToCreate) {
+            try {
+              await pool.query(
+                'INSERT INTO users (username, password, email, role, first_name, last_name, phone_number) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                [
+                  user.username,
+                  user.password,
+                  user.email,
+                  user.role || 'investor',
+                  user.firstName || null,
+                  user.lastName || null,
+                  user.phoneNumber || null
+                ]
+              );
+            } catch (err) {
+              console.error(`Error creating user ${user.username}:`, err);
+            }
+          }
+        } else {
+          // Normal mode - use Drizzle ORM
+          await db.insert(users).values(usersToCreate);
+        }
         console.log(`Created ${usersToCreate.length} test users`);
       }
     } catch (error) {
