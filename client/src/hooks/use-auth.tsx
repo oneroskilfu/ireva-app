@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     refetch,
   } = useQuery<UserPayload | null, Error>({
-    queryKey: ["/api/auth/verify"],
+    queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
   });
@@ -102,11 +102,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Mutation for login
   const loginMutation = useMutation<UserPayload, Error, LoginData>({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
+      // Map email to username for server compatibility
+      const serverCredentials = {
+        username: credentials.email,
+        password: credentials.password
+      };
+      
+      const res = await apiRequest("POST", "/api/login", serverCredentials);
       
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Login failed");
+        const error = await res.text();
+        throw new Error(error || "Login failed");
       }
       
       return await res.json();
@@ -126,11 +132,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Mutation for registration
   const registerMutation = useMutation<UserPayload, Error, RegisterData>({
     mutationFn: async (userData: RegisterData) => {
-      const res = await apiRequest("POST", "/api/auth/register", userData);
+      const res = await apiRequest("POST", "/api/register", {
+        username: userData.username,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role || "investor"
+      });
       
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Registration failed");
+        let errorMsg;
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.error || "Registration failed";
+        } catch {
+          errorMsg = "Registration failed";
+        }
+        throw new Error(errorMsg);
       }
       
       return await res.json();
@@ -150,11 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Mutation for logout
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/logout");
+      const res = await apiRequest("POST", "/api/logout");
       
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Logout failed");
+        throw new Error("Logout failed");
       }
     },
     onSuccess: () => {
