@@ -5,6 +5,13 @@ import express from "express";
 import cors from "cors";
 import { storage } from "./storage";
 import { db } from "./db";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// Get the directory name in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Register essential routes that don't depend on database/authentication
@@ -20,6 +27,15 @@ export function registerEssentialRoutes(app: Express) {
       dbStatus,
       timestamp: new Date().toISOString()
     });
+  });
+  
+  // Serve static files from the React app build directory
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+  
+  // Handle React routing for all frontend paths
+  // Add this catch-all route to make sure React router handles all frontend routes
+  app.get(['/auth', '/investor/*', '/admin/*', '/'], (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 }
 
@@ -91,6 +107,14 @@ export function registerRoutes(app: Express): Server {
 
   // Register authenticated routes
   registerAuthenticatedRoutes(app);
+
+  // Handle any remaining routes with React's router
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);
