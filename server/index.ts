@@ -6,8 +6,9 @@ import { storage } from "./storage";
 import { initializeDb, db } from "./db";
 import { initializeAuth } from "./auth";
 
-// Determine if we should use staged loading for faster startup
+// Determine startup mode for optimization
 const useStaging = process.env.STAGED_LOADING === 'true';
+const useMinimalMode = process.env.MINIMAL_STARTUP === 'true';
 const startTime = Date.now();
 
 // Log with timestamp for performance tracking
@@ -16,7 +17,11 @@ const logWithTime = (message: string) => {
   console.log(`[${elapsed}ms] ${message}`);
 };
 
-logWithTime('Starting server with' + (useStaging ? ' staged loading...' : 'out staged loading...'));
+if (useMinimalMode) {
+  logWithTime('Starting server with ultra-minimal mode...');
+} else {
+  logWithTime('Starting server with' + (useStaging ? ' staged loading...' : 'out staged loading...'));
+}
 
 // Create Express application
 const app = express();
@@ -33,11 +38,59 @@ registerEssentialRoutes(app);
 
 let server: any;
 
-// Use different initialization approaches based on staging flag
-if (useStaging) {
-  // Staged approach: Start server immediately, then initialize features progressively
+// Choose initialization approach based on environment flags
+if (useMinimalMode) {
+  // Ultra-minimal startup: Start server instantly and defer everything else
+  const PORT = process.env.PORT || 5000;
+  server = createServer(app);
   
-  // Start server immediately to bind the port
+  // Skip any pre-initialization and bind port immediately
+  server.listen(PORT, '0.0.0.0', async () => {
+    logWithTime(`Server is running on port ${PORT} - Ultra-minimal mode active`);
+    
+    // Fast-track: Skip all delays and initialize core services with max parallelism
+    logWithTime('Fast-initializing core services...');
+    
+    try {
+      // Initialize auth and database in parallel with Promise.all for maximum speed
+      await Promise.all([
+        // Auth initialization
+        (async () => {
+          try {
+            logWithTime('Fast-starting auth...');
+            initializeAuth(app);
+            logWithTime('Auth ready');
+            return true;
+          } catch (err) {
+            console.error('Auth init error:', err);
+            return false;
+          }
+        })(),
+        
+        // Database initialization
+        (async () => {
+          try {
+            logWithTime('Fast-starting database...');
+            await initializeDb();
+            logWithTime('Database ready');
+            return true;
+          } catch (err) {
+            console.error('Database init error:', err);
+            return false;
+          }
+        })()
+      ]);
+      
+      // Register routes immediately after services are initialized
+      registerAuthenticatedRoutes(app);
+      logWithTime('Ultra-minimal initialization complete');
+    } catch (err) {
+      logWithTime('ERROR: Ultra-minimal initialization failed');
+      console.error(err);
+    }
+  });
+} else if (useStaging) {
+  // Staged approach: Start server immediately, then initialize features progressively
   const PORT = process.env.PORT || 5000;
   server = createServer(app);
   

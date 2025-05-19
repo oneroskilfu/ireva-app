@@ -187,10 +187,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Simple initialization method that doesn't depend on other tables
+  // Optimized database initialization
   private async initializeDatabase() {
     try {
-      // Check if users table exists and has data
+      // Skip extensive checks if we're in minimal startup mode
+      if (process.env.MINIMAL_STARTUP === 'true') {
+        // Just validate connection and defer seeding
+        await db.select({ value: db.sql`1` }).limit(1);
+        
+        // Schedule user seeding to happen after startup is complete
+        setTimeout(() => this.seedTestUserAsync(), 2000);
+        return;
+      }
+      
+      // Standard initialization path
       try {
         const result = await db.select().from(users).limit(1);
         if (result.length === 0) {
@@ -206,14 +216,33 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Create a test user with a known password for testing
+  // Non-blocking seed operation for minimal startup mode
+  private seedTestUserAsync() {
+    this.seedTestUser().then(() => {
+      console.log('Test users created asynchronously');
+    }).catch(error => {
+      console.error('Async test user creation error:', error);
+    });
+  }
+  
+  // Create test users with known passwords for testing
   private async seedTestUser() {
     try {
-      const testUser = await this.getUserByUsername('testuser');
-      const adminUser = await this.getUserByUsername('admin');
+      // Use a simpler approach to inserting test users
+      // First check if they exist with a single query
+      const existingUsers = await db.select({
+        username: users.username
+      }).from(users).where(db.or(
+        db.eq(users.username, 'testuser'),
+        db.eq(users.username, 'admin')
+      ));
       
-      if (!testUser) {
-        await this.createUser({
+      const usersToCreate: InsertUser[] = [];
+      const existingUsernames = new Set(existingUsers.map((u: { username: string }) => u.username));
+      
+      // Only create users that don't exist
+      if (!existingUsernames.has('testuser')) {
+        usersToCreate.push({
           username: 'testuser',
           password: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', // 'password' hashed with SHA-256
           email: 'test@example.com',
@@ -222,11 +251,10 @@ export class DatabaseStorage implements IStorage {
           phoneNumber: '08012345678',
           role: 'admin'
         });
-        console.log('Created test admin user: testuser');
       }
       
-      if (!adminUser) {
-        await this.createUser({
+      if (!existingUsernames.has('admin')) {
+        usersToCreate.push({
           username: 'admin',
           password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // 'adminpassword' hashed with SHA-256
           email: 'admin@ireva.com',
@@ -235,7 +263,12 @@ export class DatabaseStorage implements IStorage {
           phoneNumber: '08012345678',
           role: 'super_admin'
         });
-        console.log('Created super admin user: admin');
+      }
+      
+      // Create all needed users in a single batch
+      if (usersToCreate.length > 0) {
+        await db.insert(users).values(usersToCreate);
+        console.log(`Created ${usersToCreate.length} test users`);
       }
     } catch (error) {
       console.error('Error creating test users:', error);
