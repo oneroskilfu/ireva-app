@@ -165,13 +165,13 @@ const server = net.createServer((socket) => {
       if (path.includes('/admin/dashboard')) {
         socket.end(
           'HTTP/1.1 302 Found\r\n' +
-          'Location: http://localhost:5000/admin/dashboard\r\n' +
+          'Location: /admin/dashboard\r\n' +
           'Connection: close\r\n\r\n'
         );
       } else if (path.includes('/investor/dashboard')) {
         socket.end(
           'HTTP/1.1 302 Found\r\n' +
-          'Location: http://localhost:5000/investor/dashboard\r\n' +
+          'Location: /investor/dashboard\r\n' +
           'Connection: close\r\n\r\n'
         );
       } else {
@@ -246,12 +246,12 @@ server.on('error', (err) => {
     // Basic routing
     if (req.url?.includes('/admin/dashboard')) {
       res.writeHead(302, { 
-        'Location': 'http://localhost:5000/admin/dashboard'
+        'Location': '/admin/dashboard'
       });
       res.end();
     } else if (req.url?.includes('/investor/dashboard')) {
       res.writeHead(302, { 
-        'Location': 'http://localhost:5000/investor/dashboard'
+        'Location': '/investor/dashboard'
       });
       res.end();
     } else {
