@@ -47,12 +47,17 @@ export const requireInvestor = (req: Request, res: Response, next: NextFunction)
 export const hasRole = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
-      return res.redirect('/login');
+      // For HTML routes, send JSON response for API calls
+      if (req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      // For HTML routes, serve the login page
+      return res.sendFile(process.cwd() + '/server/public/direct-login.html');
     }
     
     const user = req.user as Express.User;
     if (!roles.includes(user.role)) {
-      return res.status(403).send('Access denied. Insufficient privileges.');
+      return res.status(403).json({ error: 'Access denied. Insufficient privileges.' });
     }
     
     next();

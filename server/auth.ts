@@ -73,8 +73,10 @@ export function setupAuth(app: Express) {
       checkPeriod: 86400000 // prune expired entries every 24h
     }),
     cookie: {
-      secure: isProduction,
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      secure: false, // Set to false to ensure cookies work in all environments
+      sameSite: 'lax', // Helps with cross-site issues
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/'
     }
   };
 

@@ -68,9 +68,48 @@ export function registerEssentialRoutes(app: Express) {
   };
   
   // Register all page routes
-  app.get('/', serveLoginPage);
-  app.get('/login', serveLoginPage);
-  app.get('/auth', serveLoginPage);
+  app.get('/', (req, res) => {
+    // If already authenticated, redirect to appropriate dashboard
+    if (req.isAuthenticated()) {
+      const user = req.user as Express.User;
+      if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin') {
+        return res.redirect('/admin/dashboard');
+      } else {
+        return res.redirect('/investor/dashboard');
+      }
+    }
+    // Otherwise serve login page
+    serveLoginPage(req, res);
+  });
+  
+  app.get('/login', (req, res) => {
+    // If already authenticated, redirect to appropriate dashboard
+    if (req.isAuthenticated()) {
+      const user = req.user as Express.User;
+      if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin') {
+        return res.redirect('/admin/dashboard');
+      } else {
+        return res.redirect('/investor/dashboard');
+      }
+    }
+    // Otherwise serve login page
+    serveLoginPage(req, res);
+  });
+  
+  app.get('/auth', (req, res) => {
+    // If already authenticated, redirect to appropriate dashboard
+    if (req.isAuthenticated()) {
+      const user = req.user as Express.User;
+      if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin') {
+        return res.redirect('/admin/dashboard');
+      } else {
+        return res.redirect('/investor/dashboard');
+      }
+    }
+    // Otherwise serve login page
+    serveLoginPage(req, res);
+  });
+  
   app.get('/admin/dashboard', requireAdmin, serveAdminDashboard);
   app.get('/investor/dashboard', requireInvestor, serveInvestorDashboard);
 }
