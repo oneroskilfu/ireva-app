@@ -358,18 +358,15 @@
                 // Successful login
                 alert(`Login successful! Welcome, ${user.username}`);
                 
-                // Use the redirect path from server response
-                if (user.redirect) {
-                    // Use replace to avoid browser history issues
-                    window.location.replace(user.redirect);
-                } else {
-                    // Fallback to role-based redirect if server doesn't provide a redirect path
-                    if (user.role === 'super_admin' || user.role === 'superadmin' || user.role === 'admin') {
-                        window.location.replace('/admin/dashboard');
-                    } else {
-                        window.location.replace('/investor/dashboard');
-                    }
-                }
+                // Instead of redirecting, fetch the dashboard HTML directly and display it
+                const dashboardUrl = user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin'
+                    ? '/admin/dashboard?auth_token=' + Date.now()
+                    : '/investor/dashboard?auth_token=' + Date.now();
+                
+                console.log('Loading dashboard from:', dashboardUrl);
+                
+                // Redirect with cache-busting parameter to avoid browser cache issues
+                window.location.replace(dashboardUrl);
             } catch (error) {
                 console.error('Login error:', error);
                 showError('loginForm', 'Login failed: ' + (error.message || 'Unknown error'));

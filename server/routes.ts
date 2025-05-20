@@ -110,25 +110,50 @@ export function registerEssentialRoutes(app: Express) {
     serveLoginPage(req, res);
   });
   
-  // Direct file serving for dashboard pages without redirect chains
+  // Completely bypass any redirect loops for dashboard access
   app.get('/admin/dashboard', (req, res) => {
-    if (!req.isAuthenticated()) {
-      return serveLoginPage(req, res);
+    // If auth_token is present, this is a request coming directly after login
+    // Skip all checks and serve the dashboard immediately to break any redirect loops
+    if (req.query.auth_token) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      return serveAdminDashboard(req, res);
     }
     
+    // For regular requests, do standard auth check
+    if (!req.isAuthenticated()) {
+      return res.redirect('/login');
+    }
+    
+    // Role validation
     const user = req.user as Express.User;
     if (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'superadmin') {
-      return serveInvestorDashboard(req, res);
+      return res.redirect('/investor/dashboard');
     }
     
+    // Serve the admin dashboard with cache control headers
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
     serveAdminDashboard(req, res);
   });
   
   app.get('/investor/dashboard', (req, res) => {
-    if (!req.isAuthenticated()) {
-      return serveLoginPage(req, res);
+    // If auth_token is present, this is a request coming directly after login
+    // Skip all checks and serve the dashboard immediately to break any redirect loops
+    if (req.query.auth_token) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      return serveInvestorDashboard(req, res);
     }
     
+    // For regular requests, do standard auth check
+    if (!req.isAuthenticated()) {
+      return res.redirect('/login');
+    }
+    
+    // Serve the investor dashboard with cache control headers
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
     serveInvestorDashboard(req, res);
   });
 }
