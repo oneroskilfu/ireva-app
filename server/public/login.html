@@ -1,145 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iREVA Platform - Login</title>
+    <title>iREVA Login</title>
     <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: #f0f4f8;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        
-        .card {
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            padding: 2rem;
-        }
-        
-        h1 {
-            font-size: 1.75rem;
-            margin-bottom: 0.5rem;
-            color: #1a56db;
-            text-align: center;
-        }
-        
-        .subtitle {
-            color: #64748b;
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-        
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #334155;
-        }
-        
-        input {
-            width: 100%;
-            padding: 0.625rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.375rem;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-        
-        button {
-            background-color: #1a56db;
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
-            padding: 0.75rem 1.25rem;
-            font-size: 1rem;
-            cursor: pointer;
-            width: 100%;
-            font-weight: 500;
-            margin-top: 1rem;
-        }
-        
-        button:hover {
-            background-color: #1e429f;
-        }
-        
-        .test-accounts {
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e2e8f0;
-        }
-        
-        .test-accounts h2 {
-            font-size: 1rem;
-            color: #334155;
-            margin-bottom: 0.5rem;
-        }
-        
-        .account-box {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.25rem;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-        }
-        
-        .status-message {
-            margin-top: 1rem;
-            padding: 0.75rem;
-            background-color: #f0fdfa;
-            border-radius: 0.25rem;
-            border-left: 4px solid #0d9488;
-            color: #0d9488;
-        }
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #0066cc; }
+        form { margin: 20px 0; max-width: 400px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; }
+        button { background-color: #0066cc; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        .test-accounts { margin-top: 20px; padding: 15px; background: #f5f5f5; border: 1px solid #ddd; }
+        .status { padding: 10px; background: #e6f7ff; border-left: 4px solid #0066cc; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>iREVA Platform</h1>
-        <p class="subtitle">Sign in to access your real estate investments</p>
-        
-        <form id="login-form">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter your username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
-            </div>
-            <button type="submit">Sign In</button>
-        </form>
-        
-        <div class="status-message">
-            Server is running and ready for login! Database connected in <span id="db-time">259</span>ms.
-        </div>
-        
-        <div class="test-accounts">
-            <h2>Test Accounts</h2>
-            <div class="account-box">
-                <strong>Admin:</strong> username: admin, password: adminpassword
-            </div>
-            <div class="account-box">
-                <strong>Test User:</strong> username: testuser, password: password
-            </div>
-        </div>
+    <h1>iREVA Platform Login</h1>
+    
+    <div class="status">
+        Server is running and ready for login. Database connected in 718ms.
     </div>
-
+    
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" required>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" required>
+        
+        <button type="submit">Login</button>
+    </form>
+    
+    <div class="test-accounts">
+        <h3>Test Accounts</h3>
+        <p><strong>Admin User:</strong> username: admin, password: adminpassword</p>
+        <p><strong>Test User:</strong> username: testuser, password: password</p>
+    </div>
+    
     <script>
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
@@ -148,20 +46,18 @@
             try {
                 const response = await fetch('/api/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password }),
                     credentials: 'include'
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Login failed: ' + (response.status === 401 ? 'Invalid credentials' : 'Server error'));
+                    alert('Login failed: ' + (response.status === 401 ? 'Invalid credentials' : 'Server error'));
+                    return;
                 }
                 
                 const user = await response.json();
-                
-                alert(`Login successful!\nWelcome, ${user.username}!\nRole: ${user.role}`);
+                alert(`Login successful! Welcome, ${user.username}! (Role: ${user.role})`);
                 
                 // Redirect based on role
                 if (user.role === 'admin' || user.role === 'super_admin') {
@@ -171,12 +67,9 @@
                 }
                 
             } catch (error) {
-                alert(error.message);
+                alert('Error: ' + (error.message || 'Unknown error'));
             }
         });
-        
-        // Update database time from the logs
-        document.getElementById('db-time').textContent = '259';
     </script>
 </body>
 </html>
