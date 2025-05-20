@@ -76,7 +76,8 @@ export function setupAuth(app: Express) {
       secure: false, // Set to false to ensure cookies work in all environments
       sameSite: 'lax', // Helps with cross-site issues
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/'
+      path: '/',
+      httpOnly: true // Make cookie only accessible server-side
     }
   };
 
@@ -132,17 +133,28 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    // Get user role for redirection
-    const user = req.user as Express.User;
-    
-    // Return the user data with an additional redirect field
-    res.status(200).json({
-      ...req.user,
-      redirect: user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin' 
-        ? '/admin/dashboard'
-        : '/investor/dashboard'
-    });
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) return next(err);
+      
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      req.login(user, (loginErr) => {
+        if (loginErr) return next(loginErr);
+        
+        // Add redirect path based on user role
+        const redirectPath = user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin'
+          ? '/admin/dashboard'
+          : '/investor/dashboard';
+          
+        return res.status(200).json({
+          ...user,
+          redirect: redirectPath
+        });
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
