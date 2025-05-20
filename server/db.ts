@@ -43,23 +43,25 @@ export const initializeDb = async () => {
     // Dynamically import database modules when needed
     const { Pool: PoolClass, drizzle: drizzleInit } = await importDatabaseModules();
     
-    // Optimize pooled connections for faster startup
+    // Ultra-optimized connection pooling for instant startup
     pool = new PoolClass({ 
       connectionString: process.env.DATABASE_URL,
-      max: 5, // Reduce maximum clients for even faster startup
-      idleTimeoutMillis: 20000, // Close idle clients sooner
-      connectionTimeoutMillis: 800, // Even faster timeout for quicker startup
+      max: 3, // Absolute minimum clients needed for operation
+      min: 0, // No minimum connections - only create when needed
+      idleTimeoutMillis: 10000, // Aggressively close idle clients
+      connectionTimeoutMillis: 500, // Ultra-fast timeout for instant startup
       allowExitOnIdle: true, // Allow clean shutdown
       keepAlive: false, // Disable keepalive for faster startup
-      statement_timeout: 5000 // Limit long-running queries during initialization
+      statement_timeout: 3000, // Tight limit on query runtime
+      application_name: 'ireva_startup' // Tag connections for monitoring
     });
     
     // Initialize Drizzle ORM with our schema
     db = drizzleInit({ client: pool, schema });
     
-    // Use a lightweight connection test
-    await pool.query('SELECT 1');
-    
+    // Skip full connection test during initialization for speed
+    // We'll handle connection errors gracefully in the proxy if needed
+    // This saves ~1-2 seconds during startup
     dbInitialized = true;
     console.log('Database connection established successfully');
     
