@@ -29,11 +29,16 @@ export function registerEssentialRoutes(app: Express) {
     });
   });
   
-  // Serve our static login page for testing
-  app.use('/login', express.static(path.join(__dirname, 'public')));
+  // Serve static files from public directory
+  app.use(express.static(path.join(__dirname, 'public')));
   
   // Serve the login.html file directly at /login
   app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/login.html'));
+  });
+  
+  // Also serve at root for easier access
+  app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/login.html'));
   });
 }
