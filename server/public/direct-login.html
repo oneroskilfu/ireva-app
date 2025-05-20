@@ -133,6 +133,44 @@
             margin-bottom: 40px;
         }
         
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active {
+            color: #1a56db;
+            opacity: 1;
+            border-bottom: 2px solid #1a56db;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Form error styles */
+        .error-message {
+            color: #e53e3e;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
         /* Responsive styles */
         @media (max-width: 768px) {
             .container {
@@ -156,10 +194,15 @@
             <p class="subtitle">Sign in to access the real estate investment platform</p>
             
             <div class="message">
-                Server is running successfully! Database connected in 624ms.
+                Server is running successfully! Login or register to continue.
             </div>
             
-            <form id="loginForm">
+            <div class="tabs">
+                <button class="tab-btn active" id="login-tab">Login</button>
+                <button class="tab-btn" id="register-tab">Register</button>
+            </div>
+            
+            <form id="loginForm" class="tab-content active">
                 <label for="username">Username:</label>
                 <input type="text" id="username" placeholder="Enter your username" required>
                 
@@ -167,6 +210,25 @@
                 <input type="password" id="password" placeholder="Enter your password" required>
                 
                 <button type="submit">Sign In</button>
+            </form>
+
+            <form id="registerForm" class="tab-content">
+                <label for="reg-username">Username:</label>
+                <input type="text" id="reg-username" placeholder="Choose a username" required>
+                
+                <label for="reg-email">Email:</label>
+                <input type="email" id="reg-email" placeholder="Enter your email" required>
+                
+                <label for="reg-password">Password:</label>
+                <input type="password" id="reg-password" placeholder="Choose a password" required>
+                
+                <label for="reg-firstName">First Name:</label>
+                <input type="text" id="reg-firstName" placeholder="Enter your first name">
+                
+                <label for="reg-lastName">Last Name:</label>
+                <input type="text" id="reg-lastName" placeholder="Enter your last name">
+                
+                <button type="submit">Register</button>
             </form>
             
             <div class="test-accounts">
@@ -224,23 +286,131 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        // Tab switching functionality
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        
+        loginTab.addEventListener('click', function() {
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+        });
+        
+        registerTab.addEventListener('click', function() {
+            registerTab.classList.add('active');
+            loginTab.classList.remove('active');
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+        });
+        
+        // Function to display error messages
+        function showError(formId, message) {
+            let errorDiv = document.querySelector(`#${formId} .error-message`);
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                document.getElementById(formId).appendChild(errorDiv);
+            }
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Clear error messages when switching tabs
+        loginTab.addEventListener('click', () => {
+            const errorDiv = document.querySelector('#loginForm .error-message');
+            if (errorDiv) errorDiv.style.display = 'none';
+        });
+        
+        registerTab.addEventListener('click', () => {
+            const errorDiv = document.querySelector('#registerForm .error-message');
+            if (errorDiv) errorDiv.style.display = 'none';
+        });
+        
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            // Simple direct authentication for demonstration
-            if (username === 'admin' && password === 'adminpassword') {
-                alert('Login successful! Welcome, admin (Role: super_admin)');
-                window.location.href = '/admin/dashboard';
-            } 
-            else if (username === 'testuser' && password === 'password') {
-                alert('Login successful! Welcome, testuser (Role: admin)');
-                window.location.href = '/investor/dashboard';
+            try {
+                // Call the login API endpoint
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include' // Important for cookies/session
+                });
+                
+                if (!response.ok) {
+                    throw new Error(response.status === 401 ? 'Invalid credentials' : 'Server error');
+                }
+                
+                const user = await response.json();
+                
+                // Successful login
+                alert(`Login successful! Welcome, ${user.username}`);
+                
+                // Redirect based on role
+                if (user.role === 'super_admin' || user.role === 'superadmin') {
+                    window.location.href = '/admin/dashboard';
+                } else if (user.role === 'admin') {
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    window.location.href = '/investor/dashboard';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('loginForm', 'Login failed: ' + (error.message || 'Unknown error'));
             }
-            else {
-                alert('Invalid credentials. Please use one of the test accounts listed below.');
+        });
+        
+        // Registration form submission
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const firstName = document.getElementById('reg-firstName').value;
+            const lastName = document.getElementById('reg-lastName').value;
+            
+            try {
+                // Call the registration API endpoint
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        username, 
+                        email, 
+                        password, 
+                        firstName, 
+                        lastName,
+                        role: 'investor' // Default role for new users
+                    }),
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Registration failed');
+                }
+                
+                const user = await response.json();
+                
+                // Success message and redirect
+                alert('Registration successful! Welcome to iREVA.');
+                window.location.href = '/investor/dashboard';
+            } catch (error) {
+                console.error('Registration error:', error);
+                showError('registerForm', 'Registration failed: ' + (error.message || 'Unknown error'));
             }
         });
     </script>
