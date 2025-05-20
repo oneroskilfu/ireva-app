@@ -233,11 +233,11 @@
             // Simple direct authentication for demonstration
             if (username === 'admin' && password === 'adminpassword') {
                 alert('Login successful! Welcome, admin (Role: super_admin)');
-                alert('You would now be redirected to /admin/dashboard');
+                window.location.href = '/admin/dashboard.html';
             } 
             else if (username === 'testuser' && password === 'password') {
                 alert('Login successful! Welcome, testuser (Role: admin)');
-                alert('You would now be redirected to /investor/dashboard');
+                window.location.href = '/investor/dashboard.html';
             }
             else {
                 alert('Invalid credentials. Please use one of the test accounts listed below.');

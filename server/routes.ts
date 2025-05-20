@@ -29,10 +29,11 @@ export function registerEssentialRoutes(app: Express) {
     });
   });
   
-  // Serve static files from public directory with caching disabled
+  // Serve static files from public directory with improved caching options
   app.use(express.static(path.join(__dirname, 'public'), {
     etag: false,
     lastModified: false,
+    index: false, // Prevent automatic index.html serving
     setHeaders: (res) => {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     }
@@ -48,10 +49,31 @@ export function registerEssentialRoutes(app: Express) {
     });
   };
   
-  // Register multiple routes to ensure login page is accessible
+  // Define explicit handlers for dashboard pages
+  const serveAdminDashboard = (req: any, res: any) => {
+    res.sendFile(path.join(__dirname, 'public/admin/dashboard.html'), {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'X-Content-Type-Options': 'nosniff'
+      }
+    });
+  };
+  
+  const serveInvestorDashboard = (req: any, res: any) => {
+    res.sendFile(path.join(__dirname, 'public/investor/dashboard.html'), {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'X-Content-Type-Options': 'nosniff'
+      }
+    });
+  };
+  
+  // Register all page routes
   app.get('/', serveLoginPage);
   app.get('/login', serveLoginPage);
   app.get('/auth', serveLoginPage);
+  app.get('/admin/dashboard', serveAdminDashboard);
+  app.get('/investor/dashboard', serveInvestorDashboard);
 }
 
 /**
