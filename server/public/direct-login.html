@@ -356,11 +356,17 @@
                 // Successful login
                 alert(`Login successful! Welcome, ${user.username}`);
                 
-                // Redirect based on role - use exact path names to match routes
-                if (user.role === 'super_admin' || user.role === 'superadmin' || user.role === 'admin') {
-                    window.location.replace('/admin/dashboard');
+                // Use the redirect path from server response
+                if (user.redirect) {
+                    // Use replace to avoid browser history issues
+                    window.location.replace(user.redirect);
                 } else {
-                    window.location.replace('/investor/dashboard');
+                    // Fallback to role-based redirect if server doesn't provide a redirect path
+                    if (user.role === 'super_admin' || user.role === 'superadmin' || user.role === 'admin') {
+                        window.location.replace('/admin/dashboard');
+                    } else {
+                        window.location.replace('/investor/dashboard');
+                    }
                 }
             } catch (error) {
                 console.error('Login error:', error);

@@ -110,8 +110,27 @@ export function registerEssentialRoutes(app: Express) {
     serveLoginPage(req, res);
   });
   
-  app.get('/admin/dashboard', requireAdmin, serveAdminDashboard);
-  app.get('/investor/dashboard', requireInvestor, serveInvestorDashboard);
+  // Define dashboard routes without middleware to break the redirect chain
+  app.get('/admin/dashboard', (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.redirect('/login');
+    }
+    
+    const user = req.user as Express.User;
+    if (user.role !== 'admin' && user.role !== 'super_admin' && user.role !== 'superadmin') {
+      return res.redirect('/investor/dashboard');
+    }
+    
+    serveAdminDashboard(req, res);
+  });
+  
+  app.get('/investor/dashboard', (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.redirect('/login');
+    }
+    
+    serveInvestorDashboard(req, res);
+  });
 }
 
 /**

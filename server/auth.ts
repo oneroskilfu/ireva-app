@@ -133,13 +133,22 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+    // Get user role for redirection
+    const user = req.user as Express.User;
+    
+    // Return the user data with an additional redirect field
+    res.status(200).json({
+      ...req.user,
+      redirect: user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin' 
+        ? '/admin/dashboard'
+        : '/investor/dashboard'
+    });
   });
 
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      res.status(200).json({ redirect: '/login' });
     });
   });
 
