@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# Ultra-minimal startup for Replit workflow with zero overhead
+# Simple direct server startup for Replit workflow
 echo "Starting application server..."
 
-# Ensure permissions are set
-chmod +x zero-start.cjs
-
-# Use Node.js directly to minimize startup time and avoid bash overhead
-exec node zero-start.cjs
+# Use Node.js to start our simple server
+exec node simple-server.js

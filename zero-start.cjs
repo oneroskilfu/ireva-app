@@ -208,7 +208,11 @@ function startMainApp() {
   process.env.MINIMAL_STARTUP = 'true'; // New flag for ultra-minimal mode
   
   // Start main app with optimized environment
-  console.log('ZERO-START: Starting main application with minimal mode...');
+  console.log('Starting main application...');
+  
+  // Make sure environment has port set to 3000 for Replit compatibility
+  process.env.PORT = '3000';
+  
   const app = spawn('tsx', ['server/index.ts'], {
     stdio: 'inherit',
     env: process.env
@@ -231,9 +235,10 @@ function startMainApp() {
   return app;
 }
 
-// Bind to port 3000 immediately with TCP
+// Bind to port 3000 - the port Replit's webview expects
 server.listen(3000, '0.0.0.0', () => {
-  console.log('ZERO-START: Successfully bound port 3000 (TCP)');
+  console.log('Server successfully bound to port 3000 (TCP)');
+  console.log('Application server is ready and waiting for connections');
   startMainApp();
 });
 
@@ -265,7 +270,8 @@ server.on('error', (err) => {
   });
   
   httpServer.listen(3000, '0.0.0.0', () => {
-    console.log('ZERO-START: Successfully bound port 3000 (HTTP fallback)');
+    console.log('Server successfully bound to port 3000 (HTTP fallback)');
+    console.log('Application server is ready and waiting for connections');
     startMainApp();
   });
 });
