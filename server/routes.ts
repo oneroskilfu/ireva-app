@@ -29,18 +29,29 @@ export function registerEssentialRoutes(app: Express) {
     });
   });
   
-  // Serve static files from public directory
-  app.use(express.static(path.join(__dirname, 'public')));
+  // Serve static files from public directory with caching disabled
+  app.use(express.static(path.join(__dirname, 'public'), {
+    etag: false,
+    lastModified: false,
+    setHeaders: (res) => {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    }
+  }));
   
-  // Serve the login.html file directly at /login
-  app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/login.html'));
-  });
+  // Serve the login.html file directly at multiple paths for maximum compatibility
+  const serveLoginPage = (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/login.html'), {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'X-Content-Type-Options': 'nosniff'
+      }
+    });
+  };
   
-  // Also serve at root for easier access
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/login.html'));
-  });
+  // Register multiple routes to ensure login page is accessible
+  app.get('/', serveLoginPage);
+  app.get('/login', serveLoginPage);
+  app.get('/auth', serveLoginPage);
 }
 
 /**
