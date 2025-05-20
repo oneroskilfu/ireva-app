@@ -135,8 +135,9 @@ const loadingHtml = `
                 // Show success message
                 alert('Login successful! Welcome, ' + user.username + ' (Role: ' + user.role + ')');
                 
-                // Redirect based on role (simulated)
-                alert('You would be redirected to ' + (user.role === 'super_admin' ? '/admin/dashboard' : '/investor/dashboard'));
+                // Redirect based on role
+                const redirectPath = user.role === 'super_admin' ? '/admin/dashboard' : '/investor/dashboard';
+                window.location.href = redirectPath;
                 
             } catch (error) {
                 alert('Error: ' + (error.message || 'Unknown error'));
@@ -149,13 +150,51 @@ const loadingHtml = `
 
 // Create TCP server - faster than HTTP for immediate binding
 const server = net.createServer((socket) => {
-  // Update the socket response to use proper HTTP headers and the login HTML
-  socket.end(
-    'HTTP/1.1 200 OK\r\n' +
-    'Content-Type: text/html\r\n' +
-    'Connection: close\r\n\r\n' +
-    loadingHtml
-  );
+  const data = [];
+  
+  socket.on('data', (chunk) => {
+    data.push(chunk);
+    
+    // Simple HTTP request parsing - look for end of headers
+    if (data.join('').includes('\r\n\r\n')) {
+      const request = data.join('');
+      const requestLine = request.split('\r\n')[0];
+      const path = requestLine.split(' ')[1] || '/';
+      
+      // Serve different content based on path
+      if (path.includes('/admin/dashboard')) {
+        socket.end(
+          'HTTP/1.1 302 Found\r\n' +
+          'Location: http://localhost:5000/admin/dashboard\r\n' +
+          'Connection: close\r\n\r\n'
+        );
+      } else if (path.includes('/investor/dashboard')) {
+        socket.end(
+          'HTTP/1.1 302 Found\r\n' +
+          'Location: http://localhost:5000/investor/dashboard\r\n' +
+          'Connection: close\r\n\r\n'
+        );
+      } else {
+        // Default to login page
+        socket.end(
+          'HTTP/1.1 200 OK\r\n' +
+          'Content-Type: text/html\r\n' +
+          'Connection: close\r\n\r\n' +
+          loadingHtml
+        );
+      }
+    }
+  });
+  
+  // Handle connection errors
+  socket.on('error', () => {
+    socket.end(
+      'HTTP/1.1 500 Internal Server Error\r\n' +
+      'Content-Type: text/plain\r\n' +
+      'Connection: close\r\n\r\n' +
+      'Server error occurred'
+    );
+  });
 });
 
 // Use HTTP server as fallback if needed
@@ -204,12 +243,25 @@ server.on('error', (err) => {
   
   // Ensure HTTP server fallback properly serves the login HTML
   httpServer = http.createServer((req, res) => {
-    res.writeHead(200, { 
-      'Content-Type': 'text/html',
-      'Cache-Control': 'no-cache',
-      'X-Content-Type-Options': 'nosniff'
-    });
-    res.end(loadingHtml);
+    // Basic routing
+    if (req.url?.includes('/admin/dashboard')) {
+      res.writeHead(302, { 
+        'Location': 'http://localhost:5000/admin/dashboard'
+      });
+      res.end();
+    } else if (req.url?.includes('/investor/dashboard')) {
+      res.writeHead(302, { 
+        'Location': 'http://localhost:5000/investor/dashboard'
+      });
+      res.end();
+    } else {
+      res.writeHead(200, { 
+        'Content-Type': 'text/html',
+        'Cache-Control': 'no-cache',
+        'X-Content-Type-Options': 'nosniff'
+      });
+      res.end(loadingHtml);
+    }
   });
   
   httpServer.listen(3000, '0.0.0.0', () => {

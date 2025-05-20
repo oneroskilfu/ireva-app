@@ -46,11 +46,12 @@ export const initializeDb = async () => {
     // Optimize pooled connections for faster startup
     pool = new PoolClass({ 
       connectionString: process.env.DATABASE_URL,
-      max: 10, // Reduced maximum clients for startup efficiency
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 1000, // Faster timeout for startup
+      max: 5, // Reduce maximum clients for even faster startup
+      idleTimeoutMillis: 20000, // Close idle clients sooner
+      connectionTimeoutMillis: 800, // Even faster timeout for quicker startup
       allowExitOnIdle: true, // Allow clean shutdown
-      keepAlive: false // Disable keepalive for faster startup
+      keepAlive: false, // Disable keepalive for faster startup
+      statement_timeout: 5000 // Limit long-running queries during initialization
     });
     
     // Initialize Drizzle ORM with our schema
