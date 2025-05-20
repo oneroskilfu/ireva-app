@@ -337,36 +337,37 @@
             const password = document.getElementById('password').value;
             
             try {
-                // Direct credential validation without redirection
-                const credentials = { username, password };
+                // Call the login API endpoint to authenticate
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
                 
-                // Here we're switching from fetch to XMLHttpRequest to better handle redirects
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '/api/login', false); // synchronous for simplicity
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.withCredentials = true;
-                
-                // Send the request synchronously
-                xhr.send(JSON.stringify(credentials));
-                
-                if (xhr.status !== 200) {
-                    throw new Error(xhr.status === 401 ? 'Invalid credentials' : 'Server error');
+                if (!response.ok) {
+                    throw new Error(response.status === 401 ? 'Invalid credentials. Try admin/adminpassword or testuser/password' : 'Server error');
                 }
                 
-                const user = JSON.parse(xhr.responseText);
+                // Get the user data from response
+                const user = await response.json();
+                
+                // Save user to localStorage for dashboard access
+                localStorage.setItem('user', JSON.stringify(user));
                 
                 // Successful login
                 alert(`Login successful! Welcome, ${user.username}`);
                 
-                // Instead of redirecting, fetch the dashboard HTML directly and display it
+                // Simple role-based redirection
                 const dashboardUrl = user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin'
-                    ? '/admin/dashboard?auth_token=' + Date.now()
-                    : '/investor/dashboard?auth_token=' + Date.now();
+                    ? 'admin/dashboard.html'
+                    : 'investor/dashboard.html';
                 
-                console.log('Loading dashboard from:', dashboardUrl);
+                console.log('Redirecting to dashboard:', dashboardUrl);
                 
-                // Redirect with cache-busting parameter to avoid browser cache issues
-                window.location.replace(dashboardUrl);
+                // Redirect to the appropriate dashboard
+                window.location.href = dashboardUrl;
             } catch (error) {
                 console.error('Login error:', error);
                 showError('loginForm', 'Login failed: ' + (error.message || 'Unknown error'));

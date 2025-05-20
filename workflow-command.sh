@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Simple Express server startup with CommonJS
-echo "Starting iREVA application server..."
+# Simple login server startup
+echo "Starting iREVA login server..."
 
-# Use Node.js to start our simplified server with explicit CommonJS extension
-exec node start-server.cjs
+# Use Node.js to start our login server
+exec node login-server.cjs
