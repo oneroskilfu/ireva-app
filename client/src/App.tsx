@@ -27,8 +27,13 @@ function App() {
             {/* Protected investor routes */}
             <ProtectedRoute path="/investor/dashboard" component={InvestorDashboardPage} />
             
-            {/* Home route */}
-            <Route path="/" component={HomePage} />
+            {/* Home route - for testing purposes, redirect to auth page */}
+            <Route path="/">
+              {() => {
+                window.location.href = "/auth";
+                return null;
+              }}
+            </Route>
             
             {/* 404 fallback */}
             <Route>

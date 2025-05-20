@@ -29,13 +29,12 @@ export function registerEssentialRoutes(app: Express) {
     });
   });
   
-  // Serve static files from the React app build directory
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+  // Serve our static login page for testing
+  app.use('/login', express.static(path.join(__dirname, 'public')));
   
-  // Handle React routing for all frontend paths
-  // Add this catch-all route to make sure React router handles all frontend routes
-  app.get(['/auth', '/investor/*', '/admin/*', '/'], (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  // Serve the login.html file directly at /login
+  app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/login.html'));
   });
 }
 
