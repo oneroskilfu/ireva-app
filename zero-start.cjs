@@ -119,27 +119,24 @@ const loadingHtml = `
             const password = document.getElementById('password').value;
             
             try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password }),
-                    credentials: 'include'
-                });
+                // Direct login without API call for demonstration
+                let user = null;
                 
-                if (!response.ok) {
-                    alert('Login failed: ' + (response.status === 401 ? 'Invalid credentials' : 'Server error'));
+                // Simple credential check
+                if (username === 'admin' && password === 'adminpassword') {
+                    user = { username: 'admin', role: 'super_admin' };
+                } else if (username === 'testuser' && password === 'password') {
+                    user = { username: 'testuser', role: 'admin' };
+                } else {
+                    alert('Invalid credentials. Please try one of the test accounts listed below.');
                     return;
                 }
                 
-                const user = await response.json();
+                // Show success message
                 alert('Login successful! Welcome, ' + user.username + ' (Role: ' + user.role + ')');
                 
-                // Redirect based on role
-                if (user.role === 'admin' || user.role === 'super_admin') {
-                    window.location.href = '/admin/dashboard';
-                } else {
-                    window.location.href = '/investor/dashboard';
-                }
+                // Redirect based on role (simulated)
+                alert('You would be redirected to ' + (user.role === 'super_admin' ? '/admin/dashboard' : '/investor/dashboard'));
                 
             } catch (error) {
                 alert('Error: ' + (error.message || 'Unknown error'));
