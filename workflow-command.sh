@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Simple direct server startup for Replit workflow
-echo "Starting application server..."
+# Simple Express server startup
+echo "Starting iREVA application server..."
 
-# Use Node.js to start our simple server
-exec node simple-server.js
+# Use Node.js to start our simplified server
+exec node start-server.js
