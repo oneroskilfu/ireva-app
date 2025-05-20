@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserRole } from '@shared/schema';
+import { UserRole } from '../../shared/schema';
 
 // Middleware to check if user is authenticated
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {

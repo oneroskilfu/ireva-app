@@ -6,12 +6,11 @@ import cors from "cors";
 import { storage } from "./storage";
 import { db } from "./db";
 import path from "path";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { requireAuth, requireAdmin, requireInvestor } from "./middleware/auth-middleware";
+import { User } from "@shared/schema";
 
-// Get the directory name in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Use standard Node.js __dirname since we're not using ES modules
+const __dirname = process.cwd() + '/server';
 
 /**
  * Register essential routes that don't depend on database/authentication
@@ -72,8 +71,8 @@ export function registerEssentialRoutes(app: Express) {
   app.get('/', serveLoginPage);
   app.get('/login', serveLoginPage);
   app.get('/auth', serveLoginPage);
-  app.get('/admin/dashboard', serveAdminDashboard);
-  app.get('/investor/dashboard', serveInvestorDashboard);
+  app.get('/admin/dashboard', requireAdmin, serveAdminDashboard);
+  app.get('/investor/dashboard', requireInvestor, serveInvestorDashboard);
 }
 
 /**
@@ -82,20 +81,13 @@ export function registerEssentialRoutes(app: Express) {
  */
 export function registerAuthenticatedRoutes(app: Express) {
   // Get current user's profile
-  app.get('/api/profile', (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    
+  app.get('/api/profile', requireAuth, (req, res) => {
+    // User is guaranteed to be authenticated due to requireAuth middleware
     res.json(req.user);
   });
 
   // Admin-only route for user management
-  app.get('/api/admin/users', async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-    
+  app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -106,15 +98,14 @@ export function registerAuthenticatedRoutes(app: Express) {
   });
 
   // Investor dashboard data route
-  app.get('/api/investor/dashboard', async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
+  app.get('/api/investor/dashboard', requireAuth, async (req, res) => {
+    // req.user is guaranteed to exist here because of requireAuth middleware
+    const user = req.user as Express.User;
     
     // Basic dashboard data
     const dashboardData = {
-      username: req.user.username,
-      role: req.user.role,
+      username: user.username,
+      role: user.role,
       lastLogin: new Date().toISOString(),
       investments: []
     };
