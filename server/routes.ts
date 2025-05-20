@@ -39,7 +39,7 @@ export function registerEssentialRoutes(app: Express) {
   }));
   
   // Serve the login.html file directly at multiple paths for maximum compatibility
-  const serveLoginPage = (req, res) => {
+  const serveLoginPage = (req: any, res: any) => {
     res.sendFile(path.join(__dirname, 'public/login.html'), {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, private',

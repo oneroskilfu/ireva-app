@@ -10,15 +10,6 @@ const net = require('net');
 const http = require('http');
 const { spawn } = require('child_process');
 
-// Create TCP server - faster than HTTP for immediate binding
-const server = net.createServer((socket) => {
-  // Properly formatted HTTP response with HTML content
-  socket.end('HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n' + loadingHtml);
-});
-
-// Use HTTP server as fallback if needed
-let httpServer;
-
 // HTML login template that will be displayed in webview
 const loadingHtml = `
 <!DOCTYPE html>
@@ -29,10 +20,10 @@ const loadingHtml = `
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { 
-            font-family: system-ui, sans-serif; 
-            padding: 0; 
+            font-family: Arial, sans-serif; 
             margin: 0; 
-            line-height: 1.5;
+            padding: 0;
+            line-height: 1.6;
             background: #f5f7fa;
             display: flex;
             justify-content: center;
@@ -40,80 +31,67 @@ const loadingHtml = `
             min-height: 100vh;
         }
         .card { 
-            max-width: 450px; 
+            max-width: 600px; 
             margin: 0 auto; 
-            padding: 2rem;
+            padding: 20px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border-radius: 8px;
         }
         h1 { 
-            color: #0070f3; 
-            margin-top: 0;
+            color: #0066cc; 
             text-align: center;
         }
         form { 
-            margin: 1.5rem 0; 
+            margin: 20px 0; 
         }
         label { 
             display: block; 
-            margin-bottom: 0.5rem; 
-            font-weight: 500;
-            color: #333;
+            margin-bottom: 5px; 
+            font-weight: bold;
         }
         input { 
             width: 100%; 
-            padding: 0.75rem; 
-            margin-bottom: 1rem; 
-            border: 1px solid #ddd;
+            padding: 8px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 1rem;
             box-sizing: border-box;
         }
         button { 
-            background-color: #0070f3; 
+            background-color: #0066cc; 
             color: white; 
-            padding: 0.75rem 1rem; 
-            border: none;
-            border-radius: 4px;
+            padding: 10px 15px; 
+            border: none; 
             cursor: pointer;
-            font-size: 1rem;
-            width: 100%;
-            font-weight: 500;
-        }
-        button:hover { 
-            background-color: #0060df; 
-        }
-        .message {
-            padding: 0.75rem;
-            background: #e6f7ff;
-            border-left: 4px solid #0070f3;
-            margin-bottom: 1.5rem;
-            border-radius: 0 4px 4px 0;
-        }
-        .accounts {
-            background: #f8f9fa;
-            padding: 1rem;
             border-radius: 4px;
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
+            width: 100%;
+            font-size: 16px;
         }
-        .accounts h3 {
-            margin-top: 0;
-            color: #555;
-            font-size: 1rem;
+        button:hover {
+            background-color: #0052a3;
         }
-        .accounts p {
-            margin: 0.5rem 0;
+        .test-accounts { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background: #f5f5f5; 
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .status { 
+            padding: 10px; 
+            background: #e6f7ff; 
+            border-left: 4px solid #0066cc; 
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>iREVA Platform</h1>
+        <h1>iREVA Platform Login</h1>
         
-        <div class="message">
-            Server is running! Database connected successfully.
+        <div class="status">
+            Server is running and ready for login. Database connected successfully.
         </div>
         
         <form id="loginForm">
@@ -123,10 +101,10 @@ const loadingHtml = `
             <label for="password">Password:</label>
             <input type="password" id="password" placeholder="Enter your password" required>
             
-            <button type="submit">Sign In</button>
+            <button type="submit">Login</button>
         </form>
         
-        <div class="accounts">
+        <div class="test-accounts">
             <h3>Test Accounts</h3>
             <p><strong>Admin User:</strong> username: admin, password: adminpassword</p>
             <p><strong>Test User:</strong> username: testuser, password: password</p>
@@ -172,6 +150,20 @@ const loadingHtml = `
 </html>
 `;
 
+// Create TCP server - faster than HTTP for immediate binding
+const server = net.createServer((socket) => {
+  // Update the socket response to use proper HTTP headers and the login HTML
+  socket.end(
+    'HTTP/1.1 200 OK\r\n' +
+    'Content-Type: text/html\r\n' +
+    'Connection: close\r\n\r\n' +
+    loadingHtml
+  );
+});
+
+// Use HTTP server as fallback if needed
+let httpServer;
+
 // Function to start the main application
 function startMainApp() {
   // Set environment variables for ultra-fast staged loading
@@ -213,8 +205,8 @@ server.listen(3000, '0.0.0.0', () => {
 server.on('error', (err) => {
   console.error('TCP binding failed, falling back to HTTP:', err);
   
+  // Ensure HTTP server fallback properly serves the login HTML
   httpServer = http.createServer((req, res) => {
-    // Always serve the login page HTML for any request
     res.writeHead(200, { 
       'Content-Type': 'text/html',
       'Cache-Control': 'no-cache',
