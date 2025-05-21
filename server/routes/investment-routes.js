@@ -1,27 +1,56 @@
 /**
- * Investment Routes
+ * Investment Routes Module
  * 
- * Defines API endpoints for investment management and tracking
+ * Defines all API endpoints related to investment functionality:
+ * - Getting investment portfolio summary
+ * - Retrieving performance metrics
+ * - Calculating ROI data
+ * - Managing individual investments
  */
 
 const express = require('express');
 const investmentController = require('../controllers/investment-controller');
-const authController = require('../controllers/auth-controller');
+const securityMiddleware = require('../middleware/security-middleware');
 
 const router = express.Router();
 
-// All investment routes require authentication
-router.use(authController.protect);
+// Apply authentication middleware to all investment routes
+router.use(securityMiddleware.verifyToken);
 
-// Routes for all authenticated users
-router.get('/my-investments', investmentController.getMyInvestments);
-router.get('/:id', investmentController.getInvestment);
-router.post('/', investmentController.createInvestment);
+// Get portfolio summary
+router.get(
+  '/portfolio-summary', 
+  securityMiddleware.checkPermission('investments', 'read_own'),
+  investmentController.getPortfolioSummary
+);
 
-// Admin-only routes
-router.use(authController.restrictTo('admin'));
-router.get('/dashboard/stats', investmentController.getInvestmentDashboard);
-router.patch('/:id/status', investmentController.updateInvestmentStatus);
-router.post('/:id/roi-payment', investmentController.addROIPayment);
+// Get performance data
+router.get(
+  '/performance', 
+  securityMiddleware.checkPermission('investments', 'read_own'),
+  investmentController.getPerformanceData
+);
+
+// Get ROI data
+router.get(
+  '/roi', 
+  securityMiddleware.checkPermission('investments', 'read_own'),
+  investmentController.getROIData
+);
+
+// Get a specific investment
+router.get(
+  '/:id', 
+  securityMiddleware.checkPermission('investments', 'read_own'),
+  securityMiddleware.verifyOwnership('id', 'userId'),
+  investmentController.getInvestment
+);
+
+// Export investments data as CSV
+router.get(
+  '/export-csv', 
+  securityMiddleware.checkPermission('investments', 'read_own'),
+  investmentController.exportInvestmentsCSV
+);
 
 module.exports = router;

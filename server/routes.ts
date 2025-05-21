@@ -15,6 +15,7 @@ const investmentRoutes = require('./routes/investment-routes');
 const walletRoutes = require('./routes/wallet-routes');
 const notificationRoutes = require('./routes/notification-routes');
 const userRoutes = require('./routes/user-routes');
+const twoFactorRoutes = require('./routes/two-factor-routes');
 
 export function registerRoutes(app: express.Express) {
   // Security middleware

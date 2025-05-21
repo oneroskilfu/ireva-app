@@ -1,704 +1,697 @@
 /**
  * Investment Controller
  * 
- * Handles investment operations, tracking, and real-time statistics
- * for both investors and admins
+ * Handles all investment-related operations including:
+ * - Getting investment portfolio summary
+ * - Retrieving performance metrics
+ * - Calculating ROI data
+ * - Managing individual investments
  */
 
-const { eq, and, desc, sql, gte, lte } = require('drizzle-orm');
+const { eq, and, desc, asc, sql, gte, lte, between } = require('drizzle-orm');
 const { db } = require('../db.cjs');
-const { investments, properties, users, transactions, wallets, roiPayments } = require('../../shared/schema');
+const { investments, properties, users, transactions, roiPayments } = require('../../shared/schema');
+const securityMiddleware = require('../middleware/security-middleware');
 
 /**
- * Get all investments for the current user
+ * Get investment portfolio summary
  */
-exports.getMyInvestments = async (req, res) => {
+exports.getPortfolioSummary = async (req, res) => {
   try {
-    const { status, sortBy = 'investmentDate', order = 'desc', limit = 10, page = 1 } = req.query;
+    const userId = req.user.id;
     
-    // Calculate pagination
-    const offset = (page - 1) * limit;
-    
-    // Build query conditions
-    let conditions = [eq(investments.userId, req.user.id)];
-    
-    if (status) {
-      conditions.push(eq(investments.status, status));
-    }
-    
-    // Get investments with property details
+    // Get user's investments with property details
     const userInvestments = await db.select({
-      id: investments.id,
-      amount: investments.amount,
-      status: investments.status,
-      investmentDate: investments.investmentDate,
+      investment: investments,
+      property: properties
+    })
+    .from(investments)
+    .innerJoin(properties, eq(investments.propertyId, properties.id))
+    .where(and(
+      eq(investments.userId, userId),
+      eq(investments.status, 'active')
+    ))
+    .orderBy(desc(investments.createdAt));
+    
+    // Format investments data
+    const formattedInvestments = userInvestments.map(item => ({
+      id: item.investment.id,
+      propertyId: item.investment.propertyId,
+      amount: Number(item.investment.amount),
+      status: item.investment.status,
+      investmentDate: item.investment.investmentDate,
+      // Calculate individual ROI
+      roi: calculateIndividualROI(item.investment, item.property),
       property: {
-        id: properties.id,
-        name: properties.name,
-        location: properties.location,
-        propertyType: properties.propertyType,
-        roi: properties.roi,
-        images: properties.images,
-        status: properties.status
+        id: item.property.id,
+        name: item.property.name,
+        location: item.property.location,
+        propertyType: item.property.propertyType,
+        images: item.property.images,
+        roi: Number(item.property.roi)
       }
-    })
-    .from(investments)
-    .leftJoin(properties, eq(investments.propertyId, properties.id))
-    .where(and(...conditions))
-    .orderBy(order.toLowerCase() === 'desc' ? desc(investments[sortBy]) : investments[sortBy])
-    .limit(Number(limit))
-    .offset(Number(offset));
+    }));
     
-    // Get total count for pagination
-    const [{ count }] = await db.select({
-      count: sql`count(*)`
-    })
-    .from(investments)
-    .where(and(...conditions));
+    // Get unique properties from investments
+    const propertyIds = [...new Set(formattedInvestments.map(inv => inv.propertyId))];
     
-    // Calculate investment statistics
-    const [stats] = await db.select({
-      totalInvested: sql`sum(${investments.amount})`,
-      totalProperties: sql`count(distinct ${investments.propertyId})`,
-      avgInvestment: sql`avg(${investments.amount})`
-    })
-    .from(investments)
-    .where(eq(investments.userId, req.user.id));
+    // Get property details
+    const propertyDetails = await db.select()
+      .from(properties)
+      .where(sql`id IN (${propertyIds.join(',')})`);
     
-    // Get ROI payments
-    const roiPaymentsData = await db.select({
-      id: roiPayments.id,
-      amount: roiPayments.amount,
-      paymentDate: roiPayments.paymentDate,
-      status: roiPayments.status,
-      propertyId: roiPayments.propertyId,
-      propertyName: properties.name
-    })
-    .from(roiPayments)
-    .leftJoin(properties, eq(roiPayments.propertyId, properties.id))
-    .where(eq(roiPayments.userId, req.user.id))
-    .orderBy(desc(roiPayments.paymentDate))
-    .limit(5);
+    // Calculate total invested
+    const totalInvested = formattedInvestments.reduce((sum, inv) => sum + Number(inv.amount), 0);
+    
+    // Calculate current value (initial investment + ROI)
+    const totalROI = await calculateTotalROI(userId);
+    const currentValue = totalInvested + totalROI;
+    
+    // Calculate ROI percentage
+    const roiPercentage = totalInvested > 0 ? (totalROI / totalInvested) * 100 : 0;
+    
+    // Get recent activity (investments, ROI payments, documents, updates)
+    const recentActivity = await getRecentActivity(userId);
     
     res.status(200).json({
       status: 'success',
-      results: userInvestments.length,
-      pagination: {
-        totalItems: Number(count),
-        totalPages: Math.ceil(Number(count) / limit),
-        currentPage: Number(page),
-        limit: Number(limit)
-      },
       data: {
-        investments: userInvestments,
-        stats: {
-          totalInvested: stats.totalInvested || '0',
-          totalProperties: Number(stats.totalProperties) || 0,
-          avgInvestment: stats.avgInvestment || '0'
-        },
-        roiPayments: roiPaymentsData
+        investments: formattedInvestments,
+        properties: propertyDetails,
+        totalInvested,
+        totalROI,
+        currentValue,
+        roiPercentage,
+        recentActivity
       }
     });
   } catch (error) {
-    console.error('Get my investments error:', error);
-    
+    console.error('Error getting portfolio summary:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to retrieve investments',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'An error occurred while retrieving portfolio summary'
     });
   }
 };
 
 /**
- * Get a specific investment by ID
+ * Get investment performance data
+ */
+exports.getPerformanceData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { period = '3m' } = req.query;
+    
+    // Calculate date range based on period
+    const { startDate, endDate } = getDateRangeFromPeriod(period);
+    
+    // Get investment transactions within the period
+    const investmentTransactions = await db.select()
+      .from(transactions)
+      .where(and(
+        eq(transactions.userId, userId),
+        eq(transactions.type, 'investment'),
+        gte(transactions.createdAt, startDate),
+        lte(transactions.createdAt, endDate)
+      ))
+      .orderBy(asc(transactions.createdAt));
+    
+    // Get ROI payments within the period
+    const roiTransactions = await db.select()
+      .from(transactions)
+      .where(and(
+        eq(transactions.userId, userId),
+        eq(transactions.type, 'dividend'),
+        gte(transactions.createdAt, startDate),
+        lte(transactions.createdAt, endDate)
+      ))
+      .orderBy(asc(transactions.createdAt));
+    
+    // Get total investment before the period start (for initial value)
+    const [{ totalInvestedBefore }] = await db.select({
+      totalInvestedBefore: sql`COALESCE(SUM(amount), 0)`
+    })
+    .from(transactions)
+    .where(and(
+      eq(transactions.userId, userId),
+      eq(transactions.type, 'investment'),
+      lte(transactions.createdAt, startDate)
+    ));
+    
+    // Get total ROI before the period start (for initial value)
+    const [{ totalROIBefore }] = await db.select({
+      totalROIBefore: sql`COALESCE(SUM(amount), 0)`
+    })
+    .from(transactions)
+    .where(and(
+      eq(transactions.userId, userId),
+      eq(transactions.type, 'dividend'),
+      lte(transactions.createdAt, startDate)
+    ));
+    
+    // Calculate initial value at the start of the period
+    const initialValue = Number(totalInvestedBefore) + Number(totalROIBefore);
+    
+    // Generate daily performance data points
+    const performanceData = generatePerformanceData(
+      startDate,
+      endDate,
+      initialValue,
+      investmentTransactions,
+      roiTransactions
+    );
+    
+    // Get additional performance metrics
+    const averageMonthlyROI = await calculateAverageMonthlyROI(userId);
+    const projectedAnnualROI = averageMonthlyROI * 12;
+    
+    // Get best performing property
+    const bestProperty = await getBestPerformingProperty(userId);
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        performance: performanceData,
+        initialValue,
+        averageMonthlyROI,
+        projectedAnnualROI,
+        bestProperty,
+        period
+      }
+    });
+  } catch (error) {
+    console.error('Error getting performance data:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while retrieving performance data'
+    });
+  }
+};
+
+/**
+ * Get ROI data for all properties
+ */
+exports.getROIData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get user's investments with property details
+    const userInvestments = await db.select({
+      investment: investments,
+      property: properties
+    })
+    .from(investments)
+    .innerJoin(properties, eq(investments.propertyId, properties.id))
+    .where(and(
+      eq(investments.userId, userId),
+      eq(investments.status, 'active')
+    ));
+    
+    // Group investments by property
+    const propertiesMap = new Map();
+    userInvestments.forEach(item => {
+      const propertyId = item.property.id;
+      
+      if (!propertiesMap.has(propertyId)) {
+        propertiesMap.set(propertyId, {
+          id: propertyId,
+          name: item.property.name,
+          propertyType: item.property.propertyType,
+          roi: Number(item.property.roi),
+          investment: Number(item.investment.amount),
+          currentValue: 0 // To be calculated
+        });
+      } else {
+        // Add to existing investment amount
+        const property = propertiesMap.get(propertyId);
+        property.investment += Number(item.investment.amount);
+      }
+    });
+    
+    // Calculate current values and actual ROI percentages
+    for (const [propertyId, property] of propertiesMap.entries()) {
+      // Get ROI payments for this property
+      const [{ totalROI }] = await db.select({
+        totalROI: sql`COALESCE(SUM(amount), 0)`
+      })
+      .from(roiPayments)
+      .where(and(
+        eq(roiPayments.userId, userId),
+        eq(roiPayments.propertyId, propertyId)
+      ));
+      
+      // Calculate current value
+      property.currentValue = property.investment + Number(totalROI);
+      
+      // Calculate actual ROI percentage
+      property.roi = property.investment > 0 
+        ? ((property.currentValue - property.investment) / property.investment) * 100 
+        : 0;
+    }
+    
+    // Convert to array and sort by ROI
+    const propertiesArray = Array.from(propertiesMap.values())
+      .sort((a, b) => b.roi - a.roi);
+    
+    // Calculate statistics
+    const roiValues = propertiesArray.map(p => p.roi);
+    const averageROI = roiValues.length 
+      ? roiValues.reduce((sum, val) => sum + val, 0) / roiValues.length 
+      : 0;
+    const highestROI = roiValues.length ? Math.max(...roiValues) : 0;
+    const lowestROI = roiValues.length ? Math.min(...roiValues) : 0;
+    
+    // Count properties above/below average
+    const propertiesAboveAverage = roiValues.filter(v => v > averageROI).length;
+    const propertiesBelowAverage = roiValues.filter(v => v < averageROI).length;
+    
+    // Get top performing properties
+    const topProperties = propertiesArray.slice(0, 5);
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        properties: propertiesArray,
+        averageROI,
+        highestROI,
+        lowestROI,
+        propertiesAboveAverage,
+        propertiesBelowAverage,
+        topProperties
+      }
+    });
+  } catch (error) {
+    console.error('Error getting ROI data:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while retrieving ROI data'
+    });
+  }
+};
+
+/**
+ * Get a specific investment
  */
 exports.getInvestment = async (req, res) => {
   try {
-    const { id } = req.params;
+    const userId = req.user.id;
+    const investmentId = req.params.id;
     
     // Get investment with property details
     const [investment] = await db.select({
-      id: investments.id,
-      userId: investments.userId,
-      propertyId: investments.propertyId,
-      amount: investments.amount,
-      status: investments.status,
-      investmentDate: investments.investmentDate,
-      paymentId: investments.paymentId,
-      contractId: investments.contractId,
-      sharesCount: investments.sharesCount,
-      property: {
-        id: properties.id,
-        name: properties.name,
-        location: properties.location,
-        propertyType: properties.propertyType,
-        roi: properties.roi,
-        status: properties.status,
-        images: properties.images,
-        fundingGoal: properties.fundingGoal,
-        fundingProgress: properties.fundingProgress
-      }
+      investment: investments,
+      property: properties
     })
     .from(investments)
-    .leftJoin(properties, eq(investments.propertyId, properties.id))
-    .where(eq(investments.id, id))
-    .limit(1);
+    .innerJoin(properties, eq(investments.propertyId, properties.id))
+    .where(and(
+      eq(investments.id, investmentId),
+      eq(investments.userId, userId)
+    ));
     
     if (!investment) {
       return res.status(404).json({
         status: 'error',
         message: 'Investment not found'
-      });
-    }
-    
-    // Check if the user is authorized to view this investment
-    if (investment.userId !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        status: 'error',
-        message: 'You are not authorized to view this investment'
       });
     }
     
     // Get ROI payments for this investment
-    const roiPaymentsData = await db.select()
+    const roiPayments = await db.select()
       .from(roiPayments)
-      .where(eq(roiPayments.investmentId, id))
+      .where(eq(roiPayments.investmentId, investmentId))
       .orderBy(desc(roiPayments.paymentDate));
     
-    // Get related transactions
-    const transactionsData = await db.select()
-      .from(transactions)
-      .where(eq(transactions.investmentId, id))
-      .orderBy(desc(transactions.createdAt));
+    // Calculate total ROI received
+    const totalROI = roiPayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    
+    // Calculate ROI percentage
+    const roiPercentage = Number(investment.investment.amount) > 0
+      ? (totalROI / Number(investment.investment.amount)) * 100
+      : 0;
+    
+    // Format response
+    const formattedInvestment = {
+      id: investment.investment.id,
+      propertyId: investment.investment.propertyId,
+      amount: Number(investment.investment.amount),
+      status: investment.investment.status,
+      investmentDate: investment.investment.investmentDate,
+      createdAt: investment.investment.createdAt,
+      property: {
+        id: investment.property.id,
+        name: investment.property.name,
+        location: investment.property.location,
+        propertyType: investment.property.propertyType,
+        images: investment.property.images,
+        price: Number(investment.property.price),
+        roi: Number(investment.property.roi),
+        duration: investment.property.duration,
+        fundingGoal: Number(investment.property.fundingGoal),
+        fundingProgress: Number(investment.property.fundingProgress)
+      },
+      roiPayments,
+      totalROI,
+      roiPercentage
+    };
     
     res.status(200).json({
       status: 'success',
-      data: {
-        investment,
-        roiPayments: roiPaymentsData,
-        transactions: transactionsData
-      }
+      data: { investment: formattedInvestment }
     });
   } catch (error) {
-    console.error('Get investment error:', error);
-    
+    console.error('Error getting investment:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to retrieve investment details',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'An error occurred while retrieving investment'
     });
   }
 };
 
 /**
- * Make a new investment
+ * Export investments data as CSV
  */
-exports.createInvestment = async (req, res) => {
+exports.exportInvestmentsCSV = async (req, res) => {
   try {
-    const { propertyId, amount } = req.body;
+    const userId = req.user.id;
     
-    // Validate required fields
-    if (!propertyId || !amount) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Please provide propertyId and amount'
-      });
-    }
+    // Get user's investments with property details
+    const userInvestments = await db.select({
+      investment: investments,
+      property: properties
+    })
+    .from(investments)
+    .innerJoin(properties, eq(investments.propertyId, properties.id))
+    .where(eq(investments.userId, userId))
+    .orderBy(desc(investments.createdAt));
     
-    // Ensure amount is numeric
-    const numericAmount = Number(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Investment amount must be a positive number'
-      });
-    }
+    // Format CSV data
+    const csvData = userInvestments.map(item => ({
+      'Investment ID': item.investment.id,
+      'Property Name': item.property.name,
+      'Property Type': item.property.propertyType,
+      'Location': item.property.location,
+      'Investment Amount': Number(item.investment.amount).toFixed(2),
+      'Investment Date': new Date(item.investment.investmentDate).toLocaleDateString(),
+      'Status': item.investment.status,
+      'Property ROI Rate': Number(item.property.roi).toFixed(2) + '%'
+    }));
     
-    // Check if property exists and is available for investment
-    const [property] = await db.select()
-      .from(properties)
-      .where(eq(properties.id, propertyId))
-      .limit(1);
+    // Convert to CSV string
+    const { parse } = require('json2csv');
+    const csv = parse(csvData);
     
-    if (!property) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Property not found'
-      });
-    }
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="investments-${Date.now()}.csv"`);
     
-    if (property.status !== 'active' && req.user.role !== 'admin') {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Property is not currently available for investment'
-      });
-    }
-    
-    // Check if amount meets minimum investment requirement
-    if (numericAmount < Number(property.minInvestment) && req.user.role !== 'admin') {
-      return res.status(400).json({
-        status: 'error',
-        message: `Minimum investment amount is ${property.minInvestment}`
-      });
-    }
-    
-    // Check if amount exceeds maximum investment (if set)
-    if (property.maxInvestment && numericAmount > Number(property.maxInvestment) && req.user.role !== 'admin') {
-      return res.status(400).json({
-        status: 'error',
-        message: `Maximum investment amount is ${property.maxInvestment}`
-      });
-    }
-    
-    // Check if the investment would exceed the funding goal
-    const remainingFunding = Number(property.fundingGoal) - Number(property.fundingProgress);
-    if (numericAmount > remainingFunding && req.user.role !== 'admin') {
-      return res.status(400).json({
-        status: 'error',
-        message: `Investment amount exceeds remaining funding needed (${remainingFunding})`
-      });
-    }
-    
-    // Check user wallet balance (skip this check for admins)
-    if (req.user.role !== 'admin') {
-      const [userWallet] = await db.select()
-        .from(wallets)
-        .where(eq(wallets.userId, req.user.id))
-        .limit(1);
-      
-      if (!userWallet || Number(userWallet.balance) < numericAmount) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Insufficient funds in wallet',
-          data: {
-            currentBalance: userWallet ? userWallet.balance : '0',
-            requiredAmount: amount
-          }
-        });
-      }
-    }
-    
-    // Start a transaction to ensure data consistency
-    await db.transaction(async (tx) => {
-      // Create the investment
-      const [newInvestment] = await tx.insert(investments)
-        .values({
-          userId: req.user.id,
-          propertyId,
-          amount: amount.toString(),
-          status: 'confirmed', // Auto-confirm for simplicity (in real app might start as 'pending')
-          investmentDate: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-        .returning();
-      
-      // Update property funding progress
-      await tx.update(properties)
-        .set({
-          fundingProgress: sql`${properties.fundingProgress} + ${amount}`,
-          updatedAt: new Date()
-        })
-        .where(eq(properties.id, propertyId));
-      
-      // Deduct from user wallet (skip for admins)
-      if (req.user.role !== 'admin') {
-        await tx.update(wallets)
-          .set({
-            balance: sql`${wallets.balance} - ${amount}`,
-            lastUpdated: new Date()
-          })
-          .where(eq(wallets.userId, req.user.id));
-      }
-      
-      // Record the transaction
-      await tx.insert(transactions)
-        .values({
-          userId: req.user.id,
-          investmentId: newInvestment.id,
-          type: 'investment',
-          amount: amount.toString(),
-          status: 'completed',
-          description: `Investment in ${property.name}`,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-    });
-    
-    // Get the updated property and investment details
-    const [updatedProperty] = await db.select()
-      .from(properties)
-      .where(eq(properties.id, propertyId))
-      .limit(1);
-    
-    const [newInvestment] = await db.select()
-      .from(investments)
-      .where(and(
-        eq(investments.userId, req.user.id),
-        eq(investments.propertyId, propertyId)
-      ))
-      .orderBy(desc(investments.createdAt))
-      .limit(1);
-    
-    // Get updated wallet balance
-    const [userWallet] = await db.select()
-      .from(wallets)
-      .where(eq(wallets.userId, req.user.id))
-      .limit(1);
-    
-    res.status(201).json({
-      status: 'success',
-      message: 'Investment successful',
-      data: {
-        investment: newInvestment,
-        property: {
-          id: updatedProperty.id,
-          name: updatedProperty.name,
-          fundingGoal: updatedProperty.fundingGoal,
-          fundingProgress: updatedProperty.fundingProgress,
-          fundingPercentage: (Number(updatedProperty.fundingProgress) / Number(updatedProperty.fundingGoal) * 100).toFixed(2)
-        },
-        wallet: userWallet ? {
-          balance: userWallet.balance,
-          currency: userWallet.currency
-        } : undefined
-      }
-    });
+    // Send CSV data
+    res.status(200).send(csv);
   } catch (error) {
-    console.error('Create investment error:', error);
-    
+    console.error('Error exporting investments data:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Failed to process investment',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'An error occurred while exporting investments data'
     });
   }
 };
 
 /**
- * Get investment dashboard data for admin
+ * Helper: Calculate individual ROI for an investment
  */
-exports.getInvestmentDashboard = async (req, res) => {
-  try {
-    // Verify admin role
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        status: 'error',
-        message: 'You do not have permission to access this resource'
-      });
-    }
-    
-    // Get overall investment statistics
-    const [stats] = await db.select({
-      totalInvestments: sql`count(*)`,
-      totalAmount: sql`sum(${investments.amount})`,
-      avgAmount: sql`avg(${investments.amount})`,
-      totalInvestors: sql`count(distinct ${investments.userId})`
-    })
-    .from(investments);
-    
-    // Get investment counts by status
-    const statusCounts = await db.select({
-      status: investments.status,
-      count: sql`count(*)`
-    })
-    .from(investments)
-    .groupBy(investments.status);
-    
-    // Get investment trend (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
-    const monthlyTrend = await db.select({
-      month: sql`date_trunc('month', ${investments.investmentDate})`,
-      total: sql`sum(${investments.amount})`,
-      count: sql`count(*)`
-    })
-    .from(investments)
-    .where(gte(investments.investmentDate, sixMonthsAgo))
-    .groupBy(sql`date_trunc('month', ${investments.investmentDate})`)
-    .orderBy(sql`date_trunc('month', ${investments.investmentDate})`);
-    
-    // Get top properties by investment
-    const topProperties = await db.select({
-      propertyId: investments.propertyId,
-      propertyName: properties.name,
-      totalInvested: sql`sum(${investments.amount})`,
-      investorCount: sql`count(distinct ${investments.userId})`,
-      fundingPercentage: sql`(sum(${investments.amount}) / ${properties.fundingGoal}) * 100`
-    })
-    .from(investments)
-    .leftJoin(properties, eq(investments.propertyId, properties.id))
-    .groupBy(investments.propertyId, properties.name, properties.fundingGoal)
-    .orderBy(desc(sql`sum(${investments.amount})`))
-    .limit(5);
-    
-    // Get recent investments
-    const recentInvestments = await db.select({
-      id: investments.id,
-      amount: investments.amount,
-      investmentDate: investments.investmentDate,
-      status: investments.status,
-      propertyId: investments.propertyId,
-      propertyName: properties.name,
-      userId: investments.userId,
-      userName: users.name
-    })
-    .from(investments)
-    .leftJoin(properties, eq(investments.propertyId, properties.id))
-    .leftJoin(users, eq(investments.userId, users.id))
-    .orderBy(desc(investments.investmentDate))
-    .limit(10);
-    
-    res.status(200).json({
-      status: 'success',
-      data: {
-        stats: {
-          totalInvestments: Number(stats.totalInvestments) || 0,
-          totalAmount: stats.totalAmount || '0',
-          avgAmount: stats.avgAmount || '0',
-          totalInvestors: Number(stats.totalInvestors) || 0
-        },
-        statusCounts: statusCounts.reduce((acc, item) => {
-          acc[item.status] = Number(item.count);
-          return acc;
-        }, {}),
-        monthlyTrend: monthlyTrend.map(item => ({
-          month: item.month,
-          total: item.total || '0',
-          count: Number(item.count) || 0
-        })),
-        topProperties,
-        recentInvestments
-      }
-    });
-  } catch (error) {
-    console.error('Get investment dashboard error:', error);
-    
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to retrieve investment dashboard data',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
+function calculateIndividualROI(investment, property) {
+  // In a real app, this would use actual ROI payment data
+  // For now, use the property's ROI rate and time since investment
+  const roi = Number(property.roi);
+  const investmentDate = new Date(investment.investmentDate);
+  const now = new Date();
+  
+  // Calculate months since investment
+  const monthsSinceInvestment = 
+    (now.getFullYear() - investmentDate.getFullYear()) * 12 + 
+    (now.getMonth() - investmentDate.getMonth());
+  
+  // Pro-rate ROI based on months
+  return monthsSinceInvestment > 0 ? (roi / 12) * monthsSinceInvestment : 0;
+}
 
 /**
- * Update investment status (admin only)
+ * Helper: Calculate total ROI for a user
  */
-exports.updateInvestmentStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    
-    // Validate status
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'refunded'];
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({
-        status: 'error',
-        message: `Status must be one of: ${validStatuses.join(', ')}`
-      });
-    }
-    
-    // Get investment
-    const [investment] = await db.select()
-      .from(investments)
-      .where(eq(investments.id, id))
-      .limit(1);
-    
-    if (!investment) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Investment not found'
-      });
-    }
-    
-    // If cancelling or refunding, handle property funding progress
-    if ((status === 'cancelled' || status === 'refunded') && investment.status === 'confirmed') {
-      await db.transaction(async (tx) => {
-        // Update investment status
-        await tx.update(investments)
-          .set({
-            status,
-            updatedAt: new Date()
-          })
-          .where(eq(investments.id, id));
-        
-        // Reduce property funding progress
-        await tx.update(properties)
-          .set({
-            fundingProgress: sql`${properties.fundingProgress} - ${investment.amount}`,
-            updatedAt: new Date()
-          })
-          .where(eq(properties.id, investment.propertyId));
-        
-        // Return funds to wallet if refunded
-        if (status === 'refunded') {
-          await tx.update(wallets)
-            .set({
-              balance: sql`${wallets.balance} + ${investment.amount}`,
-              lastUpdated: new Date()
-            })
-            .where(eq(wallets.userId, investment.userId));
-          
-          // Record the refund transaction
-          await tx.insert(transactions)
-            .values({
-              userId: investment.userId,
-              investmentId: investment.id,
-              type: 'refund',
-              amount: investment.amount.toString(),
-              status: 'completed',
-              description: 'Investment refund',
-              createdAt: new Date(),
-              updatedAt: new Date()
-            });
-        }
-      });
-    } else {
-      // Just update the status for other status changes
-      await db.update(investments)
-        .set({
-          status,
-          updatedAt: new Date()
-        })
-        .where(eq(investments.id, id));
-    }
-    
-    // Get updated investment
-    const [updatedInvestment] = await db.select()
-      .from(investments)
-      .where(eq(investments.id, id))
-      .limit(1);
-    
-    res.status(200).json({
-      status: 'success',
-      data: {
-        investment: updatedInvestment
-      }
-    });
-  } catch (error) {
-    console.error('Update investment status error:', error);
-    
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to update investment status',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
+async function calculateTotalROI(userId) {
+  // Get sum of all ROI payments
+  const [{ total }] = await db.select({
+    total: sql`COALESCE(SUM(amount), 0)`
+  })
+  .from(transactions)
+  .where(and(
+    eq(transactions.userId, userId),
+    eq(transactions.type, 'dividend')
+  ));
+  
+  return Number(total);
+}
 
 /**
- * Add ROI payment for an investment (admin only)
+ * Helper: Get recent activity for a user
  */
-exports.addROIPayment = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { amount, notes } = req.body;
-    
-    // Validate required fields
-    if (!amount) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Please provide payment amount'
-      });
-    }
-    
-    // Ensure amount is numeric and positive
-    const numericAmount = Number(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Payment amount must be a positive number'
-      });
-    }
-    
-    // Get investment
-    const [investment] = await db.select()
-      .from(investments)
-      .where(eq(investments.id, id))
-      .limit(1);
-    
-    if (!investment) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Investment not found'
-      });
-    }
-    
-    // Get property
-    const [property] = await db.select()
-      .from(properties)
-      .where(eq(properties.id, investment.propertyId))
-      .limit(1);
-    
-    // Create ROI payment
-    await db.transaction(async (tx) => {
-      // Create ROI payment record
-      const [payment] = await tx.insert(roiPayments)
-        .values({
-          investmentId: investment.id,
-          userId: investment.userId,
-          propertyId: investment.propertyId,
-          amount: amount.toString(),
-          paymentDate: new Date(),
-          status: 'completed',
-          notes: notes || `ROI payment for ${property.name}`
-        })
-        .returning();
-      
-      // Add funds to user's wallet
-      await tx.update(wallets)
-        .set({
-          balance: sql`${wallets.balance} + ${amount}`,
-          lastUpdated: new Date()
-        })
-        .where(eq(wallets.userId, investment.userId));
-      
-      // Record the transaction
-      const [transaction] = await tx.insert(transactions)
-        .values({
-          userId: investment.userId,
-          investmentId: investment.id,
-          type: 'dividend',
-          amount: amount.toString(),
-          status: 'completed',
-          description: `ROI payment for ${property.name}`,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-        .returning();
-      
-      // Update ROI payment with transaction ID
-      await tx.update(roiPayments)
-        .set({
-          transactionId: transaction.id
-        })
-        .where(eq(roiPayments.id, payment.id));
-    });
-    
-    // Get updated wallet balance
-    const [userWallet] = await db.select()
-      .from(wallets)
-      .where(eq(wallets.userId, investment.userId))
-      .limit(1);
-    
-    res.status(201).json({
-      status: 'success',
-      message: 'ROI payment processed successfully',
-      data: {
-        paymentAmount: amount,
-        newWalletBalance: userWallet.balance
-      }
-    });
-  } catch (error) {
-    console.error('Add ROI payment error:', error);
-    
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to process ROI payment',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+async function getRecentActivity(userId) {
+  // Get recent investments
+  const recentInvestments = await db.select({
+    id: investments.id,
+    propertyId: investments.propertyId,
+    amount: investments.amount,
+    date: investments.createdAt,
+    propertyName: properties.name
+  })
+  .from(investments)
+  .innerJoin(properties, eq(investments.propertyId, properties.id))
+  .where(eq(investments.userId, userId))
+  .orderBy(desc(investments.createdAt))
+  .limit(3);
+  
+  // Get recent ROI payments
+  const recentROI = await db.select({
+    id: roiPayments.id,
+    propertyId: roiPayments.propertyId,
+    amount: roiPayments.amount,
+    date: roiPayments.paymentDate,
+    propertyName: properties.name
+  })
+  .from(roiPayments)
+  .innerJoin(properties, eq(roiPayments.propertyId, properties.id))
+  .where(eq(roiPayments.userId, userId))
+  .orderBy(desc(roiPayments.paymentDate))
+  .limit(3);
+  
+  // Format investments as activity
+  const investmentActivity = recentInvestments.map(inv => ({
+    type: 'investment',
+    date: inv.date,
+    title: `New Investment in ${inv.propertyName}`,
+    description: `You invested ${formatCurrency(inv.amount)} in ${inv.propertyName}`
+  }));
+  
+  // Format ROI payments as activity
+  const roiActivity = recentROI.map(roi => ({
+    type: 'roi',
+    date: roi.date,
+    title: `ROI Payment from ${roi.propertyName}`,
+    description: `You received ${formatCurrency(roi.amount)} in ROI from ${roi.propertyName}`
+  }));
+  
+  // Combine and sort by date (most recent first)
+  return [...investmentActivity, ...roiActivity]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5); // Limit to 5 most recent
+}
+
+/**
+ * Helper: Get date range from period string
+ */
+function getDateRangeFromPeriod(period) {
+  const endDate = new Date();
+  let startDate = new Date();
+  
+  switch (period) {
+    case '1m':
+      startDate.setMonth(endDate.getMonth() - 1);
+      break;
+    case '3m':
+      startDate.setMonth(endDate.getMonth() - 3);
+      break;
+    case '6m':
+      startDate.setMonth(endDate.getMonth() - 6);
+      break;
+    case 'ytd':
+      startDate = new Date(endDate.getFullYear(), 0, 1); // January 1st of current year
+      break;
+    case '1y':
+      startDate.setFullYear(endDate.getFullYear() - 1);
+      break;
+    case 'all':
+      startDate = new Date(0); // Beginning of time (1970)
+      break;
+    default:
+      startDate.setMonth(endDate.getMonth() - 3); // Default to 3 months
   }
-};
+  
+  return { startDate, endDate };
+}
+
+/**
+ * Helper: Generate daily performance data points
+ */
+function generatePerformanceData(startDate, endDate, initialValue, investments, roiPayments) {
+  const data = [];
+  let currentDate = new Date(startDate);
+  let portfolioValue = initialValue;
+  let investedAmount = initialValue;
+  
+  // Create a map of dates to transactions
+  const transactionsByDate = new Map();
+  
+  // Add investments to transaction map
+  investments.forEach(investment => {
+    const date = new Date(investment.createdAt).toISOString().split('T')[0];
+    if (!transactionsByDate.has(date)) {
+      transactionsByDate.set(date, { investments: [], roi: [] });
+    }
+    transactionsByDate.get(date).investments.push(investment);
+  });
+  
+  // Add ROI payments to transaction map
+  roiPayments.forEach(roi => {
+    const date = new Date(roi.createdAt).toISOString().split('T')[0];
+    if (!transactionsByDate.has(date)) {
+      transactionsByDate.set(date, { investments: [], roi: [] });
+    }
+    transactionsByDate.get(date).roi.push(roi);
+  });
+  
+  // Generate data points for each day in the range
+  while (currentDate <= endDate) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    
+    // Apply transactions for this date
+    if (transactionsByDate.has(dateStr)) {
+      const transactions = transactionsByDate.get(dateStr);
+      
+      // Add investments
+      transactions.investments.forEach(investment => {
+        investedAmount += Number(investment.amount);
+        portfolioValue += Number(investment.amount);
+      });
+      
+      // Add ROI
+      transactions.roi.forEach(roi => {
+        portfolioValue += Number(roi.amount);
+      });
+    }
+    
+    // Add data point
+    data.push({
+      date: dateStr,
+      value: portfolioValue,
+      invested: investedAmount
+    });
+    
+    // Move to next day
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return data;
+}
+
+/**
+ * Helper: Calculate average monthly ROI
+ */
+async function calculateAverageMonthlyROI(userId) {
+  // Get all ROI payments
+  const roiPayments = await db.select()
+    .from(transactions)
+    .where(and(
+      eq(transactions.userId, userId),
+      eq(transactions.type, 'dividend')
+    ))
+    .orderBy(asc(transactions.createdAt));
+  
+  if (roiPayments.length === 0) {
+    return 0;
+  }
+  
+  // Calculate total ROI
+  const totalROI = roiPayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+  
+  // Calculate months between first and last payment
+  const firstPaymentDate = new Date(roiPayments[0].createdAt);
+  const lastPaymentDate = new Date(roiPayments[roiPayments.length - 1].createdAt);
+  
+  const monthsDiff = 
+    (lastPaymentDate.getFullYear() - firstPaymentDate.getFullYear()) * 12 + 
+    (lastPaymentDate.getMonth() - firstPaymentDate.getMonth());
+  
+  // If less than a month, return total as monthly average
+  const months = Math.max(1, monthsDiff);
+  
+  return totalROI / months;
+}
+
+/**
+ * Helper: Get best performing property
+ */
+async function getBestPerformingProperty(userId) {
+  // Get user's investments with property details
+  const userInvestments = await db.select({
+    investment: investments,
+    property: properties
+  })
+  .from(investments)
+  .innerJoin(properties, eq(investments.propertyId, properties.id))
+  .where(and(
+    eq(investments.userId, userId),
+    eq(investments.status, 'active')
+  ));
+  
+  if (userInvestments.length === 0) {
+    return null;
+  }
+  
+  // Group by property
+  const propertiesMap = new Map();
+  userInvestments.forEach(item => {
+    const propertyId = item.property.id;
+    
+    if (!propertiesMap.has(propertyId)) {
+      propertiesMap.set(propertyId, {
+        id: propertyId,
+        name: item.property.name,
+        roi: Number(item.property.roi)
+      });
+    }
+  });
+  
+  // Find property with highest ROI
+  let bestProperty = null;
+  let highestROI = -Infinity;
+  
+  for (const property of propertiesMap.values()) {
+    if (property.roi > highestROI) {
+      highestROI = property.roi;
+      bestProperty = property;
+    }
+  }
+  
+  return bestProperty;
+}
+
+/**
+ * Helper: Format currency
+ */
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  }).format(Number(amount));
+}
