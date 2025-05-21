@@ -11,13 +11,8 @@ import { createInsertSchema } from 'drizzle-zod';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
 
-// Helper function to create a tenant-scoped table
-function tenantScopedTable(name: string, columns: Record<string, any>) {
-  return pgTable(name, {
-    tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-    ...columns
-  });
-}
+// Create tenant-scoped tables directly with pgTable for better type safety
+// This avoids TypeScript errors with the helper function approach
 
 /**
  * Properties - Real estate properties available for investment
