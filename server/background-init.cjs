@@ -82,30 +82,31 @@ async function initializeDatabase() {
     // Attempt to load the database module
     let db;
     try {
-      // First try to load via dynamic import (ESM style)
-      const dbModule = await import('./db.js').catch(() => {
-        // If that fails, try the TypeScript file
-        return import('./db.ts');
-      });
-      
-      // Check if the module loaded correctly
-      if (dbModule && dbModule.initializeDb) {
-        db = dbModule;
-        logWithTime('Database module loaded via ESM import');
-      } else {
-        throw new Error('Database module missing initializeDb function');
-      }
-    } catch (importError) {
-      // If dynamic import fails, try CommonJS require
+      // Try to load from our CommonJS version first
       try {
-        // Handle potential TS file by getting compiled JS path
-        const dbPath = require.resolve('./db.js');
-        db = require(dbPath);
-        logWithTime('Database module loaded via CommonJS require');
-      } catch (requireError) {
-        // Both import methods failed
-        throw new Error(`Failed to load database module: ${importError.message}, ${requireError?.message || 'No require error'}`);
+        db = require('./db.cjs');
+        logWithTime('Database module loaded from db.cjs');
+      } catch (cjsError) {
+        // If that fails, try standard import paths
+        try {
+          // Try CommonJS require
+          const dbPath = require.resolve('./db.js');
+          db = require(dbPath);
+          logWithTime('Database module loaded via CommonJS require');
+        } catch (requireError) {
+          // Try ESM dynamic import as last resort
+          const dbModule = await import('./db.js').catch(() => null);
+          
+          if (dbModule && dbModule.initializeDb) {
+            db = dbModule;
+            logWithTime('Database module loaded via ESM import');
+          } else {
+            throw new Error('Failed to load database module via any method');
+          }
+        }
       }
+    } catch (error) {
+      throw new Error(`Failed to load database module: ${error.message}`);
     }
     
     perfTracker.checkpoint('Database Module Loaded');
@@ -147,33 +148,32 @@ async function initializeAdvancedAuth() {
     // Load auth module
     let auth;
     try {
-      // Try to load via dynamic import (ESM style)
-      const authModule = await import('./auth.js').catch(() => {
-        // If that fails, try TypeScript file
-        return import('./auth.ts');
-      });
-      
-      if (authModule && typeof authModule.initializeAuth === 'function') {
-        auth = authModule;
-        logWithTime('Auth module loaded via ESM import');
-      } else {
-        throw new Error('Auth module missing initializeAuth function');
-      }
-    } catch (importError) {
-      // If dynamic import fails, try CommonJS require
+      // Try to load from our CommonJS version first
       try {
-        const authPath = require.resolve('./auth.js');
-        auth = require(authPath);
-        logWithTime('Auth module loaded via CommonJS require');
-      } catch (requireError) {
-        // Try to load auth-cjs.js as a fallback
+        auth = require('./auth.cjs');
+        logWithTime('Auth module loaded from auth.cjs');
+      } catch (cjsError) {
+        // Fall back to other methods if our CJS module fails
         try {
-          auth = require('./auth.cjs');
-          logWithTime('Auth module loaded from auth.cjs');
-        } catch (cjsError) {
-          throw new Error(`Failed to load auth module: ${importError.message}`);
+          // Try standard CommonJS path
+          const authPath = require.resolve('./auth.js');
+          auth = require(authPath);
+          logWithTime('Auth module loaded via CommonJS require');
+        } catch (requireError) {
+          // Last resort: ESM import
+          const authModule = await import('./auth.js').catch(() => null);
+          
+          if (authModule && (typeof authModule.setupAuth === 'function' || 
+              typeof authModule.initializeAuth === 'function')) {
+            auth = authModule;
+            logWithTime('Auth module loaded via ESM import');
+          } else {
+            throw new Error('Failed to load auth module via any method');
+          }
         }
       }
+    } catch (error) {
+      throw new Error(`Failed to load auth module: ${error.message}`);
     }
     
     perfTracker.checkpoint('Auth Module Loaded');
