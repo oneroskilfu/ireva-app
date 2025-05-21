@@ -66,8 +66,8 @@ function bootstrap() {
   try {
     // Load minimal modules for now
     const modules = loadModules([
-      './essential-loader.js',
-      './middleware/auth-middleware.js'
+      './essential-loader.cjs',
+      './middleware/auth-middleware.cjs'
     ]);
     
     logWithTime('Bootstrap sequence completed, running in minimal mode');
