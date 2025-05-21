@@ -1,53 +1,84 @@
 /**
- * Tenant Invitation Schema
+ * Invitation Schema
  * 
- * This file defines the invitation system for the multi-tenant architecture.
+ * This file defines the database schema for tenant invitations.
  */
 
-import { pgTable, uuid, text, timestamp, boolean } from 'drizzle-orm/pg-core';
-import { tenants, tenantUsers } from './schema-tenants';
-import { createInsertSchema } from 'drizzle-zod';
-import { relations } from 'drizzle-orm';
+import { pgTable, uuid, text, timestamp, integer, uniqueIndex } from 'drizzle-orm/pg-core';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
+import { relations } from 'drizzle-orm';
+import { tenants } from './schema-tenants';
+import { users } from './schema';
 
 /**
- * Tenant Invitations - Used to invite new users to join a tenant
+ * Invitations table
+ * Stores invitations for users to join tenants
  */
-export const tenantInvitations = pgTable('tenant_invitations', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const invitations = pgTable('tenant_invitations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
-  role: text('role').notNull().default('member'),
+  role: text('role').notNull().default('user'),
   token: text('token').notNull().unique(),
-  invitedById: uuid('invited_by_id').references(() => tenantUsers.id),
-  expires: timestamp('expires').notNull(),
-  accepted: boolean('accepted').default(false),
+  status: text('status').notNull().default('pending'),
+  invitedByUserId: integer('invited_by_user_id').notNull().references(() => users.id),
+  expiresAt: timestamp('expires_at').notNull(),
   acceptedAt: timestamp('accepted_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
+  acceptedByUserId: integer('accepted_by_user_id').references(() => users.id),
+  revokedAt: timestamp('revoked_at'),
+  revokedByUserId: integer('revoked_by_user_id').references(() => users.id),
+  resendCount: integer('resend_count').default(0).notNull(),
+  lastResendAt: timestamp('last_resend_at'),
+  lastResendByUserId: integer('last_resend_by_user_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+}, (table) => {
+  return {
+    tokenIdx: uniqueIndex('invitation_token_idx').on(table.token),
+    emailTenantIdx: uniqueIndex('invitation_email_tenant_idx').on(table.email, table.tenantId)
+  };
 });
 
-// Define relations
-export const tenantInvitationsRelations = relations(tenantInvitations, ({ one }) => ({
+/**
+ * Relations
+ */
+export const invitationsRelations = relations(invitations, ({ one }) => ({
   tenant: one(tenants, {
-    fields: [tenantInvitations.tenantId],
+    fields: [invitations.tenantId],
     references: [tenants.id],
   }),
-  invitedBy: one(tenantUsers, {
-    fields: [tenantInvitations.invitedById],
-    references: [tenantUsers.id],
+  invitedBy: one(users, {
+    fields: [invitations.invitedByUserId],
+    references: [users.id],
+  }),
+  acceptedBy: one(users, {
+    fields: [invitations.acceptedByUserId],
+    references: [users.id],
+  }),
+  revokedBy: one(users, {
+    fields: [invitations.revokedByUserId],
+    references: [users.id],
+  }),
+  lastResendBy: one(users, {
+    fields: [invitations.lastResendByUserId],
+    references: [users.id],
   }),
 }));
 
-// Zod schema for invitation validation
-export const insertInvitationSchema = createInsertSchema(tenantInvitations)
-  .omit({ 
-    id: true, 
-    token: true, 
-    accepted: true, 
-    acceptedAt: true, 
-    createdAt: true 
-  });
+/**
+ * Schemas for validation
+ */
+export const insertInvitationSchema = createInsertSchema(invitations, {
+  email: z.string().email('Invalid email address'),
+  role: z.enum(['admin', 'manager', 'user']).default('user'),
+  status: z.enum(['pending', 'accepted', 'revoked', 'expired']).default('pending'),
+});
 
-// Export types
-export type TenantInvitation = typeof tenantInvitations.$inferSelect;
-export type InsertTenantInvitation = z.infer<typeof insertInvitationSchema>;
+export const selectInvitationSchema = createSelectSchema(invitations);
+
+/**
+ * Types
+ */
+export type Invitation = z.infer<typeof selectInvitationSchema>;
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>;

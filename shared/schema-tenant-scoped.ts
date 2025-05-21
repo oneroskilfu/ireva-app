@@ -1,45 +1,51 @@
 /**
- * Tenant-Scoped Table Utility
+ * Tenant-Scoped Table Generator
  * 
- * This module provides utilities for creating tenant-scoped tables
- * that automatically include a tenant ID field and appropriate constraints.
+ * This utility generates tenant-scoped tables for the multi-tenant architecture.
+ * It ensures all tenant-specific tables include a tenantId field and appropriate constraints.
  */
 
-import { pgTable, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, Table, TableConfig, Column } from 'drizzle-orm/pg-core';
 import { tenants } from './schema-tenants';
-import { InferSelectModel } from 'drizzle-orm';
 
 /**
- * The simplest implementation of a tenant-scoped table
- * This avoids TypeScript errors while maintaining functionality
+ * Creates a tenant-scoped table with a tenantId column
+ * 
+ * @param name - The name of the table
+ * @param columns - Object with column definitions
+ * @param extraConfig - Extra configuration for the table
+ * @returns A pgTable instance with tenant ID column
  */
-export function tenantScopedTable(tableName: string, columns: Record<string, any>) {
-  return pgTable(tableName, {
+export function tenantTable<T extends TableConfig>(
+  name: string,
+  columns: T,
+  extraConfig?: Parameters<typeof pgTable>[2]
+) {
+  // Add tenantId column
+  const columnsWithTenant = {
     tenantId: uuid('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
-    ...columns
-  });
+    ...columns,
+  };
+  
+  // Create table
+  return pgTable(name, columnsWithTenant as any, extraConfig);
 }
 
 /**
- * Type helper for extracting the tenant ID from a tenant-scoped table
+ * Type helper for tenant-scoped tables
  */
-export type WithTenantId<T> = T & { tenantId: string };
+export type TenantScoped<T> = T & {
+  tenantId: string;
+};
 
 /**
- * Type helper for scoping a type to a tenant
+ * Filter helper for tenant-scoped queries
+ * 
+ * @param tenantId - The ID of the current tenant
+ * @returns A function that returns a WHERE condition for the tenant ID
  */
-export type TenantScoped<T extends object> = T & { tenantId: string };
-
-/**
- * Type helper for creating an insert type that includes tenant ID
- */
-export type TenantScopedInsert<T extends object> = Omit<T, 'tenantId'> & { tenantId: string };
-
-/**
- * Type helper for creating a select type from a tenant-scoped table
- */
-export type TenantScopedSelect<T> = InferSelectModel<T>;
-
-export default tenantScopedTable;
+export function tenantFilter(tenantId: string) {
+  return <T extends { tenantId: unknown }>(table: T) => ({ tenantId: table.tenantId });
+}
