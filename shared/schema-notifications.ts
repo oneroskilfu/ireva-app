@@ -1,4 +1,14 @@
-import { pgTable, text, boolean, timestamp, integer, json, primaryKey } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+import { 
+  pgTable, 
+  serial, 
+  text, 
+  boolean, 
+  timestamp, 
+  integer, 
+  json, 
+  primaryKey 
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { users } from './schema';
@@ -44,7 +54,7 @@ export const NotificationChannelEnum = {
 
 // Notifications table
 export const notifications = pgTable('notifications', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   message: text('message').notNull(),
@@ -62,7 +72,7 @@ export const notifications = pgTable('notifications', {
 
 // Notification Templates table
 export const notificationTemplates = pgTable('notification_templates', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  id: serial('id').primaryKey(),
   name: text('name').notNull().unique(),
   type: text('type').notNull().$type<keyof typeof NotificationTypeEnum>(),
   title: text('title').notNull(),
@@ -76,7 +86,7 @@ export const notificationTemplates = pgTable('notification_templates', {
 
 // User notification preferences
 export const userNotificationPreferences = pgTable('user_notification_preferences', {
-  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   channelEmail: boolean('channel_email').notNull().default(true),
   channelInApp: boolean('channel_in_app').notNull().default(true),
   channelSms: boolean('channel_sms').notNull().default(false),
@@ -94,7 +104,7 @@ export const userNotificationPreferences = pgTable('user_notification_preference
 
 // Scheduled notification queue
 export const scheduledNotifications = pgTable('scheduled_notifications', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  id: serial('id').primaryKey(),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   message: text('message').notNull(),
@@ -107,22 +117,44 @@ export const scheduledNotifications = pgTable('scheduled_notifications', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// Define relations
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id]
+  })
+}));
+
+export const userNotificationPreferencesRelations = relations(userNotificationPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userNotificationPreferences.userId],
+    references: [users.id]
+  })
+}));
+
 // Insert schemas
-export const insertNotificationSchema = createInsertSchema(notifications, {
-  data: z.record(z.any()).optional(),
-}).omit({ id: true, readAt: true, deliveredAt: true, createdAt: true });
+export const insertNotificationSchema = createInsertSchema(notifications)
+  .omit({ id: true, readAt: true, deliveredAt: true, createdAt: true })
+  .extend({
+    data: z.record(z.any()).optional(),
+  });
 
-export const insertNotificationTemplateSchema = createInsertSchema(notificationTemplates, {
-  emailTemplate: z.string().optional(),
-  smsTemplate: z.string().optional(),
-  inAppTemplate: z.string().optional(),
-}).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertNotificationTemplateSchema = createInsertSchema(notificationTemplates)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    emailTemplate: z.string().optional(),
+    smsTemplate: z.string().optional(),
+    inAppTemplate: z.string().optional(),
+  });
 
-export const insertUserNotificationPreferencesSchema = createInsertSchema(userNotificationPreferences).omit({ updatedAt: true });
+export const insertUserNotificationPreferencesSchema = createInsertSchema(userNotificationPreferences)
+  .omit({ updatedAt: true });
 
-export const insertScheduledNotificationSchema = createInsertSchema(scheduledNotifications, {
-  data: z.record(z.any()).optional(),
-}).omit({ id: true, processed: true, processedAt: true, createdAt: true });
+export const insertScheduledNotificationSchema = createInsertSchema(scheduledNotifications)
+  .omit({ id: true, processed: true, processedAt: true, createdAt: true })
+  .extend({
+    data: z.record(z.any()).optional(),
+  });
 
 // Types
 export type Notification = typeof notifications.$inferSelect;
