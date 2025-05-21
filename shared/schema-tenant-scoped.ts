@@ -1,80 +1,62 @@
 /**
- * Multi-tenant Schema Extensions
+ * Tenant-Scoped Table Utility
  * 
- * This file contains discriminator field definitions and utility types
- * for implementing multi-tenancy within the iREVA platform.
+ * This module provides utilities for creating tenant-scoped tables
+ * that automatically include a tenant ID field and appropriate constraints.
  */
 
-import { uuid } from 'drizzle-orm/pg-core';
-import { InferModel } from 'drizzle-orm';
-import { pgTable } from 'drizzle-orm/pg-core';
-import { z } from 'zod';
-
-/**
- * Common discriminator field to be added to all tenant-scoped tables
- */
-export const tenantDiscriminator = {
-  tenantId: uuid('tenant_id').notNull(),
-};
+import { pgTable, uuid, PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { tenants } from './schema-tenants';
+import { InferSelectModel } from 'drizzle-orm';
+import type { TableConfig } from 'drizzle-orm/pg-core';
 
 /**
- * Tenant header constant for identifying tenant in requests
+ * Creates a tenant-scoped table with an automatic tenant ID foreign key
+ * 
+ * @param name The table name
+ * @param columns The table column definitions
+ * @param extraConfig Optional extra table configuration
+ * @returns A table definition with tenant ID column
  */
-export const TENANT_HEADER = 'x-tenant-id';
-
-/**
- * Type for a tenant-scoped request
- */
-export interface TenantScopedRequest extends Request {
-  tenantId: string;
-}
-
-/**
- * Utility type to add tenant ID to any type
- */
-export type WithTenant<T> = T & {
-  tenantId: string;
-};
-
-/**
- * Utility type for tenant-scoped model
- */
-export type TenantScopedModel<T extends Record<string, any>> = T & {
-  tenantId: string;
-};
-
-/**
- * Utility function to add tenant ID to a pgTable definition
- */
-export function tenantScopedTable<T extends Record<string, any>>(
+export function tenantScopedTable(
   name: string,
-  columns: T
+  columns: Record<string, any>,
+  extraConfig?: TableConfig
 ) {
-  return pgTable(name, {
-    ...columns,
-    ...tenantDiscriminator,
-  });
-}
-
-/**
- * Zod validator for tenant ID in UUID format
- */
-export const tenantIdValidator = z.string().uuid({
-  message: 'Tenant ID must be a valid UUID',
-});
-
-/**
- * Utility function to add tenant filter to a query
- */
-export function withTenantFilter<T extends Record<string, any>>(
-  query: T,
-  tenantId: string
-): T {
-  return {
-    ...query,
-    where: {
-      ...(query.where || {}),
-      tenantId,
+  // Create table with tenant ID column and references
+  return pgTable(
+    name,
+    {
+      // Add tenant ID column with foreign key reference
+      tenantId: uuid('tenant_id')
+        .notNull()
+        .references(() => tenants.id, { onDelete: 'cascade' }),
+      
+      // Include all the provided columns
+      ...columns
     },
-  };
+    extraConfig
+  );
 }
+
+/**
+ * Type helper for extracting the tenant ID from a tenant-scoped table
+ */
+export type WithTenantId<T> = T & { tenantId: string };
+
+/**
+ * Type helper for scoping a type to a tenant
+ */
+export type TenantScoped<T extends object> = T & { tenantId: string };
+
+/**
+ * Type helper for creating an insert type that includes tenant ID
+ */
+export type TenantScopedInsert<T extends object> = Omit<T, 'tenantId'> & { tenantId: string };
+
+/**
+ * Type helper for creating a select type from a tenant-scoped table
+ */
+export type TenantScopedSelect<T extends PgTableWithColumns<any>> = InferSelectModel<T>;
+
+export default tenantScopedTable;
