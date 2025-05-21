@@ -17,7 +17,8 @@ import { z } from 'zod';
 /**
  * Properties - Real estate properties available for investment
  */
-export const properties = tenantScopedTable('properties', {
+export const properties = pgTable('properties', {
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
@@ -40,7 +41,8 @@ export const properties = tenantScopedTable('properties', {
 /**
  * Projects - Investment opportunities that may be tied to properties
  */
-export const projects = tenantScopedTable('projects', {
+export const projects = pgTable('projects', {
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
@@ -61,7 +63,8 @@ export const projects = tenantScopedTable('projects', {
 /**
  * Investments - User investments in projects or properties
  */
-export const investments = tenantScopedTable('investments', {
+export const investments = pgTable('investments', {
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   id: uuid('id').defaultRandom().primaryKey(),
   userId: integer('user_id').notNull(),
   projectId: uuid('project_id').references(() => projects.id),
@@ -78,7 +81,8 @@ export const investments = tenantScopedTable('investments', {
 /**
  * Notifications - User notifications with tenant isolation
  */
-export const notifications = tenantScopedTable('notifications', {
+export const notifications = pgTable('notifications', {
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   id: uuid('id').defaultRandom().primaryKey(),
   userId: integer('user_id').notNull(),
   title: text('title').notNull(),

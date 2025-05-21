@@ -1,12 +1,11 @@
-import { UserPayload } from '../../shared/types/user-payload';
+import { TenantUser } from '@shared/schema-tenants';
 
 declare global {
   namespace Express {
-    export interface Request {
-      user?: UserPayload;
-      jwtPayload?: UserPayload;
+    interface Request {
+      tenantId?: string;
+      tenantUser?: TenantUser;
+      tenantSlug?: string;
     }
   }
 }
-
-export {};
