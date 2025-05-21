@@ -1,66 +1,63 @@
--- Migration: Create Tenant Tables
--- Description: Creates the base tables needed for multi-tenant functionality
-
--- Create tenants table
-CREATE TABLE IF NOT EXISTS "tenants" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "name" TEXT NOT NULL,
-  "slug" TEXT NOT NULL UNIQUE,
-  "status" TEXT NOT NULL DEFAULT 'active',
-  "tier" TEXT NOT NULL DEFAULT 'basic',
-  "primary_contact_email" TEXT NOT NULL,
-  "primary_contact_name" TEXT NOT NULL,
-  "primary_contact_phone" TEXT,
-  "billing_email" TEXT,
-  "billing_address" TEXT,
-  "subscription_id" TEXT,
-  "subscription_status" TEXT,
-  "subscription_start_date" TIMESTAMP,
-  "subscription_end_date" TIMESTAMP,
-  "logo_url" TEXT,
-  "custom_domain" TEXT,
-  "theme" JSONB,
-  "max_users" INTEGER,
-  "user_count" INTEGER NOT NULL DEFAULT 0,
-  "features" JSONB,
-  "metadata" JSONB,
-  "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+-- Create Tenants Table
+CREATE TABLE IF NOT EXISTS tenants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  domain TEXT,
+  logo TEXT,
+  primary_color TEXT DEFAULT '#3B82F6',
+  subscription_tier TEXT NOT NULL DEFAULT 'free',
+  subscription_status TEXT NOT NULL DEFAULT 'active',
+  subscription_expires_at TIMESTAMP,
+  max_users INTEGER NOT NULL DEFAULT 5,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Create tenant_users junction table
-CREATE TABLE IF NOT EXISTS "tenant_users" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "tenant_id" UUID NOT NULL REFERENCES "tenants"("id") ON DELETE CASCADE,
-  "user_id" INTEGER NOT NULL,
-  "role" TEXT NOT NULL DEFAULT 'member',
-  "is_owner" BOOLEAN NOT NULL DEFAULT false,
-  "is_active" BOOLEAN NOT NULL DEFAULT true,
-  "joined_at" TIMESTAMP NOT NULL DEFAULT now(),
-  "last_access_at" TIMESTAMP,
-  "invited_by" INTEGER,
-  "metadata" JSONB,
-  UNIQUE("tenant_id", "user_id")
+-- Create index on tenant slug
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_slug_idx ON tenants(slug);
+
+-- Create Tenant Users join table
+CREATE TABLE IF NOT EXISTS tenant_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'user',
+  permissions TEXT[],
+  is_owner BOOLEAN NOT NULL DEFAULT FALSE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  joined_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  last_active_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE(tenant_id, user_id)
 );
 
--- Create tenant_invitations table
-CREATE TABLE IF NOT EXISTS "tenant_invitations" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "tenant_id" UUID NOT NULL REFERENCES "tenants"("id") ON DELETE CASCADE,
-  "email" TEXT NOT NULL,
-  "invited_by_user_id" INTEGER NOT NULL,
-  "role" TEXT NOT NULL DEFAULT 'member',
-  "status" TEXT NOT NULL DEFAULT 'pending',
-  "token" TEXT NOT NULL UNIQUE,
-  "expires_at" TIMESTAMP NOT NULL,
-  "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT now()
+-- Create index on tenant_user combination
+CREATE UNIQUE INDEX IF NOT EXISTS tenant_user_idx ON tenant_users(tenant_id, user_id);
+
+-- Create Tenant Invitations table
+CREATE TABLE IF NOT EXISTS tenant_invitations (
+  id SERIAL PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
+  token TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  invited_by_user_id INTEGER NOT NULL REFERENCES users(id),
+  expires_at TIMESTAMP NOT NULL,
+  accepted_at TIMESTAMP,
+  accepted_by_user_id INTEGER REFERENCES users(id),
+  revoked_at TIMESTAMP,
+  revoked_by_user_id INTEGER REFERENCES users(id),
+  resend_count INTEGER NOT NULL DEFAULT 0,
+  last_resend_at TIMESTAMP,
+  last_resend_by_user_id INTEGER REFERENCES users(id),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS "idx_tenant_users_tenant_id" ON "tenant_users"("tenant_id");
-CREATE INDEX IF NOT EXISTS "idx_tenant_users_user_id" ON "tenant_users"("user_id");
-CREATE INDEX IF NOT EXISTS "idx_tenant_invitations_tenant_id" ON "tenant_invitations"("tenant_id");
-CREATE INDEX IF NOT EXISTS "idx_tenant_invitations_email" ON "tenant_invitations"("email");
-CREATE INDEX IF NOT EXISTS "idx_tenant_invitations_token" ON "tenant_invitations"("token");
-CREATE INDEX IF NOT EXISTS "idx_tenants_slug" ON "tenants"("slug");
+-- Create indexes for invitations
+CREATE UNIQUE INDEX IF NOT EXISTS invitation_token_idx ON tenant_invitations(token);
+CREATE UNIQUE INDEX IF NOT EXISTS invitation_email_tenant_idx ON tenant_invitations(email, tenant_id);

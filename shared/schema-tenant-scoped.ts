@@ -16,9 +16,9 @@ import { tenants } from './schema-tenants';
  * @param extraConfig - Extra configuration for the table
  * @returns A pgTable instance with tenant ID column
  */
-export function tenantTable<T extends TableConfig>(
+export function tenantTable(
   name: string,
-  columns: T,
+  columns: Record<string, any>,
   extraConfig?: Parameters<typeof pgTable>[2]
 ) {
   // Add tenantId column
@@ -30,7 +30,7 @@ export function tenantTable<T extends TableConfig>(
   };
   
   // Create table
-  return pgTable(name, columnsWithTenant as any, extraConfig);
+  return pgTable(name, columnsWithTenant, extraConfig);
 }
 
 /**

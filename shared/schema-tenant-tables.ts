@@ -1,164 +1,214 @@
 /**
  * Tenant-Scoped Tables
  * 
- * This file contains common tenant-scoped table definitions for the iREVA platform.
- * These tables automatically include tenant isolation.
+ * This file defines tenant-scoped versions of our existing tables
+ * for complete data isolation between tenants.
  */
 
-import { pgTable, uuid, text, integer, timestamp, boolean, json } from 'drizzle-orm/pg-core';
-import { tenants } from './schema-tenants';
-import { createInsertSchema } from 'drizzle-zod';
-import { relations } from 'drizzle-orm';
+import { 
+  integer, 
+  text, 
+  varchar, 
+  timestamp, 
+  boolean,
+  numeric,
+  json,
+  uniqueIndex
+} from 'drizzle-orm/pg-core';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-
-// Create tenant-scoped tables directly with pgTable for better type safety
-// This avoids TypeScript errors with the helper function approach
-
-/**
- * Properties - Real estate properties available for investment
- */
-export const properties = pgTable('properties', {
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  address: text('address').notNull(),
-  city: text('city').notNull(),
-  state: text('state').notNull(),
-  postalCode: text('postal_code').notNull(),
-  country: text('country').notNull().default('US'),
-  propertyType: text('property_type').notNull(),
-  status: text('status').notNull().default('active'),
-  purchasePrice: integer('purchase_price').notNull(),
-  currentValue: integer('current_value'),
-  rentalIncome: integer('rental_income'),
-  expenses: integer('expenses'),
-  imageUrls: text('image_urls').array(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
-});
+import { relations } from 'drizzle-orm';
+import { tenantTable, TenantScoped } from './schema-tenant-scoped';
+import { users } from './schema';
+import { tenants } from './schema-tenants';
 
 /**
- * Projects - Investment opportunities that may be tied to properties
+ * Tenant-scoped Properties table
  */
-export const projects = pgTable('projects', {
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  status: text('status').notNull().default('active'),
+export const tenantProperties = tenantTable('tenant_properties', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description').notNull(),
+  location: varchar('location', { length: 255 }).notNull(),
+  propertyType: varchar('property_type', { length: 50 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  price: numeric('price').notNull(),
+  size: numeric('size').notNull(),
+  roi: numeric('roi').notNull(),
+  fundingGoal: numeric('funding_goal').notNull(),
+  fundingProgress: numeric('funding_progress').default('0').notNull(),
+  minInvestment: numeric('min_investment').notNull(),
+  maxInvestment: numeric('max_investment'),
+  duration: integer('duration').notNull(), // in months
+  images: json('images').$type<string[]>().default([]),
+  features: json('features').$type<string[]>().default([]),
+  documents: json('documents').$type<{name: string, url: string}[]>().default([]),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
   startDate: timestamp('start_date'),
   endDate: timestamp('end_date'),
-  targetAmount: integer('target_amount'),
-  raisedAmount: integer('raised_amount').default(0),
-  minInvestment: integer('min_investment'),
-  maxInvestment: integer('max_investment'),
-  roi: integer('roi'),
-  duration: integer('duration'),
-  propertyId: uuid('property_id').references(() => properties.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  latitude: numeric('latitude'),
+  longitude: numeric('longitude'),
+  isActive: boolean('is_active').default(true).notNull(),
 });
 
 /**
- * Investments - User investments in projects or properties
+ * Tenant-scoped Investments table
  */
-export const investments = pgTable('investments', {
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: integer('user_id').notNull(),
-  projectId: uuid('project_id').references(() => projects.id),
-  propertyId: uuid('property_id').references(() => properties.id),
-  amount: integer('amount').notNull(),
-  status: text('status').notNull().default('pending'),
-  investmentDate: timestamp('investment_date').notNull().defaultNow(),
-  maturityDate: timestamp('maturity_date'),
-  expectedRoi: integer('expected_roi'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+export const tenantInvestments = tenantTable('tenant_investments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  propertyId: integer('property_id').notNull().references(() => tenantProperties.id),
+  amount: numeric('amount').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  paymentId: varchar('payment_id', { length: 100 }),
+  contractId: varchar('contract_id', { length: 100 }),
+  sharesCount: numeric('shares_count'),
+  investmentDate: timestamp('investment_date').defaultNow().notNull(),
 });
 
 /**
- * Notifications - User notifications with tenant isolation
+ * Tenant-scoped Transactions table
  */
-export const notifications = pgTable('notifications', {
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: integer('user_id').notNull(),
-  title: text('title').notNull(),
-  message: text('message').notNull(),
-  type: text('type').notNull(),
-  isRead: boolean('is_read').notNull().default(false),
-  data: json('data'),
-  createdAt: timestamp('created_at').notNull().defaultNow()
+export const tenantTransactions = tenantTable('tenant_transactions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  investmentId: integer('investment_id').references(() => tenantInvestments.id),
+  type: varchar('type', { length: 20 }).notNull(), // deposit, withdrawal, dividend, investment
+  amount: numeric('amount').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  description: text('description'),
+  reference: varchar('reference', { length: 100 }),
 });
 
-// Define relations between tables
-export const propertiesRelations = relations(properties, ({ many, one }) => ({
-  projects: many(projects),
-  investments: many(investments),
-  tenant: one(tenants, {
-    fields: [properties.tenantId],
-    references: [tenants.id]
-  })
-}));
+/**
+ * Tenant-scoped Documents table
+ */
+export const tenantDocuments = tenantTable('tenant_documents', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id),
+  propertyId: integer('property_id').references(() => tenantProperties.id),
+  investmentId: integer('investment_id').references(() => tenantInvestments.id),
+  title: varchar('title', { length: 100 }).notNull(),
+  type: varchar('type', { length: 50 }).notNull(),
+  url: varchar('url', { length: 255 }).notNull(),
+  isPrivate: boolean('is_private').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
-export const projectsRelations = relations(projects, ({ many, one }) => ({
-  property: one(properties, {
-    fields: [projects.propertyId],
-    references: [properties.id]
+/**
+ * Tenant-scoped Property Updates table
+ */
+export const tenantPropertyUpdates = tenantTable('tenant_property_updates', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  propertyId: integer('property_id').notNull().references(() => tenantProperties.id),
+  title: varchar('title', { length: 100 }).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdBy: integer('created_by').references(() => users.id),
+  images: json('images').$type<string[]>().default([]),
+});
+
+/**
+ * Tenant-scoped ROI Payments table
+ */
+export const tenantRoiPayments = tenantTable('tenant_roi_payments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  investmentId: integer('investment_id').notNull().references(() => tenantInvestments.id),
+  userId: integer('user_id').notNull().references(() => users.id),
+  propertyId: integer('property_id').notNull().references(() => tenantProperties.id),
+  amount: numeric('amount').notNull(),
+  paymentDate: timestamp('payment_date').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  transactionId: integer('transaction_id').references(() => tenantTransactions.id),
+  notes: text('notes'),
+});
+
+/**
+ * Relations
+ */
+export const tenantPropertiesRelations = relations(tenantProperties, ({ many, one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantProperties.tenantId],
+    references: [tenants.id],
   }),
-  investments: many(investments),
-  tenant: one(tenants, {
-    fields: [projects.tenantId],
-    references: [tenants.id]
-  })
+  investments: many(tenantInvestments),
+  documents: many(tenantDocuments),
+  updates: many(tenantPropertyUpdates),
 }));
 
-export const investmentsRelations = relations(investments, ({ one }) => ({
-  project: one(projects, {
-    fields: [investments.projectId],
-    references: [projects.id]
+export const tenantInvestmentsRelations = relations(tenantInvestments, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [tenantInvestments.tenantId],
+    references: [tenants.id],
   }),
-  property: one(properties, {
-    fields: [investments.propertyId],
-    references: [properties.id]
+  user: one(users, {
+    fields: [tenantInvestments.userId],
+    references: [users.id],
   }),
-  tenant: one(tenants, {
-    fields: [investments.tenantId],
-    references: [tenants.id]
-  })
+  property: one(tenantProperties, {
+    fields: [tenantInvestments.propertyId],
+    references: [tenantProperties.id],
+  }),
+  transactions: many(tenantTransactions),
+  roiPayments: many(tenantRoiPayments),
+  documents: many(tenantDocuments),
 }));
 
-export const notificationsRelations = relations(notifications, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [notifications.tenantId],
-    references: [tenants.id]
-  })
-}));
+/**
+ * Schemas for validation
+ */
+export const insertTenantPropertySchema = createInsertSchema(tenantProperties, {
+  name: z.string().min(3).max(100),
+  description: z.string().min(10),
+  location: z.string().min(3).max(255),
+  propertyType: z.string().min(2).max(50),
+  price: z.coerce.number().positive(),
+  size: z.coerce.number().positive(),
+  roi: z.coerce.number().positive(),
+  fundingGoal: z.coerce.number().positive(),
+  minInvestment: z.coerce.number().positive(),
+}).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  fundingProgress: true,
+  tenantId: true
+});
 
-// Define insert schemas
-export const insertPropertySchema = createInsertSchema(properties)
-  .omit({ id: true, tenantId: true, createdAt: true, updatedAt: true });
+export const insertTenantInvestmentSchema = createInsertSchema(tenantInvestments).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  status: true,
+  tenantId: true
+});
 
-export const insertProjectSchema = createInsertSchema(projects)
-  .omit({ id: true, tenantId: true, createdAt: true, updatedAt: true });
+export const insertTenantTransactionSchema = createInsertSchema(tenantTransactions).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  tenantId: true
+});
 
-export const insertInvestmentSchema = createInsertSchema(investments)
-  .omit({ id: true, tenantId: true, createdAt: true, updatedAt: true });
+/**
+ * Types
+ */
+export type TenantProperty = TenantScoped<typeof tenantProperties.$inferSelect>;
+export type InsertTenantProperty = z.infer<typeof insertTenantPropertySchema>;
 
-export const insertNotificationSchema = createInsertSchema(notifications)
-  .omit({ id: true, tenantId: true, createdAt: true });
+export type TenantInvestment = TenantScoped<typeof tenantInvestments.$inferSelect>;
+export type InsertTenantInvestment = z.infer<typeof insertTenantInvestmentSchema>;
 
-// Export types
-export type Property = typeof properties.$inferSelect;
-export type InsertProperty = z.infer<typeof insertPropertySchema>;
+export type TenantTransaction = TenantScoped<typeof tenantTransactions.$inferSelect>;
+export type InsertTenantTransaction = z.infer<typeof insertTenantTransactionSchema>;
 
-export type Project = typeof projects.$inferSelect;
-export type InsertProject = z.infer<typeof insertProjectSchema>;
-
-export type Investment = typeof investments.$inferSelect;
-export type InsertInvestment = z.infer<typeof insertInvestmentSchema>;
-
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type TenantDocument = TenantScoped<typeof tenantDocuments.$inferSelect>;
+export type TenantPropertyUpdate = TenantScoped<typeof tenantPropertyUpdates.$inferSelect>;
+export type TenantRoiPayment = TenantScoped<typeof tenantRoiPayments.$inferSelect>;
