@@ -1,67 +1,68 @@
 /**
- * Tenant Invitation Controller
+ * Invitation Controller
  * 
- * Handles HTTP requests for tenant invitation management.
+ * Handles HTTP requests for tenant invitations.
  */
 
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import {
-  createInvitation,
-  verifyInvitation,
-  acceptInvitation,
-  revokeInvitation,
-  getTenantInvitations
-} from '../services/invitation-service';
 import { insertInvitationSchema } from '@shared/schema-invitations';
-
-// Validate invitation creation request
-const createInvitationSchema = insertInvitationSchema.extend({
-  daysValid: z.number().min(1).max(30).optional()
-});
+import * as invitationService from '../services/invitation-service';
 
 /**
- * Create a new invitation to join a tenant
+ * Create a new invitation
  */
-export async function createTenantInvitation(req: Request, res: Response) {
+export async function createInvitation(req: Request, res: Response) {
   try {
-    const { tenantId } = req.params;
-    
-    // Get the current user from the session
+    // Get the current user and tenant from the request
     const currentUser = req.user;
+    const tenantId = req.tenantId;
+    
     if (!currentUser) {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    // Validate request body
-    const validatedData = createInvitationSchema.parse(req.body);
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
     
-    // Get the current user's tenant user record
+    // Check if user has admin role in this tenant
     const tenantUser = req.tenantUser;
-    if (!tenantUser) {
-      return res.status(403).json({ error: 'You do not have access to this tenant' });
+    if (!tenantUser || (tenantUser.role !== 'admin' && !tenantUser.isOwner)) {
+      return res.status(403).json({ error: 'You do not have permission to invite users to this tenant' });
     }
     
-    // Check if user has permission to invite others (must be admin or owner)
-    if (tenantUser.role !== 'admin' && !tenantUser.isOwner) {
-      return res.status(403).json({ error: 'You do not have permission to invite users' });
-    }
+    // Validate request body
+    const validatedData = insertInvitationSchema.omit({
+      id: true,
+      tenantId: true,
+      invitedByUserId: true,
+      status: true,
+      token: true,
+      expiresAt: true,
+      createdAt: true,
+      updatedAt: true
+    }).parse(req.body);
     
     // Create the invitation
-    const invitation = await createInvitation(
+    const invitation = await invitationService.createInvitation(
       tenantId,
-      validatedData.email,
-      validatedData.role,
-      tenantUser.id,
-      validatedData.daysValid
+      currentUser.id,
+      validatedData
     );
+    
+    // TODO: Send invitation email
     
     res.status(201).json(invitation);
   } catch (error) {
-    console.error('Error creating tenant invitation:', error);
+    console.error('Error creating invitation:', error);
     
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid invitation data', details: error.errors });
+    }
+    
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
     }
     
     res.status(500).json({ error: 'Failed to create invitation' });
@@ -69,89 +70,167 @@ export async function createTenantInvitation(req: Request, res: Response) {
 }
 
 /**
- * Get all pending invitations for a tenant
+ * Get all invitations for a tenant
  */
-export async function listTenantInvitations(req: Request, res: Response) {
+export async function getTenantInvitations(req: Request, res: Response) {
   try {
-    const { tenantId } = req.params;
+    const tenantId = req.tenantId;
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
     
     // Check tenant access
-    const tenantUser = req.tenantUser;
-    if (!tenantUser) {
+    if (!req.tenantUser) {
       return res.status(403).json({ error: 'You do not have access to this tenant' });
     }
     
-    // Only admins and owners can view invitations
-    if (tenantUser.role !== 'admin' && !tenantUser.isOwner) {
-      return res.status(403).json({ error: 'You do not have permission to view invitations' });
-    }
+    // Get invitations
+    const invitations = await invitationService.getTenantInvitations(tenantId);
     
-    const invitations = await getTenantInvitations(tenantId);
     res.json(invitations);
   } catch (error) {
-    console.error('Error listing tenant invitations:', error);
-    res.status(500).json({ error: 'Failed to list invitations' });
+    console.error('Error getting tenant invitations:', error);
+    res.status(500).json({ error: 'Failed to get invitations' });
   }
 }
 
 /**
- * Revoke an invitation
+ * Get invitation by token
  */
-export async function revokeTenantInvitation(req: Request, res: Response) {
-  try {
-    const { tenantId, invitationId } = req.params;
-    
-    // Check tenant access
-    const tenantUser = req.tenantUser;
-    if (!tenantUser) {
-      return res.status(403).json({ error: 'You do not have access to this tenant' });
-    }
-    
-    // Only admins and owners can revoke invitations
-    if (tenantUser.role !== 'admin' && !tenantUser.isOwner) {
-      return res.status(403).json({ error: 'You do not have permission to revoke invitations' });
-    }
-    
-    const deletedInvitation = await revokeInvitation(invitationId, tenantId);
-    res.json(deletedInvitation);
-  } catch (error) {
-    console.error('Error revoking invitation:', error);
-    res.status(500).json({ error: 'Failed to revoke invitation' });
-  }
-}
-
-/**
- * Verify an invitation by token
- */
-export async function verifyInvitationToken(req: Request, res: Response) {
+export async function getInvitationByToken(req: Request, res: Response) {
   try {
     const { token } = req.params;
     
-    const result = await verifyInvitation(token);
-    res.json(result);
+    if (!token) {
+      return res.status(400).json({ error: 'Invitation token is required' });
+    }
+    
+    // Get invitation
+    const invitation = await invitationService.getInvitationByToken(token);
+    
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+    
+    res.json(invitation);
   } catch (error) {
-    console.error('Error verifying invitation:', error);
-    res.status(500).json({ error: 'Failed to verify invitation' });
+    console.error('Error getting invitation:', error);
+    res.status(500).json({ error: 'Failed to get invitation' });
   }
 }
 
 /**
  * Accept an invitation
  */
-export async function acceptTenantInvitation(req: Request, res: Response) {
+export async function acceptInvitation(req: Request, res: Response) {
   try {
     const { token } = req.params;
-    
-    // Get the current user from the session
     const currentUser = req.user;
+    
+    if (!token) {
+      return res.status(400).json({ error: 'Invitation token is required' });
+    }
+    
     if (!currentUser) {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    const result = await acceptInvitation(token, currentUser.id);
+    // Accept invitation
+    const result = await invitationService.acceptInvitation(token, currentUser.id);
+    
     res.json(result);
   } catch (error) {
     console.error('Error accepting invitation:', error);
+    
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
     res.status(500).json({ error: 'Failed to accept invitation' });
+  }
+}
+
+/**
+ * Revoke an invitation
+ */
+export async function revokeInvitation(req: Request, res: Response) {
+  try {
+    const { invitationId } = req.params;
+    const currentUser = req.user;
+    const tenantId = req.tenantId;
+    
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    
+    // Check if user has admin role in this tenant
+    const tenantUser = req.tenantUser;
+    if (!tenantUser || (tenantUser.role !== 'admin' && !tenantUser.isOwner)) {
+      return res.status(403).json({ error: 'You do not have permission to revoke invitations' });
+    }
+    
+    // Revoke invitation
+    const updatedInvitation = await invitationService.revokeInvitation(
+      parseInt(invitationId),
+      currentUser.id
+    );
+    
+    res.json(updatedInvitation);
+  } catch (error) {
+    console.error('Error revoking invitation:', error);
+    
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ error: 'Failed to revoke invitation' });
+  }
+}
+
+/**
+ * Resend an invitation
+ */
+export async function resendInvitation(req: Request, res: Response) {
+  try {
+    const { invitationId } = req.params;
+    const currentUser = req.user;
+    const tenantId = req.tenantId;
+    
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID is required' });
+    }
+    
+    // Check if user has admin role in this tenant
+    const tenantUser = req.tenantUser;
+    if (!tenantUser || (tenantUser.role !== 'admin' && !tenantUser.isOwner)) {
+      return res.status(403).json({ error: 'You do not have permission to resend invitations' });
+    }
+    
+    // Resend invitation
+    const updatedInvitation = await invitationService.resendInvitation(
+      parseInt(invitationId),
+      currentUser.id
+    );
+    
+    // TODO: Send invitation email
+    
+    res.json(updatedInvitation);
+  } catch (error) {
+    console.error('Error resending invitation:', error);
+    
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ error: 'Failed to resend invitation' });
   }
 }

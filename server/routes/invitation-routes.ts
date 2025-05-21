@@ -1,32 +1,33 @@
 /**
- * Tenant Invitation Routes
+ * Invitation Routes
  * 
- * Defines API routes for tenant invitation management.
+ * Defines API routes for tenant invitations.
  */
 
 import express from 'express';
 import {
-  createTenantInvitation,
-  listTenantInvitations,
-  revokeTenantInvitation,
-  verifyInvitationToken,
-  acceptTenantInvitation
+  createInvitation,
+  getTenantInvitations,
+  getInvitationByToken,
+  acceptInvitation,
+  revokeInvitation,
+  resendInvitation
 } from '../controllers/invitation-controller';
 import { requireAuth } from '../middleware/auth-middleware';
 import { requireTenantAccess } from '../middleware/tenant-context';
 
 const router = express.Router();
 
-// Routes that require tenant context
-router.use('/tenants/:tenantId/invitations', requireAuth, requireTenantAccess);
+// Public route for checking invitation validity
+router.get('/invitations/token/:token', getInvitationByToken);
 
-// Tenant-specific invitation routes
-router.post('/tenants/:tenantId/invitations', createTenantInvitation);
-router.get('/tenants/:tenantId/invitations', listTenantInvitations);
-router.delete('/tenants/:tenantId/invitations/:invitationId', revokeTenantInvitation);
+// Route for accepting an invitation (requires authentication)
+router.post('/invitations/token/:token/accept', requireAuth, acceptInvitation);
 
-// General invitation routes
-router.get('/invitations/verify/:token', verifyInvitationToken);
-router.post('/invitations/accept/:token', requireAuth, acceptTenantInvitation);
+// Tenant-specific invitation routes (requires tenant access)
+router.post('/tenants/:tenantId/invitations', requireAuth, requireTenantAccess, createInvitation);
+router.get('/tenants/:tenantId/invitations', requireAuth, requireTenantAccess, getTenantInvitations);
+router.put('/tenants/:tenantId/invitations/:invitationId/revoke', requireAuth, requireTenantAccess, revokeInvitation);
+router.put('/tenants/:tenantId/invitations/:invitationId/resend', requireAuth, requireTenantAccess, resendInvitation);
 
 export default router;
