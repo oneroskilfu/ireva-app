@@ -1,258 +1,271 @@
-import { pgTable, text, boolean, timestamp, integer, jsonb, uuid } from 'drizzle-orm/pg-core';
+/**
+ * KYC/AML Schema Definitions
+ * 
+ * This file defines database tables and enums related to KYC verification
+ * and AML compliance functionality within the iREVA platform.
+ */
+
+import { pgTable, uuid, text, boolean, timestamp, integer, json } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
-import { users } from './schema';
+import { tenantScopedTable } from './schema-tenant-scoped';
 
 /**
- * KYC/AML Compliance Schema
- * 
- * Database schema for storing KYC (Know Your Customer) and AML (Anti-Money Laundering)
- * related data with proper encryption markers and security features.
+ * KYC verification status values
  */
-
-// KYC Status Enum
-export const KycStatusEnum = {
-  NOT_STARTED: 'not_started',
-  IN_PROGRESS: 'in_progress',
-  PENDING_REVIEW: 'pending_review',
-  APPROVED: 'approved',
-  REJECTED: 'rejected',
-  REQUIRES_ADDITIONAL_INFO: 'requires_additional_info',
-  EXPIRED: 'expired',
+export const KycStatus = {
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  PENDING_REVIEW: 'PENDING_REVIEW',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  REQUIRES_ADDITIONAL_INFO: 'REQUIRES_ADDITIONAL_INFO',
+  EXPIRED: 'EXPIRED'
 } as const;
 
-// KYC Verification Level Enum
-export const KycLevelEnum = {
-  BASIC: 'basic',         // Email verification only
-  STANDARD: 'standard',   // ID verification
-  ENHANCED: 'enhanced',   // ID + Address verification
-  PREMIUM: 'premium',     // Full KYC with liveness detection
-  BUSINESS: 'business',   // Business verification (for entities)
+export type KycStatusEnum = typeof KycStatus[keyof typeof KycStatus];
+
+/**
+ * KYC verification levels
+ */
+export const KycLevel = {
+  BASIC: 'BASIC',
+  INTERMEDIATE: 'INTERMEDIATE',
+  ADVANCED: 'ADVANCED'
 } as const;
 
-// Document Type Enum
-export const DocumentTypeEnum = {
-  ID_CARD: 'id_card',
-  PASSPORT: 'passport',
-  DRIVERS_LICENSE: 'drivers_license',
-  UTILITY_BILL: 'utility_bill',
-  BANK_STATEMENT: 'bank_statement',
-  PROOF_OF_ADDRESS: 'proof_of_address',
-  COMPANY_REGISTRATION: 'company_registration',
-  TAX_ID: 'tax_id',
-  ARTICLES_OF_INCORPORATION: 'articles_of_incorporation',
-  OTHER: 'other',
+export type KycLevelEnum = typeof KycLevel[keyof typeof KycLevel];
+
+/**
+ * Document status values
+ */
+export const DocumentStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED'
 } as const;
 
-// Document Status Enum
-export const DocumentStatusEnum = {
-  PENDING: 'pending',
-  APPROVED: 'approved',
-  REJECTED: 'rejected',
-  EXPIRED: 'expired',
+export type DocumentStatusEnum = typeof DocumentStatus[keyof typeof DocumentStatus];
+
+/**
+ * Document types
+ */
+export const DocumentType = {
+  PASSPORT: 'PASSPORT',
+  DRIVERS_LICENSE: 'DRIVERS_LICENSE',
+  ID_CARD: 'ID_CARD',
+  UTILITY_BILL: 'UTILITY_BILL',
+  BANK_STATEMENT: 'BANK_STATEMENT',
+  OTHER: 'OTHER'
 } as const;
 
-// KYC Verification Method Enum
-export const VerificationMethodEnum = {
-  MANUAL: 'manual',
-  AUTOMATED: 'automated',
-  THIRD_PARTY: 'third_party',
+export type DocumentTypeEnum = typeof DocumentType[keyof typeof DocumentType];
+
+/**
+ * Risk levels
+ */
+export const RiskLevel = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL'
 } as const;
 
-// Risk Level Enum
-export const RiskLevelEnum = {
-  LOW: 'low',
-  MEDIUM: 'medium',
-  HIGH: 'high',
-  CRITICAL: 'critical',
+export type RiskLevelEnum = typeof RiskLevel[keyof typeof RiskLevel];
+
+/**
+ * Risk flag types
+ */
+export const FlagType = {
+  DOCUMENT_QUALITY: 'DOCUMENT_QUALITY',
+  DOCUMENT_MISMATCH: 'DOCUMENT_MISMATCH',
+  SANCTIONS_LIST: 'SANCTIONS_LIST',
+  PEP: 'PEP',
+  HIGH_RISK_COUNTRY: 'HIGH_RISK_COUNTRY',
+  SUSPICIOUS_ACTIVITY: 'SUSPICIOUS_ACTIVITY',
+  IDENTITY_VERIFICATION_FAILED: 'IDENTITY_VERIFICATION_FAILED',
+  UNUSUAL_TRANSACTION: 'UNUSUAL_TRANSACTION',
+  LOCATION_MISMATCH: 'LOCATION_MISMATCH',
+  OTHER: 'OTHER'
 } as const;
 
-// Flag Type Enum
-export const FlagTypeEnum = {
-  SUSPICIOUS_ACTIVITY: 'suspicious_activity',
-  IDENTITY_MISMATCH: 'identity_mismatch',
-  DOCUMENT_TAMPERING: 'document_tampering',
-  LOCATION_RISK: 'location_risk',
-  TRANSACTION_ANOMALY: 'transaction_anomaly',
-  PEP: 'politically_exposed_person',
-  SANCTION_LIST: 'sanction_list',
-  WATCH_LIST: 'watch_list',
-  OTHER: 'other',
-} as const;
+export type FlagTypeEnum = typeof FlagType[keyof typeof FlagType];
 
-// KYC Table - Store user verification status and overall KYC information
-export const kycVerifications = pgTable('kyc_verifications', {
+/**
+ * KYC Verification table (tenant-scoped)
+ */
+export const kycVerifications = tenantScopedTable('kyc_verifications', {
   id: uuid('id').defaultRandom().primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  status: text('status').$type<keyof typeof KycStatusEnum>().notNull().default(KycStatusEnum.NOT_STARTED),
-  level: text('level').$type<keyof typeof KycLevelEnum>().notNull().default(KycLevelEnum.BASIC),
-  riskLevel: text('risk_level').$type<keyof typeof RiskLevelEnum>().default(RiskLevelEnum.LOW),
-  expiresAt: timestamp('expires_at'),
+  userId: integer('user_id').notNull(),
+  status: text('status')
+    .notNull()
+    .default(KycStatus.NOT_STARTED),
+  level: text('level')
+    .notNull()
+    .default(KycLevel.BASIC),
+  riskLevel: text('risk_level')
+    .notNull()
+    .default(RiskLevel.LOW),
   lastVerifiedAt: timestamp('last_verified_at'),
-  verificationMethod: text('verification_method').$type<keyof typeof VerificationMethodEnum>(),
-  reviewedBy: integer('reviewed_by').references(() => users.id),
+  expiresAt: timestamp('expires_at'),
   rejectionReason: text('rejection_reason'),
   additionalInfoRequired: text('additional_info_required'),
+  reviewedBy: integer('reviewed_by'),
   notes: text('notes'),
-  metadata: jsonb('metadata').$type<Record<string, any>>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
 
-// KYC Relations
-export const kycVerificationsRelations = relations(kycVerifications, ({ one, many }) => ({
-  user: one(users, {
-    fields: [kycVerifications.userId],
-    references: [users.id],
-  }),
-  documents: many(kycDocuments),
-  verificationAttempts: many(kycVerificationAttempts),
-  flags: many(kycRiskFlags),
-}));
-
-// KYC Documents Table - Securely store document information with encrypted paths
-export const kycDocuments = pgTable('kyc_documents', {
+/**
+ * KYC Document table (tenant-scoped)
+ */
+export const kycDocuments = tenantScopedTable('kyc_documents', {
   id: uuid('id').defaultRandom().primaryKey(),
-  kycVerificationId: uuid('kyc_verification_id').notNull().references(() => kycVerifications.id, { onDelete: 'cascade' }),
-  type: text('type').$type<keyof typeof DocumentTypeEnum>().notNull(),
+  kycVerificationId: uuid('kyc_verification_id')
+    .notNull()
+    .references(() => kycVerifications.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(),
+  status: text('status')
+    .notNull()
+    .default(DocumentStatus.PENDING),
   documentNumber: text('document_number'),
   issuingCountry: text('issuing_country'),
   issuingAuthority: text('issuing_authority'),
   issueDate: timestamp('issue_date'),
   expiryDate: timestamp('expiry_date'),
-  
-  // Secure storage details (encrypted at rest)
-  encryptedPath: text('encrypted_path').notNull(),
-  encryptionKeyId: text('encryption_key_id').notNull(),
-  mimeType: text('mime_type').notNull(),
-  fileSize: integer('file_size').notNull(),
-  md5Hash: text('md5_hash').notNull(),
-  
-  // Verification status
-  status: text('status').$type<keyof typeof DocumentStatusEnum>().notNull().default(DocumentStatusEnum.PENDING),
-  reviewedBy: integer('reviewed_by').references(() => users.id),
+  fileHash: text('file_hash').notNull(), // Store file hash for integrity
+  fileUrl: text('file_url').notNull(), // Encrypted URL or path
+  fileEncryptionKey: text('file_encryption_key'), // Encryption key for the file
+  reviewedBy: integer('reviewed_by'),
   rejectionReason: text('rejection_reason'),
-  verifiedAt: timestamp('verified_at'),
-  
+  metadata: json('metadata'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
 
-// KYC Document Relations
-export const kycDocumentsRelations = relations(kycDocuments, ({ one }) => ({
-  kycVerification: one(kycVerifications, {
-    fields: [kycDocuments.kycVerificationId],
-    references: [kycVerifications.id],
-  }),
-}));
-
-// KYC Verification Attempts - Track third-party API verification attempts
-export const kycVerificationAttempts = pgTable('kyc_verification_attempts', {
+/**
+ * Risk Flags table (tenant-scoped)
+ */
+export const riskFlags = tenantScopedTable('risk_flags', {
   id: uuid('id').defaultRandom().primaryKey(),
-  kycVerificationId: uuid('kyc_verification_id').notNull().references(() => kycVerifications.id, { onDelete: 'cascade' }),
-  provider: text('provider').notNull(),  // e.g., 'trulioo', 'smile_identity'
-  requestId: text('request_id').notNull(),
-  requestType: text('request_type').notNull(), // e.g., 'identity_verification', 'document_verification'
-  requestData: jsonb('request_data').$type<Record<string, any>>(),
-  responseData: jsonb('response_data').$type<Record<string, any>>(),
-  responseCode: text('response_code'),
-  success: boolean('success').notNull(),
-  errorMessage: text('error_message'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
-
-// KYC Verification Attempts Relations
-export const kycVerificationAttemptsRelations = relations(kycVerificationAttempts, ({ one }) => ({
-  kycVerification: one(kycVerifications, {
-    fields: [kycVerificationAttempts.kycVerificationId],
-    references: [kycVerifications.id],
-  }),
-}));
-
-// KYC Risk Flags - Track potential compliance risks
-export const kycRiskFlags = pgTable('kyc_risk_flags', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  kycVerificationId: uuid('kyc_verification_id').notNull().references(() => kycVerifications.id, { onDelete: 'cascade' }),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').$type<keyof typeof FlagTypeEnum>().notNull(),
-  severity: text('severity').$type<keyof typeof RiskLevelEnum>().notNull().default(RiskLevelEnum.MEDIUM),
+  kycVerificationId: uuid('kyc_verification_id')
+    .notNull()
+    .references(() => kycVerifications.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull(),
+  type: text('type').notNull(),
+  severity: text('severity').notNull(),
   description: text('description').notNull(),
-  evidence: jsonb('evidence').$type<Record<string, any>>(),
-  status: text('status').notNull().default('open'), // 'open', 'investigating', 'resolved', 'dismissed'
-  resolvedBy: integer('resolved_by').references(() => users.id),
+  evidence: json('evidence'),
+  status: text('status').notNull().default('open'),
   resolutionNotes: text('resolution_notes'),
-  resolutionDate: timestamp('resolution_date'),
+  resolvedBy: integer('resolved_by'),
+  resolvedAt: timestamp('resolved_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
 
-// KYC Risk Flags Relations
-export const kycRiskFlagsRelations = relations(kycRiskFlags, ({ one }) => ({
-  kycVerification: one(kycVerifications, {
-    fields: [kycRiskFlags.kycVerificationId],
-    references: [kycVerifications.id],
-  }),
-  user: one(users, {
-    fields: [kycRiskFlags.userId],
-    references: [users.id],
-  }),
-}));
-
-// AML Transaction Monitoring
-export const amlTransactionMonitoring = pgTable('aml_transaction_monitoring', {
+/**
+ * Screening Results table (tenant-scoped)
+ */
+export const screeningResults = tenantScopedTable('screening_results', {
   id: uuid('id').defaultRandom().primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  transactionId: text('transaction_id').notNull(),
-  transactionType: text('transaction_type').notNull(), // 'deposit', 'withdrawal', 'investment'
-  amount: integer('amount').notNull(),
-  currency: text('currency').notNull().default('USD'),
-  sourceType: text('source_type'), // 'bank_account', 'credit_card', 'crypto_wallet'
-  sourceIdentifier: text('source_identifier'),
-  destinationType: text('destination_type'),
-  destinationIdentifier: text('destination_identifier'),
-  riskScore: integer('risk_score'),
-  isHighRisk: boolean('is_high_risk').default(false),
-  isSuspicious: boolean('is_suspicious').default(false),
-  anomalyDetails: jsonb('anomaly_details').$type<Record<string, any>>(),
-  isReviewed: boolean('is_reviewed').default(false),
-  reviewedBy: integer('reviewed_by').references(() => users.id),
-  reviewNotes: text('review_notes'),
-  reviewedAt: timestamp('reviewed_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
+  kycVerificationId: uuid('kyc_verification_id')
+    .notNull()
+    .references(() => kycVerifications.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull(),
+  screeningType: text('screening_type').notNull(), // 'pep', 'sanctions', etc.
+  inputData: json('input_data'),
+  matchStatus: text('match_status').notNull(), // 'match', 'potential_match', 'no_match'
+  matchDetails: json('match_details'),
+  externalReferenceId: text('external_reference_id'),
+  createdAt: timestamp('created_at').notNull().defaultNow()
 });
 
-// AML Transaction Monitoring Relations
-export const amlTransactionMonitoringRelations = relations(amlTransactionMonitoring, ({ one }) => ({
-  user: one(users, {
-    fields: [amlTransactionMonitoring.userId],
-    references: [users.id],
-  }),
+/**
+ * Suspicious Transaction Monitoring table (tenant-scoped)
+ */
+export const suspiciousTransactions = tenantScopedTable('suspicious_transactions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  transactionId: uuid('transaction_id').notNull(),
+  userId: integer('user_id').notNull(),
+  riskScore: integer('risk_score').notNull(),
+  triggerRules: json('trigger_rules'),
+  status: text('status').notNull().default('pending_review'),
+  approved: boolean('approved'),
+  reviewNotes: text('review_notes'),
+  reviewedBy: integer('reviewed_by'),
+  reviewedAt: timestamp('reviewed_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow()
+});
+
+// Relations between tables
+export const kycVerificationsRelations = relations(kycVerifications, ({ many }) => ({
+  documents: many(kycDocuments),
+  riskFlags: many(riskFlags),
+  screeningResults: many(screeningResults)
 }));
 
-// Insert schemas using drizzle-zod
-export const insertKycVerificationSchema = createInsertSchema(kycVerifications, {
-  metadata: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true, updatedAt: true });
+export const kycDocumentsRelations = relations(kycDocuments, ({ one }) => ({
+  verification: one(kycVerifications, {
+    fields: [kycDocuments.kycVerificationId],
+    references: [kycVerifications.id]
+  })
+}));
 
-export const insertKycDocumentSchema = createInsertSchema(kycDocuments).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-});
+export const riskFlagsRelations = relations(riskFlags, ({ one }) => ({
+  verification: one(kycVerifications, {
+    fields: [riskFlags.kycVerificationId],
+    references: [kycVerifications.id]
+  })
+}));
 
-export const insertKycVerificationAttemptSchema = createInsertSchema(kycVerificationAttempts, {
-  requestData: z.record(z.any()).optional(),
-  responseData: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true });
+export const screeningResultsRelations = relations(screeningResults, ({ one }) => ({
+  verification: one(kycVerifications, {
+    fields: [screeningResults.kycVerificationId],
+    references: [kycVerifications.id]
+  })
+}));
 
-export const insertKycRiskFlagSchema = createInsertSchema(kycRiskFlags, {
-  evidence: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true, updatedAt: true });
+// Define insert schemas using drizzle-zod
+export const insertKycVerificationSchema = createInsertSchema(kycVerifications)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    tenantId: true // Omit tenantId as it will be added by middleware
+  });
 
-export const insertAmlTransactionMonitoringSchema = createInsertSchema(amlTransactionMonitoring, {
-  anomalyDetails: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true });
+export const insertKycDocumentSchema = createInsertSchema(kycDocuments)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    tenantId: true // Omit tenantId as it will be added by middleware
+  });
+
+export const insertRiskFlagSchema = createInsertSchema(riskFlags)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    tenantId: true // Omit tenantId as it will be added by middleware
+  });
+
+export const insertScreeningResultSchema = createInsertSchema(screeningResults)
+  .omit({
+    id: true,
+    createdAt: true,
+    tenantId: true // Omit tenantId as it will be added by middleware
+  });
+
+export const insertSuspiciousTransactionSchema = createInsertSchema(suspiciousTransactions)
+  .omit({
+    id: true,
+    createdAt: true,
+    tenantId: true // Omit tenantId as it will be added by middleware
+  });
 
 // Export types
 export type KycVerification = typeof kycVerifications.$inferSelect;
@@ -261,11 +274,11 @@ export type InsertKycVerification = z.infer<typeof insertKycVerificationSchema>;
 export type KycDocument = typeof kycDocuments.$inferSelect;
 export type InsertKycDocument = z.infer<typeof insertKycDocumentSchema>;
 
-export type KycVerificationAttempt = typeof kycVerificationAttempts.$inferSelect;
-export type InsertKycVerificationAttempt = z.infer<typeof insertKycVerificationAttemptSchema>;
+export type RiskFlag = typeof riskFlags.$inferSelect;
+export type InsertRiskFlag = z.infer<typeof insertRiskFlagSchema>;
 
-export type KycRiskFlag = typeof kycRiskFlags.$inferSelect;
-export type InsertKycRiskFlag = z.infer<typeof insertKycRiskFlagSchema>;
+export type ScreeningResult = typeof screeningResults.$inferSelect;
+export type InsertScreeningResult = z.infer<typeof insertScreeningResultSchema>;
 
-export type AmlTransactionMonitoring = typeof amlTransactionMonitoring.$inferSelect;
-export type InsertAmlTransactionMonitoring = z.infer<typeof insertAmlTransactionMonitoringSchema>;
+export type SuspiciousTransaction = typeof suspiciousTransactions.$inferSelect;
+export type InsertSuspiciousTransaction = z.infer<typeof insertSuspiciousTransactionSchema>;

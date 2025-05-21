@@ -1,5 +1,8 @@
 // Essential imports only - delay loading others until needed
 import * as schema from "@shared/schema";
+import * as schemaTenants from "@shared/schema-tenants";
+import * as schemaTenantScoped from "@shared/schema-tenant-scoped";
+import * as schemaKyc from "@shared/schema-kyc";
 import type { Pool } from '@neondatabase/serverless';
 
 // Declare variables for lazy initialization
@@ -146,7 +149,15 @@ export const initializeDb = async () => {
       
       // Phase 3: Initialize Drizzle ORM
       const startDrizzleInit = Date.now();
-      db = drizzleInit({ client: pool, schema });
+      db = drizzleInit({
+        client: pool,
+        schema: {
+          ...schema,
+          ...schemaTenants,
+          ...schemaTenantScoped,
+          ...schemaKyc
+        }
+      });
       logDbTime(`Drizzle initialization took ${Date.now() - startDrizzleInit}ms`);
       
       // Phase 4: Minimal validation (if not in ultra-minimal mode)
