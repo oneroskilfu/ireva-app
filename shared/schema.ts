@@ -188,9 +188,6 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   notifications: many(notifications),
   documents: many(documents),
   wallet: one(wallets),
-  sessions: many(sessions),
-  auditLogs: many(auditLogs),
-  securitySettings: one(securitySettings),
 }));
 
 export const propertiesRelations = relations(properties, ({ many }) => ({
