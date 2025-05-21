@@ -2,6 +2,8 @@ const express = require('express');
 const authRoutes = require('./auth');
 const adminRoutes = require('./admin');
 const investorRoutes = require('./investor');
+const notificationsRoutes = require('./notifications');
+const insightsRoutes = require('./insights');
 const { verifyToken } = require('../middleware/authMiddleware');
 const propertyController = require('../controllers/propertyController');
 
@@ -15,6 +17,12 @@ router.use('/admin', adminRoutes);
 
 // Investor routes
 router.use('/investor', investorRoutes);
+
+// Notification system routes
+router.use('/', notificationsRoutes);
+
+// Insights and reporting dashboard routes
+router.use('/', insightsRoutes);
 
 // Property routes (accessible to all users)
 router.get('/properties', propertyController.getAllProperties);

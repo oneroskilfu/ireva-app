@@ -18,6 +18,8 @@ const morgan = require('morgan');
 const authRoutes = require('./routes/auth-routes');
 const propertyRoutes = require('./routes/property-routes');
 const investmentRoutes = require('./routes/investment-routes');
+const notificationsRoutes = require('./routes/notifications');
+const insightsRoutes = require('./routes/insights');
 
 // Initialize Express app
 const app = express();
@@ -72,6 +74,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/investments', investmentRoutes);
+app.use('/api', notificationsRoutes);
+app.use('/api', insightsRoutes);
 
 // Check authentication status (for frontend)
 app.get('/api/is-authenticated', (req, res) => {
