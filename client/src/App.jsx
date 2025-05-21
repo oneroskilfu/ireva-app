@@ -1,7 +1,8 @@
 import React, { Suspense, lazy } from 'react';
-import { Route, Switch } from 'wouter';
+import { Route, Switch, Redirect } from 'wouter';
 import { AppProvider, useApp } from './providers/AppProvider';
 import { ErrorBoundaryWithMonitoring } from './components/ErrorBoundary';
+import useAuth from './hooks/useAuth';
 
 // Lazy-load pages for better performance
 const HomePage = lazy(() => import('./pages/home-page'));
