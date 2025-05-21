@@ -1,206 +1,175 @@
-import { pgTable, text, boolean, timestamp, integer, json, uniqueIndex } from 'drizzle-orm/pg-core';
-import { createInsertSchema } from 'drizzle-zod';
-import { relations } from 'drizzle-orm';
-import { z } from 'zod';
-import { users } from './schema';
-
 /**
- * Multi-Tenant Architecture Schema
+ * Tenant Management Schema
  * 
- * Core tables and relationships for implementing multi-tenancy in iREVA,
- * allowing for multiple client companies or project creators to use the platform
- * with proper data isolation.
+ * This file defines the schema for the tenants table and related
+ * utilities for managing multi-tenant functionality in the iREVA platform.
  */
 
-// Tenant Status Enum
-export const TenantStatusEnum = {
-  ACTIVE: 'active',
-  INACTIVE: 'inactive',
-  SUSPENDED: 'suspended',
-  ONBOARDING: 'onboarding',
-  ARCHIVED: 'archived',
-} as const;
+import { pgTable, uuid, text, boolean, timestamp, integer, json } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
-// Tenant Tier Enum
-export const TenantTierEnum = {
-  BASIC: 'basic',      // Limited features and properties
-  STANDARD: 'standard', // Standard feature set
-  PREMIUM: 'premium',   // Full feature access
-  ENTERPRISE: 'enterprise', // Custom features and dedicated support
-} as const;
+/**
+ * Tenant status options
+ */
+export enum TenantStatusEnum {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+  PENDING = 'pending',
+  TRIAL = 'trial',
+}
 
-// Tenants Table - Master table of organizations/companies using the platform
+/**
+ * Tenant subscription tiers
+ */
+export enum TenantTierEnum {
+  FREE = 'free',
+  BASIC = 'basic',
+  STANDARD = 'standard',
+  PREMIUM = 'premium',
+  ENTERPRISE = 'enterprise',
+}
+
+/**
+ * Tenant table schema
+ */
 export const tenants = pgTable('tenants', {
-  id: integer('id').primaryKey(),
+  id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
-  slug: text('slug').notNull().unique(), // URL-friendly identifier
-  domain: text('domain').unique(), // Custom domain for white-label access
-  status: text('status').$type<keyof typeof TenantStatusEnum>().notNull().default(TenantStatusEnum.ACTIVE),
-  tier: text('tier').$type<keyof typeof TenantTierEnum>().notNull().default(TenantTierEnum.STANDARD),
+  slug: text('slug').notNull().unique(),
+  status: text('status')
+    .notNull()
+    .default(TenantStatusEnum.ACTIVE),
+  tier: text('tier')
+    .notNull()
+    .default(TenantTierEnum.BASIC),
+  primaryContactEmail: text('primary_contact_email').notNull(),
+  primaryContactName: text('primary_contact_name').notNull(),
+  primaryContactPhone: text('primary_contact_phone'),
+  billingEmail: text('billing_email'),
+  billingAddress: text('billing_address'),
+  subscriptionId: text('subscription_id'),
+  subscriptionStatus: text('subscription_status'),
+  subscriptionStartDate: timestamp('subscription_start_date'),
+  subscriptionEndDate: timestamp('subscription_end_date'),
   logoUrl: text('logo_url'),
-  primaryColor: text('primary_color'),
-  secondaryColor: text('secondary_color'),
-  contactEmail: text('contact_email').notNull(),
-  contactPhone: text('contact_phone'),
-  address: text('address'),
+  customDomain: text('custom_domain'),
+  theme: json('theme'),
   maxUsers: integer('max_users'),
-  maxProperties: integer('max_properties'),
-  subscriptionExpiresAt: timestamp('subscription_expires_at'),
-  settings: json('settings'), // JSON blob for tenant-specific settings
-  metadata: json('metadata'), // Additional metadata
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => {
-  return {
-    slugIdx: uniqueIndex('tenant_slug_idx').on(table.slug),
-    domainIdx: uniqueIndex('tenant_domain_idx').on(table.domain),
-  };
-});
-
-// Tenant Relations
-export const tenantsRelations = relations(tenants, ({ many }) => ({
-  tenantUsers: many(tenantUsers),
-  tenantProperties: many(tenantProperties),
-}));
-
-// Tenant Users (Junction table between users and tenants)
-export const tenantUsers = pgTable('tenant_users', {
-  id: integer('id').primaryKey(),
-  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: text('role').notNull().default('user'), // Role within this tenant: admin, manager, user, etc.
-  isDefault: boolean('is_default').notNull().default(false), // Is this the user's default tenant
-  permissions: json('permissions'), // Tenant-specific permissions
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-}, (table) => {
-  return {
-    // Ensure each user is only connected to each tenant once
-    uniqueUserTenant: uniqueIndex('unique_user_tenant_idx').on(table.userId, table.tenantId),
-  };
-});
-
-// Tenant Users Relations
-export const tenantUsersRelations = relations(tenantUsers, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [tenantUsers.tenantId],
-    references: [tenants.id],
-  }),
-  user: one(users, {
-    fields: [tenantUsers.userId],
-    references: [users.id],
-  }),
-}));
-
-// Tenant Properties (Properties managed by specific tenants)
-export const tenantProperties = pgTable('tenant_properties', {
-  id: integer('id').primaryKey(),
-  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  propertyId: integer('property_id').notNull(), // References properties table
-  isActive: boolean('is_active').notNull().default(true),
-  customSettings: json('custom_settings'), // Tenant-specific property settings
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-}, (table) => {
-  return {
-    // Ensure each property is only connected to each tenant once
-    uniqueTenantProperty: uniqueIndex('unique_tenant_property_idx').on(table.tenantId, table.propertyId),
-  };
-});
-
-// Tenant Invitations (For inviting users to a tenant)
-export const tenantInvitations = pgTable('tenant_invitations', {
-  id: integer('id').primaryKey(),
-  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  email: text('email').notNull(),
-  role: text('role').notNull().default('user'),
-  token: text('token').notNull().unique(),
-  expiresAt: timestamp('expires_at').notNull(),
-  acceptedAt: timestamp('accepted_at'),
-  createdBy: integer('created_by').notNull().references(() => users.id),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-}, (table) => {
-  return {
-    // Ensure each email only has one active invitation per tenant
-    uniqueEmailTenant: uniqueIndex('unique_email_tenant_idx').on(table.email, table.tenantId),
-    tokenIdx: uniqueIndex('token_idx').on(table.token),
-  };
-});
-
-// Tenant Subscription Plans
-export const tenantSubscriptionPlans = pgTable('tenant_subscription_plans', {
-  id: integer('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  tier: text('tier').$type<keyof typeof TenantTierEnum>().notNull(),
-  price: integer('price').notNull(), // Stored in cents
-  billingCycle: text('billing_cycle').notNull().default('monthly'), // monthly, annual, etc.
-  features: json('features').notNull(), // JSON array of included features
-  maxUsers: integer('max_users').notNull(),
-  maxProperties: integer('max_properties').notNull(),
-  isActive: boolean('is_active').notNull().default(true),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
-
-// Tenant Subscriptions
-export const tenantSubscriptions = pgTable('tenant_subscriptions', {
-  id: integer('id').primaryKey(),
-  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  planId: integer('plan_id').notNull().references(() => tenantSubscriptionPlans.id),
-  status: text('status').notNull().default('active'),
-  startDate: timestamp('start_date').notNull(),
-  endDate: timestamp('end_date').notNull(),
-  renewalDate: timestamp('renewal_date'),
-  cancelledAt: timestamp('cancelled_at'),
-  paymentMethod: text('payment_method'),
-  paymentDetails: json('payment_details'),
-  lastBilledAt: timestamp('last_billed_at'),
+  userCount: integer('user_count').notNull().default(0),
+  features: json('features'),
   metadata: json('metadata'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-// Insert schemas using drizzle-zod
-export const insertTenantSchema = createInsertSchema(tenants, {
-  settings: z.record(z.any()).optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true, updatedAt: true });
-
-export const insertTenantUserSchema = createInsertSchema(tenantUsers, {
-  permissions: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true });
-
-export const insertTenantPropertySchema = createInsertSchema(tenantProperties, {
-  customSettings: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true });
-
-export const insertTenantInvitationSchema = createInsertSchema(tenantInvitations).omit({
-  id: true, createdAt: true, acceptedAt: true
+/**
+ * Tenant users junction table schema
+ * This table maps users to tenants for many-to-many relationship
+ */
+export const tenantUsers = pgTable('tenant_users', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  userId: integer('user_id').notNull(), // References users.id
+  role: text('role').notNull().default('member'), // admin, member, viewer, etc.
+  isOwner: boolean('is_owner').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  joinedAt: timestamp('joined_at').notNull().defaultNow(),
+  lastAccessAt: timestamp('last_access_at'),
+  invitedBy: integer('invited_by'), // References users.id
+  metadata: json('metadata'),
 });
 
-export const insertTenantSubscriptionPlanSchema = createInsertSchema(tenantSubscriptionPlans, {
-  features: z.array(z.string()).or(z.record(z.any())),
-}).omit({ id: true, createdAt: true, updatedAt: true });
+/**
+ * Tenant invitations schema
+ */
+export const tenantInvitations = pgTable('tenant_invitations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id),
+  email: text('email').notNull(),
+  invitedByUserId: integer('invited_by_user_id').notNull(), // References users.id
+  role: text('role').notNull().default('member'),
+  status: text('status').notNull().default('pending'), // pending, accepted, declined, expired
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
 
-export const insertTenantSubscriptionSchema = createInsertSchema(tenantSubscriptions, {
-  paymentDetails: z.record(z.any()).optional(),
+/**
+ * Tenant theme options schema
+ */
+export const themeSchema = z.object({
+  primaryColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  accentColor: z.string().optional(),
+  logoUrl: z.string().optional(),
+  font: z.string().optional(),
+  isDarkMode: z.boolean().optional(),
+  customCss: z.string().optional(),
+});
+
+/**
+ * Tenant features schema
+ */
+export const featuresSchema = z.object({
+  kycVerification: z.boolean().default(true),
+  investorDashboard: z.boolean().default(true),
+  adminDashboard: z.boolean().default(true),
+  walletManagement: z.boolean().default(true),
+  documentManagement: z.boolean().default(true),
+  multiCurrency: z.boolean().default(false),
+  apiAccess: z.boolean().default(false),
+  whiteLabel: z.boolean().default(false),
+  advancedAnalytics: z.boolean().default(false),
+  customIntegrations: z.boolean().default(false),
+});
+
+/**
+ * Insert schema validation for tenants
+ */
+export const insertTenantSchema = createInsertSchema(tenants, {
+  theme: themeSchema.optional(),
+  features: featuresSchema.optional(),
   metadata: z.record(z.any()).optional(),
-}).omit({ id: true, createdAt: true, updatedAt: true });
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  userCount: true,
+});
 
-// Export types
+/**
+ * Insert schema validation for tenant users
+ */
+export const insertTenantUserSchema = createInsertSchema(tenantUsers, {
+  metadata: z.record(z.any()).optional(),
+}).omit({
+  id: true,
+  joinedAt: true,
+  lastAccessAt: true,
+});
+
+/**
+ * Insert schema validation for tenant invitations
+ */
+export const insertTenantInvitationSchema = createInsertSchema(tenantInvitations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  token: true, // Generated automatically
+  expiresAt: true, // Generated automatically
+});
+
+/**
+ * Export types
+ */
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 
 export type TenantUser = typeof tenantUsers.$inferSelect;
 export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
 
-export type TenantProperty = typeof tenantProperties.$inferSelect;
-export type InsertTenantProperty = z.infer<typeof insertTenantPropertySchema>;
-
 export type TenantInvitation = typeof tenantInvitations.$inferSelect;
 export type InsertTenantInvitation = z.infer<typeof insertTenantInvitationSchema>;
-
-export type TenantSubscriptionPlan = typeof tenantSubscriptionPlans.$inferSelect;
-export type InsertTenantSubscriptionPlan = z.infer<typeof insertTenantSubscriptionPlanSchema>;
-
-export type TenantSubscription = typeof tenantSubscriptions.$inferSelect;
-export type InsertTenantSubscription = z.infer<typeof insertTenantSubscriptionSchema>;
