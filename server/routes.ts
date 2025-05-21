@@ -12,6 +12,8 @@ import { storage } from './storage.cjs';
 const authRoutes = require('./routes/auth-routes');
 const propertyRoutes = require('./routes/property-routes');
 const investmentRoutes = require('./routes/investment-routes');
+const walletRoutes = require('./routes/wallet-routes');
+const notificationRoutes = require('./routes/notification-routes');
 
 export function registerRoutes(app: express.Express) {
   // Security middleware
@@ -51,6 +53,8 @@ export function registerRoutes(app: express.Express) {
   app.use('/api/auth', authRoutes);
   app.use('/api/properties', propertyRoutes);
   app.use('/api/investments', investmentRoutes);
+  app.use('/api/wallet', walletRoutes);
+  app.use('/api/notifications', notificationRoutes);
   
   // Health check endpoint
   app.get('/api/health', (req, res) => {
