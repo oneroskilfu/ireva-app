@@ -64,18 +64,53 @@ function bootstrap() {
   logWithTime('Starting CommonJS bootstrap initialization...');
   
   try {
-    // Load minimal modules for now
+    // Step 1: Load essential modules
     const modules = loadModules([
       './essential-loader.cjs',
-      './middleware/auth-middleware.cjs'
+      './middleware/auth-middleware.cjs',
+      './session-manager.cjs',
+      './bootstrap-routes.cjs'
     ]);
+    
+    // Step 2: Initialize Express if available
+    try {
+      const express = require('express');
+      const app = express();
+      
+      // Step 3: Initialize session management
+      if (modules['./session-manager.cjs'] && modules['./session-manager.cjs'].initializeSession) {
+        logWithTime('Initializing session management...');
+        modules['./session-manager.cjs'].initializeSession(app);
+        logWithTime('Session management initialized');
+      }
+      
+      // Step 4: Register bootstrap routes
+      if (modules['./bootstrap-routes.cjs'] && modules['./bootstrap-routes.cjs'].registerBootstrapRoutes) {
+        logWithTime('Registering bootstrap routes...');
+        modules['./bootstrap-routes.cjs'].registerBootstrapRoutes(app);
+        logWithTime('Bootstrap routes registered');
+      }
+      
+      // Step 5: Start minimal Express server on a different port
+      const BOOTSTRAP_PORT = process.env.BOOTSTRAP_PORT || 3001;
+      app.listen(BOOTSTRAP_PORT, '0.0.0.0', () => {
+        logWithTime(`Bootstrap Express server running on port ${BOOTSTRAP_PORT}`);
+      });
+    } catch (expressErr) {
+      logWithTime('Express initialization skipped: ' + expressErr.message);
+    }
     
     logWithTime('Bootstrap sequence completed, running in minimal mode');
     
     // Continue initialization in the background
     setTimeout(() => {
       logWithTime('Starting background initialization...');
-      // Nothing to do in background for now
+      // Start more advanced initialization in the background
+      try {
+        require('./background-init.cjs');
+      } catch (err) {
+        logWithTime('Background initialization skipped: ' + err.message);
+      }
     }, 100);
     
     return true;
