@@ -14,6 +14,7 @@ const propertyRoutes = require('./routes/property-routes');
 const investmentRoutes = require('./routes/investment-routes');
 const walletRoutes = require('./routes/wallet-routes');
 const notificationRoutes = require('./routes/notification-routes');
+const userRoutes = require('./routes/user-routes');
 
 export function registerRoutes(app: express.Express) {
   // Security middleware
@@ -55,6 +56,7 @@ export function registerRoutes(app: express.Express) {
   app.use('/api/investments', investmentRoutes);
   app.use('/api/wallet', walletRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/users', userRoutes);
   
   // Health check endpoint
   app.get('/api/health', (req, res) => {
