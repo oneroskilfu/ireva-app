@@ -10,6 +10,7 @@ const AuthPage = lazy(() => import('./pages/auth-page'));
 const NotFound = lazy(() => import('./pages/not-found'));
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const InvestorDashboard = lazy(() => import('./pages/investor/dashboard'));
+const AuditTrail = lazy(() => import('./pages/admin/AuditTrail'));
 
 // Loading component for suspense fallback
 function LoadingPage() {
@@ -74,6 +75,7 @@ function Router() {
         {/* Protected routes */}
         <ProtectedRoute path="/" component={HomePage} />
         <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} requiredRole="admin" />
+        <ProtectedRoute path="/admin/audit" component={AuditTrail} requiredRole="admin" />
         <ProtectedRoute path="/investor/dashboard" component={InvestorDashboard} requiredRole="investor" />
         
         {/* Fallback route */}
