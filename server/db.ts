@@ -13,10 +13,52 @@ let neonConfig: any;
 // Startup timing measurement
 const DB_INIT_START_TIME = Date.now();
 
+// Import optimized logger
+let logger: any;
+try {
+  // Use dynamic import for the logger to avoid ESM/CommonJS issues
+  logger = require('./logger.cjs');
+} catch (err) {
+  // Fallback to basic logging if logger module is unavailable
+  logger = {
+    db: {
+      info: (msg: string, details?: any) => {
+        const elapsed = Date.now() - DB_INIT_START_TIME;
+        console.log(`[DB ${elapsed}ms] ${msg}`, details || '');
+      },
+      debug: (msg: string, details?: any) => {
+        const elapsed = Date.now() - DB_INIT_START_TIME;
+        console.debug(`[DB ${elapsed}ms] ${msg}`, details || '');
+      },
+      warn: (msg: string, details?: any) => {
+        const elapsed = Date.now() - DB_INIT_START_TIME;
+        console.warn(`[DB ${elapsed}ms] ${msg}`, details || '');
+      },
+      error: (msg: string, details?: any) => {
+        const elapsed = Date.now() - DB_INIT_START_TIME;
+        console.error(`[DB ${elapsed}ms] ${msg}`, details || '');
+      }
+    },
+    performance: {
+      track: (operation: string) => ({
+        checkpoint: (name: string) => {
+          const elapsed = Date.now() - DB_INIT_START_TIME;
+          console.log(`[DB-PERF ${elapsed}ms] ${operation} - ${name}`);
+          return { elapsed };
+        },
+        end: (details?: any) => {
+          const elapsed = Date.now() - DB_INIT_START_TIME;
+          console.log(`[DB-PERF ${elapsed}ms] ${operation} - Completed`);
+          return elapsed;
+        }
+      })
+    }
+  };
+}
+
 // Function to log with timestamp for database performance tracking
-function logDbTime(message: string) {
-  const elapsed = Date.now() - DB_INIT_START_TIME;
-  console.log(`[DB ${elapsed}ms] ${message}`);
+function logDbTime(message: string, details?: any) {
+  logger.db.info(message, details);
 }
 
 // Ultra-optimized dynamic import function

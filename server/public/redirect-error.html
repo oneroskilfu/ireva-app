@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>iREVA Platform - Redirect Loop Error</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #374151;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            width: 90%;
+        }
+        .header {
+            background: #1a56db;
+            color: white;
+            padding: 20px 30px;
+        }
+        .content {
+            padding: 30px;
+        }
+        h1 { 
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        h2 {
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .alert {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .alert h3 {
+            margin-top: 0;
+            color: #b91c1c;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .alert p {
+            margin-bottom: 0;
+            color: #7f1d1d;
+        }
+        .solutions {
+            background-color: #f3f4f6;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .solutions h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #374151;
+            font-size: 18px;
+        }
+        ul {
+            margin-top: 0;
+            padding-left: 25px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .primary {
+            background-color: #1a56db;
+            color: white;
+            border: none;
+        }
+        .primary:hover {
+            background-color: #1e40af;
+        }
+        .secondary {
+            background-color: #f3f4f6;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+        }
+        .secondary:hover {
+            background-color: #e5e7eb;
+        }
+        .technical {
+            margin-top: 30px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+        .technical h3 {
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #4b5563;
+        }
+        .technical p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        code {
+            background: #e5e7eb;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Authentication Error</h1>
+        </div>
+        <div class="content">
+            <div class="alert">
+                <h3>Redirect Loop Detected</h3>
+                <p>We've detected an issue with the authentication process that's causing a redirect loop.</p>
+            </div>
+            
+            <h2>What happened?</h2>
+            <p>The system detected multiple redirects occurring in rapid succession, which may be caused by authentication issues, session problems, or browser cookie configurations.</p>
+            
+            <div class="solutions">
+                <h3>How to resolve this issue:</h3>
+                <ul>
+                    <li><strong>Clear browser cookies</strong> - This is the most common solution that resolves most authentication issues</li>
+                    <li><strong>Try a different browser</strong> - If clearing cookies doesn't work, try using a different browser</li>
+                    <li><strong>Check your login credentials</strong> - Make sure you're using the correct username and password</li>
+                    <li><strong>Disable browser extensions</strong> - Some privacy extensions may interfere with authentication</li>
+                </ul>
+            </div>
+            
+            <p>If you continue to experience this issue after trying these solutions, please contact support for further assistance.</p>
+            
+            <div class="buttons">
+                <a href="/auth" class="button primary">Return to Login</a>
+                <a href="javascript:void(0)" onclick="clearCookiesAndRedirect()" class="button secondary">Clear Cookies & Login</a>
+            </div>
+            
+            <div class="technical" id="technical-details">
+                <h3>Technical Details</h3>
+                <p>Error Type: <code>ERR_TOO_MANY_REDIRECTS</code></p>
+                <p>Session ID: <code id="session-id">Unknown</code></p>
+                <p>Timestamp: <code id="timestamp"></code></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set timestamp
+        document.getElementById('timestamp').textContent = new Date().toISOString();
+        
+        // Function to clear cookies and redirect to login
+        function clearCookiesAndRedirect() {
+            // Clear all cookies
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            // Show message
+            alert('Cookies and session data have been cleared. Redirecting to login page...');
+            
+            // Redirect to login
+            window.location.href = '/auth';
+        }
+        
+        // Get and display session ID if available
+        try {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith('ireva.sid=')) {
+                    document.getElementById('session-id').textContent = 'Found (Encrypted)';
+                    break;
+                }
+            }
+        } catch (e) {
+            console.error('Error accessing cookies:', e);
+        }
+    </script>
+</body>
+</html>

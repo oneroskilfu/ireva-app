@@ -356,15 +356,32 @@
                 // Save user to localStorage for dashboard access
                 localStorage.setItem('user', JSON.stringify(user));
                 
+                // Log session information for debugging
+                console.log('Login successful, session established');
+                
                 // Successful login
                 alert(`Login successful! Welcome, ${user.username}`);
                 
                 // Simple role-based redirection
                 const dashboardUrl = user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin'
-                    ? 'admin/dashboard.html'
-                    : 'investor/dashboard.html';
+                    ? '/admin/dashboard'  // Remove .html extension
+                    : '/investor/dashboard'; // Remove .html extension
                 
                 console.log('Redirecting to dashboard:', dashboardUrl);
+                
+                // Record the login in sessionStorage for debugging
+                try {
+                    const loginHistory = JSON.parse(sessionStorage.getItem('loginHistory') || '[]');
+                    loginHistory.push({
+                        timestamp: new Date().toISOString(),
+                        user: user.username,
+                        role: user.role,
+                        redirectTo: dashboardUrl
+                    });
+                    sessionStorage.setItem('loginHistory', JSON.stringify(loginHistory));
+                } catch (e) {
+                    console.error('Error saving login history:', e);
+                }
                 
                 // Redirect to the appropriate dashboard
                 window.location.href = dashboardUrl;
