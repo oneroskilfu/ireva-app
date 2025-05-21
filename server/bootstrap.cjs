@@ -1,132 +1,171 @@
 /**
- * iREVA Platform Bootstrap (CommonJS version)
+ * Application Bootstrap Module (CommonJS)
  * 
- * This module implements staged initialization for optimal performance.
- * It's designed to be loaded after the minimal server has bound to port 3000.
+ * This module initializes the full application server in a staged approach:
+ * 1. Sets up minimal Express server for API endpoints
+ * 2. Configures middleware and routes
+ * 3. Initializes background processes
  */
 
-// Startup timing measurement
-const BOOTSTRAP_START = Date.now();
+// Record startup time for performance tracking
+const START_TIME = Date.now();
 
-// Utility for logging with timestamps
+// Utility function for logging with elapsed time
 function logWithTime(message) {
-  const elapsed = Date.now() - BOOTSTRAP_START;
-  console.log(`[BOOTSTRAP ${elapsed}ms] ${message}`);
+  const elapsed = Date.now() - START_TIME;
+  console.log(`[${elapsed}ms] ${message}`);
 }
 
-/**
- * Dynamic module loader that supports both ESM and CommonJS
- * With specific handling for TypeScript files
- */
-async function loadModules(modulePaths) {
-  const modules = {};
+logWithTime('Starting bootstrap process...');
+
+// Load required modules
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
+
+// Create Express application
+const app = express();
+logWithTime('Express application created');
+
+// Configure middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+logWithTime('Basic middleware configured');
+
+// Configure static file serving
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir));
+logWithTime('Static file serving configured');
+
+// Load storage module
+let storage;
+try {
+  const { DatabaseStorage } = require('./storage.cjs');
+  storage = new DatabaseStorage();
+  logWithTime('Database storage initialized');
+} catch (storageError) {
+  // Fall back to memory storage if database not available
+  logWithTime(`Database storage failed, using in-memory storage: ${storageError.message}`);
   
-  for (const modulePath of modulePaths) {
-    try {
-      // Handle TypeScript files specially - they're always ESM in our project
-      if (modulePath.endsWith('.ts')) {
-        logWithTime(`TypeScript file detected, skipping for now: ${modulePath}`);
-        continue;
+  // Create minimal in-memory storage
+  const MemStorage = {
+    users: {
+      admin: {
+        id: 1,
+        username: 'admin',
+        password: 'adminpassword', // This would be hashed in a real application
+        role: 'admin',
+        name: 'Admin User',
+        email: 'admin@ireva.com'
+      },
+      testuser: {
+        id: 2,
+        username: 'testuser',
+        password: 'password', // This would be hashed in a real application
+        role: 'investor',
+        name: 'Test Investor',
+        email: 'investor@ireva.com'
       }
-      
-      // For CommonJS files, use require directly
-      if (modulePath.endsWith('.cjs')) {
-        modules[modulePath] = require(modulePath);
-        logWithTime(`Loaded ${modulePath} as CommonJS module`);
-        continue;
-      }
-      
-      // For .js files, try to guess based on error
-      try {
-        modules[modulePath] = require(modulePath);
-        logWithTime(`Loaded ${modulePath} as CommonJS module`);
-      } catch (err) {
-        if (err.code === 'ERR_REQUIRE_ESM') {
-          // This is an ESM module, skip it in this initial pass
-          logWithTime(`ESM module detected, skipping for now: ${modulePath}`);
-        } else {
-          throw err;
-        }
-      }
-    } catch (error) {
-      console.error(`Failed to load module ${modulePath}:`, error);
-      // Don't throw, just continue to the next module
+    },
+    
+    async getUser(id) {
+      return Object.values(this.users).find(user => user.id === id);
+    },
+    
+    async getUserByUsername(username) {
+      return this.users[username];
+    },
+    
+    async createUser(userData) {
+      const id = Object.keys(this.users).length + 1;
+      const newUser = { ...userData, id };
+      this.users[userData.username] = newUser;
+      return newUser;
     }
-  }
+  };
   
-  return modules;
+  storage = MemStorage;
 }
 
-/**
- * Main bootstrap function that orchestrates the initialization
- */
-function bootstrap() {
-  logWithTime('Starting CommonJS bootstrap initialization...');
+// Set up authentication
+try {
+  const { setupAuth } = require('./auth.cjs');
+  setupAuth(app, storage);
+  logWithTime('Authentication setup complete');
+} catch (authError) {
+  logWithTime(`Authentication setup failed: ${authError.message}`);
   
+  // Set up minimal authentication if full auth fails
+  app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    
+    // Get user from storage
+    const user = storage.users[username];
+    
+    if (user && user.password === password) {
+      // Strip password from response
+      const { password, ...userData } = user;
+      res.json(userData);
+    } else {
+      res.status(401).json({ error: 'Invalid credentials' });
+    }
+  });
+  
+  app.get('/api/user', (req, res) => {
+    // This is a stub - in a real app we would check session
+    res.status(401).json({ error: 'Not authenticated' });
+  });
+  
+  logWithTime('Minimal authentication configured');
+}
+
+// Set up API routes
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: Date.now()
+  });
+});
+
+logWithTime('API routes configured');
+
+// Set up catch-all route for SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicDir, 'direct-login.html'));
+});
+
+logWithTime('Catch-all route configured');
+
+// Start server on port 5001 (main app logic port)
+const PORT = process.env.PORT || 5001;
+
+const server = app.listen(PORT, '0.0.0.0', () => {
+  const bootTime = Date.now() - START_TIME;
+  logWithTime(`Full application server running on port ${PORT} (boot: ${bootTime}ms)`);
+});
+
+// Start background processes
+setTimeout(() => {
   try {
-    // Step 1: Load essential modules
-    const modules = loadModules([
-      './essential-loader.cjs',
-      './middleware/auth-middleware.cjs',
-      './session-manager.cjs',
-      './bootstrap-routes.cjs'
-    ]);
-    
-    // Step 2: Initialize Express if available
-    try {
-      const express = require('express');
-      const app = express();
-      
-      // Step 3: Initialize session management
-      if (modules['./session-manager.cjs'] && modules['./session-manager.cjs'].initializeSession) {
-        logWithTime('Initializing session management...');
-        modules['./session-manager.cjs'].initializeSession(app);
-        logWithTime('Session management initialized');
-      }
-      
-      // Step 4: Register bootstrap routes
-      if (modules['./bootstrap-routes.cjs'] && modules['./bootstrap-routes.cjs'].registerBootstrapRoutes) {
-        logWithTime('Registering bootstrap routes...');
-        modules['./bootstrap-routes.cjs'].registerBootstrapRoutes(app);
-        logWithTime('Bootstrap routes registered');
-      }
-      
-      // Step 5: Start minimal Express server on a different port
-      const BOOTSTRAP_PORT = process.env.BOOTSTRAP_PORT || 3001;
-      app.listen(BOOTSTRAP_PORT, '0.0.0.0', () => {
-        logWithTime(`Bootstrap Express server running on port ${BOOTSTRAP_PORT}`);
-      });
-    } catch (expressErr) {
-      logWithTime('Express initialization skipped: ' + expressErr.message);
-    }
-    
-    logWithTime('Bootstrap sequence completed, running in minimal mode');
-    
-    // Continue initialization in the background
-    setTimeout(() => {
-      logWithTime('Starting background initialization...');
-      // Start more advanced initialization in the background
-      try {
-        require('./background-init.cjs');
-      } catch (err) {
-        logWithTime('Background initialization skipped: ' + err.message);
-      }
-    }, 100);
-    
-    return true;
+    const { initializeBackground } = require('./background-init.cjs');
+    initializeBackground().catch(err => {
+      console.error('Background initialization error:', err);
+    });
+    logWithTime('Background initialization started');
   } catch (err) {
-    console.error('Bootstrap process failed:', err);
-    return false;
+    console.error('Failed to start background processes:', err);
   }
-}
+}, 100);
 
-// Start the bootstrap process
-const success = bootstrap();
-if (!success) {
-  console.error('Bootstrap initialization failed');
-}
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logWithTime('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logWithTime('HTTP server closed');
+    process.exit(0);
+  });
+});
 
-// Export completed status for the main server
-module.exports = {
-  bootstrapCompleted: success
-};
+// Export app for potential testing
+module.exports = app;

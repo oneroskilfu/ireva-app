@@ -1,439 +1,612 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>iREVA Platform - Login</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            display: flex;
-            max-width: 1000px;
-            width: 100%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .login-section {
-            width: 50%;
-            background: white;
-            padding: 40px;
-        }
-        .info-section {
-            width: 50%;
-            background: #1a56db;
-            color: white;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        h1 { 
-            color: #1a56db;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        .info-section h1 {
-            color: white;
-            font-size: 28px;
-        }
-        form { 
-            margin: 30px 0; 
-        }
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: 500;
-            color: #333;
-        }
-        input { 
-            width: 100%; 
-            padding: 10px 12px; 
-            margin-bottom: 20px; 
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 15px;
-            box-sizing: border-box;
-        }
-        button { 
-            background-color: #1a56db; 
-            color: white; 
-            padding: 12px 15px; 
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-        button:hover { 
-            background-color: #1642a3;
-        }
-        .message {
-            padding: 12px;
-            background: #e6f7ff;
-            border-left: 4px solid #1a56db;
-            margin-bottom: 20px;
-        }
-        .test-accounts {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 30px;
-            border: 1px solid #eee;
-        }
-        .test-accounts h3 {
-            margin-top: 0;
-            color: #333;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        .feature {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 25px;
-        }
-        .feature-icon {
-            width: 36px;
-            height: 36px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-        .feature-content h3 {
-            margin-top: 0;
-            margin-bottom: 5px;
-            font-size: 18px;
-        }
-        .feature-content p {
-            margin-top: 0;
-            opacity: 0.9;
-        }
-        .subtitle {
-            color: #666;
-            margin-bottom: 25px;
-        }
-        .info-section .subtitle {
-            color: rgba(255,255,255,0.9);
-            font-size: 18px;
-            margin-bottom: 40px;
-        }
-        
-        /* Tab styles */
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-        }
-        .tab-btn {
-            background: none;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: 500;
-            color: #666;
-            cursor: pointer;
-            opacity: 0.7;
-            transition: all 0.3s;
-            border-bottom: 2px solid transparent;
-        }
-        .tab-btn.active {
-            color: #1a56db;
-            opacity: 1;
-            border-bottom: 2px solid #1a56db;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Form error styles */
-        .error-message {
-            color: #e53e3e;
-            margin-top: -15px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        
-        /* Responsive styles */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                width: 90%;
-            }
-            .login-section, .info-section {
-                width: 100%;
-                padding: 30px;
-            }
-            .info-section {
-                order: -1; /* Move info section to top on mobile */
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Platform - Login</title>
+  <style>
+    :root {
+      --primary-color: #3a7bd5;
+      --primary-dark: #2d62aa;
+      --primary-light: #6fa3e8;
+      --accent-color: #f9a825;
+      --text-color: #333;
+      --light-text: #fafafa;
+      --background: #fff;
+      --error-color: #d32f2f;
+      --success-color: #388e3c;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f1 100%);
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .login-container {
+      display: flex;
+      background: var(--background);
+      border-radius: 12px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 1200px;
+      min-height: 600px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .login-form-section {
+      flex: 1;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .login-hero-section {
+      flex: 1.2;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: var(--light-text);
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .login-hero-section::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .login-hero-section::after {
+      content: '';
+      position: absolute;
+      bottom: -10%;
+      left: -10%;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .logo h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-left: 12px;
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--primary-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+    }
+    
+    h2 {
+      font-size: 28px;
+      margin-bottom: 24px;
+      font-weight: 600;
+    }
+    
+    .login-form, .register-form {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .active-form {
+      display: flex;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #555;
+    }
+    
+    input {
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(58, 123, 213, 0.1);
+    }
+    
+    button {
+      padding: 14px;
+      border: none;
+      border-radius: 6px;
+      background-color: var(--primary-color);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .form-footer {
+      margin-top: 20px;
+      font-size: 14px;
+      text-align: center;
+    }
+    
+    .form-footer p {
+      margin-bottom: 8px;
+    }
+    
+    .form-footer a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .form-footer a:hover {
+      text-decoration: underline;
+    }
+    
+    .hero-content h2 {
+      font-size: 36px;
+      margin-bottom: 24px;
+      font-weight: 700;
+    }
+    
+    .hero-content p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    
+    .feature-list {
+      list-style: none;
+    }
+    
+    .feature-list li {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+    
+    .feature-list li::before {
+      content: '✓';
+      display: inline-block;
+      margin-right: 12px;
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+    
+    .form-tabs {
+      display: flex;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .form-tab {
+      padding: 12px 24px;
+      cursor: pointer;
+      font-weight: 500;
+      position: relative;
+      color: #888;
+    }
+    
+    .form-tab.active {
+      color: var(--primary-color);
+    }
+    
+    .form-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: var(--primary-color);
+      border-top-left-radius: 3px;
+      border-top-right-radius: 3px;
+    }
+    
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .alert-error {
+      background-color: rgba(211, 47, 47, 0.1);
+      color: var(--error-color);
+      border: 1px solid rgba(211, 47, 47, 0.3);
+    }
+    
+    .alert-success {
+      background-color: rgba(56, 142, 60, 0.1);
+      color: var(--success-color);
+      border: 1px solid rgba(56, 142, 60, 0.3);
+    }
+    
+    /* Responsive design */
+    @media (max-width: 992px) {
+      .login-container {
+        flex-direction: column;
+        max-width: 600px;
+      }
+      
+      .login-hero-section {
+        display: none;
+      }
+      
+      .login-form-section {
+        padding: 32px;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .login-form-section {
+        padding: 24px 16px;
+      }
+      
+      .logo h1 {
+        font-size: 24px;
+      }
+      
+      h2 {
+        font-size: 24px;
+      }
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: none;
+      width: 24px;
+      height: 24px;
+      margin: 0 auto;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading {
+      position: relative;
+      color: transparent !important;
+    }
+
+    .loading .loading-spinner {
+      display: block;
+      position: absolute;
+      left: calc(50% - 12px);
+      top: calc(50% - 12px);
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="login-section">
-            <h1>Welcome to iREVA</h1>
-            <p class="subtitle">Sign in to access the real estate investment platform</p>
-            
-            <div class="message">
-                Server is running successfully! Login or register to continue.
-            </div>
-            
-            <div class="tabs">
-                <button class="tab-btn active" id="login-tab">Login</button>
-                <button class="tab-btn" id="register-tab">Register</button>
-            </div>
-            
-            <form id="loginForm" class="tab-content active">
-                <label for="username">Username:</label>
-                <input type="text" id="username" placeholder="Enter your username" required>
-                
-                <label for="password">Password:</label>
-                <input type="password" id="password" placeholder="Enter your password" required>
-                
-                <button type="submit">Sign In</button>
-            </form>
-
-            <form id="registerForm" class="tab-content">
-                <label for="reg-username">Username:</label>
-                <input type="text" id="reg-username" placeholder="Choose a username" required>
-                
-                <label for="reg-email">Email:</label>
-                <input type="email" id="reg-email" placeholder="Enter your email" required>
-                
-                <label for="reg-password">Password:</label>
-                <input type="password" id="reg-password" placeholder="Choose a password" required>
-                
-                <label for="reg-firstName">First Name:</label>
-                <input type="text" id="reg-firstName" placeholder="Enter your first name">
-                
-                <label for="reg-lastName">Last Name:</label>
-                <input type="text" id="reg-lastName" placeholder="Enter your last name">
-                
-                <button type="submit">Register</button>
-            </form>
-            
-            <div class="test-accounts">
-                <h3>Test Accounts</h3>
-                <p><strong>Admin User:</strong> username: admin, password: adminpassword</p>
-                <p><strong>Test User:</strong> username: testuser, password: password</p>
-            </div>
+  <div class="login-container">
+    <div class="login-form-section">
+      <div class="logo">
+        <div class="logo-icon">i</div>
+        <h1>iREVA</h1>
+      </div>
+      
+      <div class="form-tabs">
+        <div class="form-tab active" id="login-tab">Login</div>
+        <div class="form-tab" id="register-tab">Register</div>
+      </div>
+      
+      <div id="alert" class="alert"></div>
+      
+      <form class="login-form active-form" id="login-form">
+        <h2>Welcome back</h2>
+        
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" name="username" placeholder="Your username" required>
         </div>
         
-        <div class="info-section">
-            <h1>iREVA Platform</h1>
-            <p class="subtitle">Premium real estate investment opportunities</p>
-            
-            <div class="feature">
-                <div class="feature-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                </div>
-                <div class="feature-content">
-                    <h3>Secure Investments</h3>
-                    <p>All transactions are protected with advanced security measures.</p>
-                </div>
-            </div>
-            
-            <div class="feature">
-                <div class="feature-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                </div>
-                <div class="feature-content">
-                    <h3>Role-Based Access</h3>
-                    <p>Different dashboards for investors and administrators.</p>
-                </div>
-            </div>
-            
-            <div class="feature">
-                <div class="feature-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                </div>
-                <div class="feature-content">
-                    <h3>Real-Time Data</h3>
-                    <p>Get immediate insights on your investment performance.</p>
-                </div>
-            </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" placeholder="Your password" required>
         </div>
+        
+        <button type="submit" id="login-button">
+          <span class="button-text">Login</span>
+          <div class="loading-spinner"></div>
+        </button>
+        
+        <div class="form-footer">
+          <p>Don't have an account? <a id="switch-to-register">Register here</a></p>
+        </div>
+      </form>
+      
+      <form class="register-form" id="register-form">
+        <h2>Create an account</h2>
+        
+        <div class="form-group">
+          <label for="register-name">Full Name</label>
+          <input type="text" id="register-name" name="name" placeholder="Your full name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="register-email">Email</label>
+          <input type="email" id="register-email" name="email" placeholder="Your email address" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="register-username">Username</label>
+          <input type="text" id="register-username" name="username" placeholder="Choose a username" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="register-password">Password</label>
+          <input type="password" id="register-password" name="password" placeholder="Choose a password" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="register-confirm-password">Confirm Password</label>
+          <input type="password" id="register-confirm-password" name="confirm-password" placeholder="Confirm your password" required>
+        </div>
+        
+        <button type="submit" id="register-button">
+          <span class="button-text">Register</span>
+          <div class="loading-spinner"></div>
+        </button>
+        
+        <div class="form-footer">
+          <p>Already have an account? <a id="switch-to-login">Login here</a></p>
+        </div>
+      </form>
     </div>
+    
+    <div class="login-hero-section">
+      <div class="hero-content">
+        <h2>Real Estate Crowdfunding Platform</h2>
+        <p>iREVA is a cutting-edge platform that allows investors of all levels to access lucrative real estate opportunities with low entry barriers.</p>
+        
+        <ul class="feature-list">
+          <li>Access prime real estate investments with minimal capital</li>
+          <li>Diverse portfolio of vetted properties across markets</li>
+          <li>Transparent fee structure with no hidden costs</li>
+          <li>Advanced dashboard with real-time performance tracking</li>
+          <li>Automated payouts and comprehensive tax reporting</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-    <script>
-        // Tab switching functionality
-        const loginTab = document.getElementById('login-tab');
-        const registerTab = document.getElementById('register-tab');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        
-        loginTab.addEventListener('click', function() {
-            loginTab.classList.add('active');
-            registerTab.classList.remove('active');
-            loginForm.classList.add('active');
-            registerForm.classList.remove('active');
-        });
-        
-        registerTab.addEventListener('click', function() {
-            registerTab.classList.add('active');
-            loginTab.classList.remove('active');
-            registerForm.classList.add('active');
-            loginForm.classList.remove('active');
-        });
-        
-        // Function to display error messages
-        function showError(formId, message) {
-            let errorDiv = document.querySelector(`#${formId} .error-message`);
-            if (!errorDiv) {
-                errorDiv = document.createElement('div');
-                errorDiv.className = 'error-message';
-                document.getElementById(formId).appendChild(errorDiv);
-            }
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+  <script>
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginTab = document.getElementById('login-tab');
+      const registerTab = document.getElementById('register-tab');
+      const loginForm = document.getElementById('login-form');
+      const registerForm = document.getElementById('register-form');
+      const switchToRegister = document.getElementById('switch-to-register');
+      const switchToLogin = document.getElementById('switch-to-login');
+      const alertElement = document.getElementById('alert');
+      
+      // Form elements
+      const loginButton = document.getElementById('login-button');
+      const registerButton = document.getElementById('register-button');
+      const loginUsername = document.getElementById('login-username');
+      const loginPassword = document.getElementById('login-password');
+      
+      // Tab switching functionality
+      function switchToTab(tabName) {
+        if (tabName === 'login') {
+          loginTab.classList.add('active');
+          registerTab.classList.remove('active');
+          loginForm.classList.add('active-form');
+          registerForm.classList.remove('active-form');
+        } else {
+          registerTab.classList.add('active');
+          loginTab.classList.remove('active');
+          registerForm.classList.add('active-form');
+          loginForm.classList.remove('active-form');
         }
         
-        // Clear error messages when switching tabs
-        loginTab.addEventListener('click', () => {
-            const errorDiv = document.querySelector('#loginForm .error-message');
-            if (errorDiv) errorDiv.style.display = 'none';
-        });
+        // Clear any previous alerts
+        hideAlert();
+      }
+      
+      // Show alert message
+      function showAlert(message, type) {
+        alertElement.textContent = message;
+        alertElement.className = `alert alert-${type}`;
+        alertElement.style.display = 'block';
+      }
+      
+      // Hide alert message
+      function hideAlert() {
+        alertElement.style.display = 'none';
+      }
+      
+      // Handle form loading state
+      function setLoading(button, isLoading) {
+        if (isLoading) {
+          button.classList.add('loading');
+          button.disabled = true;
+        } else {
+          button.classList.remove('loading');
+          button.disabled = false;
+        }
+      }
+      
+      // Event listeners for tab switching
+      loginTab.addEventListener('click', () => switchToTab('login'));
+      registerTab.addEventListener('click', () => switchToTab('register'));
+      switchToRegister.addEventListener('click', () => switchToTab('register'));
+      switchToLogin.addEventListener('click', () => switchToTab('login'));
+      
+      // Handle login form submission
+      loginForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
         
-        registerTab.addEventListener('click', () => {
-            const errorDiv = document.querySelector('#registerForm .error-message');
-            if (errorDiv) errorDiv.style.display = 'none';
-        });
+        // Get form data
+        const username = loginUsername.value.trim();
+        const password = loginPassword.value;
         
-        // Login form submission
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                // Call the login API endpoint to authenticate
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(response.status === 401 ? 'Invalid credentials. Try admin/adminpassword or testuser/password' : 'Server error');
-                }
-                
-                // Get the user data from response
-                const user = await response.json();
-                
-                // Save user to localStorage for dashboard access
-                localStorage.setItem('user', JSON.stringify(user));
-                
-                // Log session information for debugging
-                console.log('Login successful, session established');
-                
-                // Successful login
-                alert(`Login successful! Welcome, ${user.username}`);
-                
-                // Simple role-based redirection
-                const dashboardUrl = user.role === 'admin' || user.role === 'super_admin' || user.role === 'superadmin'
-                    ? '/admin/dashboard'  // Remove .html extension
-                    : '/investor/dashboard'; // Remove .html extension
-                
-                console.log('Redirecting to dashboard:', dashboardUrl);
-                
-                // Record the login in sessionStorage for debugging
-                try {
-                    const loginHistory = JSON.parse(sessionStorage.getItem('loginHistory') || '[]');
-                    loginHistory.push({
-                        timestamp: new Date().toISOString(),
-                        user: user.username,
-                        role: user.role,
-                        redirectTo: dashboardUrl
-                    });
-                    sessionStorage.setItem('loginHistory', JSON.stringify(loginHistory));
-                } catch (e) {
-                    console.error('Error saving login history:', e);
-                }
-                
-                // Redirect to the appropriate dashboard
-                window.location.href = dashboardUrl;
-            } catch (error) {
-                console.error('Login error:', error);
-                showError('loginForm', 'Login failed: ' + (error.message || 'Unknown error'));
+        // Validate form input
+        if (!username || !password) {
+          showAlert('Please enter both username and password', 'error');
+          return;
+        }
+        
+        // Show loading state
+        setLoading(loginButton, true);
+        
+        try {
+          // Make login request
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+          });
+          
+          // Parse response
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.error || 'Login failed');
+          }
+          
+          // Login successful
+          showAlert('Login successful! Redirecting...', 'success');
+          
+          // Redirect based on user role
+          setTimeout(() => {
+            if (data.role === 'admin') {
+              window.location.href = '/admin/dashboard';
+            } else {
+              window.location.href = '/investor/dashboard';
             }
-        });
+          }, 1000);
+          
+        } catch (error) {
+          showAlert(error.message || 'An error occurred', 'error');
+          setLoading(loginButton, false);
+        }
+      });
+      
+      // Handle register form submission
+      registerForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
         
-        // Registration form submission
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('reg-username').value;
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
-            const firstName = document.getElementById('reg-firstName').value;
-            const lastName = document.getElementById('reg-lastName').value;
-            
-            try {
-                // Call the registration API endpoint
-                const response = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        username, 
-                        email, 
-                        password, 
-                        firstName, 
-                        lastName,
-                        role: 'investor' // Default role for new users
-                    }),
-                    credentials: 'include'
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Registration failed');
-                }
-                
-                const user = await response.json();
-                
-                // Success message and redirect
-                alert('Registration successful! Welcome to iREVA.');
-                window.location.href = '/investor/dashboard';
-            } catch (error) {
-                console.error('Registration error:', error);
-                showError('registerForm', 'Registration failed: ' + (error.message || 'Unknown error'));
-            }
-        });
-    </script>
+        // Get form data
+        const name = document.getElementById('register-name').value.trim();
+        const email = document.getElementById('register-email').value.trim();
+        const username = document.getElementById('register-username').value.trim();
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-confirm-password').value;
+        
+        // Validate form input
+        if (!name || !email || !username || !password) {
+          showAlert('Please fill in all required fields', 'error');
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          showAlert('Passwords do not match', 'error');
+          return;
+        }
+        
+        // Show loading state
+        setLoading(registerButton, true);
+        
+        try {
+          // Make registration request
+          const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              name, 
+              email, 
+              username, 
+              password,
+              role: 'investor' // Default role for new users
+            })
+          });
+          
+          // Parse response
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.error || 'Registration failed');
+          }
+          
+          // Registration successful
+          showAlert('Registration successful! Redirecting...', 'success');
+          
+          // Redirect to investor dashboard
+          setTimeout(() => {
+            window.location.href = '/investor/dashboard';
+          }, 1000);
+          
+        } catch (error) {
+          showAlert(error.message || 'An error occurred', 'error');
+          setLoading(registerButton, false);
+        }
+      });
+
+      // Pre-populate test credentials (for the demo)
+      loginUsername.value = 'admin';
+      loginPassword.value = 'adminpassword';
+    });
+  </script>
 </body>
 </html>
