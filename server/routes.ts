@@ -58,6 +58,7 @@ export function registerRoutes(app: express.Express) {
   app.use('/api/wallet', walletRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/users', userRoutes);
+  app.use('/api/2fa', twoFactorRoutes);
   
   // Health check endpoint
   app.get('/api/health', (req, res) => {
