@@ -17,6 +17,7 @@ const notificationRoutes = require('./routes/notification-routes');
 const userRoutes = require('./routes/user-routes');
 const twoFactorRoutes = require('./routes/two-factor-routes');
 const auditRoutes = require('./routes/audit-routes');
+const ledgerRoutes = require('./routes/ledger-routes');
 
 export function registerRoutes(app: express.Express) {
   // Security middleware
@@ -61,6 +62,7 @@ export function registerRoutes(app: express.Express) {
   app.use('/api/users', userRoutes);
   app.use('/api/2fa', twoFactorRoutes);
   app.use('/api/audit', auditRoutes);
+  app.use('/api/ledger', ledgerRoutes);
   
   // Health check endpoint
   app.get('/api/health', (req, res) => {

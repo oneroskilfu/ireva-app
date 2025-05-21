@@ -11,6 +11,8 @@ const NotFound = lazy(() => import('./pages/not-found'));
 const AdminDashboard = lazy(() => import('./pages/admin/dashboard'));
 const InvestorDashboard = lazy(() => import('./pages/investor/dashboard'));
 const AuditTrail = lazy(() => import('./pages/admin/AuditTrail'));
+const FinancialLedger = lazy(() => import('./pages/admin/FinancialLedger'));
+const TransactionHistory = lazy(() => import('./pages/wallet/TransactionHistory'));
 
 // Loading component for suspense fallback
 function LoadingPage() {
@@ -76,7 +78,9 @@ function Router() {
         <ProtectedRoute path="/" component={HomePage} />
         <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} requiredRole="admin" />
         <ProtectedRoute path="/admin/audit" component={AuditTrail} requiredRole="admin" />
+        <ProtectedRoute path="/admin/financials" component={FinancialLedger} requiredRole="admin" />
         <ProtectedRoute path="/investor/dashboard" component={InvestorDashboard} requiredRole="investor" />
+        <ProtectedRoute path="/wallet/transactions" component={TransactionHistory} />
         
         {/* Fallback route */}
         <Route component={NotFound} />
