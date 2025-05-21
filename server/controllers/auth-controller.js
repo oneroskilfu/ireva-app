@@ -51,30 +51,113 @@ const signToken = (id) => {
 };
 
 /**
- * Create and send token as cookie
+ * Create and send token as cookie with enhanced security
  */
-const createSendToken = (user, statusCode, req, res) => {
-  const token = signToken(user.id);
+const createSendToken = async (user, statusCode, req, res) => {
+  // Import security middleware
+  const securityMiddleware = require('../middleware/security-middleware');
   
-  // Create secure cookie
+  // Get device fingerprint or generate one if not provided
+  const deviceFingerprint = req.headers['x-device-fingerprint'] || 
+                          crypto.createHash('sha256')
+                                .update(`${req.headers['user-agent']}${req.ip}`)
+                                .digest('hex');
+  
+  // Generate secure token with fingerprinting
+  const { token, sessionId } = securityMiddleware.generateSecureToken(user.id, deviceFingerprint);
+  
+  // Create secure cookie with enhanced protection
   res.cookie('jwt', token, {
     expires: new Date(Date.now() + COOKIE_EXPIRES_IN),
     httpOnly: true,
     secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-    sameSite: 'lax'
+    sameSite: 'strict', // Enhanced from 'lax' to 'strict' for better CSRF protection
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? process.env.DOMAIN : undefined
   });
   
-  // Remove password from output
-  const userWithoutPassword = { ...user };
-  delete userWithoutPassword.password;
+  // Store device info for audit and security purposes
+  try {
+    // Extract basic device info from user agent
+    const deviceInfo = {
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers['user-agent'],
+      os: parseUserAgent(req.headers['user-agent']).os,
+      browser: parseUserAgent(req.headers['user-agent']).browser
+    };
+    
+    // Update session with device info
+    const { sessions } = require('../../shared/schema');
+    await db.update(sessions)
+      .set({ 
+        deviceInfo,
+        updatedAt: new Date()
+      })
+      .where(eq(sessions.id, sessionId));
+      
+    // Create audit log for successful login/token creation
+    securityMiddleware.auditLog('AUTHENTICATION_SUCCESS')(req, res, () => {});
+    
+  } catch (error) {
+    console.error('Error updating session with device info:', error);
+  }
   
+  // Remove password and sensitive data from output
+  const userWithoutSensitiveData = { ...user };
+  delete userWithoutSensitiveData.password;
+  delete userWithoutSensitiveData.passwordResetToken;
+  delete userWithoutSensitiveData.passwordResetExpires;
+  
+  // Send response with fingerprint for subsequent requests
   res.status(statusCode).json({
     status: 'success',
     token,
+    sessionId,
+    fingerprint: deviceFingerprint,
     data: {
-      user: userWithoutPassword
+      user: userWithoutSensitiveData
     }
   });
+};
+
+/**
+ * Parse basic device info from user agent string
+ */
+function parseUserAgent(userAgent = '') {
+  const result = {
+    browser: 'Unknown',
+    os: 'Unknown'
+  };
+  
+  if (!userAgent) return result;
+  
+  // Simple parsing for browser
+  if (userAgent.includes('Firefox')) {
+    result.browser = 'Firefox';
+  } else if (userAgent.includes('Chrome')) {
+    result.browser = 'Chrome';
+  } else if (userAgent.includes('Safari')) {
+    result.browser = 'Safari';
+  } else if (userAgent.includes('Edge')) {
+    result.browser = 'Edge';
+  } else if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) {
+    result.browser = 'Internet Explorer';
+  }
+  
+  // Simple parsing for OS
+  if (userAgent.includes('Windows')) {
+    result.os = 'Windows';
+  } else if (userAgent.includes('Mac OS')) {
+    result.os = 'macOS';
+  } else if (userAgent.includes('Linux')) {
+    result.os = 'Linux';
+  } else if (userAgent.includes('Android')) {
+    result.os = 'Android';
+  } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+    result.os = 'iOS';
+  }
+  
+  return result;
 };
 
 /**

@@ -188,6 +188,9 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   notifications: many(notifications),
   documents: many(documents),
   wallet: one(wallets),
+  sessions: many(sessions),
+  auditLogs: many(auditLogs),
+  securitySettings: one(securitySettings),
 }));
 
 export const propertiesRelations = relations(properties, ({ many }) => ({
@@ -247,6 +250,58 @@ export const insertKycSchema = createInsertSchema(kyc).omit({
   reviewDate: true
 });
 
+// Sessions table
+export const sessions = pgTable('sessions', {
+  id: varchar('id', { length: 36 }).primaryKey(), // UUID
+  userId: integer('user_id').notNull().references(() => users.id),
+  fingerprint: varchar('fingerprint', { length: 255 }),
+  isRevoked: boolean('is_revoked').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  lastActivity: timestamp('last_activity').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  deviceInfo: json('device_info').$type<{
+    ipAddress?: string;
+    userAgent?: string;
+    os?: string;
+    browser?: string;
+  }>(),
+});
+
+// Audit logs table
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  action: varchar('action', { length: 100 }).notNull(),
+  resource: varchar('resource', { length: 255 }),
+  method: varchar('method', { length: 10 }),
+  statusCode: integer('status_code'),
+  requestBody: json('request_body'),
+  responseTime: integer('response_time'),
+  ipAddress: varchar('ip_address', { length: 50 }),
+  userAgent: varchar('user_agent', { length: 255 }),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  additionalInfo: json('additional_info'),
+});
+
+// Security settings
+export const securitySettings = pgTable('security_settings', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).unique(),
+  mfaEnabled: boolean('mfa_enabled').default(false).notNull(),
+  mfaSecret: varchar('mfa_secret', { length: 255 }),
+  trustedDevices: json('trusted_devices').$type<{deviceId: string, name: string, lastUsed: string}[]>(),
+  loginAttempts: integer('login_attempts').default(0).notNull(),
+  lastFailedLogin: timestamp('last_failed_login'),
+  passwordChangedAt: timestamp('password_changed_at'),
+  securityQuestions: json('security_questions').$type<{question: string, answer: string}[]>(),
+  accountLocked: boolean('account_locked').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Relations are already defined above
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -268,3 +323,6 @@ export type Document = typeof documents.$inferSelect;
 export type PropertyUpdate = typeof propertyUpdates.$inferSelect;
 export type ROIPayment = typeof roiPayments.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type SecuritySetting = typeof securitySettings.$inferSelect;
