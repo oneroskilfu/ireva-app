@@ -1,203 +1,258 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  Bell, 
-  BellRing, 
-  Check, 
-  ExternalLink 
-} from 'lucide-react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApiRequest } from '../hooks/useApiRequest';
+import { useAuth } from '../hooks/useAuth';
+import { Link } from 'wouter';
+import { format, formatDistanceToNow } from 'date-fns';
+import { Bell, CheckCircle, X, Award, CreditCard, CheckSquare, LockKeyhole, Settings, ExternalLink } from 'lucide-react';
+import { Badge } from './ui/badge';
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent
+} from './ui/popover';
+import { Button } from './ui/button';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent
+} from './ui/tabs';
+import { ScrollArea } from './ui/scroll-area';
+import { Separator } from './ui/separator';
 
 const NotificationBell = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { toast } = useToast();
-  const [, navigate] = useLocation();
-  
-  // Get unread notification count
-  const { data: unreadData } = useQuery({
-    queryKey: ['/api/notifications/unread'],
+  const { user } = useAuth();
+  const api = useApiRequest();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+
+  // Query notifications
+  const {
+    data: notificationsData,
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ['/api/notifications'],
+    queryFn: async () => {
+      const response = await api.get('notifications');
+      return response.data;
+    },
+    enabled: !!user,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
-  
-  // Get recent notifications (limited to 5)
-  const { data: notifications, isLoading } = useQuery({
-    queryKey: ['/api/notifications/recent'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/notifications/recent');
-      return await response.json();
+
+  // Mark as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: async (ids) => {
+      const response = await api.post('notifications/mark-read', { ids });
+      return response.data;
     },
-    enabled: isOpen, // Only fetch when dropdown is open
+    onSuccess: () => {
+      queryClient.invalidateQuery(['/api/notifications']);
+    }
   });
-  
-  const unreadCount = unreadData?.count || 0;
-  
-  const markAsRead = async (id) => {
-    try {
-      await apiRequest('PATCH', `/api/notifications/${id}/read`);
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications/recent'] });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to mark notification as read",
-        variant: "destructive",
-      });
+
+  // Mark all as read
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post('notifications/mark-all-read');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQuery(['/api/notifications']);
     }
-  };
-  
-  const markAllAsRead = async () => {
-    try {
-      await apiRequest('PATCH', '/api/notifications/mark-all-read');
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications/unread'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications/recent'] });
+  });
+
+  // Mark notifications as read when opened
+  useEffect(() => {
+    if (open && notificationsData?.data?.notifications) {
+      const unreadIds = notificationsData.data.notifications
+        .filter(notif => !notif.isRead)
+        .map(notif => notif.id);
       
-      toast({
-        title: "Success",
-        description: "All notifications marked as read",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to mark all notifications as read",
-        variant: "destructive",
-      });
+      if (unreadIds.length > 0) {
+        markAsReadMutation.mutate(unreadIds);
+      }
     }
-  };
-  
-  const handleNotificationClick = async (notification) => {
-    // Mark as read if unread
-    if (!notification.isRead) {
-      await markAsRead(notification.id);
-    }
-    
-    // Navigate to linked page if available
-    if (notification.link) {
-      navigate(notification.link);
-    }
-    
-    // Close dropdown
-    setIsOpen(false);
-  };
-  
-  const getNotificationIcon = (type) => {
+  }, [open, notificationsData]);
+
+  // Get notification icon
+  const getNotificationIcon = (type, status = null) => {
     switch (type) {
       case 'investment':
-        return <div className="h-2 w-2 rounded-full bg-green-500"></div>;
-      case 'property':
-        return <div className="h-2 w-2 rounded-full bg-blue-500"></div>;
+        return <Award className="h-4 w-4 text-green-500" />;
       case 'kyc':
-        return <div className="h-2 w-2 rounded-full bg-yellow-500"></div>;
-      case 'payment':
-        return <div className="h-2 w-2 rounded-full bg-purple-500"></div>;
+        if (status === 'approved') {
+          return <CheckSquare className="h-4 w-4 text-green-500" />;
+        } else if (status === 'rejected') {
+          return <X className="h-4 w-4 text-red-500" />;
+        }
+        return <LockKeyhole className="h-4 w-4 text-yellow-500" />;
+      case 'roi':
+        return <Award className="h-4 w-4 text-purple-500" />;
+      case 'wallet':
+        return <CreditCard className="h-4 w-4 text-blue-500" />;
+      case 'system':
       default:
-        return <div className="h-2 w-2 rounded-full bg-gray-500"></div>;
+        return <Settings className="h-4 w-4 text-gray-500" />;
     }
   };
 
+  // Filter notifications by tab
+  const getFilteredNotifications = () => {
+    if (!notificationsData?.data?.notifications) return [];
+    
+    if (activeTab === 'all') {
+      return notificationsData.data.notifications;
+    }
+    
+    return notificationsData.data.notifications.filter(
+      notification => notification.type === activeTab
+    );
+  };
+
+  // Format time display
+  const getTimeDisplay = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInHours = (now - date) / (1000 * 60 * 60);
+      
+      if (diffInHours < 24) {
+        return formatDistanceToNow(date, { addSuffix: true });
+      } else {
+        return format(date, 'MMM d, h:mm a');
+      }
+    } catch (e) {
+      return 'Unknown time';
+    }
+  };
+
+  const filteredNotifications = getFilteredNotifications();
+  const unreadCount = notificationsData?.data?.meta?.unreadCount || 0;
+
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          className="relative h-9 w-9 rounded-full p-0" 
-          aria-label="Notifications"
-        >
-          {unreadCount > 0 ? (
-            <>
-              <BellRing className="h-5 w-5" />
-              <Badge 
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs" 
-                variant="destructive"
-              >
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Badge>
-            </>
-          ) : (
-            <Bell className="h-5 w-5" />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center p-0 px-[5px]"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
           )}
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between p-4">
-          <h3 className="font-medium">Notifications</h3>
-          {unreadCount > 0 && (
+      </PopoverTrigger>
+      <PopoverContent className="w-[360px] p-0" align="end">
+        <div className="flex items-center justify-between p-3 border-b">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            <h4 className="font-medium text-sm">Notifications</h4>
+            {unreadCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {unreadCount} new
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-1">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-xs h-8"
-              onClick={markAllAsRead}
+              onClick={() => markAllAsReadMutation.mutate()}
+              disabled={unreadCount === 0}
+              className="h-8 text-xs"
+              title="Mark all as read"
             >
-              <Check className="h-3.5 w-3.5 mr-1" />
-              Mark all as read
+              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+              Clear all
             </Button>
-          )}
+          </div>
         </div>
-        <Separator />
         
-        {isLoading && (
-          <div className="p-4 flex justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+          <div className="border-b px-1 py-2">
+            <TabsList className="grid grid-cols-4 h-8">
+              <TabsTrigger value="all" className="text-xs py-1">All</TabsTrigger>
+              <TabsTrigger value="investment" className="text-xs py-1">Investments</TabsTrigger>
+              <TabsTrigger value="roi" className="text-xs py-1">ROI</TabsTrigger>
+              <TabsTrigger value="wallet" className="text-xs py-1">Wallet</TabsTrigger>
+            </TabsList>
           </div>
-        )}
-        
-        {!isLoading && (!notifications || notifications.length === 0) && (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            No notifications
-          </div>
-        )}
-        
-        {!isLoading && notifications && notifications.length > 0 && (
-          <>
-            {notifications.map((notification) => (
-              <DropdownMenuItem 
-                key={notification.id}
-                className={`p-4 flex flex-col items-start cursor-pointer ${!notification.isRead ? 'bg-muted' : ''}`}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="flex items-center gap-2 w-full">
-                  {getNotificationIcon(notification.type)}
-                  <span className="flex-grow font-medium text-sm">{notification.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(notification.createdAt).toLocaleDateString()}
-                  </span>
+          
+          <TabsContent value={activeTab} className="focus-visible:outline-none p-0">
+            <ScrollArea className="h-[300px]">
+              {isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
                 </div>
-                <p className="text-xs mt-1 line-clamp-2">{notification.message}</p>
-                {notification.link && (
-                  <div className="flex items-center text-xs text-blue-500 mt-1">
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    Open
-                  </div>
-                )}
-              </DropdownMenuItem>
-            ))}
-            
-            <Separator />
-            <DropdownMenuItem 
-              className="p-3 justify-center text-sm font-medium"
-              onClick={() => {
-                navigate('/notifications');
-                setIsOpen(false);
-              }}
-            >
+              ) : filteredNotifications.length > 0 ? (
+                <div className="divide-y">
+                  {filteredNotifications.map((notification) => (
+                    <div 
+                      key={notification.id} 
+                      className={`p-3 hover:bg-accent/30 ${!notification.isRead ? 'bg-accent/40' : ''}`}
+                    >
+                      <div className="flex gap-3">
+                        <div className="mt-0.5">
+                          {getNotificationIcon(notification.type, notification.data?.status)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between mb-1">
+                            <p className="text-sm font-medium line-clamp-1">{notification.title}</p>
+                            <span className="text-xs text-muted-foreground ml-2 shrink-0">
+                              {getTimeDisplay(notification.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                            {notification.message}
+                          </p>
+                          <div>
+                            <Link href={notification.type === 'roi' 
+                              ? "/insights/reports" 
+                              : notification.type === 'wallet' 
+                                ? "/wallet" 
+                                : "/"}
+                            >
+                              <Button variant="link" size="sm" className="h-auto p-0 text-xs flex items-center">
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View details
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-center">
+                  <Bell className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                  <p className="text-sm text-muted-foreground mb-1">No notifications</p>
+                  <p className="text-xs text-muted-foreground/60">
+                    {activeTab === 'all' 
+                      ? "You're all caught up!" 
+                      : `You don't have any ${activeTab} notifications`}
+                  </p>
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="p-2 border-t">
+          <Link href="/notifications">
+            <Button variant="outline" size="sm" className="w-full text-xs">
               View all notifications
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            </Button>
+          </Link>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

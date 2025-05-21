@@ -24,7 +24,10 @@ import {
   Shield,
   BadgeCheck,
   Home,
-  ChevronRight
+  ChevronRight,
+  BarChart,
+  LineChart,
+  PieChart
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -64,10 +67,12 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
     { path: "/investor/projects", label: "Invest Now", icon: <Building className="w-5 h-5" />, highlight: true },
     { path: "/investor/properties", label: "Browse Properties", icon: <FileText className="w-5 h-5" /> },
     { path: "/investor/wallet", label: "Wallet", icon: <Wallet className="w-5 h-5" /> },
-    { path: "/investor/roi-dashboard", label: "ROI Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { path: "/investor/insights/reports", label: "Investment Reports", icon: <BarChart className="w-5 h-5" /> },
+    { path: "/investor/roi-dashboard", label: "ROI Dashboard", icon: <LineChart className="w-5 h-5" /> },
     { path: "/investor/saved", label: "Saved Properties", icon: <Bookmark className="w-5 h-5" /> },
     { path: "/investor/roi-calculator", label: "ROI Calculator", icon: <Calculator className="w-5 h-5" /> },
     { path: "/investor/documents", label: "Documents", icon: <FileText className="w-5 h-5" /> },
+    { path: "/investor/notifications", label: "Notifications", icon: <Bell className="w-5 h-5" /> },
     { path: "/investor/kyc", label: "KYC Verification", icon: <BadgeCheck className="w-5 h-5" /> },
     { path: "/investor/messages", label: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
     { path: "/investor/support", label: "Support", icon: <HelpCircle className="w-5 h-5" /> },
