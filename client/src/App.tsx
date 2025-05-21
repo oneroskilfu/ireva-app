@@ -1,55 +1,112 @@
-import { Route, Switch } from "wouter";
-import { ThemeProvider } from "./components/ui/theme-provider";
-import { Toaster } from "./components/ui/toaster";
-import HomePage from "./pages/home-page";
-import AuthPage from "./pages/auth-page";
-import AuthTestPage from "./pages/auth-test";
-import UnauthorizedPage from "./pages/unauthorized-page";
-import { ProtectedRoute, AdminRoute, InvestorRoute } from "./lib/protected-route";
-import AdminDashboardPage from "./pages/admin/admin-dashboard";
-import InvestorDashboardPage from "./pages/investor/investor-dashboard";
-import { AuthProvider } from "./hooks/use-auth";
+import React from 'react';
+import { Route, Switch } from 'wouter';
+import { Toaster } from './components/ui/toaster';
+import { AuthProvider } from './hooks/useAuth';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Layouts
+import InvestorLayout from './components/layouts/InvestorLayout';
+import AdminLayout from './components/layouts/AdminLayout';
+
+// Auth Pages
+import AuthPage from './pages/auth/AuthPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
+
+// Investor Pages
+import InvestorDashboard from './pages/investor/Dashboard';
+import WalletPage from './pages/investor/WalletPage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
+import InvestorReportDashboard from './pages/insights/reports/InvestorReportDashboard';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/Dashboard';
+
+// Error Pages
+import NotFound from './pages/NotFound';
+
+// Create a client for React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="ireva-ui-theme">
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="min-h-screen">
-          <Switch>
-            {/* Public routes */}
-            <Route path="/auth" component={AuthPage} />
-            <Route path="/auth-test" component={AuthTestPage} />
-            <Route path="/unauthorized" component={UnauthorizedPage} />
-            
-            {/* Protected admin routes */}
-            <AdminRoute path="/admin/dashboard" component={AdminDashboardPage} />
-            
-            {/* Protected investor routes */}
-            <ProtectedRoute path="/investor/dashboard" component={InvestorDashboardPage} />
-            
-            {/* Home route - for testing purposes, redirect to auth page */}
-            <Route path="/">
-              {() => {
-                window.location.href = "/auth";
-                return null;
-              }}
-            </Route>
-            
-            {/* 404 fallback */}
-            <Route>
-              <div className="flex flex-col items-center justify-center min-h-screen">
-                <h1 className="text-4xl font-bold mb-4">404 - Page Not Found</h1>
-                <p className="text-muted-foreground mb-8">The page you're looking for doesn't exist.</p>
-                <a href="/" className="bg-primary text-primary-foreground px-4 py-2 rounded-md">
-                  Go Home
-                </a>
-              </div>
-            </Route>
-          </Switch>
-        </div>
+        <Switch>
+          {/* Auth Routes */}
+          <Route path="/auth" component={AuthPage} />
+          
+          {/* Investor Routes */}
+          <ProtectedRoute 
+            path="/investor/dashboard" 
+            component={() => (
+              <InvestorLayout>
+                <InvestorDashboard />
+              </InvestorLayout>
+            )} 
+          />
+          
+          <ProtectedRoute 
+            path="/investor/wallet" 
+            component={() => (
+              <InvestorLayout>
+                <WalletPage />
+              </InvestorLayout>
+            )} 
+          />
+          
+          {/* New Notification Route */}
+          <ProtectedRoute 
+            path="/investor/notifications" 
+            component={() => (
+              <InvestorLayout>
+                <NotificationsPage />
+              </InvestorLayout>
+            )} 
+          />
+          
+          {/* New Investment Reports Route */}
+          <ProtectedRoute 
+            path="/investor/insights/reports" 
+            component={() => (
+              <InvestorLayout>
+                <InvestorReportDashboard />
+              </InvestorLayout>
+            )} 
+          />
+          
+          {/* Admin Routes */}
+          <ProtectedRoute 
+            path="/admin/dashboard" 
+            component={() => (
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            )} 
+            requiredRole="admin"
+          />
+          
+          {/* Redirect root to dashboard */}
+          <Route path="/">
+            {() => {
+              window.location.href = '/investor/dashboard';
+              return null;
+            }}
+          </Route>
+          
+          {/* 404 - Not Found */}
+          <Route component={NotFound} />
+        </Switch>
         <Toaster />
       </AuthProvider>
-    </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

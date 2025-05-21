@@ -2,7 +2,6 @@ import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { User } from "@/contexts/unified-auth-context";
 import NotificationBell from "@/components/NotificationBell";
 import {
   LayoutDashboard,
@@ -96,9 +95,9 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
 
   // Function to check verification status
   const getVerificationStatus = () => {
-    if (user?.kycStatus === 'verified') {
+    if (typedUser?.kycStatus === 'verified') {
       return { icon: <BadgeCheck className="h-4 w-4" />, text: 'Verified', class: 'bg-green-100 text-green-800' };
-    } else if (user?.kycStatus === 'pending') {
+    } else if (typedUser?.kycStatus === 'pending') {
       return { icon: <Shield className="h-4 w-4" />, text: 'Pending', class: 'bg-yellow-100 text-yellow-800' };
     } else {
       return { icon: <Shield className="h-4 w-4" />, text: 'Unverified', class: 'bg-red-100 text-red-800' };

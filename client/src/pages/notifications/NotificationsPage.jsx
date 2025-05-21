@@ -5,6 +5,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/use-toast';
 import { format } from 'date-fns';
 import { Link } from 'wouter';
+import NotificationSettings from '../../components/notifications/NotificationSettings';
+import TestNotifications from '../../components/notifications/TestNotifications';
 
 import {
   Card,
