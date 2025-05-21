@@ -1,63 +1,62 @@
 /**
  * Invitation Service
  * 
- * This service handles tenant invitations, including creation, acceptance, and management.
+ * This service handles invitations to join tenant organizations
  */
 
 import { db } from '../db';
-import { invitations, insertInvitationSchema } from '@shared/schema-invitations';
-import { tenantUsers, tenants } from '@shared/schema-tenants';
+import { 
+  tenantInvitations, 
+  tenantUsers,
+  tenants
+} from '@shared/schema-tenant-tables';
+import { eq, and, sql, desc, lt, inArray } from 'drizzle-orm';
+import { 
+  TenantInvitation, 
+  InsertTenantInvitation,
+  TenantUser,
+  InsertTenantUser
+} from '@shared/schema-tenant-tables';
+import { v4 as uuidv4 } from 'uuid';
 import { users } from '@shared/schema';
-import { eq, and, not, sql } from 'drizzle-orm';
-import { randomBytes } from 'crypto';
-import { z } from 'zod';
-
-/**
- * Generate a unique invitation token
- */
-function generateInvitationToken(): string {
-  return randomBytes(32).toString('hex');
-}
 
 /**
  * Create a new invitation to join a tenant
  */
 export async function createInvitation(
-  tenantId: string,
-  invitedByUserId: number,
-  data: z.infer<typeof insertInvitationSchema>
-) {
+  tenantId: string, 
+  createdByUserId: number,
+  data: { email: string; role: string }
+): Promise<TenantInvitation> {
+  // Check if the user already has an active invitation
+  const existingInvitations = await getInvitationsByEmail(tenantId, data.email);
+  if (existingInvitations.length > 0) {
+    // Just return the existing invitation
+    return existingInvitations[0];
+  }
+  
   try {
-    // Validate the invitation data
-    const validatedData = insertInvitationSchema.parse({
-      ...data,
-      tenantId,
-      invitedByUserId,
-      token: generateInvitationToken(),
-      status: 'pending',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+    // Generate a unique token
+    const token = uuidv4();
     
-    // Check if an active invitation already exists for this email
-    const existingInvitation = await db.query.invitations.findFirst({
-      where: and(
-        eq(invitations.tenantId, tenantId),
-        eq(invitations.email, data.email),
-        not(eq(invitations.status, 'expired')),
-        not(eq(invitations.status, 'revoked'))
-      )
-    });
-    
-    if (existingInvitation) {
-      throw new Error('An active invitation already exists for this email');
-    }
+    // Calculate expiration date (30 days from now)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
     
     // Create the invitation
     const [invitation] = await db
-      .insert(invitations)
-      .values(validatedData)
+      .insert(tenantInvitations)
+      .values({
+        tenantId,
+        email: data.email.toLowerCase(),
+        role: data.role,
+        token,
+        status: 'pending',
+        createdByUserId,
+        expiresAt,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
       .returning();
     
     return invitation;
@@ -70,14 +69,14 @@ export async function createInvitation(
 /**
  * Get all invitations for a tenant
  */
-export async function getTenantInvitations(tenantId: string) {
+export async function getTenantInvitations(tenantId: string): Promise<TenantInvitation[]> {
   try {
-    const tenantInvitations = await db.query.invitations.findMany({
-      where: eq(invitations.tenantId, tenantId),
-      orderBy: sql`created_at DESC`
+    const invitations = await db.query.tenantInvitations.findMany({
+      where: eq(tenantInvitations.tenantId, tenantId),
+      orderBy: desc(tenantInvitations.createdAt)
     });
     
-    return tenantInvitations;
+    return invitations;
   } catch (error) {
     console.error('Error getting tenant invitations:', error);
     throw error;
@@ -85,19 +84,48 @@ export async function getTenantInvitations(tenantId: string) {
 }
 
 /**
- * Get invitation by token
+ * Get invitations for a specific email in a tenant
  */
-export async function getInvitationByToken(token: string) {
+export async function getInvitationsByEmail(
+  tenantId: string,
+  email: string
+): Promise<TenantInvitation[]> {
   try {
-    const invitation = await db.query.invitations.findFirst({
-      where: eq(invitations.token, token),
-      with: {
-        tenant: true,
-        invitedBy: true
-      }
+    const invitations = await db.query.tenantInvitations.findMany({
+      where: and(
+        eq(tenantInvitations.tenantId, tenantId),
+        eq(tenantInvitations.email, email.toLowerCase()),
+        eq(tenantInvitations.status, 'pending'),
+        lt(new Date(), tenantInvitations.expiresAt)
+      )
     });
     
-    return invitation;
+    return invitations;
+  } catch (error) {
+    console.error('Error getting invitations by email:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get invitation by token
+ */
+export async function getInvitationByToken(token: string): Promise<TenantInvitation | null> {
+  try {
+    const [invitation] = await db.query.tenantInvitations.findMany({
+      where: and(
+        eq(tenantInvitations.token, token),
+        eq(tenantInvitations.status, 'pending'),
+        lt(new Date(), tenantInvitations.expiresAt)
+      ),
+      with: {
+        tenant: true,
+        createdByUser: true
+      },
+      limit: 1
+    });
+    
+    return invitation || null;
   } catch (error) {
     console.error('Error getting invitation by token:', error);
     throw error;
@@ -107,82 +135,45 @@ export async function getInvitationByToken(token: string) {
 /**
  * Accept an invitation
  */
-export async function acceptInvitation(token: string, userId: number) {
+export async function acceptInvitation(
+  token: string,
+  userId: number
+): Promise<TenantUser | null> {
   try {
+    // Run everything in a transaction
     return await db.transaction(async (tx) => {
       // Get the invitation
-      const invitation = await tx.query.invitations.findFirst({
-        where: eq(invitations.token, token)
-      });
-      
+      const invitation = await getInvitationByToken(token);
       if (!invitation) {
-        throw new Error('Invitation not found');
+        throw new Error('Invitation not found or expired');
       }
       
-      // Check if invitation is valid
-      if (invitation.status !== 'pending') {
-        throw new Error(`Invitation is ${invitation.status}`);
-      }
-      
-      if (invitation.expiresAt < new Date()) {
-        // Update the invitation status to expired
-        await tx
-          .update(invitations)
-          .set({ 
-            status: 'expired',
-            updatedAt: new Date()
-          })
-          .where(eq(invitations.id, invitation.id));
-          
-        throw new Error('Invitation has expired');
-      }
-      
-      // Check if user is already a member of this tenant
-      const existingTenantUser = await tx.query.tenantUsers.findFirst({
-        where: and(
-          eq(tenantUsers.tenantId, invitation.tenantId),
-          eq(tenantUsers.userId, userId)
-        )
-      });
-      
-      if (existingTenantUser) {
-        if (existingTenantUser.isActive) {
-          throw new Error('You are already a member of this tenant');
-        }
-        
-        // Reactivate the tenant-user relationship
-        const [updatedTenantUser] = await tx
-          .update(tenantUsers)
-          .set({ 
-            isActive: true,
-            updatedAt: new Date()
-          })
-          .where(and(
+      // Check if the user is already a member of the tenant
+      const [existingUser] = await tx
+        .select()
+        .from(tenantUsers)
+        .where(
+          and(
             eq(tenantUsers.tenantId, invitation.tenantId),
             eq(tenantUsers.userId, userId)
-          ))
-          .returning();
-          
-        // Update the invitation status
-        const [updatedInvitation] = await tx
-          .update(invitations)
-          .set({ 
+          )
+        );
+      
+      if (existingUser) {
+        // Update the invitation
+        await tx
+          .update(tenantInvitations)
+          .set({
             status: 'accepted',
-            acceptedAt: new Date(),
-            updatedAt: new Date(),
-            acceptedByUserId: userId
+            updatedAt: new Date()
           })
-          .where(eq(invitations.id, invitation.id))
-          .returning();
-          
-        return {
-          tenantUser: updatedTenantUser,
-          invitation: updatedInvitation
-        };
+          .where(eq(tenantInvitations.token, token));
+        
+        return existingUser;
       }
       
-      // Create new tenant-user relationship
-      const [newTenantUser] = await tx
+      // Add user to tenant
+      const [tenantUser] = await tx
         .insert(tenantUsers)
         .values({
           tenantId: invitation.tenantId,
@@ -195,23 +186,19 @@ export async function acceptInvitation(token: string, userId: number) {
           updatedAt: new Date()
         })
         .returning();
-        
-      // Update the invitation status
-      const [updatedInvitation] = await tx
-        .update(invitations)
-        .set({ 
+      
+      // Update the invitation
+      await tx
+        .update(tenantInvitations)
+        .set({
           status: 'accepted',
+          acceptedByUserId: userId,
           acceptedAt: new Date(),
-          updatedAt: new Date(),
-          acceptedByUserId: userId
+          updatedAt: new Date()
         })
-        .where(eq(invitations.id, invitation.id))
-        .returning();
-        
-      return {
-        tenantUser: newTenantUser,
-        invitation: updatedInvitation
-      };
+        .where(eq(tenantInvitations.token, token));
+      
+      return tenantUser;
     });
   } catch (error) {
     console.error('Error accepting invitation:', error);
@@ -222,20 +209,41 @@ export async function acceptInvitation(token: string, userId: number) {
 /**
  * Revoke an invitation
  */
-export async function revokeInvitation(invitationId: number, revokedByUserId: number) {
+export async function revokeInvitation(
+  tenantId: string,
+  invitationId: number
+): Promise<boolean> {
   try {
-    const [updatedInvitation] = await db
-      .update(invitations)
-      .set({ 
+    // First ensure the invitation belongs to this tenant
+    const [invitation] = await db
+      .select()
+      .from(tenantInvitations)
+      .where(
+        and(
+          eq(tenantInvitations.tenantId, tenantId),
+          eq(tenantInvitations.id, invitationId)
+        )
+      );
+    
+    if (!invitation) {
+      return false;
+    }
+    
+    // Update the invitation
+    await db
+      .update(tenantInvitations)
+      .set({
         status: 'revoked',
-        updatedAt: new Date(),
-        revokedByUserId,
-        revokedAt: new Date()
+        updatedAt: new Date()
       })
-      .where(eq(invitations.id, invitationId))
-      .returning();
-      
-    return updatedInvitation;
+      .where(
+        and(
+          eq(tenantInvitations.tenantId, tenantId),
+          eq(tenantInvitations.id, invitationId)
+        )
+      );
+    
+    return true;
   } catch (error) {
     console.error('Error revoking invitation:', error);
     throw error;
@@ -243,31 +251,68 @@ export async function revokeInvitation(invitationId: number, revokedByUserId: nu
 }
 
 /**
- * Resend an invitation
+ * Check if an email is already invited to any tenant
  */
-export async function resendInvitation(invitationId: number, resendByUserId: number) {
+export async function checkEmailInvitedToAnyTenant(email: string): Promise<{
+  tenantId: string;
+  tenantName: string;
+  invitationId: number;
+  token: string;
+}[]> {
   try {
-    // Generate a new token and expiration date
-    const token = generateInvitationToken();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-    
-    const [updatedInvitation] = await db
-      .update(invitations)
-      .set({ 
-        token,
-        expiresAt,
-        status: 'pending',
-        updatedAt: new Date(),
-        resendCount: sql`${invitations.resendCount} + 1`,
-        lastResendAt: new Date(),
-        lastResendByUserId: resendByUserId
+    const result = await db
+      .select({
+        tenantId: tenantInvitations.tenantId,
+        tenantName: tenants.name,
+        invitationId: tenantInvitations.id,
+        token: tenantInvitations.token
       })
-      .where(eq(invitations.id, invitationId))
-      .returning();
-      
-    return updatedInvitation;
+      .from(tenantInvitations)
+      .leftJoin(
+        tenants,
+        eq(tenantInvitations.tenantId, tenants.id)
+      )
+      .where(
+        and(
+          eq(tenantInvitations.email, email.toLowerCase()),
+          eq(tenantInvitations.status, 'pending'),
+          lt(new Date(), tenantInvitations.expiresAt)
+        )
+      );
+    
+    return result;
   } catch (error) {
-    console.error('Error resending invitation:', error);
+    console.error('Error checking if email is invited to any tenant:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get pending invitations for a user by email
+ */
+export async function getPendingInvitationsForEmail(email: string): Promise<(TenantInvitation & {
+  tenant: { id: string; name: string; }
+})[]> {
+  try {
+    const invitations = await db.query.tenantInvitations.findMany({
+      where: and(
+        eq(tenantInvitations.email, email.toLowerCase()),
+        eq(tenantInvitations.status, 'pending'),
+        lt(new Date(), tenantInvitations.expiresAt)
+      ),
+      with: {
+        tenant: {
+          columns: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+    
+    return invitations;
+  } catch (error) {
+    console.error('Error getting pending invitations for email:', error);
     throw error;
   }
 }

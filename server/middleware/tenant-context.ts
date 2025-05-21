@@ -1,121 +1,208 @@
 /**
  * Tenant Context Middleware
  * 
- * This middleware extracts and attaches tenant information to the request.
- * It also validates tenant access for the current user.
+ * This middleware provides tenant isolation by:
+ * 1. Extracting the tenant ID from the request URL or headers
+ * 2. Validating that the user has access to the tenant
+ * 3. Setting the tenant context for all downstream services
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { db } from '../db';
-import { tenantUsers } from '@shared/schema-tenants';
+import { tenantUsers, tenants } from '@shared/schema-tenant-tables';
 import { eq, and } from 'drizzle-orm';
-import { createTenantDb } from '../lib/tenant-db';
 
-/**
- * Middleware to apply tenant context to requests
- * This extracts tenant information from the request and validates user access
- */
-export function applyTenantContext(req: Request, res: Response, next: NextFunction) {
-  const tenantId = extractTenantId(req);
-  
-  // If no tenant ID is found, continue without tenant context
-  if (!tenantId) {
-    return next();
+// Extend express Request to include tenant context
+declare global {
+  namespace Express {
+    interface Request {
+      tenantId?: string;
+      tenantContext?: {
+        id: string;
+        name: string;
+        role: string;
+        isOwner: boolean;
+      };
+    }
   }
-  
-  // Attach tenant ID to request for later use
-  req.tenantId = tenantId;
-  
-  // If user is not authenticated, just set the tenant ID and continue
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return next();
-  }
-  
-  // Validate user access to this tenant and attach tenant role
-  validateTenantAccess(req, tenantId)
-    .then(tenantUser => {
-      if (tenantUser) {
-        req.tenantUser = tenantUser;
-        // Create tenant-scoped database client
-        req.tenantDb = createTenantDb(tenantId);
-      }
-      next();
-    })
-    .catch(error => {
-      console.error('Error validating tenant access:', error);
-      next(error);
-    });
 }
 
 /**
- * Middleware to require tenant access
- * Use this on routes that should only be accessible to users with tenant access
- */
-export function requireTenantAccess(req: Request, res: Response, next: NextFunction) {
-  if (!req.tenantId) {
-    return res.status(400).json({ error: 'Tenant ID is required' });
-  }
-  
-  if (!req.tenantUser) {
-    return res.status(403).json({ error: 'You do not have access to this tenant' });
-  }
-  
-  next();
-}
-
-/**
- * Extract tenant ID from various sources in the request
+ * Extract tenant ID from request
+ * - First try URL path parameter (/tenant/:tenantId/...)
+ * - Then try query parameter (?tenantId=...)
+ * - Then try header (X-Tenant-ID)
  */
 function extractTenantId(req: Request): string | undefined {
-  // Try to get tenant ID from route params
-  const tenantIdParam = req.params.tenantId;
-  if (tenantIdParam) {
-    return tenantIdParam;
+  // Check URL path parameter
+  if (req.params.tenantId) {
+    return req.params.tenantId;
   }
   
-  // Try to get tenant ID from query string
-  const tenantIdQuery = req.query.tenantId;
-  if (tenantIdQuery && typeof tenantIdQuery === 'string') {
-    return tenantIdQuery;
+  // Check query parameter
+  if (req.query.tenantId && typeof req.query.tenantId === 'string') {
+    return req.query.tenantId;
   }
   
-  // Try to get tenant ID from headers
-  const tenantIdHeader = req.headers['x-tenant-id'];
-  if (tenantIdHeader && typeof tenantIdHeader === 'string') {
-    return tenantIdHeader;
+  // Check header
+  const headerTenantId = req.headers['x-tenant-id'];
+  if (headerTenantId && typeof headerTenantId === 'string') {
+    return headerTenantId;
   }
   
-  // Try to get tenant ID from subdomain
-  const host = req.headers.host;
-  if (host) {
-    const subdomain = host.split('.')[0];
-    // TODO: Lookup tenant by subdomain in database
-    // For now, just return undefined
+  // Check localStorage through cookies
+  if (req.cookies && req.cookies.selectedTenantId) {
+    return req.cookies.selectedTenantId;
   }
   
   return undefined;
 }
 
 /**
- * Validate user access to the tenant
+ * Validate that user has access to the tenant
  */
-async function validateTenantAccess(req: Request, tenantId: string) {
-  if (!req.user || !req.user.id) {
-    return null;
+async function validateTenantAccess(req: Request, tenantId: string): Promise<boolean> {
+  if (!req.isAuthenticated() || !req.user) {
+    return false;
   }
   
   try {
-    // Get tenant-user relationship from database
-    const tenantUser = await db.query.tenantUsers.findFirst({
-      where: and(
-        eq(tenantUsers.tenantId, tenantId),
-        eq(tenantUsers.userId, req.user.id)
-      )
-    });
+    // Check if user has access to this tenant
+    const [tenantUser] = await db
+      .select({
+        id: tenantUsers.id,
+        role: tenantUsers.role,
+        isOwner: tenantUsers.isOwner
+      })
+      .from(tenantUsers)
+      .where(
+        and(
+          eq(tenantUsers.tenantId, tenantId),
+          eq(tenantUsers.userId, req.user.id)
+        )
+      );
     
-    return tenantUser;
+    if (!tenantUser) {
+      return false;
+    }
+    
+    // Also get the tenant name
+    const [tenant] = await db
+      .select({
+        id: tenants.id,
+        name: tenants.name
+      })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
+    
+    if (!tenant) {
+      return false;
+    }
+    
+    // Set tenant context on request
+    req.tenantId = tenantId;
+    req.tenantContext = {
+      id: tenantId,
+      name: tenant.name,
+      role: tenantUser.role,
+      isOwner: tenantUser.isOwner
+    };
+    
+    return true;
   } catch (error) {
     console.error('Error validating tenant access:', error);
-    return null;
+    return false;
   }
+}
+
+/**
+ * Tenant context middleware factory
+ * @param required Whether tenant context is required (true) or optional (false)
+ */
+export function tenantContext(required = true) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    // Skip for authentication routes and public assets
+    if (
+      req.path.startsWith('/api/auth') ||
+      req.path.startsWith('/api/login') ||
+      req.path.startsWith('/api/register') ||
+      req.path.startsWith('/api/user') ||
+      req.path.startsWith('/api/tenants') && !req.path.includes('/tenants/')
+    ) {
+      return next();
+    }
+    
+    const tenantId = extractTenantId(req);
+    
+    // If tenant ID is not found
+    if (!tenantId) {
+      // Skip if tenant context is optional
+      if (!required) {
+        return next();
+      }
+      
+      return res.status(400).json({
+        error: 'Tenant ID is required'
+      });
+    }
+    
+    // Validate that user has access to the tenant
+    const hasAccess = await validateTenantAccess(req, tenantId);
+    
+    if (!hasAccess) {
+      // Skip if tenant context is optional
+      if (!required) {
+        return next();
+      }
+      
+      return res.status(403).json({
+        error: 'Access to this tenant is forbidden'
+      });
+    }
+    
+    // Continue with tenant context
+    next();
+  };
+}
+
+/**
+ * Require admin role middleware
+ */
+export function requireTenantAdmin() {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.tenantContext) {
+      return res.status(400).json({
+        error: 'Tenant context is required'
+      });
+    }
+    
+    if (req.tenantContext.role !== 'admin' && !req.tenantContext.isOwner) {
+      return res.status(403).json({
+        error: 'Admin role is required for this action'
+      });
+    }
+    
+    next();
+  };
+}
+
+/**
+ * Require owner role middleware
+ */
+export function requireTenantOwner() {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.tenantContext) {
+      return res.status(400).json({
+        error: 'Tenant context is required'
+      });
+    }
+    
+    if (!req.tenantContext.isOwner) {
+      return res.status(403).json({
+        error: 'Owner permission is required for this action'
+      });
+    }
+    
+    next();
+  };
 }

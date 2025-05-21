@@ -1,51 +1,31 @@
 /**
- * Tenant-Scoped Table Generator
+ * Tenant Table Factory
  * 
- * This utility generates tenant-scoped tables for the multi-tenant architecture.
- * It ensures all tenant-specific tables include a tenantId field and appropriate constraints.
+ * This module provides a factory function that creates tenant-scoped tables.
+ * These tables automatically include a tenantId column that links to the tenant,
+ * ensuring proper data isolation between organizations.
  */
 
-import { pgTable, uuid, Table, TableConfig, Column } from 'drizzle-orm/pg-core';
+import { pgTable, uuid } from 'drizzle-orm/pg-core';
 import { tenants } from './schema-tenants';
 
 /**
- * Creates a tenant-scoped table with a tenantId column
- * 
- * @param name - The name of the table
- * @param columns - Object with column definitions
- * @param extraConfig - Extra configuration for the table
- * @returns A pgTable instance with tenant ID column
+ * Creates a tenant-scoped table with an automatic tenantId column
+ * @param tableName The name of the table
+ * @param columns The table columns (excluding tenantId which is added automatically)
+ * @returns A pg table with a tenantId column
  */
-export function tenantTable(
-  name: string,
-  columns: Record<string, any>,
-  extraConfig?: Parameters<typeof pgTable>[2]
+export function tenantTable<T extends Record<string, any>>(
+  tableName: string,
+  columns: T
 ) {
-  // Add tenantId column
-  const columnsWithTenant = {
+  return pgTable(tableName, {
+    // Add the tenant ID column as the first column
     tenantId: uuid('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
-    ...columns,
-  };
-  
-  // Create table
-  return pgTable(name, columnsWithTenant, extraConfig);
-}
-
-/**
- * Type helper for tenant-scoped tables
- */
-export type TenantScoped<T> = T & {
-  tenantId: string;
-};
-
-/**
- * Filter helper for tenant-scoped queries
- * 
- * @param tenantId - The ID of the current tenant
- * @returns A function that returns a WHERE condition for the tenant ID
- */
-export function tenantFilter(tenantId: string) {
-  return <T extends { tenantId: unknown }>(table: T) => ({ tenantId: table.tenantId });
+    
+    // Include all the other columns
+    ...columns
+  });
 }

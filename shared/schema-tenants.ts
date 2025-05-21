@@ -1,103 +1,55 @@
 /**
- * Tenant Schema
+ * Tenants Schema
  * 
- * This file defines the database schema for tenants and tenant users.
+ * This file defines the database schema for tenant organizations.
+ * Each tenant is a separate organization with its own users, properties, and data.
  */
 
-import { pgTable, uuid, text, timestamp, boolean, integer, uniqueIndex } from 'drizzle-orm/pg-core';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { pgTable, uuid, varchar, timestamp, text, boolean, json } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { users } from './schema';
-import { relations } from 'drizzle-orm';
 
-/**
- * Tenants table
- * Stores organizations/companies in the multi-tenant architecture
- */
+// Base tenants table
 export const tenants = pgTable('tenants', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  slug: text('slug').notNull().unique(),
-  domain: text('domain'),
-  logo: text('logo'),
-  primaryColor: text('primary_color').default('#3B82F6'),
-  subscriptionTier: text('subscription_tier').default('free').notNull(),
-  subscriptionStatus: text('subscription_status').default('active').notNull(),
-  subscriptionExpiresAt: timestamp('subscription_expires_at'),
-  maxUsers: integer('max_users').default(5).notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => {
-  return {
-    slugIdx: uniqueIndex('tenant_slug_idx').on(table.slug)
-  };
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  slug: varchar('slug', { length: 100 }).notNull().unique(),
+  description: text('description'),
+  logo: varchar('logo', { length: 255 }),
+  website: varchar('website', { length: 255 }),
+  industry: varchar('industry', { length: 100 }),
+  size: varchar('size', { length: 50 }),
+  address: varchar('address', { length: 255 }),
+  city: varchar('city', { length: 100 }),
+  state: varchar('state', { length: 100 }),
+  country: varchar('country', { length: 100 }),
+  postalCode: varchar('postal_code', { length: 20 }),
+  phone: varchar('phone', { length: 20 }),
+  email: varchar('email', { length: 255 }),
+  taxId: varchar('tax_id', { length: 50 }),
+  isActive: boolean('is_active').notNull().default(true),
+  verificationStatus: varchar('verification_status', { length: 20 }).notNull().default('pending'),
+  verifiedAt: timestamp('verified_at'),
+  settings: json('settings').$type<Record<string, any>>().default({}),
+  metadata: json('metadata').$type<Record<string, any>>().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
 
-/**
- * Tenant-User relationships
- * Links users to tenants with roles and permissions
- */
-export const tenantUsers = pgTable('tenant_users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: text('role').notNull().default('user'),
-  permissions: text('permissions').array(),
-  isOwner: boolean('is_owner').default(false).notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
-  joinedAt: timestamp('joined_at').defaultNow().notNull(),
-  lastActiveAt: timestamp('last_active_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-}, (table) => {
-  return {
-    tenantUserIdx: uniqueIndex('tenant_user_idx').on(table.tenantId, table.userId)
-  };
-});
-
-/**
- * Relations
- */
-export const tenantsRelations = relations(tenants, ({ many }) => ({
-  users: many(tenantUsers),
-}));
-
-export const tenantUsersRelations = relations(tenantUsers, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [tenantUsers.tenantId],
-    references: [tenants.id],
-  }),
-  user: one(users, {
-    fields: [tenantUsers.userId],
-    references: [users.id],
-  }),
-}));
-
-/**
- * Schemas for validation
- */
+// Schema for inserting a new tenant
 export const insertTenantSchema = createInsertSchema(tenants, {
-  slug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/, 
-    'Slug must contain only lowercase letters, numbers, and hyphens'),
-  name: z.string().min(2).max(100),
-  domain: z.string().url().optional().nullable(),
-  primaryColor: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color').optional(),
+  name: z.string().min(3, "Organization name must be at least 3 characters"),
+  slug: z.string().min(3, "Slug must be at least 3 characters")
+    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  verifiedAt: true,
+  verificationStatus: true,
+  isActive: true
 });
 
-export const selectTenantSchema = createSelectSchema(tenants);
-
-export const insertTenantUserSchema = createInsertSchema(tenantUsers, {
-  role: z.enum(['admin', 'manager', 'user']),
-  permissions: z.array(z.string()).optional(),
-});
-
-export const selectTenantUserSchema = createSelectSchema(tenantUsers);
-
-/**
- * Types
- */
-export type Tenant = z.infer<typeof selectTenantSchema>;
+// Export types
+export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
-export type TenantUser = z.infer<typeof selectTenantUserSchema>;
-export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
