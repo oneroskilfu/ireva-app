@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { User } from "@/contexts/unified-auth-context";
 import NotificationBell from "@/components/NotificationBell";
 import {
   LayoutDashboard,
@@ -55,6 +56,7 @@ interface InvestorLayoutProps {
 const InvestorLayout = ({ children }: InvestorLayoutProps) => {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
+  const typedUser = user as User;
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
@@ -80,9 +82,9 @@ const InvestorLayout = ({ children }: InvestorLayoutProps) => {
     { path: "/investor/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
   ];
 
-  const initials = user?.firstName && user?.lastName 
-    ? `${user.firstName[0]}${user.lastName[0]}` 
-    : user?.username?.substring(0, 2).toUpperCase() || 'IR';
+  const initials = typedUser?.firstName && typedUser?.lastName 
+    ? `${typedUser.firstName[0]}${typedUser.lastName[0]}` 
+    : typedUser?.username?.substring(0, 2).toUpperCase() || 'IR';
 
   const handleLogout = async () => {
     try {
