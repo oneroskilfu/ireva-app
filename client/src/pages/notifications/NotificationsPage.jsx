@@ -500,134 +500,19 @@ const NotificationsPage = () => {
                 </TabsContent>
               </CardContent>
             </Card>
+            
+            {/* Test Notifications Section */}
+            {user?.role === 'admin' && (
+              <div className="mt-6">
+                <TestNotifications />
+              </div>
+            )}
           </Tabs>
         </div>
         
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Choose how you want to receive updates
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium">Communication Channels</h3>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <BellIcon className="h-5 w-5 text-gray-600" />
-                    <Label htmlFor="in-app-notifications">In-App Notifications</Label>
-                  </div>
-                  <Switch
-                    id="in-app-notifications"
-                    checked={notificationPreferences.inApp}
-                    onCheckedChange={(checked) => handlePreferenceChange('inApp', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-600" />
-                    <Label htmlFor="email-notifications">Email Notifications</Label>
-                  </div>
-                  <Switch
-                    id="email-notifications"
-                    checked={notificationPreferences.email}
-                    onCheckedChange={(checked) => handlePreferenceChange('email', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <DevicePhoneMobileIcon className="h-5 w-5 text-gray-600" />
-                    <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                  </div>
-                  <Switch
-                    id="sms-notifications"
-                    checked={notificationPreferences.sms}
-                    onCheckedChange={(checked) => handlePreferenceChange('sms', checked)}
-                  />
-                </div>
-              </div>
-              
-              <div className="pt-4">
-                <Separator className="mb-4" />
-                <h3 className="text-sm font-medium mb-4">Notification Types</h3>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CurrencyDollarIcon className="h-5 w-5 text-green-500" />
-                      <Label htmlFor="investment-notifications">Investment Updates</Label>
-                    </div>
-                    <Switch
-                      id="investment-notifications"
-                      checked={notificationPreferences.investment}
-                      onCheckedChange={(checked) => handlePreferenceChange('investment', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ChartBarIcon className="h-5 w-5 text-purple-500" />
-                      <Label htmlFor="roi-notifications">ROI Payments</Label>
-                    </div>
-                    <Switch
-                      id="roi-notifications"
-                      checked={notificationPreferences.roi}
-                      onCheckedChange={(checked) => handlePreferenceChange('roi', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <IdentificationIcon className="h-5 w-5 text-yellow-500" />
-                      <Label htmlFor="kyc-notifications">KYC Updates</Label>
-                    </div>
-                    <Switch
-                      id="kyc-notifications"
-                      checked={notificationPreferences.kyc}
-                      onCheckedChange={(checked) => handlePreferenceChange('kyc', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCardIcon className="h-5 w-5 text-blue-500" />
-                      <Label htmlFor="wallet-notifications">Wallet Transactions</Label>
-                    </div>
-                    <Switch
-                      id="wallet-notifications"
-                      checked={notificationPreferences.wallet}
-                      onCheckedChange={(checked) => handlePreferenceChange('wallet', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <BellIcon className="h-5 w-5 text-gray-500" />
-                      <Label htmlFor="system-notifications">System Notifications</Label>
-                    </div>
-                    <Switch
-                      id="system-notifications"
-                      checked={notificationPreferences.system}
-                      onCheckedChange={(checked) => handlePreferenceChange('system', checked)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Alert>
-            <InformationCircleIcon className="h-4 w-4" />
-            <AlertTitle>Stay informed</AlertTitle>
-            <AlertDescription>
-              Some critical notifications related to security and important account updates cannot be disabled.
-            </AlertDescription>
-          </Alert>
+          {/* Use our enhanced NotificationSettings component */}
+          <NotificationSettings />
         </div>
       </div>
     </div>
