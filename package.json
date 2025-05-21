@@ -132,6 +132,7 @@
     "react-qr-code": "^2.0.15",
     "react-resizable-panels": "^2.1.4",
     "react-router-dom": "^7.5.2",
+    "react-to-pdf": "^2.0.0",
     "react-toastify": "^11.0.5",
     "recharts": "^2.15.3",
     "socket.io": "^4.8.1",
