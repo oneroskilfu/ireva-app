@@ -148,9 +148,16 @@ server.listen(PORT, '0.0.0.0', () => {
   logWithTime(`Ultra-fast server running on port ${PORT}`);
   
   // Load full server functionality after port binding is established
-  // This is commented out for now as we'll develop this in next steps
-  // setTimeout(() => {
-  //   logWithTime('Starting full application server...');
-  //   require('./server/bootstrap.js');
-  // }, 100);
+  // Use a minimal timeout to ensure port binding is registered by Replit
+  setTimeout(() => {
+    logWithTime('Starting full application server...');
+    try {
+      // Path is relative to where this script is run - use CJS version
+      require('./server/bootstrap.cjs');
+      logWithTime('Bootstrap process initiated successfully');
+    } catch (err) {
+      console.error('Error loading bootstrap module:', err);
+      logWithTime('Running in minimal server mode only due to bootstrap error');
+    }
+  }, 100);
 });
