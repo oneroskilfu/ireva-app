@@ -193,7 +193,13 @@ router.patch('/tenants/:tenantId', tenantContext(), requireTenantAdmin(), async 
     // Filter out disallowed fields
     for (const field of allowedFields) {
       if (Object.prototype.hasOwnProperty.call(req.body, field) && req.body[field] !== undefined) {
-        updateData[field] = req.body[field];
+        // Use Object.defineProperty to safely assign without prototype pollution
+        Object.defineProperty(updateData, field, {
+          value: req.body[field],
+          enumerable: true,
+          writable: true,
+          configurable: true
+        });
       }
     }
     
