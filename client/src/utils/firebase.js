@@ -41,7 +41,7 @@ export const requestNotificationPermission = async () => {
       
       // Get the FCM token
       const currentToken = await getToken(messaging, {
-        vapidKey: 'BL_hy-dBVTtm08ZIp9lgWIrEcNd8YTwjQHuFyEZYcgbJ3wNPgPPtHZ-1lfHQUJOX_hY2ykJcIoVJPaKXQAQy5Vs'
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
       });
       
       if (currentToken) {
