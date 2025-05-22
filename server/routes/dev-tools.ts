@@ -14,33 +14,28 @@ devToolsRouter.get('/run-command', (req: Request, res: Response) => {
     return res.status(403).send('This endpoint is only available in development mode');
   }
   
-  const command = req.query.command as string;
+  const commandKey = req.query.command as string;
   
-  // Validate command - only allow specific development commands
-  if (!command || typeof command !== 'string') {
-    return res.status(400).send('Invalid command');
+  // Validate command key
+  if (!commandKey || typeof commandKey !== 'string') {
+    return res.status(400).send('Invalid command key');
   }
   
-  // Whitelist of allowed commands for security
-  const allowedCommands = [
-    'cd /home/runner/workspace/client && node switch-implementation.js status',
-    'cd /home/runner/workspace/client && node switch-implementation.js use-fixed',
-    'cd /home/runner/workspace/client && node switch-implementation.js use-original',
-    'echo test' // For testing the API endpoint
-  ];
+  // Map command keys to actual commands (no user input in exec)
+  const commandMap: Record<string, string> = {
+    'status': 'cd /home/runner/workspace/client && node switch-implementation.js status',
+    'use-fixed': 'cd /home/runner/workspace/client && node switch-implementation.js use-fixed',
+    'use-original': 'cd /home/runner/workspace/client && node switch-implementation.js use-original',
+    'test': 'echo test'
+  };
   
-  // Check if command is exactly in whitelist (exact match for security)
-  if (!allowedCommands.includes(command)) {
-    return res.status(403).send('Command not allowed');
+  // Get the actual command from the safe map
+  const command = commandMap[commandKey];
+  if (!command) {
+    return res.status(403).send('Command key not allowed');
   }
   
-  // Additional security: ensure no command injection characters
-  if (command.includes(';') || command.includes('&&') || command.includes('||') || 
-      command.includes('|') || command.includes('`') || command.includes('$')) {
-    return res.status(403).send('Command contains forbidden characters');
-  }
-  
-  // Execute command
+  // Execute the pre-defined command (no user input injection possible)
   exec(command, (error, stdout, stderr) => {
     if (error) {
       return res.status(500).send(`Error: ${error.message}`);
