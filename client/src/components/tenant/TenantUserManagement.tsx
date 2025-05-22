@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { useParams } from 'wouter';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRoute } from 'wouter';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import {
   Card,
   CardContent,
@@ -10,6 +12,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -28,126 +47,203 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  AlertCircle, 
-  Check, 
-  MoreHorizontal, 
-  Pencil, 
-  Plus, 
-  Shield, 
-  Trash, 
-  User, 
-  UserCog, 
+import {
+  Copy,
+  MoreHorizontal,
+  Loader2,
+  Mail,
+  ShieldAlert,
+  ShieldCheck,
   UserPlus,
-  X
+  UserX,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { formatDistanceToNow } from 'date-fns';
+
+// Invitation form schema
+const invitationFormSchema = z.object({
+  email: z.string().email('Must be a valid email'),
+  role: z.string().min(1, 'Role is required'),
+});
+
+type InvitationFormValues = z.infer<typeof invitationFormSchema>;
+
+// Invitation and user types
+interface Invitation {
+  id: number;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+  createdByUser: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
 
 interface TenantUser {
-  id: string;
-  tenantId: string;
+  id: number;
   userId: number;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    name: string;
-    profileImage?: string;
-  };
   role: string;
   isOwner: boolean;
-  isActive: boolean;
   joinedAt: string;
-  lastActiveAt?: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 export default function TenantUserManagement() {
-  const { tenantId } = useParams();
+  const [activeTab, setActiveTab] = useState('members');
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [, params] = useRoute('/tenant/:tenantId/*');
+  const tenantId = params?.tenantId;
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('user');
 
-  // Fetch tenant users
+  // Fetch users and invitations
   const {
-    data: tenantUsers,
-    isLoading,
-    error,
+    data: users = [],
+    isLoading: usersLoading,
+    error: usersError,
   } = useQuery<TenantUser[]>({
     queryKey: [`/api/tenants/${tenantId}/users`],
     enabled: !!tenantId,
   });
 
-  // Invite user mutation
-  const inviteUserMutation = useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      const res = await apiRequest('POST', `/api/tenants/${tenantId}/invitations`, {
-        email,
-        role,
-      });
+  const {
+    data: invitations = [],
+    isLoading: invitationsLoading,
+    error: invitationsError,
+  } = useQuery<Invitation[]>({
+    queryKey: [`/api/tenants/${tenantId}/invitations`],
+    enabled: !!tenantId,
+  });
+
+  // Invitation form
+  const form = useForm<InvitationFormValues>({
+    resolver: zodResolver(invitationFormSchema),
+    defaultValues: {
+      email: '',
+      role: 'user',
+    },
+  });
+
+  // Create invitation mutation
+  const createInvitationMutation = useMutation({
+    mutationFn: async (data: InvitationFormValues) => {
+      const res = await apiRequest('POST', `/api/tenants/${tenantId}/invitations`, data);
       return await res.json();
     },
     onSuccess: () => {
-      // Clear form and close dialog
-      setInviteEmail('');
-      setInviteRole('user');
-      setIsInviteDialogOpen(false);
-      
-      // Show success message
       toast({
         title: 'Invitation sent',
-        description: `An invitation has been sent to ${inviteEmail}.`,
+        description: 'The invitation has been sent successfully.',
       });
+      
+      // Reset form and close dialog
+      form.reset();
+      setInviteDialogOpen(false);
+      
+      // Refresh invitations list
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/invitations`] });
     },
     onError: (error: Error) => {
       toast({
         title: 'Failed to send invitation',
-        description: error.message || 'There was an error sending the invitation. Please try again.',
+        description: error.message,
         variant: 'destructive',
       });
     },
   });
 
-  // Change user role mutation
-  const changeRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
-      const res = await apiRequest('PUT', `/api/tenants/${tenantId}/users/${userId}/role`, {
-        role,
-      });
+  // Resend invitation mutation
+  const resendInvitationMutation = useMutation({
+    mutationFn: async (invitationId: number) => {
+      const res = await apiRequest('POST', `/api/tenants/${tenantId}/invitations/${invitationId}/resend`);
       return await res.json();
     },
     onSuccess: () => {
-      // Invalidate users query to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
+      toast({
+        title: 'Invitation resent',
+        description: 'The invitation has been resent successfully.',
+      });
       
-      // Show success message
+      // Refresh invitations list
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/invitations`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to resend invitation',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Revoke invitation mutation
+  const revokeInvitationMutation = useMutation({
+    mutationFn: async (invitationId: number) => {
+      const res = await apiRequest('DELETE', `/api/tenants/${tenantId}/invitations/${invitationId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Invitation revoked',
+        description: 'The invitation has been revoked successfully.',
+      });
+      
+      // Refresh invitations list
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/invitations`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to revoke invitation',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Update user role mutation
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
+      const res = await apiRequest('PATCH', `/api/tenants/${tenantId}/users/${userId}`, { role });
+      return await res.json();
+    },
+    onSuccess: () => {
       toast({
         title: 'Role updated',
         description: 'The user role has been updated successfully.',
       });
+      
+      // Refresh users list
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
     },
     onError: (error: Error) => {
       toast({
         title: 'Failed to update role',
-        description: error.message || 'There was an error updating the user role. Please try again.',
+        description: error.message,
         variant: 'destructive',
       });
     },
@@ -160,66 +256,111 @@ export default function TenantUserManagement() {
       return await res.json();
     },
     onSuccess: () => {
-      // Invalidate users query to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
-      
-      // Show success message
       toast({
         title: 'User removed',
         description: 'The user has been removed from the organization.',
       });
+      
+      // Refresh users list
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
     },
     onError: (error: Error) => {
       toast({
         title: 'Failed to remove user',
-        description: error.message || 'There was an error removing the user. Please try again.',
+        description: error.message,
         variant: 'destructive',
       });
     },
   });
 
-  // Handle invite form submission
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    inviteUserMutation.mutate({ email: inviteEmail, role: inviteRole });
+  // Form submission handler
+  const onSubmit = (data: InvitationFormValues) => {
+    createInvitationMutation.mutate(data);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Copy invitation link
+  const copyInvitationLink = (token: string) => {
+    const link = `${window.location.origin}/invitations/accept/${token}`;
+    navigator.clipboard.writeText(link);
+    
+    toast({
+      title: 'Link copied',
+      description: 'The invitation link has been copied to clipboard.',
+    });
+  };
 
-  if (error) {
-    return (
-      <Alert variant="destructive" className="max-w-2xl mx-auto my-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          There was an error loading the organization users. Please try again.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const getRoleBadgeColor = (role: string) => {
+  // Role badge component
+  const RoleBadge = ({ role }: { role: string }) => {
+    let color = 'default';
+    let icon = null;
+    
     switch (role) {
       case 'admin':
-        return 'bg-red-100 text-red-800';
-      case 'manager':
-        return 'bg-blue-100 text-blue-800';
+        color = 'default';
+        icon = <ShieldCheck className="h-3 w-3 mr-1" />;
+        break;
+      case 'owner':
+        color = 'destructive';
+        icon = <ShieldAlert className="h-3 w-3 mr-1" />;
+        break;
       default:
-        return 'bg-gray-100 text-gray-800';
+        color = 'secondary';
+        break;
     }
+    
+    return (
+      <Badge variant={color as any} className="capitalize flex items-center">
+        {icon}
+        {role}
+      </Badge>
+    );
   };
 
+  // Status badge component
+  const StatusBadge = ({ status }: { status: string }) => {
+    let color = 'default';
+    let icon = null;
+    
+    switch (status) {
+      case 'pending':
+        color = 'warning';
+        icon = <Clock className="h-3 w-3 mr-1" />;
+        break;
+      case 'accepted':
+        color = 'success';
+        icon = <CheckCircle2 className="h-3 w-3 mr-1" />;
+        break;
+      case 'revoked':
+        color = 'destructive';
+        icon = <XCircle className="h-3 w-3 mr-1" />;
+        break;
+      default:
+        color = 'secondary';
+        break;
+    }
+    
+    return (
+      <Badge variant={color as any} className="capitalize flex items-center">
+        {icon}
+        {status}
+      </Badge>
+    );
+  };
+
+  // Check if user is tenant owner
+  const isOwner = users.some(user => user.isOwner && user.user.id === users[0]?.user.id);
+
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Organization Members</h1>
-        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>
+            Manage your organization's team members and invitations.
+          </CardDescription>
+        </div>
+        
+        <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
@@ -230,190 +371,337 @@ export default function TenantUserManagement() {
             <DialogHeader>
               <DialogTitle>Invite User</DialogTitle>
               <DialogDescription>
-                Send an invitation email to add a new user to your organization.
+                Send an invitation to join your organization.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleInvite}>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="user@example.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="role" className="text-sm font-medium">
-                    Role
-                  </label>
-                  <Select value={inviteRole} onValueChange={setInviteRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="user">User</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  disabled={inviteUserMutation.isPending}
-                >
-                  {inviteUserMutation.isPending ? 'Sending...' : 'Send Invitation'}
-                </Button>
-              </DialogFooter>
-            </form>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="user@example.com"
+                          {...field}
+                          disabled={createInvitationMutation.isPending}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={createInvitationMutation.isPending}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setInviteDialogOpen(false)}
+                    disabled={createInvitationMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createInvitationMutation.isPending}
+                  >
+                    {createInvitationMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Send Invitation
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All Members</CardTitle>
-          <CardDescription>
-            Manage the users in your organization and their roles
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[250px]">User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tenantUsers && tenantUsers.map((tenantUser) => (
-                <TableRow key={tenantUser.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {tenantUser.user.profileImage ? (
-                        <img
-                          src={tenantUser.user.profileImage}
-                          alt={tenantUser.user.name}
-                          className="h-8 w-8 rounded-full"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div>
-                        <div>{tenantUser.user.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {tenantUser.user.email}
-                        </div>
-                      </div>
+      </CardHeader>
+      
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="invitations">Invitations</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="members">
+            {usersLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4 py-2">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-4 w-24" />
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        className={`${getRoleBadgeColor(tenantUser.role)} capitalize`}
-                        variant="outline"
-                      >
-                        {tenantUser.role}
-                      </Badge>
-                      {tenantUser.isOwner && (
-                        <Badge variant="outline">Owner</Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {tenantUser.isActive ? (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <Check className="h-4 w-4" /> Active
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 text-gray-500">
-                        <X className="h-4 w-4" /> Inactive
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(tenantUser.joinedAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {!tenantUser.isOwner && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => 
-                              changeRoleMutation.mutate({
-                                userId: tenantUser.user.id,
-                                role: tenantUser.role === 'admin' ? 'user' : 'admin'
-                              })
-                            }
-                          >
-                            {tenantUser.role === 'admin' ? (
-                              <>
-                                <User className="mr-2 h-4 w-4" />
-                                <span>Make User</span>
-                              </>
-                            ) : (
-                              <>
-                                <Shield className="mr-2 h-4 w-4" />
-                                <span>Make Admin</span>
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => removeUserMutation.mutate(tenantUser.user.id)}
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            <span>Remove User</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {tenantUsers && tenantUsers.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    <div className="flex flex-col items-center gap-2">
-                      <UserCog className="h-8 w-8 text-muted-foreground" />
-                      <p className="text-muted-foreground">
-                        No users found. Invite users to get started.
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setIsInviteDialogOpen(true)}
-                      >
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Invite User
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+                    <Skeleton className="ml-auto h-6 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : usersError ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  Error loading team members. Please try again.
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] })}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  No team members found. Invite users to join your organization.
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell className="font-medium">
+                        {member.user.name || 'Unknown'}
+                      </TableCell>
+                      <TableCell>{member.user.email}</TableCell>
+                      <TableCell>
+                        <RoleBadge role={member.isOwner ? 'owner' : member.role} />
+                      </TableCell>
+                      <TableCell>
+                        {formatDistanceToNow(new Date(member.joinedAt), { addSuffix: true })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {member.isOwner ? (
+                          <Badge variant="outline">Owner</Badge>
+                        ) : (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              
+                              {isOwner && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => updateUserRoleMutation.mutate({
+                                      userId: member.userId,
+                                      role: member.role === 'user' ? 'admin' : 'user'
+                                    })}
+                                    disabled={updateUserRoleMutation.isPending}
+                                  >
+                                    {member.role === 'user' ? (
+                                      <>
+                                        <ShieldCheck className="mr-2 h-4 w-4" />
+                                        Make Admin
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ShieldCheck className="mr-2 h-4 w-4" />
+                                        Remove Admin
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                </>
+                              )}
+                              
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to remove ${member.user.name || member.user.email}?`)) {
+                                    removeUserMutation.mutate(member.userId);
+                                  }
+                                }}
+                                disabled={removeUserMutation.isPending}
+                                className="text-destructive"
+                              >
+                                <UserX className="mr-2 h-4 w-4" />
+                                Remove User
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="invitations">
+            {invitationsLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4 py-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="ml-auto h-6 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : invitationsError ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  Error loading invitations. Please try again.
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/invitations`] })}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : invitations.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  No invitations found. Invite users to join your organization.
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead>Invited By</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invitations.map((invitation) => (
+                    <TableRow key={invitation.id}>
+                      <TableCell className="font-medium">
+                        {invitation.email}
+                      </TableCell>
+                      <TableCell>
+                        <RoleBadge role={invitation.role} />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={invitation.status} />
+                      </TableCell>
+                      <TableCell>
+                        {invitation.status === 'pending' ? (
+                          formatDistanceToNow(new Date(invitation.expiresAt), { addSuffix: true })
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {invitation.createdByUser?.name || invitation.createdByUser?.email || 'Unknown'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {invitation.status === 'pending' ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              
+                              <DropdownMenuItem
+                                onClick={() => copyInvitationLink(invitation.id.toString())}
+                              >
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copy Link
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuItem
+                                onClick={() => resendInvitationMutation.mutate(invitation.id)}
+                                disabled={resendInvitationMutation.isPending}
+                              >
+                                <Mail className="mr-2 h-4 w-4" />
+                                Resend
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuSeparator />
+                              
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to revoke the invitation for ${invitation.email}?`)) {
+                                    revokeInvitationMutation.mutate(invitation.id);
+                                  }
+                                }}
+                                disabled={revokeInvitationMutation.isPending}
+                                className="text-destructive"
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Revoke
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <Badge variant="outline">
+                            {invitation.status === 'accepted' ? 'Accepted' : 'Revoked'}
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
