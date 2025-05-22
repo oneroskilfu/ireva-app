@@ -412,12 +412,19 @@ exports.rollbackChanges = async (req, res) => {
           }
         }
         
-        // Generate the SQL update statement
-        let updateSql = `UPDATE ${tableName} SET `;
-        updateSql += updateColumns.map((col, index) => `${col} = $${index + 1}`).join(', ');
-        updateSql += ` WHERE id = ${record.entityId}`;
+        // Generate the SQL update statement using Drizzle's safe query builder
+        const tableIdentifier = sql.identifier(tableName);
+        const columnIdentifiers = updateColumns.map(col => sql.identifier(col));
+        const valuePlaceholders = updateValues.map((_, index) => sql.placeholder(`param${index + 1}`));
         
-        await db.execute(sql.raw(updateSql), ...updateValues);
+        const updateQuery = sql`UPDATE ${tableIdentifier} SET ${sql.join(
+          columnIdentifiers.map((col, index) => sql`${col} = ${valuePlaceholders[index]}`),
+          sql.raw(', ')
+        )} WHERE id = ${record.entityId}`;
+        
+        await db.execute(updateQuery, Object.fromEntries(
+          updateValues.map((value, index) => [`param${index + 1}`, value])
+        ));
       } else if (record.changeType === 'delete') {
         // Rollback a deletion by recreating the entity
         const newState = JSON.parse(record.newState);
