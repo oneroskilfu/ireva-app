@@ -192,7 +192,7 @@ router.patch('/tenants/:tenantId', tenantContext(), requireTenantAdmin(), async 
     
     // Filter out disallowed fields
     for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field) && req.body[field] !== undefined) {
         updateData[field] = req.body[field];
       }
     }
