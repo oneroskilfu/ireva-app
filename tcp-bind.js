@@ -27,7 +27,7 @@ server.listen(PORT, HOST, () => {
   // Start the actual application server as a child process
   const child = spawn('npm', ['run', 'dev'], {
     stdio: 'inherit',
-    shell: true
+    shell: false
   });
   
   // Close the minimal server once the child process is running
