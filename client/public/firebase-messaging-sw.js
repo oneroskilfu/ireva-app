@@ -3,16 +3,24 @@
 importScripts('https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-compat.js');
 
-// Firebase configuration - loaded from environment
+// Firebase configuration - requires environment variables to be set
+// Note: Service workers cannot access import.meta.env, so config must be injected at build time
 const firebaseConfig = {
-  apiKey: "AIzaSyAHhiM0PxwYn8a64DzOBco5RWlXf4adQOk",
-  authDomain: "ireva-platform.firebaseapp.com",
-  projectId: "ireva-platform",
-  storageBucket: "ireva-platform.firebasestorage.app",
-  messagingSenderId: "488160387734",
-  appId: "1:488160387734:web:02088d5591c8d75f4598b7",
-  measurementId: "G-LHGPCTYFTK"
+  apiKey: self.VITE_FIREBASE_API_KEY || "",
+  authDomain: self.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: self.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: self.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: self.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: self.VITE_FIREBASE_APP_ID || "",
+  measurementId: self.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
+
+// Validate that required configuration is present
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error('Firebase configuration missing. Please set environment variables.');
+  // Exit early if configuration is incomplete
+  throw new Error('Firebase configuration incomplete');
+}
 
 firebase.initializeApp(firebaseConfig);
 
