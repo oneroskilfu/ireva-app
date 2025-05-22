@@ -101,17 +101,32 @@ async function runPortCheck() {
   if (workingPort) {
     const url = generateReplitUrl(replInfo.replId, workingPort, replInfo.domain);
     statusElement.textContent = `Found working port: ${workingPort}`;
-    directionsElement.innerHTML = `
-      <p>The application is available at:</p>
-      <a href="${url}" target="_blank" class="link">${url}</a>
-      <p>Click the link above to open the application.</p>
-    `;
+    
+    // Safe DOM manipulation to prevent XSS
+    directionsElement.innerHTML = '';
+    const p1 = document.createElement('p');
+    p1.textContent = 'The application is available at:';
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.className = 'link';
+    link.textContent = url;
+    const p2 = document.createElement('p');
+    p2.textContent = 'Click the link above to open the application.';
+    
+    directionsElement.appendChild(p1);
+    directionsElement.appendChild(link);
+    directionsElement.appendChild(p2);
   } else {
     statusElement.textContent = 'No working ports found. The application may not be running.';
-    directionsElement.innerHTML = `
-      <p>Please make sure the application is running by checking the workflow status.</p>
-      <p>If the application is running but not accessible, try restarting the workflow.</p>
-    `;
+    directionsElement.innerHTML = '';
+    const p1 = document.createElement('p');
+    p1.textContent = 'Please make sure the application is running by checking the workflow status.';
+    const p2 = document.createElement('p');
+    p2.textContent = 'If the application is running but not accessible, try restarting the workflow.';
+    
+    directionsElement.appendChild(p1);
+    directionsElement.appendChild(p2);
   }
 }
 
