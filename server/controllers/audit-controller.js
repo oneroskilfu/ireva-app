@@ -434,12 +434,16 @@ exports.rollbackChanges = async (req, res) => {
           }
         }
         
-        // Generate the SQL insert statement
-        let insertSql = `INSERT INTO ${tableName} (${insertColumns.join(', ')}) VALUES (`;
-        insertSql += insertColumns.map((_, index) => `$${index + 1}`).join(', ');
-        insertSql += `) RETURNING *`;
+        // Generate the SQL insert statement using Drizzle's safe query builder
+        const tableIdentifier = sql.identifier(tableName);
+        const columnIdentifiers = insertColumns.map(col => sql.identifier(col));
+        const valuePlaceholders = insertValues.map((_, index) => sql.placeholder(`param${index + 1}`));
         
-        rollbackResult = await db.execute(sql.raw(insertSql), ...insertValues);
+        const insertQuery = sql`INSERT INTO ${tableIdentifier} (${sql.join(columnIdentifiers, sql.raw(', '))}) VALUES (${sql.join(valuePlaceholders, sql.raw(', '))}) RETURNING *`;
+        
+        rollbackResult = await db.execute(insertQuery, Object.fromEntries(
+          insertValues.map((value, index) => [`param${index + 1}`, value])
+        ));
       }
     } catch (error) {
       console.error('Error during rollback operation:', error);
