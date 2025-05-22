@@ -44,18 +44,9 @@ async function hashPassword(password) {
  * @returns {Promise<boolean>} - Whether the passwords match
  */
 async function comparePasswords(supplied, stored) {
-  // Handle SHA-256 hashed test user passwords
+  // Handle SHA-256 hashed passwords (for legacy compatibility)
   if (stored.length === 64 && /^[0-9a-f]+$/.test(stored)) {
-    // This is a SHA-256 hash from storage.ts test users
-    // Handle the special case for test accounts
-    if (supplied === 'adminpassword' && stored === '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9') {
-      return true;
-    }
-    if (supplied === 'password' && stored === '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8') {
-      return true;
-    }
-    
-    // For other cases, use SHA-256 comparison
+    // Use SHA-256 comparison for legacy hashed passwords
     const crypto = require('crypto');
     const hash = crypto.createHash('sha256').update(supplied).digest('hex');
     return hash === stored;
