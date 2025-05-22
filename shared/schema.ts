@@ -247,6 +247,8 @@ export const insertKycSchema = createInsertSchema(kyc).omit({
   reviewDate: true
 });
 
+
+
 // Sessions table
 export const sessions = pgTable('sessions', {
   id: varchar('id', { length: 36 }).primaryKey(), // UUID
@@ -294,7 +296,196 @@ export const securitySettings = pgTable('security_settings', {
   securityQuestions: json('security_questions').$type<{question: string, answer: string}[]>(),
   accountLocked: boolean('account_locked').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_date').defaultNow().notNull(),
+});
+
+// User consents table for Terms of Service and Privacy Policy
+export const userConsents = pgTable('user_consents', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  consentType: varchar('consent_type', { length: 50 }).notNull(), // 'terms', 'privacy', 'marketing'
+  version: varchar('version', { length: 20 }).notNull(),
+  accepted: boolean('accepted').notNull(),
+  ipAddress: varchar('ip_address', { length: 50 }),
+  userAgent: varchar('user_agent', { length: 255 }),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+}, (table) => ({
+  userConsentIdx: uniqueIndex('user_consent_idx').on(table.userId, table.consentType, table.version),
+}));
+
+// Stripe payments table
+export const stripePayments = pgTable('stripe_payments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }).notNull().unique(),
+  stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
+  amount: numeric('amount').notNull(),
+  currency: varchar('currency', { length: 3 }).default('USD').notNull(),
+  status: varchar('status', { length: 50 }).notNull(), // succeeded, failed, pending, canceled
+  paymentType: varchar('payment_type', { length: 20 }).notNull(), // deposit, withdrawal, investment
+  transactionId: integer('transaction_id').references(() => transactions.id),
+  investmentId: integer('investment_id').references(() => investments.id),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Firebase Cloud Messaging tokens
+export const fcmTokens = pgTable('fcm_tokens', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  token: varchar('token', { length: 255 }).notNull(),
+  deviceType: varchar('device_type', { length: 20 }).notNull(), // ios, android, web
+  deviceId: varchar('device_id', { length: 255 }),
+  isActive: boolean('is_active').default(true).notNull(),
+  lastUsed: timestamp('last_used').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  userTokenIdx: uniqueIndex('user_token_idx').on(table.userId, table.token),
+}));
+
+// Plugin registry and tenant configuration
+export const tenants = pgTable('tenants', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull().unique(),
+  slug: varchar('slug', { length: 50 }).notNull().unique(),
+  domain: varchar('domain', { length: 255 }).unique(),
+  logo: varchar('logo', { length: 255 }),
+  config: json('config').$type<{
+    theme: {
+      primaryColor: string;
+      secondaryColor: string;
+      logoUrl?: string;
+    };
+    features: {
+      multiCurrency: boolean;
+      aiAnalytics: boolean;
+      advancedReporting: boolean;
+      customBranding: boolean;
+    };
+    limits: {
+      maxUsers: number;
+      maxProperties: number;
+      storageLimit: number; // in MB
+    };
+  }>(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const plugins = pgTable('plugins', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull().unique(),
+  version: varchar('version', { length: 20 }).notNull(),
+  description: text('description'),
+  category: varchar('category', { length: 50 }).notNull(), // 'investment', 'analytics', 'payment', 'notification'
+  entryPoint: varchar('entry_point', { length: 255 }).notNull(), // JS module path
+  dependencies: json('dependencies').$type<string[]>().default([]),
+  config: json('config').$type<{
+    permissions: string[];
+    routes: string[];
+    components: string[];
+    hooks: string[];
+    apis: string[];
+  }>(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const tenantPlugins = pgTable('tenant_plugins', {
+  id: serial('id').primaryKey(),
+  tenantId: integer('tenant_id').notNull().references(() => tenants.id),
+  pluginId: integer('plugin_id').notNull().references(() => plugins.id),
+  isEnabled: boolean('is_enabled').default(true).notNull(),
+  config: json('config'), // Plugin-specific configuration for this tenant
+  enabledAt: timestamp('enabled_at').defaultNow().notNull(),
+  enabledBy: integer('enabled_by').references(() => users.id),
+}, (table) => ({
+  tenantPluginIdx: uniqueIndex('tenant_plugin_idx').on(table.tenantId, table.pluginId),
+}));
+
+// Update users table to include tenantId for multi-tenancy
+// Note: This would require a migration to add tenantId to existing users table
+
+// Investment module configurations
+export const investmentModules = pgTable('investment_modules', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'reit', 'crowdfunding', 'private_equity', 'crypto'
+  description: text('description'),
+  minInvestment: numeric('min_investment').notNull(),
+  maxInvestment: numeric('max_investment'),
+  expectedROI: numeric('expected_roi'),
+  riskLevel: varchar('risk_level', { length: 20 }).notNull(), // 'low', 'medium', 'high'
+  duration: integer('duration'), // in months
+  features: json('features').$type<{
+    autoReinvest: boolean;
+    partialLiquidation: boolean;
+    dividendReinvestment: boolean;
+    fractionalOwnership: boolean;
+  }>(),
+  fees: json('fees').$type<{
+    managementFee: number; // percentage
+    performanceFee: number; // percentage
+    exitFee: number; // percentage
+  }>(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const tenantInvestmentModules = pgTable('tenant_investment_modules', {
+  id: serial('id').primaryKey(),
+  tenantId: integer('tenant_id').notNull().references(() => tenants.id),
+  moduleId: integer('module_id').notNull().references(() => investmentModules.id),
+  isEnabled: boolean('is_enabled').default(true).notNull(),
+  customConfig: json('custom_config'), // Tenant-specific overrides
+  enabledAt: timestamp('enabled_at').defaultNow().notNull(),
+}, (table) => ({
+  tenantModuleIdx: uniqueIndex('tenant_module_idx').on(table.tenantId, table.moduleId),
+}));
+
+// Zod schemas for new tables
+export const insertUserConsentSchema = createInsertSchema(userConsents).omit({ 
+  id: true, 
+  timestamp: true 
+});
+
+export const insertStripePaymentSchema = createInsertSchema(stripePayments).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const insertFcmTokenSchema = createInsertSchema(fcmTokens).omit({ 
+  id: true, 
+  createdAt: true, 
+  lastUsed: true 
+});
+
+export const insertTenantSchema = createInsertSchema(tenants).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const insertPluginSchema = createInsertSchema(plugins).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export const insertTenantPluginSchema = createInsertSchema(tenantPlugins).omit({ 
+  id: true, 
+  enabledAt: true 
+});
+
+export const insertInvestmentModuleSchema = createInsertSchema(investmentModules).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
 });
 
 // Relations are already defined above
@@ -323,3 +514,17 @@ export type Wallet = typeof wallets.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type SecuritySetting = typeof securitySettings.$inferSelect;
+export type UserConsent = typeof userConsents.$inferSelect;
+export type InsertUserConsent = z.infer<typeof insertUserConsentSchema>;
+export type StripePayment = typeof stripePayments.$inferSelect;
+export type InsertStripePayment = z.infer<typeof insertStripePaymentSchema>;
+export type FcmToken = typeof fcmTokens.$inferSelect;
+export type InsertFcmToken = z.infer<typeof insertFcmTokenSchema>;
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type Plugin = typeof plugins.$inferSelect;
+export type InsertPlugin = z.infer<typeof insertPluginSchema>;
+export type TenantPlugin = typeof tenantPlugins.$inferSelect;
+export type InsertTenantPlugin = z.infer<typeof insertTenantPluginSchema>;
+export type InvestmentModule = typeof investmentModules.$inferSelect;
+export type InsertInvestmentModule = z.infer<typeof insertInvestmentModuleSchema>;
