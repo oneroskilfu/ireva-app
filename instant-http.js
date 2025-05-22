@@ -68,7 +68,7 @@ server.listen(5000, '0.0.0.0', () => {
     // Launch the real application in a separate process
     const applicationProcess = spawn('npm', ['run', 'dev'], {
       stdio: 'inherit',
-      shell: true
+      shell: false
     });
     
     applicationProcess.on('error', (err) => {
