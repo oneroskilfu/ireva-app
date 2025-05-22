@@ -5,10 +5,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,84 +25,59 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 
-// Form validation schema
-const tenantFormSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters'),
-  slug: z.string()
-    .min(3, 'Slug must be at least 3 characters')
-    .max(50, 'Slug cannot be longer than 50 characters')
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
-  description: z.string().optional(),
-  website: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  industry: z.string().optional(),
+// Form schema with validation
+const createTenantSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }).max(100),
+  slug: z
+    .string()
+    .min(2, { message: 'Slug must be at least 2 characters' })
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, {
+      message: 'Slug can only contain lowercase letters, numbers, and hyphens',
+    }),
+  description: z.string().max(500).optional(),
+  website: z.string().url({ message: 'Please enter a valid URL' }).optional().or(z.literal('')),
+  industry: z.string().max(100).optional(),
 });
 
-type TenantFormValues = z.infer<typeof tenantFormSchema>;
-
-// Default form values
-const defaultValues: Partial<TenantFormValues> = {
-  name: '',
-  slug: '',
-  description: '',
-  website: '',
-  industry: '',
-};
+type CreateTenantFormValues = z.infer<typeof createTenantSchema>;
 
 export default function CreateTenantForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [slugEdited, setSlugEdited] = useState(false);
 
-  // Initialize form
-  const form = useForm<TenantFormValues>({
-    resolver: zodResolver(tenantFormSchema),
-    defaultValues,
+  // Initialize form with default values
+  const form = useForm<CreateTenantFormValues>({
+    resolver: zodResolver(createTenantSchema),
+    defaultValues: {
+      name: '',
+      slug: '',
+      description: '',
+      website: '',
+      industry: '',
+    },
   });
-  
-  // Generate slug from name
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-');
-  };
-  
-  // Handle name change to auto-generate slug
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    const slug = generateSlug(name);
-    form.setValue('slug', slug);
-  };
-  
+
   // Create tenant mutation
   const createTenantMutation = useMutation({
-    mutationFn: async (data: TenantFormValues) => {
+    mutationFn: async (data: CreateTenantFormValues) => {
       const res = await apiRequest('POST', '/api/tenants', data);
       return await res.json();
     },
-    
     onSuccess: (data) => {
       toast({
         title: 'Organization created',
-        description: `${data.name} has been created successfully.`,
+        description: 'Your organization has been created successfully.',
       });
       
-      // Invalidate tenants query to refresh the tenant list
+      // Invalidate tenants query to refresh the list
       queryClient.invalidateQueries({ queryKey: ['/api/tenants'] });
       
-      // Store selected tenant in local storage for persistence
-      localStorage.setItem('selectedTenantId', data.id);
-      
-      // Navigate to the tenant dashboard
+      // Redirect to the new tenant dashboard
       setLocation(`/tenant/${data.id}/dashboard`);
     },
     onError: (error: Error) => {
@@ -104,25 +88,42 @@ export default function CreateTenantForm() {
       });
     },
   });
-  
-  // Form submission handler
-  const onSubmit = (data: TenantFormValues) => {
+
+  // Handle form submission
+  const onSubmit = (data: CreateTenantFormValues) => {
     createTenantMutation.mutate(data);
   };
 
+  // Auto-generate slug from name if slug hasn't been manually edited
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    form.setValue('name', name);
+    
+    if (!slugEdited) {
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-');
+      
+      form.setValue('slug', slug);
+    }
+  };
+
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
-        <CardTitle>Create New Organization</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Building2 className="h-6 w-6" />
+          Create New Organization
+        </CardTitle>
         <CardDescription>
-          Create a new organization for your properties and investments.
-          Each organization has its own separate dashboard, properties, and users.
+          Set up a new organization for your real estate investment projects
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -131,15 +132,15 @@ export default function CreateTenantForm() {
                   <FormLabel>Organization Name</FormLabel>
                   <FormControl>
                     <Input
+                      placeholder="Acme Properties"
                       {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleNameChange(e);
-                      }}
-                      placeholder="Acme Real Estate"
+                      onChange={handleNameChange}
                       disabled={createTenantMutation.isPending}
                     />
                   </FormControl>
+                  <FormDescription>
+                    The name of your organization as it will appear to users
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -150,14 +151,21 @@ export default function CreateTenantForm() {
               name="slug"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL Slug</FormLabel>
+                  <FormLabel>Organization Slug</FormLabel>
                   <FormControl>
                     <Input
+                      placeholder="acme-properties"
                       {...field}
-                      placeholder="acme-real-estate"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setSlugEdited(true);
+                      }}
                       disabled={createTenantMutation.isPending}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Used in URLs: yoursite.com/tenant/{form.watch('slug') || 'acme-properties'}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -171,9 +179,9 @@ export default function CreateTenantForm() {
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
+                      placeholder="A brief description of your organization"
+                      className="resize-none"
                       {...field}
-                      placeholder="Tell us about your organization"
-                      className="min-h-24"
                       disabled={createTenantMutation.isPending}
                     />
                   </FormControl>
@@ -191,8 +199,8 @@ export default function CreateTenantForm() {
                     <FormLabel>Website</FormLabel>
                     <FormControl>
                       <Input
-                        {...field}
                         placeholder="https://example.com"
+                        {...field}
                         disabled={createTenantMutation.isPending}
                       />
                     </FormControl>
@@ -209,8 +217,8 @@ export default function CreateTenantForm() {
                     <FormLabel>Industry</FormLabel>
                     <FormControl>
                       <Input
+                        placeholder="Real Estate Investment"
                         {...field}
-                        placeholder="Real Estate, Construction, etc."
                         disabled={createTenantMutation.isPending}
                       />
                     </FormControl>
@@ -219,30 +227,33 @@ export default function CreateTenantForm() {
                 )}
               />
             </div>
-            
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setLocation('/tenant/select')}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={createTenantMutation.isPending}
-              >
-                {createTenantMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : 'Create Organization'}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
+          </CardContent>
+          
+          <CardFooter className="flex justify-end space-x-4 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setLocation('/')}
+              disabled={createTenantMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={createTenantMutation.isPending}
+            >
+              {createTenantMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Organization'
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }

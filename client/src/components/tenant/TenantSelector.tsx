@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Building, LogOut, Plus, User } from 'lucide-react';
-import { useLocation, useRoute } from 'wouter';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +12,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Building2,
+  ChevronDown,
+  Plus,
+  Loader2,
+} from 'lucide-react';
 
+// Tenant interface
 interface Tenant {
   id: string;
   name: string;
@@ -26,70 +30,66 @@ interface Tenant {
 }
 
 export default function TenantSelector() {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [, params] = useRoute('/tenant/:tenantId/*');
-  const { toast } = useToast();
-  const { user, logoutMutation } = useAuth();
-  
-  // Get current tenant ID from route or localStorage
-  const currentTenantId = params?.tenantId || localStorage.getItem('selectedTenantId');
-  
-  // Fetch tenants for the current user
-  const { 
-    data: tenants = [], 
+  const [currentTenantId, setCurrentTenantId] = useState<string | null>(null);
+
+  // Get current tenant ID from URL
+  useEffect(() => {
+    const match = window.location.pathname.match(/\/tenant\/([^\/]+)/);
+    if (match) {
+      setCurrentTenantId(match[1]);
+    } else {
+      setCurrentTenantId(null);
+    }
+  }, [window.location.pathname]);
+
+  // Fetch tenants
+  const {
+    data: tenants = [],
     isLoading,
-    error
+    error,
   } = useQuery<Tenant[]>({
     queryKey: ['/api/tenants'],
     enabled: !!user,
   });
-  
-  // Find the currently selected tenant
-  const selectedTenant = tenants.find(tenant => tenant.id === currentTenantId);
 
-  // Handle tenant change
-  const handleTenantChange = (tenantId: string) => {
-    // Store selected tenant in localStorage
-    localStorage.setItem('selectedTenantId', tenantId);
-    
-    // Navigate to the tenant dashboard
+  // Get current tenant
+  const currentTenant = currentTenantId
+    ? tenants.find((tenant) => tenant.id === currentTenantId)
+    : null;
+
+  // Handle tenant selection
+  const handleSelectTenant = (tenantId: string) => {
+    setCurrentTenantId(tenantId);
     setLocation(`/tenant/${tenantId}/dashboard`);
   };
-  
-  // Handle logout
-  const handleLogout = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        // Clear selected tenant from localStorage
-        localStorage.removeItem('selectedTenantId');
-        
-        // Navigate to login page
-        setLocation('/auth');
-      },
-      onError: (error: Error) => {
-        toast({
-          title: 'Logout failed',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
-    });
+
+  // Handle create new tenant
+  const handleCreateTenant = () => {
+    setLocation('/tenants/create');
   };
-  
-  if (error) {
-    return (
-      <Button variant="ghost" className="flex items-center gap-2" onClick={() => setLocation('/tenant/select')}>
-        <Building className="h-4 w-4" />
-        <span>Error loading organizations</span>
-      </Button>
-    );
-  }
-  
+
+  // If loading
   if (isLoading) {
     return (
-      <Button variant="ghost" className="flex items-center gap-2" disabled>
-        <Skeleton className="h-4 w-4 rounded-full" />
-        <Skeleton className="h-4 w-24" />
+      <div className="flex items-center space-x-2">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-6 w-28" />
+      </div>
+    );
+  }
+
+  // If error or no tenants
+  if (error || tenants.length === 0) {
+    return (
+      <Button
+        variant="outline"
+        className="flex items-center space-x-2"
+        onClick={handleCreateTenant}
+      >
+        <Plus className="h-4 w-4" />
+        <span>Create Organization</span>
       </Button>
     );
   }
@@ -97,65 +97,55 @@ export default function TenantSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 max-w-[200px]">
-          {selectedTenant?.logo ? (
-            <Avatar className="h-5 w-5">
-              <AvatarImage src={selectedTenant.logo} alt={selectedTenant.name} />
-              <AvatarFallback>{selectedTenant.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-          ) : (
-            <Building className="h-4 w-4" />
-          )}
-          <span className="truncate">{selectedTenant?.name || 'Select Organization'}</span>
+        <Button
+          variant="outline"
+          className="flex items-center justify-between space-x-2 px-3 min-w-[220px]"
+        >
+          <div className="flex items-center space-x-2 truncate">
+            {currentTenant?.logo ? (
+              <img
+                src={currentTenant.logo}
+                alt={currentTenant.name}
+                className="h-5 w-5 rounded object-cover"
+              />
+            ) : (
+              <Building2 className="h-5 w-5" />
+            )}
+            <span className="truncate">
+              {currentTenant?.name || 'Select Organization'}
+            </span>
+          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>My Organizations</DropdownMenuLabel>
+      <DropdownMenuContent align="start" className="w-[220px]">
+        <DropdownMenuLabel>Your Organizations</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
-        {tenants.length === 0 ? (
-          <DropdownMenuItem disabled className="text-muted-foreground">
-            No organizations found
+        {tenants.map((tenant) => (
+          <DropdownMenuItem
+            key={tenant.id}
+            className="flex items-center space-x-2 cursor-pointer"
+            onClick={() => handleSelectTenant(tenant.id)}
+          >
+            {tenant.logo ? (
+              <img
+                src={tenant.logo}
+                alt={tenant.name}
+                className="h-5 w-5 rounded object-cover"
+              />
+            ) : (
+              <Building2 className="h-5 w-5" />
+            )}
+            <span>{tenant.name}</span>
+            {tenant.id === currentTenantId && (
+              <div className="ml-auto h-2 w-2 rounded-full bg-primary" />
+            )}
           </DropdownMenuItem>
-        ) : (
-          tenants.map(tenant => (
-            <DropdownMenuItem 
-              key={tenant.id} 
-              onClick={() => handleTenantChange(tenant.id)}
-              className={tenant.id === currentTenantId ? 'bg-accent' : ''}
-            >
-              <div className="flex items-center gap-2 w-full">
-                {tenant.logo ? (
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={tenant.logo} alt={tenant.name} />
-                    <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Building className="h-4 w-4" />
-                )}
-                <div className="flex-1 truncate">{tenant.name}</div>
-                <div className="text-xs text-muted-foreground capitalize">{tenant.role}</div>
-              </div>
-            </DropdownMenuItem>
-          ))
-        )}
-        
+        ))}
         <DropdownMenuSeparator />
-        
-        <DropdownMenuItem onClick={() => setLocation('/tenant/create')}>
+        <DropdownMenuItem onClick={handleCreateTenant} className="cursor-pointer">
           <Plus className="h-4 w-4 mr-2" />
-          <span>Create Organization</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem 
-          onClick={handleLogout}
-          disabled={logoutMutation.isPending}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          <span>Log Out</span>
+          <span>Create New Organization</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
