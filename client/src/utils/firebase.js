@@ -3,13 +3,13 @@ import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAHhiM0PxwYn8a64DzOBco5RWlXf4adQOk",
-  authDomain: "ireva-platform.firebaseapp.com",
-  projectId: "ireva-platform",
-  storageBucket: "ireva-platform.firebasestorage.app",
-  messagingSenderId: "488160387734",
-  appId: "1:488160387734:web:02088d5591c8d75f4598b7",
-  measurementId: "G-LHGPCTYFTK"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

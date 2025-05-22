@@ -3,14 +3,16 @@
 importScripts('https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-compat.js');
 
+// Note: Service workers can't access import.meta.env, so we'll need to inject these values
+// This will be handled by the build process or server-side rendering
 const firebaseConfig = {
-  apiKey: "AIzaSyAHhiM0PxwYn8a64DzOBco5RWlXf4adQOk",
-  authDomain: "ireva-platform.firebaseapp.com",
-  projectId: "ireva-platform",
-  storageBucket: "ireva-platform.firebasestorage.app",
-  messagingSenderId: "488160387734",
-  appId: "1:488160387734:web:02088d5591c8d75f4598b7",
-  measurementId: "G-LHGPCTYFTK"
+  apiKey: "%VITE_FIREBASE_API_KEY%",
+  authDomain: "%VITE_FIREBASE_AUTH_DOMAIN%",
+  projectId: "%VITE_FIREBASE_PROJECT_ID%",
+  storageBucket: "%VITE_FIREBASE_STORAGE_BUCKET%",
+  messagingSenderId: "%VITE_FIREBASE_MESSAGING_SENDER_ID%",
+  appId: "%VITE_FIREBASE_APP_ID%",
+  measurementId: "%VITE_FIREBASE_MEASUREMENT_ID%"
 };
 
 firebase.initializeApp(firebaseConfig);
