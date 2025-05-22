@@ -42,7 +42,7 @@ server.listen(5000, '0.0.0.0', () => {
     // Start the actual application in a separate process
     const child = spawn('npm', ['run', 'dev'], {
       stdio: 'inherit',
-      shell: true
+      shell: false
     });
     
     // Handle child process events
@@ -69,7 +69,7 @@ server.on('error', (err) => {
     // Try to start main app even if port is in use
     const child = spawn('npm', ['run', 'dev'], {
       stdio: 'inherit',
-      shell: true
+      shell: false
     });
   }
 });
