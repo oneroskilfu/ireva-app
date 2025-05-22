@@ -295,28 +295,35 @@ function getInMemoryStorage() {
   const users = new Map();
   let nextId = 1;
   
-  // Add test users
-  users.set(1, {
-    id: 1,
-    username: 'admin',
-    password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // adminpassword
-    email: 'admin@ireva.com',
-    role: 'admin',
-    firstName: 'Admin',
-    lastName: 'User',
-    phoneNumber: '08012345678'
-  });
+  // Add test users - only if environment variables are provided
+  const adminPassword = process.env.TEST_ADMIN_PASSWORD_HASH;
+  const testUserPassword = process.env.TEST_USER_PASSWORD_HASH;
   
-  users.set(2, {
-    id: 2,
-    username: 'testuser',
-    password: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', // password
-    email: 'test@example.com',
-    role: 'investor',
-    firstName: 'Test',
-    lastName: 'User',
-    phoneNumber: '08012345678'
-  });
+  if (adminPassword) {
+    users.set(1, {
+      id: 1,
+      username: 'admin',
+      password: adminPassword,
+      email: 'admin@ireva.com',
+      role: 'admin',
+      firstName: 'Admin',
+      lastName: 'User',
+      phoneNumber: '08012345678'
+    });
+  }
+  
+  if (testUserPassword) {
+    users.set(2, {
+      id: 2,
+      username: 'testuser',
+      password: testUserPassword,
+      email: 'test@example.com',
+      role: 'investor',
+      firstName: 'Test',
+      lastName: 'User',
+      phoneNumber: '08012345678'
+    });
+  }
   
   nextId = 3;
   
