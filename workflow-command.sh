@@ -39,6 +39,6 @@ export REPLIT_PORT_BINDING="true"
 
 log_with_time "Environment configured for optimized startup"
 
-# Start the full iREVA application instead of just login server
-log_with_time "Starting full iREVA platform..."
-exec npm run dev
+# Start the simple homepage server for immediate display
+log_with_time "Starting iREVA homepage server..."
+exec node simple-homepage.js
