@@ -29,9 +29,15 @@ devToolsRouter.get('/run-command', (req: Request, res: Response) => {
     'echo test' // For testing the API endpoint
   ];
   
-  // Check if command is in whitelist
+  // Check if command is exactly in whitelist (exact match for security)
   if (!allowedCommands.includes(command)) {
     return res.status(403).send('Command not allowed');
+  }
+  
+  // Additional security: ensure no command injection characters
+  if (command.includes(';') || command.includes('&&') || command.includes('||') || 
+      command.includes('|') || command.includes('`') || command.includes('$')) {
+    return res.status(403).send('Command contains forbidden characters');
   }
   
   // Execute command
