@@ -1,254 +1,149 @@
-/**
- * Authentication Hook
- * 
- * Provides authentication state and methods with:
- * - User session management
- * - Login/logout functions
- * - Role-based authorization
- * - Integration with performance monitoring
- */
+import { useState, createContext, useContext, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import { useToast } from './use-toast';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useApiRequest } from './useApiRequest';
-import { usePerformanceMonitor } from './usePerformanceMonitor';
-import { Redirect } from 'wouter';
+// Create Auth Context
+const AuthContext = createContext(null);
 
-// Default authentication state
-const initialState = {
-  user: null,
-  isLoading: true,
-  error: null
-};
+// Auth Provider component
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-/**
- * Hook for authentication state and methods
- */
-export default function useAuth() {
-  // Use API request for authentication endpoints
-  const api = useApiRequest({
-    baseUrl: '/api',
-    retries: 1, // Lower retries for auth endpoints
-    circuitBreaker: {
-      enabled: true,
-      failureThreshold: 3
-    }
-  });
-  
-  // Performance monitoring
-  const { trackOperation } = usePerformanceMonitor('Auth', {
-    trackInteractions: true
-  });
-  
-  // Authentication state
-  const [auth, setAuth] = useState(initialState);
-  
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      const perfOp = trackOperation('checkAuthStatus');
-      
-      try {
-        // Try to get current user data
-        const userData = await api.get('user');
-        
-        perfOp.checkpoint('user-data-received');
-        
-        setAuth({
-          user: userData,
-          isLoading: false,
-          error: null
-        });
-        
-        perfOp.end('success');
-      } catch (error) {
-        // Not authenticated or server error
-        if (error.statusCode === 401) {
-          // Not authenticated, this is expected for logged out users
-          perfOp.checkpoint('not-authenticated');
-          
-          setAuth({
-            user: null,
-            isLoading: false,
-            error: null
-          });
-          
-          perfOp.end('not-authenticated');
-        } else {
-          // Server error or other issue
-          console.error('Auth check failed:', error);
-          
-          perfOp.checkpoint('error');
-          
-          setAuth({
-            user: null,
-            isLoading: false,
-            error: error.message || 'Failed to check authentication status'
-          });
-          
-          perfOp.end('failed');
-        }
+  // Function to check auth status
+  const checkAuthStatus = async () => {
+    try {
+      const response = await axios.get('/api/auth/check', { withCredentials: true });
+      if (response.data.authenticated) {
+        setUser(response.data.user);
+        return response.data.user;
+      } else {
+        setUser(null);
+        return null;
       }
-    };
-    
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+      setUser(null);
+      return null;
+    }
+  };
+
+  // Check auth status on mount
+  useEffect(() => {
     checkAuthStatus();
   }, []);
-  
-  /**
-   * Login function
-   */
-  const login = useCallback(async (credentials) => {
-    const perfOp = trackOperation('login');
-    
-    try {
-      setAuth(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      perfOp.checkpoint('request-start');
-      
-      // Call login API
-      const userData = await api.post('login', credentials);
-      
-      perfOp.checkpoint('login-successful');
-      
-      // Update auth state with user data
-      setAuth({
-        user: userData,
-        isLoading: false,
-        error: null
+
+  // Login mutation
+  const loginMutation = useMutation({
+    mutationFn: async (credentials) => {
+      const response = await axios.post('/api/auth/login', credentials, {
+        withCredentials: true
       });
-      
-      perfOp.end('success');
-      
-      return userData;
-    } catch (error) {
-      perfOp.checkpoint('login-failed');
-      
-      // Set error state
-      setAuth({
-        user: null,
-        isLoading: false,
-        error: error.message || 'Login failed'
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setUser(data.user);
+      // Invalidate all queries to refetch with new auth status
+      queryClient.invalidateQueries();
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+        variant: "success",
       });
-      
-      perfOp.end('failed');
-      
-      throw error;
+    },
+    onError: (error) => {
+      toast({
+        title: "Login failed",
+        description: error.response?.data?.message || "Invalid credentials",
+        variant: "destructive",
+      });
     }
-  }, [api, trackOperation]);
-  
-  /**
-   * Register function
-   */
-  const register = useCallback(async (userData) => {
-    const perfOp = trackOperation('register');
-    
-    try {
-      setAuth(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      perfOp.checkpoint('request-start');
-      
-      // Call register API
-      const newUser = await api.post('register', userData);
-      
-      perfOp.checkpoint('register-successful');
-      
-      // Update auth state with new user data
-      setAuth({
-        user: newUser,
-        isLoading: false,
-        error: null
+  });
+
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: async (userData) => {
+      const response = await axios.post('/api/auth/register', userData, {
+        withCredentials: true
       });
-      
-      perfOp.end('success');
-      
-      return newUser;
-    } catch (error) {
-      perfOp.checkpoint('register-failed');
-      
-      // Set error state
-      setAuth({
-        user: null,
-        isLoading: false,
-        error: error.message || 'Registration failed'
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setUser(data.user);
+      // Invalidate all queries to refetch with new auth status
+      queryClient.invalidateQueries();
+      toast({
+        title: "Registration successful",
+        description: "Welcome to iREVA!",
+        variant: "success",
       });
-      
-      perfOp.end('failed');
-      
-      throw error;
+    },
+    onError: (error) => {
+      toast({
+        title: "Registration failed",
+        description: error.response?.data?.message || "Could not create account",
+        variant: "destructive",
+      });
     }
-  }, [api, trackOperation]);
-  
-  /**
-   * Logout function
-   */
-  const logout = useCallback(async () => {
-    const perfOp = trackOperation('logout');
-    
-    try {
-      setAuth(prev => ({ ...prev, isLoading: true }));
-      
-      perfOp.checkpoint('request-start');
-      
-      // Call logout API
-      await api.post('logout');
-      
-      perfOp.checkpoint('logout-successful');
-      
-      // Clear auth state
-      setAuth({
-        user: null,
-        isLoading: false,
-        error: null
+  });
+
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/auth/logout', {}, {
+        withCredentials: true
       });
-      
-      perfOp.end('success');
-      
-      return true;
-    } catch (error) {
-      perfOp.checkpoint('logout-failed');
-      
-      // Set error state but still clear user
-      // (better to force logout client-side even if server fails)
-      setAuth({
-        user: null,
-        isLoading: false,
-        error: error.message || 'Logout failed'
+      return response.data;
+    },
+    onSuccess: () => {
+      setUser(null);
+      // Clear all queries from cache
+      queryClient.clear();
+      toast({
+        title: "Logout successful",
+        description: "You have been logged out",
+        variant: "success",
       });
-      
-      perfOp.end('failed');
-      
-      // Don't throw error for logout failures
-      console.error('Logout failed:', error);
-      return false;
+    },
+    onError: (error) => {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout failed",
+        description: "An error occurred during logout",
+        variant: "destructive",
+      });
     }
-  }, [api, trackOperation]);
-  
-  /**
-   * Check if user has required role
-   */
-  const hasRole = useCallback((role) => {
-    if (!auth.user) return false;
-    
-    // If role is an array, check if user has any of the roles
-    if (Array.isArray(role)) {
-      return role.some(r => auth.user.role === r);
-    }
-    
-    // Otherwise check specific role
-    return auth.user.role === role;
-  }, [auth.user]);
-  
-  return {
-    // State
-    user: auth.user,
-    isLoading: auth.isLoading,
-    error: auth.error,
-    
-    // Authentication methods
-    login,
-    register,
-    logout,
-    
-    // Authorization method
-    hasRole
-  };
-}
+  });
+
+  // Use query for persistent authentication state
+  const { isLoading } = useQuery({
+    queryKey: ['auth-status'],
+    queryFn: checkAuthStatus,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true,
+    refetchInterval: 15 * 60 * 1000, // 15 minutes
+  });
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      loginMutation,
+      registerMutation,
+      logoutMutation
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Custom hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

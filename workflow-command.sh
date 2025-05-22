@@ -39,6 +39,6 @@ export REPLIT_PORT_BINDING="true"
 
 log_with_time "Environment configured for optimized startup"
 
-# Start the simple homepage server for immediate display
-log_with_time "Starting iREVA homepage server..."
-exec node simple-homepage.js
+# Start the React application with your StaticHome homepage
+log_with_time "Starting iREVA React application..."
+exec npm run dev

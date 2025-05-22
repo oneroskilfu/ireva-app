@@ -1,77 +1,152 @@
-// TypeScript version of StaticHome for better compatibility
+// Clean, simple StaticHome component - your beautiful iREVA homepage
 import React from 'react';
-import { Helmet } from 'react-helmet';
-import './StaticHome.css';
 
 const StaticHome: React.FC = () => {
   return (
-    <div className="home-container">
-      {/* SEO HEAD */}
-      <Helmet>
-        <title>iREVA - Smart Real Estate Investing Platform</title>
-        <meta name="description" content="Invest in fractional real estate assets securely with crypto integration, smart contracts, and high ROI opportunities. Join iREVA today!" />
-        
-        {/* OpenGraph for social sharing */}
-        <meta property="og:title" content="iREVA - Smart Real Estate Investing Platform" />
-        <meta property="og:description" content="Invest smarter with iREVA. Verified properties, fractional ownership, crypto support, and blockchain security." />
-        <meta property="og:image" content="/assets/ireva-og-image.png" />
-        <meta property="og:url" content="https://yourdomain.com/static-home" />
-        <meta property="og:type" content="website" />
-        
-        {/* Twitter Card */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="iREVA - Smart Real Estate Investing Platform" />
-        <meta name="twitter:description" content="Real estate investments made simple and secure through crypto and blockchain technology." />
-        <meta name="twitter:image" content="/assets/ireva-og-image.png" />
-      </Helmet>
-      
+    <div style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
       {/* Hero Section */}
-      <section className="hero">
-        <div className="hero-content">
-          <h1>Welcome to iREVA</h1>
-          <p>Smart, Secure, and Crypto-Powered Real Estate Investing</p>
-          <a href="/signup" className="cta-button">Start Investing</a>
+      <section style={{
+        background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%)',
+        height: '90vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        color: '#fff'
+      }}>
+        <div>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '20px', fontWeight: 'bold' }}>
+            Welcome to iREVA
+          </h1>
+          <p style={{ fontSize: '1.2rem', marginBottom: '30px', maxWidth: '600px' }}>
+            Smart, Secure, and Crypto-Powered Real Estate Investing
+          </p>
+          <a 
+            href="/signup" 
+            style={{
+              display: 'inline-block',
+              padding: '12px 30px',
+              backgroundColor: '#ff7b00',
+              color: '#fff',
+              textDecoration: 'none',
+              borderRadius: '30px',
+              fontWeight: 'bold',
+              fontSize: '1.1rem',
+              transition: '0.3s',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e06600'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ff7b00'}
+          >
+            Start Investing
+          </a>
         </div>
       </section>
 
-      {/* Value Propositions */}
-      <section className="features">
-        <div className="feature-item">
-          <h3>Fractional Ownership</h3>
-          <p>Invest in prime properties with as little as $100.</p>
+      {/* Features Section */}
+      <section style={{
+        padding: '50px 20px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: '30px',
+        textAlign: 'center',
+        maxWidth: '1200px',
+        margin: '0 auto'
+      }}>
+        <div>
+          <h3 style={{ marginBottom: '10px', color: '#333', fontSize: '1.5rem' }}>
+            Fractional Ownership
+          </h3>
+          <p style={{ color: '#666', lineHeight: '1.6' }}>
+            Invest in prime properties with as little as $100.
+          </p>
         </div>
-        <div className="feature-item">
-          <h3>Crypto Enabled</h3>
-          <p>Deposit and invest using Bitcoin, USDT, and more.</p>
+        <div>
+          <h3 style={{ marginBottom: '10px', color: '#333', fontSize: '1.5rem' }}>
+            Crypto Enabled
+          </h3>
+          <p style={{ color: '#666', lineHeight: '1.6' }}>
+            Deposit and invest using Bitcoin, USDT, and more.
+          </p>
         </div>
-        <div className="feature-item">
-          <h3>Verified Properties</h3>
-          <p>Every project is vetted for transparency and ROI.</p>
+        <div>
+          <h3 style={{ marginBottom: '10px', color: '#333', fontSize: '1.5rem' }}>
+            Verified Properties
+          </h3>
+          <p style={{ color: '#666', lineHeight: '1.6' }}>
+            Every project is vetted for transparency and ROI.
+          </p>
         </div>
-        <div className="feature-item">
-          <h3>Smart Contract Secured</h3>
-          <p>Your transactions are blockchain-verified.</p>
+        <div>
+          <h3 style={{ marginBottom: '10px', color: '#333', fontSize: '1.5rem' }}>
+            Smart Contract Secured
+          </h3>
+          <p style={{ color: '#666', lineHeight: '1.6' }}>
+            Your transactions are blockchain-verified.
+          </p>
         </div>
       </section>
 
-      {/* How it Works */}
-      <section className="how-it-works">
-        <h2>How It Works</h2>
-        <div className="steps">
-          <div className="step">1. Sign Up</div>
-          <div className="step">2. Browse Properties</div>
-          <div className="step">3. Invest Seamlessly</div>
+      {/* How It Works */}
+      <section style={{
+        padding: '40px 20px',
+        backgroundColor: '#f9f9f9',
+        textAlign: 'center'
+      }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '20px', color: '#333' }}>
+          How It Works
+        </h2>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: '30px',
+          marginTop: '20px'
+        }}>
+          <div style={{
+            background: '#fff',
+            padding: '20px',
+            borderRadius: '10px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+            minWidth: '200px'
+          }}>
+            <strong>1. Sign Up</strong>
+          </div>
+          <div style={{
+            background: '#fff',
+            padding: '20px',
+            borderRadius: '10px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+            minWidth: '200px'
+          }}>
+            <strong>2. Browse Properties</strong>
+          </div>
+          <div style={{
+            background: '#fff',
+            padding: '20px',
+            borderRadius: '10px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+            minWidth: '200px'
+          }}>
+            <strong>3. Invest Seamlessly</strong>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="footer">
+      <footer style={{
+        background: '#333',
+        color: '#aaa',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
         <p>&copy; {new Date().getFullYear()} iREVA. All rights reserved.</p>
-        <div className="footer-links">
-          <a href="/about">About</a> | 
-          <a href="/privacy">Privacy</a> | 
-          <a href="/terms">Terms</a> | 
-          <a href="/contact">Contact</a>
+        <div style={{ marginTop: '10px' }}>
+          <a href="/about" style={{ color: '#aaa', margin: '0 8px', textDecoration: 'none' }}>About</a> | 
+          <a href="/privacy" style={{ color: '#aaa', margin: '0 8px', textDecoration: 'none' }}>Privacy</a> | 
+          <a href="/terms" style={{ color: '#aaa', margin: '0 8px', textDecoration: 'none' }}>Terms</a> | 
+          <a href="/contact" style={{ color: '#aaa', margin: '0 8px', textDecoration: 'none' }}>Contact</a>
         </div>
       </footer>
     </div>

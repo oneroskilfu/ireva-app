@@ -644,20 +644,4 @@ DashboardLayout.Footer = ({ className = "", ...props }) => (
 );
 
 // Export all components
-export {
-  Button,
-  Card,
-  Badge,
-  Alert,
-  Input,
-  Select,
-  Avatar,
-  StatCard,
-  Progress,
-  Table,
-  Tabs,
-  Dialog,
-  Spinner,
-  Tooltip,
-  DashboardLayout
-};
+// All components are already exported individually above

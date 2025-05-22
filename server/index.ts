@@ -5,6 +5,7 @@ import { registerRoutes } from "./routes";
 import { storage } from "./storage";
 import { initializeDb, db } from "./db";
 import { initializeAuth } from "./auth";
+import { setupVite } from "./vite";
 
 // Determine startup mode for optimization
 const useStaging = process.env.STAGED_LOADING === 'true';
@@ -83,7 +84,16 @@ if (useMinimalMode) {
       
       // Register routes immediately after services are initialized
       registerRoutes(app);
-      logWithTime('Ultra-minimal initialization complete');
+      logWithTime('Routes registered');
+      
+      // Setup Vite to serve React frontend with StaticHome
+      setupVite(app, server).then(() => {
+        logWithTime('Frontend setup complete - StaticHome ready');
+        logWithTime('Ultra-minimal initialization complete');
+      }).catch(err => {
+        console.error('Frontend setup error:', err);
+        logWithTime('Ultra-minimal initialization complete (frontend setup failed)');
+      });
     } catch (err) {
       logWithTime('ERROR: Ultra-minimal initialization failed');
       console.error(err);
@@ -131,7 +141,11 @@ if (useMinimalMode) {
     // Only register authenticated routes if both auth and db initialized successfully
     if (authSuccess && dbSuccess) {
       registerRoutes(app);
-      logWithTime('All routes registered - Server fully initialized');
+      logWithTime('Routes registered');
+      
+      // Setup Vite to serve React frontend with StaticHome
+      await setupVite(app, server);
+      logWithTime('Frontend setup complete - StaticHome ready');
     } else {
       logWithTime('WARNING: Some services failed to initialize properly');
     }
@@ -145,6 +159,10 @@ if (useMinimalMode) {
   
   // Register all routes
   server = registerRoutes(app);
+  
+  // Setup Vite to serve React frontend with StaticHome
+  await setupVite(app, server);
+  logWithTime('Frontend setup complete - StaticHome ready');
   
   // Initialize database
   initializeDb().then(() => {

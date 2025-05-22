@@ -2,12 +2,12 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
-import App from "./App";
+import SimpleApp from "./SimpleApp";
 
-// Using our main application with AuthProvider
+// Using simple app to bypass build errors and show StaticHome
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <SimpleApp />
   </React.StrictMode>
 );
 
