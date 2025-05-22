@@ -260,12 +260,14 @@ class KycService {
         .update(fileBuffer)
         .digest('hex');
       
-      // Generate encryption key
-      const encryptionKey = crypto.randomBytes(32).toString('hex');
+      // Generate encryption key and IV
+      const encryptionKey = crypto.randomBytes(32);
+      const iv = crypto.randomBytes(16);
       
       // Encrypt the file
-      const cipher = crypto.createCipher('aes-256-cbc', encryptionKey);
+      const cipher = crypto.createCipheriv('aes-256-cbc', encryptionKey, iv);
       const encryptedBuffer = Buffer.concat([
+        iv, // Prepend IV to encrypted data
         cipher.update(fileBuffer),
         cipher.final(),
       ]);
@@ -287,7 +289,7 @@ class KycService {
           expiryDate: documentData.expiryDate ? new Date(documentData.expiryDate) : null,
           fileHash,
           fileUrl: filePath,
-          fileEncryptionKey: encryptionKey,
+          fileEncryptionKey: encryptionKey.toString('hex'),
           metadata: documentData.metadata || {},
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -405,10 +407,15 @@ class KycService {
       tenantId = tenantId || document.tenantId;
       
       // Read encrypted file
-      const encryptedBuffer = await fs.readFile(document.fileUrl);
+      const encryptedData = await fs.readFile(document.fileUrl);
+      
+      // Extract IV and encrypted content
+      const iv = encryptedData.slice(0, 16);
+      const encryptedBuffer = encryptedData.slice(16);
       
       // Decrypt file
-      const decipher = crypto.createDecipher('aes-256-cbc', document.fileEncryptionKey);
+      const encryptionKey = Buffer.from(document.fileEncryptionKey, 'hex');
+      const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKey, iv);
       const buffer = Buffer.concat([
         decipher.update(encryptedBuffer),
         decipher.final(),
