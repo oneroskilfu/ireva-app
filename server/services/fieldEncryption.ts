@@ -142,11 +142,12 @@ export function decryptField(
     // Extract encryption details
     const { data, iv, authTag, meta } = payload as any;
     
-    // Create decipher
+    // Create decipher with explicit auth tag length for GCM mode
     const decipher = crypto.createDecipheriv(
       ENCRYPTION_ALGORITHM,
       Buffer.from(ENCRYPTION_KEY, 'hex'),
-      Buffer.from(iv, 'hex')
+      Buffer.from(iv, 'hex'),
+      { authTagLength: 16 } // Explicitly specify 16-byte auth tag length for AES-256-GCM
     );
     
     // Set auth tag
