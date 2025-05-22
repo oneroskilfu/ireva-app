@@ -39,6 +39,6 @@ export REPLIT_PORT_BINDING="true"
 
 log_with_time "Environment configured for optimized startup"
 
-# Use Node.js to start our optimized login server
-log_with_time "Starting ultra-minimal login server..."
-exec node login-server.cjs
+# Start the full iREVA application instead of just login server
+log_with_time "Starting full iREVA platform..."
+exec npm run dev

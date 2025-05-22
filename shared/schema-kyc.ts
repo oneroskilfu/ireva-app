@@ -9,7 +9,7 @@ import { pgTable, uuid, text, boolean, timestamp, integer, json } from 'drizzle-
 import { createInsertSchema } from 'drizzle-zod';
 import { relations } from 'drizzle-orm';
 import { z } from 'zod';
-import { tenantScopedTable } from './schema-tenant-scoped';
+import { tenantTable } from './schema-tenant-scoped';
 
 /**
  * KYC verification status values
@@ -96,7 +96,7 @@ export type FlagTypeEnum = typeof FlagType[keyof typeof FlagType];
 /**
  * KYC Verification table (tenant-scoped)
  */
-export const kycVerifications = tenantScopedTable('kyc_verifications', {
+export const kycVerifications = tenantTable('kyc_verifications', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: integer('user_id').notNull(),
   status: text('status')
@@ -121,7 +121,7 @@ export const kycVerifications = tenantScopedTable('kyc_verifications', {
 /**
  * KYC Document table (tenant-scoped)
  */
-export const kycDocuments = tenantScopedTable('kyc_documents', {
+export const kycDocuments = tenantTable('kyc_documents', {
   id: uuid('id').defaultRandom().primaryKey(),
   kycVerificationId: uuid('kyc_verification_id')
     .notNull()
@@ -148,7 +148,7 @@ export const kycDocuments = tenantScopedTable('kyc_documents', {
 /**
  * Risk Flags table (tenant-scoped)
  */
-export const riskFlags = tenantScopedTable('risk_flags', {
+export const riskFlags = tenantTable('risk_flags', {
   id: uuid('id').defaultRandom().primaryKey(),
   kycVerificationId: uuid('kyc_verification_id')
     .notNull()
@@ -169,7 +169,7 @@ export const riskFlags = tenantScopedTable('risk_flags', {
 /**
  * Screening Results table (tenant-scoped)
  */
-export const screeningResults = tenantScopedTable('screening_results', {
+export const screeningResults = tenantTable('screening_results', {
   id: uuid('id').defaultRandom().primaryKey(),
   kycVerificationId: uuid('kyc_verification_id')
     .notNull()
@@ -186,7 +186,7 @@ export const screeningResults = tenantScopedTable('screening_results', {
 /**
  * Suspicious Transaction Monitoring table (tenant-scoped)
  */
-export const suspiciousTransactions = tenantScopedTable('suspicious_transactions', {
+export const suspiciousTransactions = tenantTable('suspicious_transactions', {
   id: uuid('id').defaultRandom().primaryKey(),
   transactionId: uuid('transaction_id').notNull(),
   userId: integer('user_id').notNull(),

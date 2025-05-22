@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { createServer } from "http";
-import { registerRoutes, registerEssentialRoutes, registerAuthenticatedRoutes } from "./routes";
+import { registerRoutes } from "./routes";
 import { storage } from "./storage";
 import { initializeDb, db } from "./db";
 import { initializeAuth } from "./auth";
@@ -33,8 +33,8 @@ app.use(cors({
   credentials: true
 }));
 
-// Register essential routes that don't depend on auth/db
-registerEssentialRoutes(app);
+// Register all routes
+registerRoutes(app);
 
 let server: any;
 
@@ -82,7 +82,7 @@ if (useMinimalMode) {
       ]);
       
       // Register routes immediately after services are initialized
-      registerAuthenticatedRoutes(app);
+      registerRoutes(app);
       logWithTime('Ultra-minimal initialization complete');
     } catch (err) {
       logWithTime('ERROR: Ultra-minimal initialization failed');
@@ -130,7 +130,7 @@ if (useMinimalMode) {
     
     // Only register authenticated routes if both auth and db initialized successfully
     if (authSuccess && dbSuccess) {
-      registerAuthenticatedRoutes(app);
+      registerRoutes(app);
       logWithTime('All routes registered - Server fully initialized');
     } else {
       logWithTime('WARNING: Some services failed to initialize properly');
