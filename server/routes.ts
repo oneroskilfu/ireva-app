@@ -24,6 +24,7 @@ import tenantRoutes from './routes/tenant-routes';
 import tenantUserRoutes from './routes/tenant-user-routes';
 import invitationRoutes from './routes/invitation-routes';
 import healthRoutes from './routes/health-routes';
+import jobQueueRoutes from './routes/job-queue-routes';
 
 export function registerRoutes(app: Express) {
   // Set up request ID middleware
@@ -72,6 +73,7 @@ export function registerRoutes(app: Express) {
   app.use('/api', tenantUserRoutes);
   app.use('/api', invitationRoutes);
   app.use('/api', healthRoutes);
+  app.use('/api/jobs', jobQueueRoutes);
   
   // Add route to verify Redis is working
   app.get('/redis-test', (req, res) => {
@@ -135,6 +137,10 @@ export function registerRoutes(app: Express) {
       '/api/tenants/:tenantId/invitations',
       '/api/invitations',
       '/api/health',
+      '/api/jobs/email',
+      '/api/jobs/roi-distribution',
+      '/api/jobs/report',
+      '/api/jobs/stats',
       '/redis-test',
       '/logdna-test'
     ]
