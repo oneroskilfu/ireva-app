@@ -39,32 +39,39 @@ export class MemStorage implements IStorage {
     this.seedTestUsers();
   }
   
-  // Create test users with known passwords for testing
+  // Create test users with configurable passwords for testing
   private async seedTestUsers() {
     try {
+      // Use environment variables for test credentials, with secure random defaults
+      const testUserPassword = process.env.TEST_USER_PASSWORD || 
+        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const adminUserPassword = process.env.ADMIN_USER_PASSWORD || 
+        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
       // Create a regular test user
       const testUser = await this.createUser({
         username: 'testuser',
-        password: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', // This is 'password' hashed using SHA-256
+        password: testUserPassword,
         email: 'test@example.com',
-        firstName: 'Test',
-        lastName: 'User',
-        phoneNumber: '08012345678',
+        name: 'Test User',
+        phone: '08012345678',
         role: 'admin'
       });
       
       // Create an admin user
       const adminUser = await this.createUser({
         username: 'admin',
-        password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // This is 'adminpassword' hashed using SHA-256
+        password: adminUserPassword,
         email: 'admin@ireva.com',
-        firstName: 'Admin',
-        lastName: 'User',
-        phoneNumber: '08012345678',
+        name: 'Admin User',
+        phone: '08012345678',
         role: 'super_admin'
       });
       
       console.log('Created test users for development');
+      if (!process.env.TEST_USER_PASSWORD || !process.env.ADMIN_USER_PASSWORD) {
+        console.log('⚠️  Using random passwords for test users. Set TEST_USER_PASSWORD and ADMIN_USER_PASSWORD env vars for consistent credentials.');
+      }
     } catch (error) {
       console.error('Error creating test users:', error);
     }
@@ -93,13 +100,18 @@ export class MemStorage implements IStorage {
       username: insertUser.username,
       password: insertUser.password,
       email: insertUser.email,
-      role: insertUser.role || 'user',
-      firstName: insertUser.firstName || null,
-      lastName: insertUser.lastName || null,
-      phoneNumber: insertUser.phoneNumber || null,
+      name: insertUser.name,
+      role: insertUser.role || 'investor',
+      phone: insertUser.phone || null,
+      address: insertUser.address || null,
       profileImage: insertUser.profileImage || null,
-      bio: insertUser.bio || null,
-      createdAt: new Date()
+      isActive: insertUser.isActive ?? true,
+      isVerified: insertUser.isVerified ?? false,
+      kycStatus: insertUser.kycStatus || 'pending',
+      dateOfBirth: insertUser.dateOfBirth || null,
+      preferences: insertUser.preferences || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.users.set(id, user);
     return user;
@@ -258,15 +270,20 @@ export class DatabaseStorage implements IStorage {
       const usersToCreate: InsertUser[] = [];
       const existingUsernames = new Set(existingUsers.map((u: { username: string }) => u.username));
       
+      // Use environment variables for test credentials, with secure random defaults
+      const testUserPassword = process.env.TEST_USER_PASSWORD || 
+        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const adminUserPassword = process.env.ADMIN_USER_PASSWORD || 
+        Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
       // Only create users that don't exist
       if (!existingUsernames.has('testuser')) {
         usersToCreate.push({
           username: 'testuser',
-          password: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', // 'password' hashed with SHA-256
+          password: testUserPassword,
           email: 'test@example.com',
-          firstName: 'Test',
-          lastName: 'User',
-          phoneNumber: '08012345678',
+          name: 'Test User',
+          phone: '08012345678',
           role: 'admin'
         });
       }
@@ -274,11 +291,10 @@ export class DatabaseStorage implements IStorage {
       if (!existingUsernames.has('admin')) {
         usersToCreate.push({
           username: 'admin',
-          password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // 'adminpassword' hashed with SHA-256
+          password: adminUserPassword,
           email: 'admin@ireva.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          phoneNumber: '08012345678',
+          name: 'Admin User',
+          phone: '08012345678',
           role: 'super_admin'
         });
       }
@@ -290,15 +306,14 @@ export class DatabaseStorage implements IStorage {
           for (const user of usersToCreate) {
             try {
               await pool.query(
-                'INSERT INTO users (username, password, email, role, first_name, last_name, phone_number) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                'INSERT INTO users (username, password, email, name, role, phone) VALUES ($1, $2, $3, $4, $5, $6)',
                 [
                   user.username,
                   user.password,
                   user.email,
+                  user.name,
                   user.role || 'investor',
-                  user.firstName || null,
-                  user.lastName || null,
-                  user.phoneNumber || null
+                  user.phone || null
                 ]
               );
             } catch (err) {
