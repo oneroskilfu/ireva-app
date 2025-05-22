@@ -3,12 +3,15 @@
  * 
  * This file sets up session management with Redis for better scalability.
  * It supports distributed sessions across multiple application instances.
+ * Includes support for Redis Sentinel for high availability.
  */
 
 import session, { SessionData } from 'express-session';
 import { Request, Response, NextFunction } from 'express';
-import { createClient } from 'redis';
-import * as connectRedis from 'connect-redis';
+import { RedisStore as ConnectRedisStore } from 'connect-redis';
+
+// Import Redis client from our centralized Redis configuration
+import redisClient from './redis';
 
 // Extend the session type to include our custom fields
 declare module 'express-session' {
@@ -19,46 +22,15 @@ declare module 'express-session' {
 }
 
 // Environment variables
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'ireva-session-secret';
 const SESSION_MAX_AGE = parseInt(process.env.SESSION_MAX_AGE || '86400000', 10); // Default: 24 hours
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const SESSION_PREFIX = process.env.SESSION_PREFIX || 'ireva:sess:';
 
-// Create Redis client for sessions
-const redisClient = createClient({
-  url: REDIS_URL,
-  password: REDIS_PASSWORD,
-  socket: {
-    reconnectStrategy: (retries: number) => {
-      return Math.min(retries * 100, 10000);
-    },
-  },
-});
-
-// Handle Redis connection events
-redisClient.on('connect', () => {
-  console.log('Redis session client connected');
-});
-
-redisClient.on('error', (err) => {
-  console.error('Redis session client error:', err);
-});
-
-// Connect to Redis
-(async () => {
-  try {
-    await redisClient.connect();
-  } catch (err) {
-    console.error('Failed to connect to Redis for sessions:', err);
-  }
-})();
-
-// Create Redis store
-const RedisStore = connectRedis.default(session);
-const redisStore = new RedisStore({
-  client: redisClient as any, // Type workaround due to library compatibility
-  prefix: 'ireva:sess:',
+// Create Redis store using our pre-configured Redis client
+const redisStore = new ConnectRedisStore({
+  client: redisClient,
+  prefix: SESSION_PREFIX,
 });
 
 // Configure session options
@@ -118,6 +90,18 @@ export const trackUserActivity = (req: Request, res: Response, next: NextFunctio
   }
   
   next();
+};
+
+// Simple health check for the session store
+export const checkSessionStoreHealth = async (): Promise<boolean> => {
+  try {
+    // Check if the Redis connection for sessions is healthy
+    await redisClient.ping();
+    return true;
+  } catch (error) {
+    console.error('Session store health check failed:', error);
+    return false;
+  }
 };
 
 export default sessionMiddleware;

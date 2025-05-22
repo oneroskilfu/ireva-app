@@ -2,45 +2,93 @@
  * Redis Configuration
  * 
  * This file sets up Redis for caching and session storage.
- * It supports both standalone and clustered Redis configurations.
+ * It supports Sentinel for high availability and automatic failover.
  */
 
-import { createClient } from 'redis';
-import { promisify } from 'util';
+import { createClient, RedisClientType } from 'redis';
 
 // Environment variables
+const REDIS_MODE = process.env.REDIS_MODE || 'standalone'; // 'standalone', 'sentinel', or 'cluster'
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
-const USE_CLUSTER = process.env.REDIS_CLUSTER === 'true';
+const REDIS_SENTINEL_NAME = process.env.REDIS_SENTINEL_NAME || 'mymaster';
+const REDIS_SENTINEL_URLS = (process.env.REDIS_SENTINEL_URLS || '')
+  .split(',')
+  .filter(url => url.trim() !== '');
+const REDIS_KEY_PREFIX = process.env.REDIS_KEY_PREFIX || 'ireva:';
 
-// Create Redis client with options
-const clientOptions = {
-  url: REDIS_URL,
-  password: REDIS_PASSWORD,
-  socket: {
-    reconnectStrategy: (retries: number) => {
-      // Exponential backoff with max delay of 10 seconds
-      return Math.min(retries * 100, 10000);
-    },
-  },
+// Connection options for different Redis modes
+const connectionOptions = () => {
+  // Basic connection options shared by all modes
+  const options: any = {
+    socket: {
+      reconnectStrategy: (retries: number) => {
+        // Exponential backoff with max delay of 10 seconds
+        return Math.min(retries * 100, 10000);
+      },
+      connectTimeout: 10000,
+    }
+  };
+  
+  // Add password if provided
+  if (REDIS_PASSWORD) {
+    options.password = REDIS_PASSWORD;
+  }
+  
+  // Configure based on selected mode
+  switch (REDIS_MODE) {
+    case 'sentinel':
+      if (REDIS_SENTINEL_URLS.length === 0) {
+        console.warn('Sentinel mode selected but no sentinel URLs provided. Falling back to standalone.');
+        return { ...options, url: REDIS_URL };
+      }
+      
+      return {
+        ...options,
+        sentinel: {
+          name: REDIS_SENTINEL_NAME,
+          sentinels: REDIS_SENTINEL_URLS.map(url => {
+            const parsedUrl = new URL(url);
+            return {
+              host: parsedUrl.hostname,
+              port: parseInt(parsedUrl.port || '26379', 10)
+            };
+          }),
+          password: REDIS_PASSWORD
+        }
+      };
+      
+    case 'cluster':
+      console.warn('Redis Cluster mode not fully implemented, falling back to standalone');
+      return { ...options, url: REDIS_URL };
+      
+    case 'standalone':
+    default:
+      return { ...options, url: REDIS_URL };
+  }
 };
 
-// Create Redis client
-const redisClient = createClient(clientOptions);
+// Create Redis client with appropriate options
+const redisClient: RedisClientType = createClient(connectionOptions());
 
 // Handle connection events
 redisClient.on('connect', () => {
-  console.log('Redis client connected');
+  console.log(`Redis client connected in ${REDIS_MODE} mode`);
 });
 
 redisClient.on('error', (err) => {
   console.error('Redis client error:', err);
 });
 
+redisClient.on('reconnecting', () => {
+  console.log('Redis client reconnecting...');
+});
+
 // Connect to Redis
 (async () => {
   try {
     await redisClient.connect();
+    console.log('Redis connection established successfully');
   } catch (err) {
     console.error('Failed to connect to Redis:', err);
   }
@@ -49,7 +97,8 @@ redisClient.on('error', (err) => {
 // Cache utility functions
 export const getCache = async (key: string): Promise<string | null> => {
   try {
-    return await redisClient.get(key);
+    const prefixedKey = `${REDIS_KEY_PREFIX}${key}`;
+    return await redisClient.get(prefixedKey);
   } catch (err) {
     console.error('Redis get error:', err);
     return null;
@@ -62,10 +111,11 @@ export const setCache = async (
   expirationInSeconds?: number
 ): Promise<boolean> => {
   try {
+    const prefixedKey = `${REDIS_KEY_PREFIX}${key}`;
     if (expirationInSeconds) {
-      await redisClient.set(key, value, { EX: expirationInSeconds });
+      await redisClient.set(prefixedKey, value, { EX: expirationInSeconds });
     } else {
-      await redisClient.set(key, value);
+      await redisClient.set(prefixedKey, value);
     }
     return true;
   } catch (err) {
@@ -76,10 +126,81 @@ export const setCache = async (
 
 export const deleteCache = async (key: string): Promise<boolean> => {
   try {
-    await redisClient.del(key);
+    const prefixedKey = `${REDIS_KEY_PREFIX}${key}`;
+    await redisClient.del(prefixedKey);
     return true;
   } catch (err) {
     console.error('Redis delete error:', err);
+    return false;
+  }
+};
+
+/**
+ * Delete keys matching a pattern using Redis SCAN
+ * This is useful for cache invalidation of related items
+ */
+export const deleteCacheByPattern = async (pattern: string): Promise<number> => {
+  try {
+    const prefixedPattern = `${REDIS_KEY_PREFIX}${pattern}`;
+    let cursor = 0;
+    let deletedCount = 0;
+    
+    // SCAN approach is more efficient than KEYS for production systems
+    do {
+      const reply = await redisClient.scan(cursor, {
+        MATCH: prefixedPattern,
+        COUNT: 100
+      });
+      
+      cursor = reply.cursor;
+      
+      if (reply.keys.length > 0) {
+        await redisClient.del(reply.keys);
+        deletedCount += reply.keys.length;
+      }
+    } while (cursor !== 0);
+    
+    return deletedCount;
+  } catch (err) {
+    console.error('Redis pattern delete error:', err);
+    return 0;
+  }
+};
+
+/**
+ * Set multiple cache entries in a single operation
+ */
+export const setCacheMulti = async (
+  entries: Array<{ key: string; value: string; expiration?: number }>
+): Promise<boolean> => {
+  try {
+    // Use multi/exec for atomic operations
+    const multi = redisClient.multi();
+    
+    for (const entry of entries) {
+      const prefixedKey = `${REDIS_KEY_PREFIX}${entry.key}`;
+      if (entry.expiration) {
+        multi.set(prefixedKey, entry.value, { EX: entry.expiration });
+      } else {
+        multi.set(prefixedKey, entry.value);
+      }
+    }
+    
+    await multi.exec();
+    return true;
+  } catch (err) {
+    console.error('Redis multi set error:', err);
+    return false;
+  }
+};
+
+// Health check function
+export const healthCheck = async (): Promise<boolean> => {
+  try {
+    const result = await redisClient.ping();
+    return result === 'PONG';
+  } catch (err) {
+    console.error('Redis health check failed:', err);
     return false;
   }
 };
