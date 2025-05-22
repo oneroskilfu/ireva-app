@@ -62,7 +62,7 @@ server.listen(5000, '0.0.0.0', () => {
   
   const appProcess = spawn('npm', ['run', 'dev'], {
     stdio: 'inherit',
-    shell: true
+    shell: false
   });
   
   appProcess.on('error', (err) => {
@@ -84,7 +84,7 @@ server.on('error', (err) => {
     // Try to start the application even if the port is in use
     const appProcess = spawn('npm', ['run', 'dev'], {
       stdio: 'inherit',
-      shell: true
+      shell: false
     });
   }
 });
