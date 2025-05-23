@@ -181,11 +181,11 @@ if (useMinimalMode) {
   await setupVite(app, server);
   logWithTime('Frontend setup complete - StaticHome ready');
   
-  // Initialize database
+  // Initialize database (non-blocking for server stability)
   initializeDb().then(() => {
     logWithTime('Database initialized');
   }).catch(err => {
-    console.error('Error initializing database:', err);
+    console.warn('Database initialization failed (server continues):', err.message);
   });
   
   // Start server
