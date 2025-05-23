@@ -20,6 +20,8 @@ services:
         fromDatabase:
           name: ireva-postgres
           property: connectionString
+      - key: DB_INITIALIZATION_MODE
+        value: "production"
       - key: JWT_SECRET
         generateValue: true
       - key: STRIPE_SECRET_KEY

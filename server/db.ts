@@ -116,12 +116,19 @@ export const initializeDb = async () => {
   dbInitPromise = (async () => {
     // Enhanced DATABASE_URL validation for production deployment
     const databaseUrl = process.env.DATABASE_URL;
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isRenderBuild = process.env.RENDER === 'true';
+    
     if (!databaseUrl) {
-      // Provide specific guidance for Render deployment
-      const errorMessage = process.env.NODE_ENV === 'production' 
-        ? "DATABASE_URL environment variable is required for production deployment. Please ensure the database service is properly linked in your render.yaml configuration."
-        : "DATABASE_URL must be set. Did you forget to provision a database?";
-      throw new Error(errorMessage);
+      if (isRenderBuild) {
+        // During Render build phase, database may not be available yet
+        logDbTime('DATABASE_URL not available during build phase - this is expected on Render');
+        throw new Error('Database not available during build phase - deployment will retry at runtime');
+      } else if (isProduction) {
+        throw new Error("DATABASE_URL environment variable is required for production deployment. Please ensure the database service is properly linked in your render.yaml configuration.");
+      } else {
+        throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+      }
     }
     
     // Validate URL format to catch configuration issues early
