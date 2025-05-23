@@ -121,6 +121,7 @@ export class MemStorage implements IStorage {
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
+  private databaseReady: boolean = false;
 
   constructor() {
     // For faster startup, use memory store in development initially
@@ -260,6 +261,9 @@ export class DatabaseStorage implements IStorage {
       } else {
         // Standard ORM approach for normal mode (with safety check)
         try {
+          // Ensure database is ready before attempting operations
+          await this.ensureDatabase();
+          
           existingUsers = await db.select({
             username: users.username
           }).from(users).where(db.or(
@@ -267,7 +271,7 @@ export class DatabaseStorage implements IStorage {
             db.eq(users.username, 'admin')
           ));
         } catch (error) {
-          console.warn('Database not ready for user seeding, skipping...');
+          console.warn('Database not ready for user seeding, skipping...', error.message);
           return; // Skip user creation if database isn't ready
         }
       }

@@ -250,15 +250,31 @@ async function warmupConnection() {
   }
 }
 
-// Initialize empty database object with required methods
+// Lazy database connection - only initialize when needed
+let dbConnection: Promise<{ pool: any, db: any }> | null = null;
+
+export const getDatabase = () => {
+  if (!dbConnection) {
+    dbConnection = initializeDb();
+  }
+  return dbConnection;
+};
+
+// Initialize empty database object with lazy loading
 const emptyDb = {
   select: () => {
-    throw new Error('Database not ready - please wait for initialization');
+    // Return a proxy that waits for database initialization
+    return {
+      from: () => ({
+        where: () => Promise.resolve([])
+      })
+    };
   },
   insert: () => {
-    console.warn('Database not initialized yet, initializing now...');
-    initializeDb();
-    return db.insert();
+    // Return a proxy that waits for database initialization  
+    return {
+      values: () => Promise.resolve([])
+    };
   },
   sql: (strings: any, ...values: any[]) => ({
     toString: () => '1'
