@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { initializeDb, db } from "./db";
 import { initializeAuth } from "./auth";
 import { setupVite } from "./vite";
+import { setupStaticServing } from "./static-serve";
 
 // Determine startup mode for optimization
 const useStaging = process.env.STAGED_LOADING === 'true';
@@ -91,14 +92,21 @@ if (useMinimalMode) {
       registerRoutes(app);
       logWithTime('Routes registered');
       
-      // Setup Vite to serve React frontend with StaticHome
-      setupVite(app, server).then(() => {
-        logWithTime('Frontend setup complete - StaticHome ready');
+      // In production, serve static files; in development, use Vite
+      if (process.env.NODE_ENV === 'production') {
+        setupStaticServing(app);
+        logWithTime('Production static serving enabled - StaticHome ready');
         logWithTime('Ultra-minimal initialization complete');
-      }).catch(err => {
-        console.error('Frontend setup error:', err);
-        logWithTime('Ultra-minimal initialization complete (frontend setup failed)');
-      });
+      } else {
+        // Setup Vite to serve React frontend with StaticHome
+        setupVite(app, server).then(() => {
+          logWithTime('Frontend setup complete - StaticHome ready');
+          logWithTime('Ultra-minimal initialization complete');
+        }).catch(err => {
+          console.error('Frontend setup error:', err);
+          logWithTime('Ultra-minimal initialization complete (frontend setup failed)');
+        });
+      }
     } catch (err) {
       logWithTime('ERROR: Ultra-minimal initialization failed');
       console.error(err);
