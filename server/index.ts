@@ -2,8 +2,8 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
-// import { storage } from "./storage"; // Temporarily disabled for development
-// import { initializeDb, db } from "./db"; // Temporarily disabled for development
+import { storage } from "./storage";
+import { initializeDb, db } from "./db";
 import { initializeAuth } from "./auth";
 import { setupVite } from "./vite";
 import { setupStaticServing } from "./static-serve";
