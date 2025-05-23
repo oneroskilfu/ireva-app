@@ -1,0 +1,48 @@
+# Render.com deployment configuration for iREVA Platform
+services:
+  # Backend API Server
+  - type: web
+    name: ireva-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start:server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    autoDeploy: true
+
+  # Frontend Static Site
+  - type: web
+    name: ireva-frontend
+    env: static
+    plan: free
+    buildCommand: npm install && npm run build:client
+    staticPublishPath: client/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://ireva-backend.onrender.com
+    autoDeploy: true
+
+# Database
+databases:
+  - name: ireva-postgres
+    databaseName: ireva_production
+    user: ireva_user
+    plan: free
