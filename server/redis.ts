@@ -89,18 +89,38 @@ redisClient.on('reconnecting', () => {
   console.log('Redis client reconnecting...');
 });
 
-// Connect to Redis
+// Enhanced graceful fallback for production deployment
+let redisConnected = false;
+const REDIS_GRACEFUL_FALLBACK = process.env.REDIS_GRACEFUL_FALLBACK === 'true';
+
+// Connect to Redis with production-safe error handling
 (async () => {
   try {
-    await redisClient.connect();
-    console.log('Redis connection established successfully');
+    if (REDIS_GRACEFUL_FALLBACK) {
+      // In production, attempt connection but don't fail if Redis unavailable
+      const connectPromise = redisClient.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Redis connection timeout')), 3000)
+      );
+      
+      await Promise.race([connectPromise, timeoutPromise]);
+      redisConnected = true;
+      console.log('Redis connection established successfully');
+    } else {
+      await redisClient.connect();
+      redisConnected = true;
+      console.log('Redis connection established successfully');
+    }
   } catch (err) {
-    console.error('Failed to connect to Redis:', err);
+    console.log('Redis unavailable, using memory sessions for graceful degradation');
+    redisConnected = false;
   }
 })();
 
 // Cache utility functions
 export const getCache = async (key: string): Promise<string | null> => {
+  if (!redisConnected) return null;
+  
   try {
     const prefixedKey = `${REDIS_KEY_PREFIX}${key}`;
     return await redisClient.get(prefixedKey);
@@ -115,6 +135,8 @@ export const setCache = async (
   value: string,
   expirationInSeconds?: number
 ): Promise<boolean> => {
+  if (!redisConnected) return false;
+  
   try {
     const prefixedKey = `${REDIS_KEY_PREFIX}${key}`;
     if (expirationInSeconds) {

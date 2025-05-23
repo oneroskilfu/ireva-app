@@ -5,31 +5,35 @@ services:
     name: ireva-backend
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: npm run start:server
+    buildCommand: npm install && npm run build
+    startCommand: node server/index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      - key: MINIMAL_STARTUP
+        value: "true"
+      - key: REDIS_GRACEFUL_FALLBACK
+        value: "true"
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: ireva-postgres
+          property: connectionString
       - key: JWT_SECRET
-        sync: false
-      - key: REDIS_URL
-        sync: false
+        generateValue: true
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: OPENAI_API_KEY
         sync: false
     autoDeploy: true
 
-  # Frontend Static Site
+  # Frontend Static Site  
   - type: web
     name: ireva-frontend
     env: static
     plan: free
-    buildCommand: npm install && npm run build:client
+    buildCommand: cd client && npm install && npm run build
     staticPublishPath: client/dist
     routes:
       - type: rewrite

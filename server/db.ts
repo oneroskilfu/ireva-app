@@ -114,10 +114,21 @@ export const initializeDb = async () => {
   
   // Create a promise for the initialization process
   dbInitPromise = (async () => {
-    if (!process.env.DATABASE_URL) {
-      throw new Error(
-        "DATABASE_URL must be set. Did you forget to provision a database?",
-      );
+    // Enhanced DATABASE_URL validation for production deployment
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      // Provide specific guidance for Render deployment
+      const errorMessage = process.env.NODE_ENV === 'production' 
+        ? "DATABASE_URL environment variable is required for production deployment. Please ensure the database service is properly linked in your render.yaml configuration."
+        : "DATABASE_URL must be set. Did you forget to provision a database?";
+      throw new Error(errorMessage);
+    }
+    
+    // Validate URL format to catch configuration issues early
+    try {
+      new URL(databaseUrl);
+    } catch (urlError) {
+      throw new Error(`Invalid DATABASE_URL format. Please check your database connection string: ${urlError}`);
     }
     
     // Ultra-minimal mode = absolute fastest initialization possible
