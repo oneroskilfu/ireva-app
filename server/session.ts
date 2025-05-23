@@ -27,15 +27,35 @@ const SESSION_MAX_AGE = parseInt(process.env.SESSION_MAX_AGE || '86400000', 10);
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const SESSION_PREFIX = process.env.SESSION_PREFIX || 'ireva:sess:';
 
-// Create Redis store using our pre-configured Redis client
-const redisStore = new ConnectRedisStore({
-  client: redisClient,
-  prefix: SESSION_PREFIX,
-});
+// Create Redis store using our pre-configured Redis client with graceful fallback
+import MemoryStore from 'memorystore';
+
+// Create fallback memory store for when Redis is unavailable
+const memoryStore = MemoryStore(session);
+
+// Try to use Redis, but gracefully fall back to memory store if Redis fails
+let sessionStore;
+try {
+  // Check if Redis client is connected
+  if (redisClient.isReady) {
+    sessionStore = new ConnectRedisStore({
+      client: redisClient,
+      prefix: SESSION_PREFIX,
+    });
+    console.log('Session store: Using Redis for distributed sessions');
+  } else {
+    throw new Error('Redis not ready');
+  }
+} catch (error) {
+  sessionStore = new memoryStore({
+    checkPeriod: 86400000, // Prune expired entries every 24h
+  });
+  console.log('Session store: Using memory store (Redis unavailable)');
+}
 
 // Configure session options
 const sessionOptions: session.SessionOptions = {
-  store: redisStore,
+  store: sessionStore,
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,

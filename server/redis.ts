@@ -23,10 +23,15 @@ const connectionOptions = () => {
   const options: any = {
     socket: {
       reconnectStrategy: (retries: number) => {
-        // Exponential backoff with max delay of 10 seconds
-        return Math.min(retries * 100, 10000);
+        // Limit retries to prevent endless reconnection spam
+        if (retries > 3) {
+          console.log('Redis connection failed after 3 retries, giving up for graceful degradation');
+          return false; // Stop retrying
+        }
+        // Exponential backoff with max delay of 5 seconds for faster startup
+        return Math.min(retries * 500, 5000);
       },
-      connectTimeout: 10000,
+      connectTimeout: 5000, // Reduced timeout for faster startup
     }
   };
   

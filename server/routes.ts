@@ -122,11 +122,8 @@ export function registerRoutes(app: Express) {
     });
   });
   
-  // Catch-all error handler
-  app.use((req, res) => {
-    logger.warn(`Route not found: ${req.method} ${req.url}`);
-    res.status(404).json({ error: 'Not Found' });
-  });
+  // Note: Catch-all handler removed to allow Vite middleware to serve frontend routes
+  // API 404s will be handled by individual route handlers
   
   // Create and return HTTP server
   const httpServer = createServer(app);
