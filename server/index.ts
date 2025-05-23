@@ -68,12 +68,17 @@ if (useMinimalMode) {
           }
         })(),
         
-        // Database initialization
+        // Database initialization - only at runtime, never during build
         (async () => {
           try {
             logWithTime('Fast-starting database...');
-            await initializeDb();
-            logWithTime('Database ready');
+            // Only initialize if not in build phase
+            if (process.env.RENDER !== 'true' || process.env.DATABASE_URL) {
+              await initializeDb();
+              logWithTime('Database ready');
+            } else {
+              logWithTime('Skipping database init during build phase');
+            }
             return true;
           } catch (err) {
             console.error('Database init error:', err);
