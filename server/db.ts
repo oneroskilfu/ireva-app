@@ -85,10 +85,12 @@ async function importDatabaseModules() {
   // Store for future reference
   neonConfig = neonCfg;
   
-  // Set up neon configuration for WebSocket support with aggressive timeouts
+  // Set up neon configuration for production-ready WebSocket support
   neonConfig.webSocketConstructor = wsModule.default;
-  neonConfig.connectionTimeoutMillis = 400; // Ultra-aggressive timeout
-  neonConfig.pipeliningEnabled = false; // Disable pipelining for faster initial connection
+  neonConfig.connectionTimeoutMillis = 10000; // Production-safe timeout (10 seconds)
+  neonConfig.pipeliningEnabled = true; // Enable for better performance
+  neonConfig.fetchConnectionCache = true; // Cache connections for stability
+  neonConfig.useSecureWebSocket = true; // Secure connections for production
   
   logDbTime('Module imports completed');
   return { Pool, drizzle };
@@ -151,17 +153,15 @@ export const initializeDb = async () => {
       const startPoolCreation = Date.now();
       pool = new PoolClass({ 
         connectionString: process.env.DATABASE_URL,
-        max: 2, // Absolute minimum for basic operation
-        min: 0, // Create connections only when needed
-        idleTimeoutMillis: 5000, // Super aggressive idle timeout
-        connectionTimeoutMillis: 300, // Ultra-fast timeout
+        max: 5, // Production-ready pool size
+        min: 1, // Keep minimum connection for stability
+        idleTimeoutMillis: 30000, // 30 seconds for production stability
+        connectionTimeoutMillis: 10000, // 10 seconds - production safe
         allowExitOnIdle: true, // Enable clean shutdown
-        keepAlive: false, // Disable for faster startup
-        statement_timeout: 2000, // Tight query timeout
-        query_timeout: 1500, // Even tighter overall timeout
-        application_name: 'ireva_fast_init' // For monitoring
-        // Note: We're not using skipValidation as it's not part of standard PoolConfig
-        // Instead we handle validation separately for ultra-minimal mode
+        keepAlive: true, // Enable keepalive for production
+        statement_timeout: 30000, // 30 seconds for complex queries
+        query_timeout: 25000, // 25 seconds overall timeout
+        application_name: 'ireva_platform_production' // Clear production identifier
       });
       logDbTime(`Pool creation took ${Date.now() - startPoolCreation}ms`);
       
