@@ -11,28 +11,15 @@ build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [[ports]]
-localPort = 3000
-externalPort = 80
-
-[[ports]]
-localPort = 3001
-
-[[ports]]
 localPort = 5000
-
-[[ports]]
-localPort = 5001
-externalPort = 3001
+externalPort = 80
 
 [[ports]]
 localPort = 5002
 externalPort = 3000
 
-[[ports]]
-localPort = 5050
-
 [workflows]
-runButton = "Start application"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -46,14 +33,14 @@ args = "Start application"
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
-mode = "sequential"
 
 [workflows.workflow.metadata]
 agentRequireRestartOnSave = false
 
 [[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "./workflow-command.sh"
+task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
-task = "packager.installForAll"
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000

@@ -1,0 +1,42 @@
+2:35:37 AM [vite] Pre-transform error: Failed to load url /src/main.tsx?v=hl1uCEvXhP-MeZnWqIC2u (resolved id: /src/main.tsx?v=hl1uCEvXhP-MeZnWqIC2u). Does the file exist?
+Error creating test users: TypeError: Cannot read properties of undefined (reading 'select')
+Database initialization error: TypeError: Cannot read properties of undefined (reading 'select')
+[2025-05-23 02:35:49] [ERROR]: Unhandled Promise Rejection
+    "name": "Error",
+    "stack": "Error: DATABASE_URL must be set. Did you forget to provision a database?\n    at file:///opt/render/project/src/dist/index.js:1000:17\n    at initializeDb (file:///opt/render/project/src/dist/index.js:1067:9)\n    at Proxy.select (file:///opt/render/project/src/dist/index.js:1073:9)\n    at DatabaseStorage.initializeDatabase (file:///opt/render/project/src/dist/index.js:1350:38)\n    at new DatabaseStorage (file:///opt/render/project/src/dist/index.js:1297:12)\n    at file:///opt/render/project/src/dist/index.js:1446:15\n    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)"
+[2025-05-23 02:35:49] [ERROR]: Unhandled Promise Rejection
+    "name": "Error",
+    "stack": "Error: DATABASE_URL must be set. Did you forget to provision a database?\n    at file:///opt/render/project/src/dist/index.js:1000:17\n    at initializeDb (file:///opt/render/project/src/dist/index.js:1067:9)\n    at Proxy.select (file:///opt/render/project/src/dist/index.js:1073:9)\n    at DatabaseStorage.initializeDatabase (file:///opt/render/project/src/dist/index.js:1350:38)\n    at new DatabaseStorage (file:///opt/render/project/src/dist/index.js:1297:12)\n    at file:///opt/render/project/src/dist/index.js:1446:15\n    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)"
+Redis client error: AggregateError [ECONNREFUSED]: 
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:6379
+        at createConnectionError (node:net:1675:14)
+    Error: connect ECONNREFUSED 127.0.0.1:6379
+        at createConnectionError (node:net:1675:14)
+Error initializing database: Error: DATABASE_URL must be set. Did you forget to provision a database?
+Redis client error: AggregateError [ECONNREFUSED]: 
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:6379
+        at createConnectionError (node:net:1675:14)
+    Error: connect ECONNREFUSED 127.0.0.1:6379
+        at createConnectionError (node:net:1675:14)
+Redis client error: AggregateError [ECONNREFUSED]: 
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:6379
+        at createConnectionError (node:net:1675:14)
+    Error: connect ECONNREFUSED 127.0.0.1:6379
+        at createConnectionError (node:net:1675:14)
+Redis client error: AggregateError [ECONNREFUSED]: 
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:6379
+        at createConnectionError (node:net:1675:14)
+    Error: connect ECONNREFUSED 127.0.0.1:6379
+        at createConnectionError (node:net:1675:14)
+Redis client error: AggregateError [ECONNREFUSED]: 
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:6379
+
+        at createConnectionError (node:net:1675:14)
+    Error: connect ECONNREFUSED 127.0.0.1:6379
+        at createConnectionError (node:net:1675:14)
+  [errors]: [
