@@ -179,13 +179,51 @@ if (useMinimalMode) {
   
   // Start server FIRST for fastest port binding
   const PORT = process.env.PORT || 5000;
-  server.listen(PORT, '0.0.0.0', () => {
-    logWithTime(`Server ready on port ${PORT}`);
-    
-    // Initialize services in background after port is bound
-    initializeServices().catch(err => {
-      console.warn('Background service initialization failed:', err.message);
-    });
+  server.listen(PORT, '0.0.0.0', (err: any) => {
+    if (err) {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${PORT} busy, trying alternate ports...`);
+        // Try ports 5001, 5002, etc.
+        tryAlternatePort(server, parseInt(PORT.toString()) + 1);
+      } else {
+        console.error('Server startup error:', err);
+        process.exit(1);
+      }
+    } else {
+      logWithTime(`Server ready on port ${PORT}`);
+      
+      // Initialize services in background after port is bound
+      initializeServices().catch(err => {
+        console.warn('Background service initialization failed:', err.message);
+      });
+    }
+  });
+}
+
+// Try alternate ports if main port is busy
+function tryAlternatePort(server: any, port: number) {
+  if (port > 5010) {
+    console.error('Unable to find available port');
+    process.exit(1);
+  }
+  
+  server.listen(port, '0.0.0.0', (err: any) => {
+    if (err) {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${port} also busy, trying ${port + 1}...`);
+        tryAlternatePort(server, port + 1);
+      } else {
+        console.error('Server startup error:', err);
+        process.exit(1);
+      }
+    } else {
+      logWithTime(`Server ready on alternate port ${port}`);
+      
+      // Initialize services in background after port is bound
+      initializeServices().catch(err => {
+        console.warn('Background service initialization failed:', err.message);
+      });
+    }
   });
 }
 
