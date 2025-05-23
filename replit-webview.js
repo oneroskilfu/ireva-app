@@ -110,17 +110,26 @@ app.get('*', (req, res) => {
 
     <script>
         function openMainApp() {
-            // Try to open the main app on port 5000
+            // Redirect to main app on port 5000 in same window for seamless experience
             const mainAppUrl = window.location.origin.replace(':3000', ':5000');
-            window.open(mainAppUrl, '_blank');
+            window.location.href = mainAppUrl;
         }
         
-        // Auto-refresh to check if main app is ready
+        // Auto-redirect after 5 seconds for better UX
         setTimeout(() => {
-            fetch('/health-check')
-                .then(() => openMainApp())
-                .catch(() => console.log('Main app still loading...'));
-        }, 3000);
+            console.log('Auto-redirecting to main iREVA application...');
+            openMainApp();
+        }, 5000);
+        
+        // Try immediate redirect if main app responds
+        fetch('http://localhost:5000/')
+            .then(response => {
+                if (response.ok) {
+                    console.log('Main app ready, redirecting immediately...');
+                    setTimeout(openMainApp, 1000);
+                }
+            })
+            .catch(() => console.log('Main app still initializing...'));
     </script>
 </body>
 </html>

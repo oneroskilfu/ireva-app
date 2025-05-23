@@ -39,6 +39,10 @@ export REPLIT_PORT_BINDING="true"
 
 log_with_time "Environment configured for optimized startup"
 
+# Start webview bridge on port 3000 for Replit webview
+log_with_time "Starting webview bridge on port 3000..."
+node replit-webview.js &
+
 # Start the React application with your StaticHome homepage
 log_with_time "Starting iREVA React application..."
 exec npm run dev
