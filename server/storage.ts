@@ -258,13 +258,18 @@ export class DatabaseStorage implements IStorage {
           existingUsers = [];
         }
       } else {
-        // Standard ORM approach for normal mode
-        existingUsers = await db.select({
-          username: users.username
-        }).from(users).where(db.or(
-          db.eq(users.username, 'testuser'),
-          db.eq(users.username, 'admin')
-        ));
+        // Standard ORM approach for normal mode (with safety check)
+        try {
+          existingUsers = await db.select({
+            username: users.username
+          }).from(users).where(db.or(
+            db.eq(users.username, 'testuser'),
+            db.eq(users.username, 'admin')
+          ));
+        } catch (error) {
+          console.warn('Database not ready for user seeding, skipping...');
+          return; // Skip user creation if database isn't ready
+        }
       }
       
       const usersToCreate: InsertUser[] = [];

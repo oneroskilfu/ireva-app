@@ -253,9 +253,7 @@ async function warmupConnection() {
 // Initialize empty database object with required methods
 const emptyDb = {
   select: () => {
-    console.warn('Database not initialized yet, initializing now...');
-    initializeDb();
-    return db.select();
+    throw new Error('Database not ready - please wait for initialization');
   },
   insert: () => {
     console.warn('Database not initialized yet, initializing now...');
