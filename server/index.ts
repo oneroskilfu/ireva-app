@@ -168,31 +168,42 @@ if (useMinimalMode) {
     }
   });
 } else {
-  // Traditional approach: Initialize everything before starting the server
-  logWithTime('Using traditional initialization approach');
+  // Optimized approach: Port binding first, then background initialization
+  logWithTime('Using optimized port-first initialization approach');
   
-  // Initialize auth
+  // Initialize auth immediately
   initializeAuth(app);
   
   // Register all routes
   server = registerRoutes(app);
   
-  // Setup Vite to serve React frontend with StaticHome
-  await setupVite(app, server);
-  logWithTime('Frontend setup complete - StaticHome ready');
-  
-  // Initialize database (non-blocking for server stability)
-  initializeDb().then(() => {
-    logWithTime('Database initialized');
-  }).catch(err => {
-    console.warn('Database initialization failed (server continues):', err.message);
-  });
-  
-  // Start server
+  // Start server FIRST for fastest port binding
   const PORT = process.env.PORT || 5000;
   server.listen(PORT, '0.0.0.0', () => {
-    logWithTime(`Server is running on port ${PORT}`);
+    logWithTime(`Server ready on port ${PORT}`);
+    
+    // Initialize services in background after port is bound
+    initializeServices().catch(err => {
+      console.warn('Background service initialization failed:', err.message);
+    });
   });
+}
+
+// Background service initialization (non-blocking)
+async function initializeServices() {
+  try {
+    // Setup Vite in background
+    if (server) {
+      await setupVite(app, server);
+      logWithTime('Frontend setup complete - StaticHome ready');
+    }
+    
+    // Initialize database last (optional for basic functionality)
+    await initializeDb();
+    logWithTime('Database initialized');
+  } catch (error: any) {
+    console.warn('Service initialization completed with warnings:', error.message);
+  }
 }
 
 // Handle graceful shutdown

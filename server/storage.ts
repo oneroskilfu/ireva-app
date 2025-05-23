@@ -3,7 +3,7 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import { db, pool } from "./db";
+import { db, pool, getDatabase } from "./db";
 import connectPg from "connect-pg-simple";
 import { eq } from "drizzle-orm";
 
@@ -338,6 +338,18 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating test users:', error);
       throw error;
+    }
+  }
+
+  private async ensureDatabase() {
+    if (!this.databaseReady) {
+      try {
+        await getDatabase();
+        this.databaseReady = true;
+      } catch (error: any) {
+        console.warn('Database connection not available:', error.message);
+        throw error;
+      }
     }
   }
 }
