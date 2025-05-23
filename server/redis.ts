@@ -7,9 +7,9 @@
 
 import { createClient, RedisClientType } from 'redis';
 
-// Environment variables
+// Environment variables with production defaults
 const REDIS_MODE = process.env.REDIS_MODE || 'standalone'; // 'standalone', 'sentinel', or 'cluster'
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL; // Will be set via environment variables in production
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 const REDIS_SENTINEL_NAME = process.env.REDIS_SENTINEL_NAME || 'mymaster';
 const REDIS_SENTINEL_URLS = (process.env.REDIS_SENTINEL_URLS || '')
@@ -93,8 +93,14 @@ redisClient.on('reconnecting', () => {
 let redisConnected = false;
 const REDIS_GRACEFUL_FALLBACK = process.env.REDIS_GRACEFUL_FALLBACK === 'true';
 
-// Connect to Redis with production-safe error handling
-(async () => {
+// Only attempt Redis connection if URL is provided
+const initializeRedis = async () => {
+  if (!REDIS_URL) {
+    console.log('No REDIS_URL provided, using memory sessions for session storage');
+    redisConnected = false;
+    return;
+  }
+
   try {
     if (REDIS_GRACEFUL_FALLBACK) {
       // In production, attempt connection but don't fail if Redis unavailable
@@ -105,17 +111,20 @@ const REDIS_GRACEFUL_FALLBACK = process.env.REDIS_GRACEFUL_FALLBACK === 'true';
       
       await Promise.race([connectPromise, timeoutPromise]);
       redisConnected = true;
-      console.log('Redis connection established successfully');
+      console.log('Redis connection established successfully with external provider');
     } else {
       await redisClient.connect();
       redisConnected = true;
       console.log('Redis connection established successfully');
     }
   } catch (err) {
-    console.log('Redis unavailable, using memory sessions for graceful degradation');
+    console.log('Redis connection failed, using memory sessions for graceful degradation:', err.message);
     redisConnected = false;
   }
-})();
+};
+
+// Initialize Redis connection
+initializeRedis();
 
 // Cache utility functions
 export const getCache = async (key: string): Promise<string | null> => {
