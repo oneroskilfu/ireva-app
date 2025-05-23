@@ -37,8 +37,8 @@ services:
     name: ireva-frontend
     env: static
     plan: free
-    buildCommand: cd client && npm install && npm run build
-    staticPublishPath: client/dist
+    buildCommand: npm install && npm run build:client
+    staticPublishPath: dist/public
     routes:
       - type: rewrite
         source: /*
