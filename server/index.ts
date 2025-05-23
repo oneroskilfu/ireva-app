@@ -88,9 +88,13 @@ if (useMinimalMode) {
         })()
       ]);
       
-      // Register routes immediately after services are initialized
-      registerRoutes(app);
-      logWithTime('Routes registered');
+      // Skip routes registration if already done or database unavailable
+      if (process.env.DATABASE_URL || process.env.NODE_ENV === 'production') {
+        registerRoutes(app);
+        logWithTime('Routes registered');
+      } else {
+        logWithTime('Routes skipped - database unavailable');
+      }
       
       // In production, serve static files; in development, use Vite
       if (process.env.NODE_ENV === 'production') {
