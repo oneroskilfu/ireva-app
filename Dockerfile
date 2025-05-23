@@ -13,9 +13,12 @@ COPY package*.json ./
 # Install dependencies
 RUN cd client && npm ci --only=production
 
-# Copy frontend source
+# Copy frontend source and shared utilities
 COPY client/ ./client/
 COPY shared/ ./shared/
+
+# Copy frontend-specific environment configuration
+COPY .env.frontend .env.production ./
 
 # Build frontend for production
 RUN cd client && npm run build
@@ -32,9 +35,12 @@ COPY package*.json ./
 # Install dependencies
 RUN cd server && npm ci --only=production
 
-# Copy backend source
+# Copy backend source and shared utilities
 COPY server/ ./server/
 COPY shared/ ./shared/
+
+# Copy backend-specific environment configuration
+COPY .env.backend .env.production ./
 
 # Build backend if needed
 RUN cd server && npm run build 2>/dev/null || echo "No build script found"
@@ -55,6 +61,9 @@ COPY --from=frontend-builder --chown=ireva:nodejs /app/client/dist ./public
 COPY --from=backend-builder --chown=ireva:nodejs /app/server ./server
 COPY --from=backend-builder --chown=ireva:nodejs /app/shared ./shared
 COPY --chown=ireva:nodejs package*.json ./
+
+# Copy production environment configuration
+COPY --chown=ireva:nodejs .env.production ./
 
 # Install only production dependencies at root level
 RUN npm ci --only=production && npm cache clean --force
