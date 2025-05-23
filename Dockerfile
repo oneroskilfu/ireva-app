@@ -1,41 +1,84 @@
-FROM node:20-alpine AS base
+# Multi-stage Dockerfile for iREVA Platform
+# Optimized for Render.com deployment with frontend and backend
 
-# Set working directory
+# Stage 1: Build Frontend
+FROM node:18-alpine AS frontend-builder
+
 WORKDIR /app
 
+# Copy frontend package files
+COPY client/package*.json ./client/
+COPY package*.json ./
+
 # Install dependencies
-FROM base AS deps
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN cd client && npm ci --only=production
 
-# Build application
-FROM deps AS builder
-COPY . .
-RUN npm run build
+# Copy frontend source
+COPY client/ ./client/
+COPY shared/ ./shared/
 
-# Production image
-FROM base AS runner
+# Build frontend for production
+RUN cd client && npm run build
+
+# Stage 2: Build Backend
+FROM node:18-alpine AS backend-builder
+
+WORKDIR /app
+
+# Copy backend package files
+COPY server/package*.json ./server/
+COPY package*.json ./
+
+# Install dependencies
+RUN cd server && npm ci --only=production
+
+# Copy backend source
+COPY server/ ./server/
+COPY shared/ ./shared/
+
+# Build backend if needed
+RUN cd server && npm run build 2>/dev/null || echo "No build script found"
+
+# Stage 3: Production Runtime
+FROM node:18-alpine AS production
+
+# Install production dependencies
+RUN apk add --no-cache \
+    dumb-init \
+    && addgroup -g 1001 -S nodejs \
+    && adduser -S ireva -u 1001
+
+WORKDIR /app
+
+# Copy built applications
+COPY --from=frontend-builder --chown=ireva:nodejs /app/client/dist ./public
+COPY --from=backend-builder --chown=ireva:nodejs /app/server ./server
+COPY --from=backend-builder --chown=ireva:nodejs /app/shared ./shared
+COPY --chown=ireva:nodejs package*.json ./
+
+# Install only production dependencies at root level
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy server dependencies
+COPY --from=backend-builder --chown=ireva:nodejs /app/server/node_modules ./server/node_modules
+
+# Set production environment
 ENV NODE_ENV=production
+ENV PORT=10000
+ENV FRONTEND_BUILD_PATH=/app/public
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 --ingroup nodejs nodeuser
+# Use non-root user
+USER ireva
 
-# Copy built files from builder stage
-COPY --from=builder --chown=nodeuser:nodejs /app/build ./build
-COPY --from=builder --chown=nodeuser:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodeuser:nodejs /app/package.json ./package.json
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:10000/api/health', (res) => { \
+        process.exit(res.statusCode === 200 ? 0 : 1); \
+    }).on('error', () => process.exit(1));"
 
-# Create uploads directory with proper permissions
-RUN mkdir -p uploads/logos \
-    && chown -R nodeuser:nodejs /app
+# Expose port
+EXPOSE 10000
 
-# Switch to non-root user
-USER nodeuser
-
-# Expose ports - 5000 for API, 3000 for web
-EXPOSE 5000
-EXPOSE 3000
-
-# Default command
-CMD ["npm", "run", "start"]
+# Start application with proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "server/index.js"]

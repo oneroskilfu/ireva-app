@@ -1,54 +1,54 @@
 # Render.com deployment configuration for iREVA Platform
+# Dockerized monorepo deployment optimized for production
+
 services:
-  # Backend API Server
+  # Full-Stack iREVA Platform (Frontend + Backend in single container)
   - type: web
-    name: ireva-backend
-    env: node
+    name: ireva-platform
+    env: docker
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: node server/index.js
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: MINIMAL_STARTUP
-        value: "true"
-      - key: REDIS_GRACEFUL_FALLBACK
-        value: "true"
-      - key: REDIS_URL
-        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: ireva-postgres
           property: connectionString
-      - key: DB_INITIALIZATION_MODE
-        value: "production"
       - key: JWT_SECRET
         generateValue: true
+      - key: REDIS_GRACEFUL_FALLBACK
+        value: "true"
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: VITE_FIREBASE_API_KEY
+        value: AIzaSyAHhiM0PxwYn8a64DzOBco5RWlXf4adQOk
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        value: ireva-platform.firebaseapp.com
+      - key: VITE_FIREBASE_PROJECT_ID
+        value: ireva-platform
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        value: ireva-platform.firebasestorage.app
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        value: 488160387734
+      - key: VITE_FIREBASE_APP_ID
+        value: 1:488160387734:web:02088d5591c8d75f4598b7
+      - key: VITE_FIREBASE_MEASUREMENT_ID
+        value: G-LHGPCTYFTK
     autoDeploy: true
+    healthCheckPath: /api/health
 
-  # Frontend Static Site  
-  - type: web
-    name: ireva-frontend
-    env: static
+  # Redis Cache (Optional - for enhanced performance)
+  - type: redis
+    name: ireva-redis
     plan: free
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist/public
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        value: https://ireva-backend.onrender.com
-    autoDeploy: true
+    maxmemoryPolicy: allkeys-lru
 
-# Database
+# PostgreSQL Database
 databases:
   - name: ireva-postgres
     databaseName: ireva_production
