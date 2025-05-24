@@ -1,115 +1,97 @@
-version: '3.8'
+# Docker Compose for iREVA Platform Production
+# Optimized for production deployment
+
+version: "3.9"
 
 services:
-  app:
-    image: ghcr.io/${GITHUB_REPOSITORY}:main
-    restart: always
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: production
     environment:
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - NODE_ENV=production
-      - SESSION_SECRET=${SESSION_SECRET}
-    volumes:
-      - ./uploads:/app/uploads
-    depends_on:
-      - db
-      - redis
-    networks:
-      - app_network
-      - db_network
-
-  db:
-    image: postgres:15-alpine
+      - LOG_LEVEL=info
+      - PORT=3000
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: client/Dockerfile.production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER:-ireva_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-ireva_production}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
-    networks:
-      - db_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - postgres_prod_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   redis:
     image: redis:7-alpine
-    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - redis_prod_data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    restart: always
 
+  # Load balancer for production
   nginx:
     image: nginx:alpine
-    restart: always
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - ./uploads:/app/uploads
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
-      - app
-    networks:
-      - app_network
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-
-  certbot:
-    image: certbot/certbot
+      - frontend
+      - backend
     restart: always
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-
-  # Log management with Fluent Bit
-  logging:
-    image: fluent/fluent-bit:latest
-    restart: always
-    volumes:
-      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
-      - ./logs:/logs
-    networks:
-      - app_network
-      - db_network
-    depends_on:
-      - app
-      - nginx
-
-  # Backup service
-  backup:
-    image: postgres:15-alpine
-    restart: always
-    volumes:
-      - ./backups:/backups
-      - ./scripts:/scripts
-    depends_on:
-      - db
-    networks:
-      - db_network
-    command: ["/bin/sh", "-c", "while true; do sleep 24h; sh /scripts/backup.sh; done"]
-    environment:
-      - PGHOST=db
-      - PGUSER=${DB_USER}
-      - PGPASSWORD=${DB_PASSWORD}
-      - PGDATABASE=${DB_NAME}
-
-networks:
-  app_network:
-  db_network:
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_prod_data:
+  redis_prod_data:
+
+networks:
+  default:
+    driver: bridge
