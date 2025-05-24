@@ -1,30 +1,14 @@
-# Frontend Dockerfile for iREVA Platform
-# Optimized for React + Vite deployment
-
 # Build stage
 FROM node:18-alpine AS builder
 WORKDIR /app
-
-# Copy package files and install dependencies
 COPY apps/client/package*.json ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --only=production
-
-# Copy source code
-COPY apps/client/ ./
-COPY shared/ ./shared/
-
-# Build the application
+RUN npm install
+COPY apps/client .
 RUN npm run build
 
-# Production stage with nginx
-FROM nginx:alpine AS production
-WORKDIR /usr/share/nginx/html
-
-# Copy built files
-COPY --from=builder /app/dist .
-
-# Copy nginx configuration
+# Production stage
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
 COPY apps/client/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Health check
