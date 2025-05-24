@@ -61,8 +61,8 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Copy built applications
-COPY --from=frontend-builder --chown=ireva:nodejs /app/client/dist ./public
+# Copy built applications (using correct Vite output path)
+COPY --from=frontend-builder --chown=ireva:nodejs /app/dist/public ./public
 COPY --from=backend-builder --chown=ireva:nodejs /app/server ./server
 COPY --from=backend-builder --chown=ireva:nodejs /app/shared ./shared
 COPY --chown=ireva:nodejs package*.json ./
