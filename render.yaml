@@ -23,28 +23,25 @@ services:
     plan: free
     envVars:
       - key: DATABASE_URL
-        fromService:
-          type: pserv
+        fromDatabase:
           name: iREVA-db
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
           name: iREVA-redis
+          type: redis
           property: connectionString
       - key: JWT_SECRET
-        value: 9f6c3a2d8e91e5b4d8d2beae9c67f7bafc45c1a9f6d7a3b1c2e4e7a6b5d2c3f1b8d4c6a3e1f7c9a5b6e3c2f9d7b1a2f3e
+        value: fba4762e52ab29cbec388fd6908192ab6e836d16baa10bd720ceffcf19627c24119eb6a4b70da2ee85eba036da5d003d3f94bcf06266b48df7681823a174240e
       - key: NODE_ENV
         value: production
 
-  - type: pserv
+  - type: postgres
     name: iREVA-db
-    env: postgres
-    plan: free
     region: oregon
+    plan: free
 
-  - type: pserv
+  - type: redis
     name: iREVA-redis
-    env: redis
-    plan: free
     region: oregon
+    plan: free
