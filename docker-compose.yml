@@ -1,27 +1,24 @@
 # Docker Compose for iREVA Platform Local Development
 # This mirrors your current Replit setup for easy local development
 
-version: "3.9"
+version: '3.9'
 
 services:
-  # iREVA Backend API
   backend:
     build:
       context: .
       dockerfile: apps/server/Dockerfile
     ports:
-      - "3000:3000"
+      - "5000:5000"
     environment:
-      - NODE_ENV=development
-      - PORT=3000
-      - DATABASE_URL=postgresql://ireva_user:ireva_password@postgres:5432/ireva_dev
-      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-key-minimum-32-characters}
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5000
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - redis
+      - postgres
     volumes:
       # Hot reload for development
       - ./server:/app/server
@@ -31,19 +28,18 @@ services:
       - npm_cache:/root/.npm
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
-  # iREVA Frontend
   frontend:
     build:
       context: .
       dockerfile: apps/client/Dockerfile
     ports:
-      - "80:80"
+      - "3000:80"
     depends_on:
       - backend
     restart: unless-stopped
