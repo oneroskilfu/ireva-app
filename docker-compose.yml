@@ -9,6 +9,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Enable BuildKit for cache optimization
+      target: production
     ports:
       - "5000:10000"
     environment:
@@ -25,7 +27,9 @@ services:
       - ./server:/app/server
       - ./client:/app/client
       - ./shared:/app/shared
-      - /app/node_modules
+      # Cache volumes for faster rebuilds
+      - node_modules_cache:/app/node_modules
+      - npm_cache:/root/.npm
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:10000/api/health"]
@@ -68,6 +72,9 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  # Cache volumes for faster Docker builds
+  node_modules_cache:
+  npm_cache:
 
 networks:
   default:

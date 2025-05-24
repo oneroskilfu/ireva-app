@@ -10,8 +10,10 @@ WORKDIR /app
 COPY client/package*.json ./client/
 COPY package*.json ./
 
-# Install dependencies
-RUN cd client && npm install --omit=dev
+# Create cache mount for faster builds
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/app/client/node_modules/.cache \
+    cd client && npm install --omit=dev
 
 # Copy frontend source and shared utilities
 COPY client/ ./client/
@@ -20,8 +22,9 @@ COPY shared/ ./shared/
 # Copy frontend-specific environment configuration
 COPY .env.frontend .env.production ./
 
-# Build frontend for production
-RUN cd client && npm run build
+# Build frontend for production with build cache
+RUN --mount=type=cache,target=/app/client/node_modules/.cache \
+    cd client && npm run build
 
 # Stage 2: Build Backend
 FROM node:18-alpine AS backend-builder
@@ -32,8 +35,10 @@ WORKDIR /app
 COPY server/package*.json ./server/
 COPY package*.json ./
 
-# Install dependencies
-RUN cd server && npm install --omit=dev
+# Create cache mount for faster builds
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/app/server/node_modules/.cache \
+    cd server && npm install --omit=dev
 
 # Copy backend source and shared utilities
 COPY server/ ./server/
@@ -65,8 +70,10 @@ COPY --chown=ireva:nodejs package*.json ./
 # Copy production environment configuration
 COPY --chown=ireva:nodejs .env.production ./
 
-# Install only production dependencies at root level
-RUN npm install --omit=dev && npm cache clean --force
+# Install only production dependencies at root level with caching
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/app/node_modules/.cache \
+    npm install --omit=dev && npm cache clean --force
 
 # Copy server dependencies
 COPY --from=backend-builder --chown=ireva:nodejs /app/server/node_modules ./server/node_modules
