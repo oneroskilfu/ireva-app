@@ -45,7 +45,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://ireva-backend.onrender.com/api
+        value: https://your-backend-domain.com/api
       - key: VITE_ENVIRONMENT
         value: production
 
