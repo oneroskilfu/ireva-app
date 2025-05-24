@@ -2,7 +2,7 @@ services:
   - type: web
     name: iREVA-frontend
     env: docker
-    repo: https://github.com/your-username/ireva
+    repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
     dockerContext: ./apps/client
     dockerfilePath: ./apps/client/Dockerfile
@@ -15,7 +15,7 @@ services:
   - type: web
     name: iREVA-backend
     env: docker
-    repo: https://github.com/your-username/ireva
+    repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
     dockerContext: ./apps/server
     dockerfilePath: ./apps/server/Dockerfile
@@ -24,7 +24,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromService:
-          type: postgres
+          type: pserv
           name: iREVA-db
           property: connectionString
       - key: REDIS_URL
@@ -33,14 +33,15 @@ services:
           name: iREVA-redis
           property: connectionString
       - key: JWT_SECRET
-        value: your-secret-key
+        value: 9f6c3a2d8e91e5b4d8d2beae9c67f7bafc45c1a9f6d7a3b1c2e4e7a6b5d2c3f1b8d4c6a3e1f7c9a5b6e3c2f9d7b1a2f3e
       - key: NODE_ENV
         value: production
 
-  - type: postgres
+  - type: pserv
     name: iREVA-db
     region: oregon
     plan: free
+    postgresMajorVersion: 15
 
   - type: redis
     name: iREVA-redis
