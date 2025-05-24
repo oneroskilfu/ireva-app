@@ -39,11 +39,12 @@ services:
 
   - type: pserv
     name: iREVA-db
-    region: oregon
+    env: postgres
     plan: free
-    postgresMajorVersion: 15
+    region: oregon
 
-  - type: redis
+  - type: pserv
     name: iREVA-redis
-    region: oregon
+    env: redis
     plan: free
+    region: oregon
