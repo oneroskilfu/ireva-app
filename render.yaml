@@ -2,22 +2,6 @@
 # Professional deployment configuration for Nigerian real estate investment platform
 
 services:
-  # Frontend: React + Vite Static Site
-  - type: web
-    name: ireva-frontend
-    env: static
-    buildCommand: cd apps/client && npm install && npm run build
-    staticPublishPath: apps/client/dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        value: https://ireva-backend.onrender.com/api
-      - key: VITE_ENVIRONMENT
-        value: production
-
   # Backend: Express.js Web Service
   - type: web
     name: ireva-backend
@@ -40,8 +24,30 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-      - key: CORS_ORIGIN
-        value: https://ireva-frontend.onrender.com
+      - key: POSTGRES_USER
+        value: ireva_user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: ireva-postgres
+          property: password
+      - key: POSTGRES_DB
+        value: ireva_production
+
+  # Frontend: React + Vite Static Site
+  - type: web
+    name: ireva-frontend
+    env: static
+    buildCommand: cd apps/client && npm install && npm run build
+    staticPublishPath: apps/client/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://ireva-backend.onrender.com/api
+      - key: VITE_ENVIRONMENT
+        value: production
 
 databases:
   - name: ireva-postgres
