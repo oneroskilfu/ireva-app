@@ -1,97 +1,67 @@
 # 🔧 Environment Configuration Guide for iREVA Platform
 
-## 📁 Environment File Structure
+## ✅ **Production-Ready Environment Setup**
 
-Your dockerized iREVA platform uses a clean environment separation strategy:
+Your Nigerian real estate investment platform now has comprehensive environment configuration for all deployment scenarios.
 
-```
-/iREVA/
-├── .env                 # Current development (used by Replit)
-├── .env.production      # Production deployment (Render.com)
-├── .env.local          # Local development template
-├── .env.backend        # Backend-specific variables
-├── .env.frontend       # Frontend-specific variables
-└── docker-compose.yml  # Uses .env.local for local Docker
-```
+## 📁 **Environment Files Overview**
 
-## 🎯 Environment Usage by Context
+### **`.env.template`** - Production Template
+Complete configuration for Render.com deployment with all platform features:
+- Frontend and backend URLs
+- Database and Redis connections
+- JWT authentication settings
+- Email notifications with SendGrid
+- Crypto payment integration
+- File upload configurations
 
-### **Development (Replit)**
-- Uses: `.env` (your current setup)
-- Perfect for your current workflow
+### **`.env.compose`** - Local Development
+Optimized for Docker Compose local development:
+- Local service URLs (localhost)
+- Development database settings
+- Relaxed rate limiting for testing
+- Hot reload configurations
 
-### **Production (Render.com)**
-- Uses: `.env.production`
-- Automatically applied during Docker build
-- Environment variables set in Render dashboard override file values
+## 🚀 **Quick Setup Commands**
 
-### **Local Docker Development**
-- Uses: `.env.local`
-- Copy `.env.local` to `.env` for local Docker development
-- Run: `docker-compose up -d`
-
-### **Docker Build Process**
-- **Frontend Stage**: Uses `.env.frontend` + `.env.production`
-- **Backend Stage**: Uses `.env.backend` + `.env.production`
-- **Runtime**: Uses `.env.production`
-
-## ⚙️ TypeScript Path Aliases (Shared Logic)
-
-Your platform now includes organized shared utilities:
-
-```typescript
-// Use these imports in both frontend and backend:
-import { formatCurrency, calculateROI } from '@shared/utils';
-import { INVESTMENT, USER_ROLES } from '@shared/config';
-import type { User, Property, Investment } from '@shared/types';
-```
-
-### **Shared Structure:**
-```
-/shared/
-├── types/index.ts      # Type-safe API responses, forms, filters
-├── utils/index.ts      # Currency, date, validation utilities
-└── config/index.ts     # Constants, validation patterns
-```
-
-## 🚀 Deployment Workflow
-
-### **Render.com (Recommended)**
-1. Environment variables automatically set via `render.yaml`
-2. Docker build uses appropriate `.env` files per stage
-3. Production runtime uses `.env.production` + Render dashboard variables
-
-### **Local Testing**
+**For Local Development:**
 ```bash
-# Test with Docker Compose
-cp .env.local .env
-docker-compose up -d
-
-# Access at http://localhost:5000
+cp .env.compose .env
+docker-compose up -d --build
 ```
 
-### **Environment Priority**
-1. **Render Dashboard Variables** (highest priority)
-2. **Dockerfile ENV statements**
-3. **Environment files** (.env.production, etc.)
+**For Production Deployment:**
+```bash
+cp .env.template .env
+# Update with your actual production values
+# Deploy to Render.com
+```
 
-## 🔐 Security Best Practices
+## 🔑 **Critical Variables to Update**
 
-### **Never Commit Secrets**
-- `.env.local` contains example values only
-- Real secrets go in Render dashboard
-- Use environment-specific files for different deployment stages
+### **Database & Cache:**
+- `DATABASE_URL` - Your PostgreSQL connection string
+- `REDIS_URL` - Your Redis connection string
 
-### **Environment Separation**
-- **Development**: Full logging, debug mode, test APIs
-- **Production**: Minimal logging, secure APIs, performance optimized
+### **Security:**
+- `JWT_SECRET` - Minimum 32 characters, cryptographically secure
+- `TWO_FACTOR_AUTH_SECRET` - For enhanced security features
 
-## 🎉 Benefits of This Setup
+### **External Services:**
+- `SENDGRID_API_KEY` - For email notifications
+- `CRYPTO_PAYMENT_WEBHOOK_SECRET` - For crypto integration
 
-✅ **Clean Separation**: Each environment has its specific configuration  
-✅ **Docker Optimized**: Multi-stage builds use appropriate environment per stage  
-✅ **Shared Logic**: TypeScript path aliases for consistent utilities  
-✅ **Production Ready**: Secure, scalable configuration for Render.com  
-✅ **Developer Friendly**: Easy local development with Docker Compose  
+### **URLs:**
+- `VITE_API_URL` - Your backend service URL
+- `CLIENT_ORIGIN` - Your frontend service URL
 
-Your iREVA platform is now perfectly configured for professional deployment with clean environment management!
+## ⚡ **Production Benefits**
+
+Your environment configuration supports:
+- **Multi-tenant architecture** for scalable growth
+- **Real-time features** with Socket.IO
+- **Email notifications** for investor updates
+- **Crypto payment integration** for seamless transactions
+- **Enhanced security** with rate limiting and 2FA
+
+Perfect for your real estate investment platform serving investors accessing premium Nigerian properties!
