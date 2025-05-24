@@ -1,17 +1,4 @@
 services:
-  # Define PostgreSQL FIRST
-  - type: postgres
-    name: iREVA-db    # Must match the name in "fromService"
-    region: oregon
-    plan: free
-
-  # Define Redis NEXT
-  - type: redis
-    name: iREVA-redis
-    region: oregon
-    plan: free
-
-  # Frontend Service
   - type: web
     name: iREVA-frontend
     env: docker
@@ -25,7 +12,6 @@ services:
       - key: VITE_API_URL
         value: https://ireva-backend.onrender.com/api
 
-  # Backend Service (comes AFTER database/redis)
   - type: web
     name: iREVA-backend
     env: docker
@@ -38,15 +24,25 @@ services:
     envVars:
       - key: DATABASE_URL
         fromService:
-          name: iREVA-db      # Must match the PostgreSQL service name
-          type: postgres      # Lowercase
+          type: postgres
+          name: iREVA-db
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: iREVA-redis   # Must match the Redis service name
           type: redis
+          name: iREVA-redis
           property: connectionString
       - key: JWT_SECRET
-        generateValue: true   # Let Render generate this
+        value: your-secret-key
       - key: NODE_ENV
         value: production
+
+  - type: postgres
+    name: iREVA-db
+    region: oregon
+    plan: free
+
+  - type: redis
+    name: iREVA-redis
+    region: oregon
+    plan: free
