@@ -1,118 +1,95 @@
-# iREVA Platform Production Deployment Guide
+# 🚀 Production Deployment Guide for iREVA Platform
 
-This document provides instructions for building and deploying the iREVA platform in a production environment.
+## 🎯 **Deployment Strategy Overview**
 
-## Build Process Overview
+Your Nigerian real estate investment platform is ready for professional deployment with multiple options optimized for performance and scalability.
 
-The build process for iREVA involves two main steps:
-1. Building the React frontend with Vite
-2. Building the Node.js/Express backend with esbuild
+## 🟢 **Frontend Deployment Options**
 
-## Prerequisites
-
-- Node.js v20+ installed
-- NPM v10+ installed
-- PostgreSQL database configured (connection string in .env file)
-- All necessary API keys and secrets configured in .env file
-
-## Production Build Instructions
-
-### Method 1: Using the Master Build Script
-
-The simplest way to create a production build is to use the master build script:
-
-```bash
-# Make the script executable (if needed)
-chmod +x build-master.sh
-
-# Run the master build script
-./build-master.sh
+### **Option 1: Static Site (Recommended)**
+Perfect for your React + Vite frontend:
+```yaml
+# In render.yaml
+- type: web
+  name: ireva-frontend
+  env: static
+  buildCommand: cd apps/client && npm install && npm run build
+  staticPublishPath: apps/client/dist
 ```
 
-This script will:
-- Clean up any existing build files
-- Build the frontend with Vite
-- Build the backend with esbuild
-- Copy necessary assets and environment files
-- Generate a VERSION.txt file with build details
+**Benefits:**
+- Lightning-fast loading times
+- Global CDN distribution
+- Automatic SSL certificates
+- Cost-effective scaling
 
-### Method 2: Step-by-Step Build
-
-If you prefer to build the application in stages, you can use the individual build scripts:
-
-#### 1. Build the Frontend
-
-```bash
-./build-frontend.sh
+### **Option 2: Web Service (If SSR needed)**
+For server-side rendering or auth logic:
+```yaml
+- type: web
+  name: ireva-frontend
+  env: docker
+  dockerfilePath: ./apps/client/Dockerfile
 ```
 
-This builds just the React frontend with Vite, placing the output in `dist/public`.
+## ✅ **Backend Deployment (Web Service)**
 
-#### 2. Build the Backend
+Your Express.js backend with Drizzle ORM deploys as a Docker-based Web Service:
 
-```bash
-./build-backend.sh
+```yaml
+- type: web
+  name: ireva-backend
+  env: docker
+  dockerfilePath: ./apps/server/Dockerfile
+  envVars:
+    - key: DATABASE_URL
+      fromDatabase: ireva-postgres
+    - key: REDIS_URL 
+      fromService: ireva-redis
+    - key: JWT_SECRET
+      generateValue: true
 ```
 
-This builds the Node.js/Express backend with esbuild, placing the output in `dist`.
+## 🔧 **Environment Configuration**
 
-### Running in Production
+Set these in your Render dashboard:
+- `DATABASE_URL` - Auto-generated from PostgreSQL service
+- `REDIS_URL` - Auto-generated from Redis service  
+- `JWT_SECRET` - Auto-generated secure token
+- `CORS_ORIGIN` - Your frontend URL for security
 
-Once the build process is complete, you can start the application in production mode:
+## 🎯 **Deployment Commands**
 
+**From GitHub (Recommended):**
+1. Push code to GitHub repository
+2. Connect repository in Render dashboard
+3. Deploy using `render.yaml` blueprint
+
+**Manual Deployment:**
 ```bash
-./start-production.sh
+# Build and test locally first
+docker build -f apps/client/Dockerfile -t ireva-frontend .
+docker build -f apps/server/Dockerfile -t ireva-backend .
+
+# Deploy via Render CLI or dashboard
 ```
 
-The application will run on port 5001 by default.
+## ⚡ **Performance Expectations**
 
-## Production Environment Configuration
+Based on your current excellent performance (1-2ms response times), expect:
+- **Frontend**: Sub-second page loads globally
+- **Backend**: 10-50ms API responses
+- **Database**: Optimized queries with connection pooling
+- **Redis**: In-memory caching for instant lookups
 
-For a production deployment, ensure you have the following environment variables set:
+Your iREVA platform will maintain its lightning-fast performance while serving investors accessing premium Nigerian real estate opportunities!
 
-- `NODE_ENV=production`
-- `DATABASE_URL` - Your PostgreSQL connection string
-- Any API keys needed by the application
+## 🌟 **Production Benefits**
 
-You can set these either in a `.env` file in the root directory (which will be copied to the `dist` folder during the build) or set them in your deployment environment.
+- **Automatic scaling** based on traffic
+- **SSL certificates** included
+- **Health monitoring** built-in
+- **Zero-downtime deployments**
+- **Professional logging** and metrics
 
-## Deployment Options
-
-### Option 1: Replit Deployment
-
-The easiest way to deploy is using Replit's built-in deployment feature:
-
-1. Complete the production build using the instructions above
-2. Click the "Deploy" button in the Replit UI
-3. Follow the prompts to deploy the application
-
-### Option 2: Manual Deployment
-
-For deploying to other platforms:
-
-1. Complete the production build
-2. Copy the entire `dist` directory to your production server
-3. Install production dependencies: `cd dist && npm install --production`
-4. Start the server: `NODE_ENV=production node index.js`
-
-## Dual-Port Architecture
-
-Note that the iREVA platform uses a dual-port architecture:
-
-- Port 3000: Static webview server for Replit environment
-- Port 5001: Main application server
-
-In a production environment, you may want to use a reverse proxy (like Nginx) to route traffic appropriately.
-
-## Troubleshooting
-
-If you encounter issues during the build or deployment:
-
-1. Check the build logs for specific error messages
-2. Ensure all dependencies are installed: `npm install`
-3. Verify database connectivity with `node -e "require('pg').Pool({connectionString: process.env.DATABASE_URL}).query('SELECT NOW()', (err, res) => console.log(err || res.rows[0]))"`
-4. Make sure all required environment variables are set
-
-## Support
-
-For additional help or to report issues, please contact the iREVA support team.
+Perfect for your growing real estate investment community!
