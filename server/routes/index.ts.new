@@ -1,0 +1,34 @@
+import { Express } from 'express';
+import propertyRoutes from './propertyRoutes';
+import investmentRoutes from './investmentRoutes';
+import notificationRoutes from './notificationRoutes';
+import adminRoutes from './adminRoutes';
+import authRoutes from './authRoutes';
+
+/**
+ * Register all API routes
+ */
+export function registerRoutes(app: Express) {
+  // Auth routes
+  app.use('/api/auth', authRoutes);
+  
+  // Property routes - publicly accessible
+  app.use('/api/properties', propertyRoutes);
+  
+  // Protected routes
+  app.use('/api/investments', investmentRoutes);
+  app.use('/api/notifications', notificationRoutes);
+  
+  // Admin routes
+  app.use('/api/admin', adminRoutes);
+  
+  // Log all registered routes for debugging
+  console.log('API Routes registered:');
+  console.log('- /api/auth/login, /api/auth/register, /api/auth/user');
+  console.log('- /api/properties');
+  console.log('- /api/investments');
+  console.log('- /api/notifications');
+  console.log('- /api/admin/*');
+}
+
+export default registerRoutes;

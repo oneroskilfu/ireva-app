@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material-UI Debug</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@emotion/react@11.11.1/dist/emotion-react.umd.min.js"></script>
+  <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
+  <script src="https://unpkg.com/@mui/material@5.14.18/umd/material-ui.development.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .error {
+      color: #d32f2f;
+      background-color: #ffebee;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Destructure Material-UI components
+    const {
+      Button,
+      Container,
+      Typography,
+      AppBar,
+      Toolbar,
+      Box,
+      Card,
+      CardContent,
+      Grid,
+      TextField,
+      ThemeProvider,
+      createTheme,
+      CssBaseline
+    } = MaterialUI;
+
+    // Create a theme
+    const theme = createTheme({
+      palette: {
+        primary: {
+          main: '#1976d2',
+        },
+        secondary: {
+          main: '#9c27b0',
+        },
+      },
+    });
+
+    // Simple Counter Component
+    function Counter() {
+      const [count, setCount] = React.useState(0);
+      
+      return (
+        <Box sx={{ my: 2 }}>
+          <Typography variant="h6" gutterBottom>Counter: {count}</Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => setCount(count + 1)}
+            >
+              Increment
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              onClick={() => setCount(0)}
+            >
+              Reset
+            </Button>
+          </Box>
+        </Box>
+      );
+    }
+
+    // Form Example
+    function SimpleForm() {
+      const [name, setName] = React.useState('');
+      const [email, setEmail] = React.useState('');
+      const [submitted, setSubmitted] = React.useState(false);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        setSubmitted(true);
+      };
+
+      return (
+        <Box sx={{ my: 4 }}>
+          <Typography variant="h6" gutterBottom>Simple Form</Typography>
+          {submitted ? (
+            <Card>
+              <CardContent>
+                <Typography variant="h6" color="primary">Form Submitted!</Typography>
+                <Typography>Name: {name}</Typography>
+                <Typography>Email: {email}</Typography>
+                <Button 
+                  variant="text" 
+                  onClick={() => {
+                    setName('');
+                    setEmail('');
+                    setSubmitted(false);
+                  }}
+                  sx={{ mt: 2 }}
+                >
+                  Reset Form
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary"
+                  >
+                    Submit
+                  </Button>
+                </Grid>
+              </Grid>
+            </form>
+          )}
+        </Box>
+      );
+    }
+
+    // Main App Component
+    function App() {
+      return (
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AppBar position="static">
+            <Toolbar>
+              <Typography variant="h6">Material-UI Debug</Typography>
+            </Toolbar>
+          </AppBar>
+          <Container maxWidth="md" sx={{ mt: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Material-UI v5 Debug Page
+            </Typography>
+            <Typography variant="body1" paragraph>
+              This is a standalone debug page that loads Material-UI directly from CDN to verify functionality.
+            </Typography>
+            
+            <Card sx={{ mb: 4 }}>
+              <CardContent>
+                <Typography variant="h5" gutterBottom>Components Test</Typography>
+                <Counter />
+                <SimpleForm />
+              </CardContent>
+            </Card>
+            
+            <Box sx={{ mt: 4 }}>
+              <Button 
+                href="/" 
+                color="primary"
+              >
+                Back to Home
+              </Button>
+            </Box>
+          </Container>
+        </ThemeProvider>
+      );
+    }
+
+    // Render the App
+    try {
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    } catch (error) {
+      document.getElementById('root').innerHTML = `
+        <div class="container">
+          <div class="error">
+            <h2>Error Rendering Material-UI</h2>
+            <pre>${error.message}\n${error.stack}</pre>
+          </div>
+          <a href="/">Back to Home</a>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

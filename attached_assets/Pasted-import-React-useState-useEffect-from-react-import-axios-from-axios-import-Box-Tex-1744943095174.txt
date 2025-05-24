@@ -1,0 +1,113 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  Box,
+  TextField,
+  Button,
+  MenuItem,
+  Typography,
+  Snackbar,
+  Alert,
+  CircularProgress,
+} from '@mui/material';
+
+const InvestNow = () => {
+  const [projects, setProjects] = useState([]);
+  const [projectId, setProjectId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/projects', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProjects(res.data);
+    };
+    fetchProjects();
+  }, []);
+
+  const handleInvest = async () => {
+    if (!projectId || !amount) {
+      return setSnackbar({ open: true, message: 'Please fill all fields', severity: 'error' });
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        '/api/investments',
+        { projectId, amount: parseFloat(amount) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSnackbar({ open: true, message: 'Investment successful!', severity: 'success' });
+      setAmount('');
+      setProjectId('');
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Investment failed', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box maxWidth={500} mx="auto">
+      <Typography variant="h5" gutterBottom>Invest in a Project</Typography>
+
+      <TextField
+        select
+        fullWidth
+        label="Select Project"
+        value={projectId}
+        onChange={(e) => setProjectId(e.target.value)}
+        margin="normal"
+      >
+        {projects.map((proj) => (
+          <MenuItem key={proj._id} value={proj._id}>
+            {proj.name}
+          </MenuItem>
+        ))}
+      </TextField>
+
+      <TextField
+        fullWidth
+        label="Amount"
+        type="number"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        margin="normal"
+      />
+
+      <Box mt={2} position="relative">
+        <Button variant="contained" onClick={handleInvest} disabled={loading}>
+          {loading ? 'Processing...' : 'Invest Now'}
+        </Button>
+        {loading && (
+          <CircularProgress
+            size={24}
+            sx={{
+              color: 'primary.main',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              marginTop: '-12px',
+              marginLeft: '-12px',
+            }}
+          />
+        )}
+      </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default InvestNow;

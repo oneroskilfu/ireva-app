@@ -1,0 +1,137 @@
+import os
+
+# Create directory structure and boilerplate files for the Admin Wallet Control Panel
+base_path = "/mnt/data/ireva_admin_wallet"
+
+file_structure = {
+    "backend/routes/adminWallet.ts": """\
+import express from 'express';
+import { isAdmin } from '../../middleware/auth';
+const router = express.Router();
+
+let wallets = [
+  { id: '1', type: 'main', balance: 10000, currency: 'USD' },
+  { id: '2', type: 'escrow', balance: 5000, currency: 'USD' },
+  { id: '3', type: 'rewards', balance: 1200, currency: 'USD' }
+];
+
+let transactions = [
+  { id: 'tx1', type: 'deposit', amount: 1000, status: 'completed', date: '2025-04-28' },
+  { id: 'tx2', type: 'withdrawal', amount: 200, status: 'pending', date: '2025-04-29' }
+];
+
+router.use(isAdmin);
+
+router.get('/', (req, res) => {
+  res.json(wallets);
+});
+
+router.get('/transactions', (req, res) => {
+  res.json(transactions);
+});
+
+router.post('/transactions/:id/approve', (req, res) => {
+  const tx = transactions.find(t => t.id === req.params.id);
+  if (tx && tx.status === 'pending') {
+    tx.status = 'completed';
+    return res.json({ success: true, transaction: tx });
+  }
+  res.status(404).json({ error: 'Transaction not found or already completed' });
+});
+
+export default router;
+""",
+    "frontend/components/admin/WalletControlPanel.tsx": """\
+import React, { useEffect, useState } from 'react';
+import { Paper, Typography, CircularProgress, Alert, Button, Table, TableRow, TableCell, TableHead, TableBody } from '@mui/material';
+import axios from 'axios';
+
+export const WalletControlPanel = () => {
+  const [wallets, setWallets] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchData = async () => {
+    try {
+      const [walletRes, txRes] = await Promise.all([
+        axios.get('/api/admin/wallets'),
+        axios.get('/api/admin/wallets/transactions')
+      ]);
+      setWallets(walletRes.data);
+      setTransactions(txRes.data);
+    } catch (err) {
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const approveTransaction = async (id: string) => {
+    try {
+      await axios.post(`/api/admin/wallets/transactions/${id}/approve`);
+      fetchData();
+    } catch {
+      alert('Failed to approve transaction');
+    }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Alert severity="error">{error}</Alert>;
+
+  return (
+    <div>
+      <Typography variant="h5" gutterBottom>Wallet Overview</Typography>
+      {wallets.map((wallet: any) => (
+        <Paper key={wallet.id} style={{ marginBottom: 12, padding: 16 }}>
+          <Typography>{wallet.type.toUpperCase()} Wallet</Typography>
+          <Typography>{wallet.currency} {wallet.balance}</Typography>
+        </Paper>
+      ))}
+      <Typography variant="h6" gutterBottom>Transactions</Typography>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>ID</TableCell><TableCell>Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell><TableCell>Date</TableCell><TableCell>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {transactions.map((tx: any) => (
+            <TableRow key={tx.id}>
+              <TableCell>{tx.id}</TableCell><TableCell>{tx.type}</TableCell><TableCell>{tx.amount}</TableCell><TableCell>{tx.status}</TableCell><TableCell>{tx.date}</TableCell>
+              <TableCell>
+                {tx.status === 'pending' && (
+                  <Button onClick={() => approveTransaction(tx.id)} variant="contained" size="small">Approve</Button>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+""",
+    "frontend/components/admin/index.ts": "export * from './WalletControlPanel';",
+    "middleware/auth.ts": """\
+import { Request, Response, NextFunction } from 'express';
+
+export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+  // In production, you'd check req.user.role or JWT claims
+  const isAdmin = true;
+  if (isAdmin) next();
+  else res.status(403).json({ error: 'Unauthorized' });
+};
+"""
+}
+
+# Create the directory and files
+for path, content in file_structure.items():
+    full_path = os.path.join(base_path, path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "w") as f:
+        f.write(content)
+
+base_path

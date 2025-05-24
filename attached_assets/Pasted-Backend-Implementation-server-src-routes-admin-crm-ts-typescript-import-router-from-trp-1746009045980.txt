@@ -1,0 +1,73 @@
+Backend Implementation (server/src/routes/admin/crm.ts)
+```typescript
+import { router } from '../trpc';
+import { z } from 'zod';
+import { adminAuth } from '../middleware/auth';
+import { 
+  communications,
+  userSegments,
+  userCommunicationLogs
+} from '../../../shared/schema';
+
+const crmRouter = router({
+  sendMessage: adminAuth
+    .input(z.object({
+      title: z.string(),
+      content: z.string(),
+      channel: z.enum(['email', 'push', 'sms']),
+      segmentId: z.string().optional(),
+      userIds: z.array(z.string()).optional(),
+      schedule: z.date().optional()
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const comm = await ctx.db.insert(communications).values({
+        ...input,
+        status: input.schedule ? 'scheduled' : 'sent',
+        scheduledAt: input.schedule
+      }).returning();
+
+      // Queue message sending
+      await ctx.queue.add('send-communication', {
+        commId: comm[0].id,
+        userIds: input.userIds,
+        segmentId: input.segmentId
+      });
+
+      return comm[0];
+    }),
+
+  listSegments: adminAuth
+    .query(async ({ ctx }) => {
+      return ctx.db.select().from(userSegments);
+    }),
+
+  createSegment: adminAuth
+    .input(z.object({
+      name: z.string(),
+      filters: z.object({
+        minInvestment: z.number().optional(),
+        lastActivityDays: z.number().optional(),
+        kycStatus: z.array(z.string()).optional()
+      })
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return ctx.db.insert(userSegments).values(input).returning();
+    }),
+
+  getUserCommunications: adminAuth
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      return ctx.db
+        .select({
+          id: userCommunicationLogs.id,
+          title: communications.title,
+          channel: communications.channel,
+          sentAt: userCommunicationLogs.sentAt,
+          openedAt: userCommunicationLogs.openedAt
+        })
+        .from(userCommunicationLogs)
+        .leftJoin(communications, eq(userCommunicationLogs.communicationId, communications.id))
+        .where(eq(userCommunicationLogs.userId, input.userId));
+    })
+});
+```

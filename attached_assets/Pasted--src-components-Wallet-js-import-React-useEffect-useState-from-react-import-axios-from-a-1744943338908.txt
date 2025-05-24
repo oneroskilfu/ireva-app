@@ -1,0 +1,83 @@
+// src/components/Wallet.js
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Box, Button, Typography, Table, TableBody, TableCell, TableHead, TableRow, TextField } from '@mui/material';
+
+const Wallet = () => {
+  const [wallet, setWallet] = useState({ balance: 0 });
+  const [transactions, setTransactions] = useState([]);
+  const [filter, setFilter] = useState('');
+
+  const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    fetchWalletData();
+  }, []);
+
+  const fetchWalletData = async () => {
+    try {
+      const res = await axios.get('/api/wallet', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setWallet(res.data.wallet);
+      setTransactions(res.data.transactions);
+    } catch (err) {
+      console.error('Failed to fetch wallet', err);
+    }
+  };
+
+  const handleAddFunds = async () => {
+    try {
+      await axios.post('/api/wallet/add', { amount: 1000 }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchWalletData();
+    } catch (err) {
+      console.error('Error adding funds', err);
+    }
+  };
+
+  const filteredTransactions = transactions.filter(tx =>
+    tx.type.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  return (
+    <Box p={3}>
+      <Typography variant="h5" mb={2}>Wallet Balance: ₦{wallet.balance}</Typography>
+      <Button variant="contained" color="primary" onClick={handleAddFunds}>Add ₦1000</Button>
+
+      <Box mt={4}>
+        <Typography variant="h6">Transaction History</Typography>
+        <TextField
+          label="Filter by type"
+          variant="outlined"
+          size="small"
+          onChange={(e) => setFilter(e.target.value)}
+          sx={{ mb: 2 }}
+        />
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Date</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell>Status</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredTransactions.map(tx => (
+              <TableRow key={tx._id}>
+                <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
+                <TableCell>{tx.type}</TableCell>
+                <TableCell>₦{tx.amount}</TableCell>
+                <TableCell>{tx.status}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
+    </Box>
+  );
+};
+
+export default Wallet;

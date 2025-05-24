@@ -1,0 +1,46 @@
+const fs = require('fs');
+const path = require('path');
+
+function checkFileExists(filePath, label) {
+  const exists = fs.existsSync(filePath);
+  console.log(`${label}: ${exists ? '✅ Found' : '❌ Missing'}`);
+  return exists;
+}
+
+function checkFileContains(filePath, keywords = []) {
+  if (!fs.existsSync(filePath)) return false;
+  const content = fs.readFileSync(filePath, 'utf-8');
+  return keywords.every(kw => content.includes(kw));
+}
+
+console.log('\n=== iREVA Crypto Integration Validator ===\n');
+
+// 1. Investment route for crypto
+checkFileExists('routes/investments.js', 'Investments Route File');
+console.log('- Crypto Route:', checkFileContains('routes/investments.js', ['/crypto', 'handleCryptoInvestment']) ? '✅ Present' : '❌ Not found');
+
+// 2. Controller logic
+checkFileExists('controllers/investmentController.js', 'Investment Controller');
+console.log('- handleCryptoInvestment:', checkFileContains('controllers/investmentController.js', ['handleCryptoInvestment', 'CoinGate', 'status: "pending"']) ? '✅ Present' : '❌ Not found');
+
+// 3. Webhook route
+checkFileExists('routes/cryptoWebhook.js', 'Crypto Webhook Route');
+console.log('- Webhook Handler:', checkFileContains('routes/cryptoWebhook.js', ['/coingate/webhook', 'updateCryptoTransactionStatus']) ? '✅ Present' : '❌ Not found');
+
+// 4. Transaction schema
+checkFileExists('models/Transaction.js', 'Transaction Schema');
+console.log('- Crypto Fields in Transaction:', checkFileContains('models/Transaction.js', ['txHash', 'status', 'walletAddress', 'crypto']) ? '✅ Present' : '❌ Not found');
+
+// 5. Wallet Model
+checkFileExists('models/Wallet.js', 'Wallet Schema');
+console.log('- Balance Update Support:', checkFileContains('models/Wallet.js', ['balance', 'update']) ? '✅ Present' : '❌ Not found');
+
+// 6. Frontend Integration (basic checks)
+console.log('\n--- Frontend Checks (src/pages or src/components) ---');
+checkFileExists('client/src/pages/InvestNow.js', 'InvestNow Page');
+console.log('- Crypto Payment Trigger:', checkFileContains('client/src/pages/InvestNow.js', ['Pay with Crypto', 'cryptoPaymentUrl']) ? '✅ Present' : '❌ Not found');
+
+checkFileExists('client/src/pages/InvestorDashboard.js', 'Investor Dashboard Page');
+console.log('- Crypto Investment Data:', checkFileContains('client/src/pages/InvestorDashboard.js', ['transactionHash', 'crypto']) ? '✅ Present' : '❌ Not found');
+
+console.log('\n=== Validation Complete ===\n');

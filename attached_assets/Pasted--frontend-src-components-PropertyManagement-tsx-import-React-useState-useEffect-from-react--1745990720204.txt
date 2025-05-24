@@ -1,0 +1,198 @@
+// frontend/src/components/PropertyManagement.tsx
+import React, { useState, useEffect } from 'react';
+import { 
+  Container, 
+  Paper, 
+  TextField, 
+  Button, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  LinearProgress,
+  IconButton
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers';
+import { apiClient } from '../api/client';
+import { Property, Milestone } from '../types';
+
+const PropertyManagement = () => {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const res = await apiClient.get('/api/admin/properties');
+        setProperties(res.data);
+      } catch (err) {
+        setError('Failed to load properties');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProperties();
+  }, []);
+
+  const handleCreateProperty = async (formData: FormData) => {
+    try {
+      const res = await apiClient.post('/api/admin/properties', formData);
+      setProperties([...properties, res.data]);
+    } catch (err) {
+      setError('Failed to create property');
+    }
+  };
+
+  const handleUpdateMilestone = async (propertyId: string, milestoneId: string, updates: Partial<Milestone>) => {
+    try {
+      await apiClient.patch(`/api/admin/properties/${propertyId}/milestones/${milestoneId}`, updates);
+      setProperties(properties.map(p => 
+        p.id === propertyId ? {
+          ...p,
+          milestones: p.milestones.map(m => 
+            m.id === milestoneId ? { ...m, ...updates } : m
+          )
+        } : p
+      ));
+    } catch (err) {
+      setError('Failed to update milestone');
+    }
+  };
+
+  if (loading) return <LinearProgress />;
+  if (error) return <div>{error}</div>;
+
+  return (
+    <Container>
+      <Button variant="contained" onClick={() => setSelectedProperty(null)}>
+        Create New Property
+      </Button>
+
+      {!selectedProperty ? (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Title</TableCell>
+                <TableCell>Funding Progress</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Backers</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {properties.map(property => (
+                <TableRow key={property.id}>
+                  <TableCell>{property.title}</TableCell>
+                  <TableCell>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={(property.currentFunding / property.fundingGoal) * 100} 
+                    />
+                    {((property.currentFunding / property.fundingGoal) * 100).toFixed(1)}%
+                  </TableCell>
+                  <TableCell>{property.status}</TableCell>
+                  <TableCell>{property.backers}</TableCell>
+                  <TableCell>
+                    <Button onClick={() => setSelectedProperty(property)}>Edit</Button>
+                    <Button color="secondary">Archive</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <PropertyEditor 
+          property={selectedProperty}
+          onSave={handleCreateProperty}
+          onClose={() => setSelectedProperty(null)}
+        />
+      )}
+    </Container>
+  );
+};
+
+const PropertyEditor = ({ property, onSave, onClose }) => {
+  const [formState, setFormState] = useState(property || {
+    title: '',
+    description: '',
+    fundingGoal: 0,
+    investmentTenor: 12,
+    roiPercentage: 8
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    Object.entries(formState).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+    onSave(formData);
+    onClose();
+  };
+
+  return (
+    <Paper style={{ padding: '20px', marginTop: '20px' }}>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          label="Property Title"
+          fullWidth
+          margin="normal"
+          value={formState.title}
+          onChange={e => setFormState({...formState, title: e.target.value})}
+        />
+        
+        <TextField
+          label="Description"
+          multiline
+          rows={4}
+          fullWidth
+          margin="normal"
+          value={formState.description}
+          onChange={e => setFormState({...formState, description: e.target.value})}
+        />
+
+        <div style={{ display: 'flex', gap: '1rem', margin: '1rem 0' }}>
+          <TextField
+            label="Funding Goal"
+            type="number"
+            value={formState.fundingGoal}
+            onChange={e => setFormState({...formState, fundingGoal: e.target.value})}
+          />
+          
+          <TextField
+            label="Investment Tenor (months)"
+            type="number"
+            value={formState.investmentTenor}
+            onChange={e => setFormState({...formState, investmentTenor: e.target.value})}
+          />
+
+          <TextField
+            label="ROI Percentage"
+            type="number"
+            value={formState.roiPercentage}
+            onChange={e => setFormState({...formState, roiPercentage: e.target.value})}
+          />
+        </div>
+
+        <Button type="submit" variant="contained" color="primary">
+          Save Property
+        </Button>
+        <Button onClick={onClose} style={{ marginLeft: '1rem' }}>
+          Cancel
+        </Button>
+      </form>
+    </Paper>
+  );
+};
+
+export default PropertyManagement;

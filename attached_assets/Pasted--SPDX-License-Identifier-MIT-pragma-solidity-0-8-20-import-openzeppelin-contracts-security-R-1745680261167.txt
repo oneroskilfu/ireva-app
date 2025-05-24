@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract iREVAEscrow is ReentrancyGuard {
+    address public admin;
+    address public projectOwner;
+    IERC20 public stablecoin; // USDC or other ERC20 token
+    uint256 public fundingGoal;
+    uint256 public deadline;
+    bool public goalReached;
+    bool public fundsReleased;
+
+    mapping(address => uint256) public contributions;
+
+    event ContributionReceived(address indexed contributor, uint256 amount);
+    event FundingGoalReached();
+    event FundsReleased(address indexed projectOwner, uint256 amount);
+    event Refunded(address indexed investor, uint256 amount);
+    event EmergencyWithdrawal(address indexed admin, uint256 amount);
+
+    constructor(
+        address _projectOwner,
+        address _stablecoinAddress,
+        uint256 _fundingGoal,
+        uint256 _durationInDays
+    ) {
+        require(_projectOwner != address(0), "Invalid project owner");
+        require(_stablecoinAddress != address(0), "Invalid token address");
+
+        admin = msg.sender;
+        projectOwner = _projectOwner;
+        stablecoin = IERC20(_stablecoinAddress);
+        fundingGoal = _fundingGoal;
+        deadline = block.timestamp + (_durationInDays * 1 days);
+        goalReached = false;
+        fundsReleased = false;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Not authorized");
+        _;
+    }
+
+    // Investors contribute stablecoin
+    function contribute(uint256 amount) external nonReentrant {
+        require(block.timestamp <= deadline, "Funding closed");
+        require(amount > 0, "Amount must be greater than zero");
+
+        contributions[msg.sender] += amount;
+        require(stablecoin.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+
+        emit ContributionReceived(msg.sender, amount);
+    }
+
+    // Check if the funding goal has been reached
+    function checkGoalReached() public {
+        require(block.timestamp >= deadline, "Funding still active");
+        
+        if (stablecoin.balanceOf(address(this)) >= fundingGoal) {
+            goalReached = true;
+            emit FundingGoalReached();
+        }
+    }
+
+    // Admin releases funds to project owner after goal is reached
+    function releaseFunds() external onlyAdmin nonReentrant {
+        require(goalReached, "Goal not reached");
+        require(!fundsReleased, "Funds already released");
+
+        uint256 balance = stablecoin.balanceOf(address(this));
+        fundsReleased = true;
+        require(stablecoin.transfer(projectOwner, balance), "Transfer to project owner failed");
+
+        emit FundsReleased(projectOwner, balance);
+    }
+
+    // Refund investors if goal not reached
+    function refund() external nonReentrant {
+        require(block.timestamp >= deadline, "Funding still active");
+        require(!goalReached, "Goal was reached");
+
+        uint256 amount = contributions[msg.sender];
+        require(amount > 0, "No contribution to refund");
+
+        contributions[msg.sender] = 0;
+        require(stablecoin.transfer(msg.sender, amount), "Refund transfer failed");
+
+        emit Refunded(msg.sender, amount);
+    }
+
+    // Emergency withdrawal by Admin (last resort only)
+    function emergencyWithdraw() external onlyAdmin nonReentrant {
+        uint256 balance = stablecoin.balanceOf(address(this));
+        require(stablecoin.transfer(admin, balance), "Emergency withdrawal failed");
+
+        emit EmergencyWithdrawal(admin, balance);
+    }
+}

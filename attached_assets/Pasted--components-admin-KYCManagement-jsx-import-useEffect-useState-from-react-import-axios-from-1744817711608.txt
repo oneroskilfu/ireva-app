@@ -1,0 +1,70 @@
+// components/admin/KYCManagement.jsx
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Paper, Button, Typography
+} from '@mui/material';
+
+const KYCManagement = () => {
+  const [kycs, setKycs] = useState([]);
+
+  const fetchKYCs = async () => {
+    const token = localStorage.getItem('token');
+    const res = await axios.get('/api/kyc', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setKycs(res.data);
+  };
+
+  const handleApproval = async (id, status) => {
+    const token = localStorage.getItem('token');
+    await axios.patch(`/api/kyc/${id}`, { status }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchKYCs(); // Refresh after update
+  };
+
+  useEffect(() => {
+    fetchKYCs();
+  }, []);
+
+  return (
+    <Paper sx={{ padding: 3 }}>
+      <Typography variant="h5" mb={2}>KYC Submissions</Typography>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>User</TableCell>
+              <TableCell>ID Number</TableCell>
+              <TableCell>Bank</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {kycs.map((kyc) => (
+              <TableRow key={kyc._id}>
+                <TableCell>{kyc.fullName}</TableCell>
+                <TableCell>{kyc.idNumber}</TableCell>
+                <TableCell>{kyc.bankName}</TableCell>
+                <TableCell>{kyc.status}</TableCell>
+                <TableCell>
+                  {kyc.status === 'Pending' && (
+                    <>
+                      <Button color="success" onClick={() => handleApproval(kyc._id, 'Approved')}>Approve</Button>
+                      <Button color="error" onClick={() => handleApproval(kyc._id, 'Rejected')}>Reject</Button>
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
+  );
+};
+
+export default KYCManagement;

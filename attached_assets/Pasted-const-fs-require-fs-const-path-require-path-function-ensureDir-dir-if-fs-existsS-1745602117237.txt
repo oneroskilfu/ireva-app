@@ -1,0 +1,106 @@
+const fs = require('fs');
+const path = require('path');
+
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`✅ Created directory: ${dir}`);
+  }
+}
+
+function createIfMissing(filePath, content) {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, content);
+    console.log(`✅ Created file: ${filePath}`);
+  } else {
+    console.log(`✔ File exists: ${filePath}`);
+  }
+}
+
+// 1. Crypto Controller
+ensureDir('controllers');
+createIfMissing('controllers/cryptoController.js', `
+// controllers/cryptoController.js
+const handleCryptoInvestment = (req, res) => {
+  const { projectId, userId, amount } = req.body;
+  // Simulate a crypto investment request
+  res.json({ success: true, message: 'Crypto investment initialized', redirectUrl: 'https://pay.crypto.gateway' });
+};
+
+const updateCryptoTransactionStatus = (req, res) => {
+  // This is where you would handle webhook updates
+  console.log('Webhook received:', req.body);
+  res.status(200).send('OK');
+};
+
+module.exports = {
+  handleCryptoInvestment,
+  updateCryptoTransactionStatus,
+};
+`);
+
+// 2. Crypto Route
+ensureDir('routes');
+createIfMissing('routes/crypto.js', `
+// routes/crypto.js
+const express = require('express');
+const router = express.Router();
+const { handleCryptoInvestment, updateCryptoTransactionStatus } = require('../controllers/cryptoController');
+
+router.post('/invest/crypto', handleCryptoInvestment);
+router.post('/webhook/crypto', updateCryptoTransactionStatus);
+
+module.exports = router;
+`);
+
+// 3. Transaction Model
+ensureDir('models');
+createIfMissing('models/Transaction.js', `
+// models/Transaction.js
+const mongoose = require('mongoose');
+
+const transactionSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
+  amount: Number,
+  currency: String,
+  txHash: String,
+  status: { type: String, enum: ['pending', 'confirmed', 'failed'], default: 'pending' },
+  walletAddress: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Transaction', transactionSchema);
+`);
+
+// 4. Basic Frontend Integration (React)
+const frontendDir = 'client/src/pages';
+ensureDir(frontendDir);
+createIfMissing(`${frontendDir}/InvestNow.js`, `
+// client/src/pages/InvestNow.js
+import React from 'react';
+
+const InvestNow = () => {
+  const investWithCrypto = async () => {
+    const res = await fetch('/api/invest/crypto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: '123', userId: 'abc', amount: 1000 })
+    });
+    const data = await res.json();
+    window.location.href = data.redirectUrl;
+  };
+
+  return (
+    <div>
+      <h2>Invest in Project</h2>
+      <button onClick={investWithCrypto}>Pay with Crypto</button>
+    </div>
+  );
+};
+
+export default InvestNow;
+`);
+
+console.log('\n=== Auto-Fix Complete ===');
+console.log('Be sure to:\n- Mount crypto.js in your Express app\n- Add CoinGate or BitPay payment logic\n- Add webhooks for production use\n');

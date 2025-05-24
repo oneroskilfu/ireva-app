@@ -1,0 +1,270 @@
+Document Management System**
+**Why**: Central hub for property contracts, investor agreements, and legal docs  
+**Implementation**:
+```typescript
+// Schema
+export const documentTypes = pgEnum('doc_type', [
+  'contract', 'kyc', 'property_deed', 'term_sheet'
+]);
+
+export const documents = pgTable('documents', {
+  id: uuid('id').primaryKey(),
+  title: varchar('title', 255).notNull(),
+  type: documentTypes('type').notNull(),
+  fileUrl: text('file_url').notNull(),
+  metadata: jsonb('metadata').$type<{
+    parties?: string[];
+    expiration?: Date;
+    signatures?: Array<{ userId: string; signedAt: Date }>;
+  }>(),
+  uploadedBy: uuid('user_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
+// Version control extension
+export const documentVersions = pgTable('document_versions', {
+  id: uuid('id').primaryKey(),
+  documentId: uuid('doc_id').references(() => documents.id),
+  version: integer('version').notNull(),
+  hash: varchar('hash', 64).notNull() // SHA-256
+});
+```
+
+---
+
+### **2. Automated Reporting Engine**
+**Why**: Regulatory compliance and investor transparency  
+**Components**:
+```tsx
+// Financial report generator
+const generateInvestorStatement = (investorId: string) => {
+  return db
+    .select({
+      property: properties.title,
+      invested: investments.amount,
+      returned: sql`SUM(returns.amount)`,
+      roi: sql`(SUM(returns.amount) / investments.amount * 100`
+    })
+    .from(investments)
+    .leftJoin(returns, eq(investments.id, returns.investmentId))
+    .where(eq(investments.userId, investorId))
+    .groupBy(investments.id, properties.title);
+};
+
+// PDF export service
+const exportAsPDF = (data) => {
+  const doc = new PDFDocument();
+  doc.text(`Statement for ${new Date().toLocaleDateString()}`);
+  data.forEach(row => {
+    doc.text(`${row.property}: ${row.roi.toFixed(1)}% ROI`);
+  });
+  return doc.pipe(fs.createWriteStream('report.pdf'));
+};
+```
+
+---
+
+### **3. Smart Contract Integration**
+**Why**: Transparent property ownership tracking  
+**Implementation**:
+```solidity
+// PropertyOwnership.sol
+contract PropertyOwnership is ERC1155 {
+  mapping(uint256 => address) public propertyOwner;
+  mapping(uint256 => uint256) public totalShares;
+
+  function mintShares(address investor, uint256 propertyId, uint256 shares) external {
+    _mint(investor, propertyId, shares, "");
+    totalShares[propertyId] += shares;
+  }
+  
+  function distributeDividends(uint256 propertyId) external payable {
+    uint256 shares = totalShares[propertyId];
+    require(shares > 0, "No shares issued");
+    uint256 perShare = msg.value / shares;
+    
+    address[] memory investors = getInvestors(propertyId);
+    for(uint i = 0; i < investors.length; i++) {
+      (bool sent, ) = investors[i].call{value: perShare}("");
+      require(sent, "Payment failed");
+    }
+  }
+}
+```
+
+---
+
+### **4. Investor Portal**
+**Key Features**:
+- Real-time investment performance dashboard
+- Document access portal
+- Tax document repository
+- Secondary marketplace UI
+```tsx
+// client/src/pages/investor/Portal.tsx
+const InvestorPortal = () => {
+  const { data: portfolio } = usePortfolio();
+  
+  return (
+    <Container>
+      <PerformanceChart data={portfolio} />
+      <DocumentVault />
+      <SecondaryMarketListings />
+      <TaxCenter />
+    </Container>
+  );
+};
+```
+
+---
+
+### **5. Compliance Automation**
+**Components**:
+```typescript
+// KYC/AML check
+const screenInvestor = async (userId: string) => {
+  const [kyc, transactions] = await Promise.all([
+    db.query.kycData.findFirst({ where: eq(users.id, userId) }),
+    db.query.transactions.findMany({ where: eq(transactions.userId, userId) })
+  ]);
+
+  const riskScore = calculateAMLRisk({
+    kycData: kyc,
+    transactionPatterns: transactions
+  });
+
+  await db.update(users)
+    .set({ riskRating: riskScore })
+    .where(eq(users.id, userId));
+};
+
+// Sanctions list check
+const checkSanctionsList = async (name: string) => {
+  const response = await axios.post(SANCTIONS_API, { name });
+  return response.data.matches;
+};
+```
+
+---
+
+### **6. Mobile-First Experience**
+**Key Components**:
+```tsx
+// React Native core components
+const InvestmentCard = ({ property }) => (
+  <View style={styles.card}>
+    <Image source={{ uri: property.image }} style={styles.image} />
+    <Text style={styles.title}>{property.title}</Text>
+    <ProgressBar progress={property.fundingProgress} />
+    <ActionButton onPress={() => navigate('Invest', { propertyId: property.id })}>
+      Invest Now
+    </ActionButton>
+  </View>
+);
+```
+
+---
+
+### **7. AI-Powered Analytics**
+**Implementation**:
+```python
+# predictive_analytics.py
+class ROI Predictor:
+    def __init__(self):
+        self.model = load_model('roi_predictor.h5')
+    
+    def predict(self, property_features):
+        scaler = StandardScaler()
+        scaled = scaler.fit_transform(property_features)
+        return self.model.predict(scaled)
+```
+
+---
+
+### **8. Escrow Management**
+**Workflow**:
+```mermaid
+sequenceDiagram
+    Investor->>Escrow: Funds deposit
+    Escrow->>Smart Contract: Lock funds
+    Property-->>Escrow: Milestone achieved
+    Escrow->>Contractor: Release payment
+    Escrow->>Investor: Send progress report
+```
+
+---
+
+### **9. Social Proof System**
+**Components**:
+```tsx
+// Investor testimonials
+const SocialProofWidget = () => {
+  const { data: testimonials } = useTestimonials();
+  
+  return (
+    <Carousel>
+      {testimonials.map((testimonial) => (
+        <Blockquote 
+          key={testimonial.id}
+          text={testimonial.content}
+          author={testimonial.author}
+        />
+      ))}
+    </Carousel>
+  );
+};
+```
+
+---
+
+### **10. Disaster Recovery**
+**Strategy**:
+```bash
+# Backup script
+pg_dump -U $DB_USER -h $DB_HOST $DB_NAME | gzip > backup_$(date +%s).sql.gz
+
+# AWS S3 Sync
+aws s3 sync ./backups s3://ireva-db-backups --delete
+```
+
+---
+
+### **11. Localization Engine**
+**Implementation**:
+```typescript
+// i18n setup
+const i18n = {
+  locales: ['en', 'es', 'de'],
+  defaultLocale: 'en',
+  translations: {
+    investButton: {
+      en: 'Invest Now',
+      es: 'Invertir Ahora',
+      de: 'Jetzt investieren'
+    }
+  }
+};
+
+// React hook
+const useTranslation = (key: string) => {
+  const { locale } = useRouter();
+  return i18n.translations[key][locale];
+};
+```
+
+---
+
+### **12. Performance Optimization**
+**Techniques**:
+```typescript
+// Database indexing
+CREATE INDEX CONCURRENTLY investment_user_idx ON investments(user_id);
+
+// Redis caching
+const getFeaturedProperties = cached(
+  async () => db.query.properties.findMany({ 
+    where: gt(properties.fundingProgress, 0.7) 
+  }),
+  { ttl: 3600, key: 'featured-props' }
+);
+```

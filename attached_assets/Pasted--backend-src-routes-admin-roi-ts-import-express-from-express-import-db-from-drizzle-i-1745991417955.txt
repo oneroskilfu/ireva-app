@@ -1,0 +1,127 @@
+// backend/src/routes/admin/roi.ts
+import express from 'express';
+import { db } from '../drizzle';
+import { eq, and, sql, gte, lte } from 'drizzle-orm';
+import { 
+  properties,
+  payoutSchedules,
+  roiDistributions,
+  investorPayouts,
+  transactions
+} from '../../shared/schema';
+import { adminAuth } from '../middleware/auth';
+
+const router = express.Router();
+
+// Get ROI performance for a property
+router.get('/:propertyId/performance', adminAuth, async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    
+    const result = await db
+      .select({
+        totalDistributed: sql<number>`sum(amount)`,
+        pendingAmount: sql<number>`sum(case when status = 'pending' then amount else 0 end)`,
+        nextPayoutDate: sql<Date>`min(payout_date)`,
+      })
+      .from(roiDistributions)
+      .where(and(
+        eq(roiDistributions.propertyId, propertyId),
+        eq(roiDistributions.status, 'pending')
+      ));
+
+    res.json(result[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch ROI performance' });
+  }
+});
+
+// Create payout schedule
+router.post('/:propertyId/schedules', adminAuth, async (req, res) => {
+  try {
+    const newSchedule = await db
+      .insert(payoutSchedules)
+      .values({
+        propertyId: req.params.propertyId,
+        ...req.body,
+        startDate: new Date(req.body.startDate),
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      })
+      .returning();
+
+    res.status(201).json(newSchedule[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create payout schedule' });
+  }
+});
+
+// Trigger ROI distribution
+router.post('/:propertyId/distributions', adminAuth, async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    
+    // 1. Create distribution record
+    const distribution = await db
+      .insert(roiDistributions)
+      .values({
+        propertyId,
+        payoutDate: new Date(),
+        totalAmount: req.body.amount,
+        initiatedBy: req.user.id,
+      })
+      .returning();
+
+    // 2. Calculate investor payouts (simplified example)
+    const investors = await db.query.investments.findMany({
+      where: eq(investments.propertyId, propertyId),
+    });
+
+    const payoutPromises = investors.map(investor => 
+      db.insert(investorPayouts).values({
+        distributionId: distribution[0].id,
+        investorId: investor.investorId,
+        amount: investor.amount * req.body.percentage,
+      })
+    );
+
+    await Promise.all(payoutPromises);
+    
+    // 3. Initiate actual payments (pseudo-code)
+    // await processPayouts(distribution[0].id);
+
+    res.json(distribution[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to trigger distribution' });
+  }
+});
+
+// Generate ROI report
+router.get('/:propertyId/report', adminAuth, async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const report = await db
+      .select({
+        date: roiDistributions.payoutDate,
+        totalAmount: roiDistributions.totalAmount,
+        status: roiDistributions.status,
+        paidInvestors: sql<number>`count(${investorPayouts.id}) filter (where ${investorPayouts.status} = 'paid')`,
+        pendingAmount: sql<number>`sum(${investorPayouts.amount}) filter (where ${investorPayouts.status} = 'pending')`,
+      })
+      .from(roiDistributions)
+      .leftJoin(investorPayouts, eq(roiDistributions.id, investorPayouts.distributionId))
+      .where(and(
+        eq(roiDistributions.propertyId, propertyId),
+        gte(roiDistributions.payoutDate, new Date(startDate)),
+        lte(roiDistributions.payoutDate, new Date(endDate))
+      ))
+      .groupBy(roiDistributions.id);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=roi-report.csv');
+    res.send(generateCSV(report));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate report' });
+  }
+});

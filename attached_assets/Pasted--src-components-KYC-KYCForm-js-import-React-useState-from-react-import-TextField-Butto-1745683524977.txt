@@ -1,0 +1,91 @@
+// src/components/KYC/KYCForm.js
+
+import React, { useState } from 'react';
+import { TextField, Button, Grid, Typography, Checkbox, FormControlLabel } from '@mui/material';
+
+const KYCForm = ({ onSubmit }) => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    address: '',
+    city: '',
+    country: '',
+    idDocument: '',
+    cryptoWallet: '',
+    sourceOfFunds: '',
+    occupation: '',
+    citizenship: '',
+    isPEP: false, // Politically Exposed Person
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Typography variant="h5" gutterBottom>
+        Complete Your KYC Verification
+      </Typography>
+      <Grid container spacing={2}>
+        {/* Personal Details */}
+        <Grid item xs={12}>
+          <TextField label="Full Name" name="fullName" fullWidth required onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Address" name="address" fullWidth required onChange={handleChange} />
+        </Grid>
+        <Grid item xs={6}>
+          <TextField label="City" name="city" fullWidth required onChange={handleChange} />
+        </Grid>
+        <Grid item xs={6}>
+          <TextField label="Country" name="country" fullWidth required onChange={handleChange} />
+        </Grid>
+
+        {/* Identity Document */}
+        <Grid item xs={12}>
+          <TextField label="ID Document URL (upload separately)" name="idDocument" fullWidth required onChange={handleChange} />
+        </Grid>
+
+        {/* Crypto-specific fields */}
+        <Grid item xs={12}>
+          <TextField label="Crypto Wallet Address (optional)" name="cryptoWallet" fullWidth onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Source of Funds" name="sourceOfFunds" fullWidth required onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Occupation" name="occupation" fullWidth required onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Citizenship" name="citizenship" fullWidth required onChange={handleChange} />
+        </Grid>
+
+        {/* PEP Checkbox */}
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={<Checkbox name="isPEP" color="primary" onChange={handleChange} />}
+            label="I am a Politically Exposed Person (PEP)"
+          />
+        </Grid>
+
+        {/* Submit */}
+        <Grid item xs={12}>
+          <Button type="submit" variant="contained" color="primary" fullWidth>
+            Submit KYC
+          </Button>
+        </Grid>
+      </Grid>
+    </form>
+  );
+};
+
+export default KYCForm;

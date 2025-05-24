@@ -1,0 +1,254 @@
+I'll provide a structured implementation. Let's break this into backend and frontend parts:
+
+```typescript
+// backend/src/interfaces.ts
+export interface Wallet {
+  id: string;
+  type: 'main' | 'escrow' | 'rewards';
+  balance: number;
+  currency: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'deposit' | 'withdrawal';
+  amount: number;
+  status: 'pending' | 'completed';
+  date: Date;
+}
+```
+
+```typescript
+// backend/src/middleware/auth.ts
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).send('Access denied');
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    // In production: Check if decoded user has admin privileges
+    next();
+  } catch (err) {
+    res.status(400).send('Invalid token');
+  }
+};
+```
+
+```typescript
+// backend/src/routes/admin/wallets.ts
+import express from 'express';
+import { Wallet, Transaction } from '../interfaces';
+import { adminAuth } from '../middleware/auth';
+
+const router = express.Router();
+
+// Mock data
+let wallets: Wallet[] = [
+  { id: '1', type: 'main', balance: 100000, currency: 'USD' },
+  { id: '2', type: 'escrow', balance: 50000, currency: 'USD' },
+];
+
+let transactions: Transaction[] = [
+  { id: 't1', type: 'deposit', amount: 10000, status: 'pending', date: new Date() },
+  { id: 't2', type: 'withdrawal', amount: 5000, status: 'completed', date: new Date() },
+];
+
+router.get('/', adminAuth, (req, res) => {
+  res.json(wallets);
+});
+
+router.get('/transactions', adminAuth, (req, res) => {
+  res.json(transactions);
+});
+
+router.post('/transactions/:id/approve', adminAuth, (req, res) => {
+  const transaction = transactions.find(t => t.id === req.params.id);
+  if (!transaction) return res.status(404).send('Transaction not found');
+  
+  transaction.status = 'completed';
+  res.json(transaction);
+});
+
+export default router;
+```
+
+```typescript
+// backend/src/app.ts
+import express from 'express';
+import cors from 'cors';
+import walletsRouter from './routes/admin/wallets';
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.use('/api/admin/wallets', walletsRouter);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+Now for the frontend:
+
+```typescript
+// frontend/src/api/client.ts
+import axios from 'axios';
+
+export const apiClient = axios.create({
+  baseURL: process.env.REACT_APP_API_URL,
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+  }
+});
+```
+
+```typescript
+// frontend/src/components/WalletControlPanel.tsx
+import React, { useEffect, useState } from 'react';
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, Alert, Button } from '@mui/material';
+import { apiClient } from '../api/client';
+import { Wallet, Transaction } from '../types';
+
+const WalletControlPanel = () => {
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [walletRes, txRes] = await Promise.all([
+          apiClient.get('/api/admin/wallets'),
+          apiClient.get('/api/admin/wallets/transactions')
+        ]);
+        setWallets(walletRes.data);
+        setTransactions(txRes.data);
+      } catch (err) {
+        setError('Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleApprove = async (txId: string) => {
+    try {
+      await apiClient.post(`/api/admin/wallets/transactions/${txId}/approve`);
+      setTransactions(transactions.map(tx => 
+        tx.id === txId ? { ...tx, status: 'completed' } : tx
+      ));
+    } catch (err) {
+      setError('Approval failed');
+    }
+  };
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Alert severity="error">{error}</Alert>;
+
+  return (
+    <div>
+      <h1>Wallet Dashboard</h1>
+      
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        {wallets.map(wallet => (
+          <Paper key={wallet.id} style={{ padding: '1rem', minWidth: '200px' }}>
+            <h3>{wallet.type.toUpperCase()}</h3>
+            <p>{wallet.currency} {wallet.balance.toLocaleString()}</p>
+          </Paper>
+        ))}
+      </div>
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {transactions.map(tx => (
+              <TableRow key={tx.id}>
+                <TableCell>{tx.id}</TableCell>
+                <TableCell>{tx.type}</TableCell>
+                <TableCell>{tx.amount.toLocaleString()}</TableCell>
+                <TableCell>{tx.status}</TableCell>
+                <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  {tx.status === 'pending' && (
+                    <Button 
+                      variant="contained" 
+                      color="primary"
+                      onClick={() => handleApprove(tx.id)}
+                    >
+                      Approve
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </div>
+  );
+};
+
+export default WalletControlPanel;
+```
+
+```typescript
+// frontend/src/routes/AdminRoutes.tsx
+import { Route, Navigate } from 'react-router-dom';
+import WalletControlPanel from '../components/WalletControlPanel';
+
+const AdminRoutes = () => {
+  const isAuthenticated = !!localStorage.getItem('adminToken'); // Add proper auth check
+  
+  return (
+    <Route path="/admin/wallet">
+      {isAuthenticated ? <WalletControlPanel /> : <Navigate to="/login" />}
+    </Route>
+  );
+};
+```
+
+**Production Enhancements Suggestions:**
+
+Backend:
+1. Replace mock data with PostgreSQL/MongoDB with proper schema validation
+2. Add transaction processing queue (Redis/BullMQ)
+3. Implement proper error handling middleware
+4. Add request validation with Zod/Joi
+5. Add rate limiting and security headers
+6. Implement proper audit logging
+7. Add Webhook notifications for transaction updates
+
+Frontend:
+1. Add proper authentication flow with refresh tokens
+2. Implement pagination for transactions table
+3. Add data visualization for wallet balances
+4. Implement real-time updates with WebSockets
+5. Add CSV export functionality
+6. Implement proper error boundaries
+7. Add end-to-end testing with Cypress
+
+To run this system, you'll need to:
+1. Set up proper TypeScript config for both backend and frontend
+2. Configure environment variables (JWT_SECRET, API_URL)
+3. Add proper build scripts and process managers (PM2/Nodemon)
+4. Set up CORS configuration for production
+5. Implement proper logging (Winston/Morgan)
+
+This provides a solid foundation that can be extended with real financial integrations and additional admin features.

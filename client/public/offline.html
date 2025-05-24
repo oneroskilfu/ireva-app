@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iREVA - Offline</title>
+  <style>
+    body {
+      background-color: #f5f5f5;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      margin: 0;
+    }
+    h1 {
+      color: #4caf50;
+      font-size: 2rem;
+    }
+    p {
+      color: #555;
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+    img {
+      width: 150px;
+      margin-top: 20px;
+    }
+    button {
+      margin-top: 30px;
+      padding: 12px 24px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #43a047;
+    }
+  </style>
+</head>
+<body>
+  <h1>You are offline</h1>
+  <p>Don't worry, iREVA will reconnect automatically when you're back online.</p>
+  <img src="/logo192.png" alt="iREVA Logo">
+  <button onclick="location.reload()">Try Again</button>
+</body>
+</html>

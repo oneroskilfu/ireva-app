@@ -1,0 +1,301 @@
+import React, { useState, ReactNode } from 'react';
+import { 
+  Box, 
+  Drawer, 
+  AppBar, 
+  Toolbar, 
+  Typography, 
+  List, 
+  ListItem, 
+  ListItemIcon, 
+  ListItemText,
+  Divider,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+  Avatar,
+  Menu,
+  MenuItem,
+  Badge
+} from '@mui/material';
+import {
+  Dashboard,
+  VerifiedUser,
+  Business,
+  AccountBalance,
+  ShowChart,
+  People,
+  Settings,
+  Notifications,
+  Person,
+  Menu as MenuIcon,
+  ChevronLeft,
+  Logout
+} from '@mui/icons-material';
+import { useLocation } from 'wouter';
+
+const drawerWidth = 240;
+
+interface NavItem {
+  text: string;
+  icon: ReactNode;
+  path: string;
+  badge?: number;
+}
+
+interface AdminDashboardLayoutProps {
+  children: ReactNode;
+}
+
+const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({ children }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [drawerOpen, setDrawerOpen] = useState(!isMobile);
+  const [location, navigate] = useLocation();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleDrawerToggle = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const navItems: NavItem[] = [
+    { 
+      text: 'Dashboard', 
+      icon: <Dashboard />, 
+      path: '/admin/dashboard' 
+    },
+    { 
+      text: 'KYC Verification', 
+      icon: <VerifiedUser />, 
+      path: '/admin/kyc',
+      badge: 5 
+    },
+    { 
+      text: 'Properties', 
+      icon: <Business />, 
+      path: '/admin/properties' 
+    },
+    { 
+      text: 'Investors', 
+      icon: <People />, 
+      path: '/admin/investors' 
+    },
+    { 
+      text: 'Investments', 
+      icon: <AccountBalance />, 
+      path: '/admin/investments' 
+    },
+    { 
+      text: 'ROI Management', 
+      icon: <ShowChart />, 
+      path: '/admin/roi-management' 
+    },
+  ];
+
+  const settingsItems: NavItem[] = [
+    { 
+      text: 'Settings', 
+      icon: <Settings />, 
+      path: '/admin/settings' 
+    },
+    { 
+      text: 'Profile', 
+      icon: <Person />, 
+      path: '/admin/profile' 
+    },
+  ];
+
+  const drawer = (
+    <>
+      <Toolbar sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        px: [1]
+      }}>
+        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+          iREVA Admin
+        </Typography>
+        {isMobile && (
+          <IconButton onClick={handleDrawerToggle}>
+            <ChevronLeft />
+          </IconButton>
+        )}
+      </Toolbar>
+      <Divider />
+      <Box sx={{ overflow: 'auto' }}>
+        <List>
+          {navItems.map((item) => (
+            <ListItem 
+              button 
+              key={item.text} 
+              onClick={() => navigate(item.path)}
+              selected={location === item.path}
+              sx={{ 
+                borderRadius: '8px', 
+                mx: 1, 
+                mb: 0.5,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                  },
+                }
+              }}
+            >
+              <ListItemIcon>
+                {item.badge ? (
+                  <Badge badgeContent={item.badge} color="error">
+                    {item.icon}
+                  </Badge>
+                ) : (
+                  item.icon
+                )}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItem>
+          ))}
+        </List>
+        <Divider sx={{ my: 2 }} />
+        <List>
+          {settingsItems.map((item) => (
+            <ListItem 
+              button 
+              key={item.text} 
+              onClick={() => navigate(item.path)}
+              selected={location === item.path}
+              sx={{ 
+                borderRadius: '8px', 
+                mx: 1, 
+                mb: 0.5,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                  },
+                }
+              }}
+            >
+              <ListItemIcon>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItem>
+          ))}
+          <ListItem 
+            button 
+            sx={{ 
+              borderRadius: '8px', 
+              mx: 1, 
+              mb: 0.5,
+              color: 'error.main',
+            }}
+          >
+            <ListItemIcon>
+              <Logout sx={{ color: 'error.main' }} />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItem>
+        </List>
+      </Box>
+    </>
+  );
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <AppBar 
+        position="fixed" 
+        sx={{ 
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          boxShadow: 1,
+          bgcolor: 'background.paper',
+          color: 'text.primary'
+        }}
+      >
+        <Toolbar>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            iREVA Admin Dashboard
+          </Typography>
+          <IconButton color="inherit" sx={{ mr: 1 }}>
+            <Badge badgeContent={7} color="error">
+              <Notifications />
+            </Badge>
+          </IconButton>
+          <IconButton 
+            onClick={handleProfileMenuOpen}
+            size="small" 
+            edge="end" 
+            aria-label="account of current user"
+            aria-haspopup="true"
+            color="inherit"
+          >
+            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>A</Avatar>
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleProfileMenuClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+            <MenuItem onClick={() => { navigate('/admin/profile'); handleProfileMenuClose(); }}>Profile</MenuItem>
+            <MenuItem onClick={() => { navigate('/admin/settings'); handleProfileMenuClose(); }}>Settings</MenuItem>
+            <Divider />
+            <MenuItem onClick={handleProfileMenuClose}>Logout</MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
+      
+      <Drawer
+        variant={isMobile ? "temporary" : "permanent"}
+        open={drawerOpen}
+        onClose={isMobile ? handleDrawerToggle : undefined}
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          [`& .MuiDrawer-paper`]: { 
+            width: drawerWidth, 
+            boxSizing: 'border-box',
+            boxShadow: isMobile ? 2 : 0
+          },
+        }}
+      >
+        {drawer}
+      </Drawer>
+      
+      <Box 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          p: 3,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` }
+        }}
+      >
+        <Toolbar />
+        {children}
+      </Box>
+    </Box>
+  );
+};
+
+export default AdminDashboardLayout;

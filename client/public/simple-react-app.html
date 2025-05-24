@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple React Test</title>
+  <!-- Load React directly from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Load Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .reset {
+      background-color: #f44336;
+    }
+    .reset:hover {
+      background-color: #d32f2f;
+    }
+    .nav-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #2196F3;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Create a simple Auth Context
+    const AuthContext = React.createContext(null);
+
+    // Auth Provider Component
+    const AuthProvider = ({ children }) => {
+      const [user, setUser] = React.useState(null);
+
+      const login = (userData) => {
+        setUser(userData);
+      };
+
+      const logout = () => {
+        setUser(null);
+      };
+
+      return (
+        <AuthContext.Provider value={{ user, login, logout }}>
+          {children}
+        </AuthContext.Provider>
+      );
+    };
+
+    // Hook to use Auth Context
+    const useAuth = () => {
+      const context = React.useContext(AuthContext);
+      if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+      }
+      return context;
+    };
+
+    // Login Form Component
+    const LoginForm = () => {
+      const { login } = useAuth();
+      const [username, setUsername] = React.useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (username.trim()) {
+          login({
+            id: 1,
+            username: username,
+            role: 'user'
+          });
+        }
+      };
+
+      return (
+        <div className="container">
+          <h2>Login</h2>
+          <form onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="username">Username:</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                style={{ 
+                  padding: '8px', 
+                  marginLeft: '10px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd' 
+                }}
+              />
+            </div>
+            <button type="submit" style={{ marginTop: '10px' }}>Login</button>
+          </form>
+        </div>
+      );
+    };
+
+    // User Profile Component
+    const UserProfile = () => {
+      const { user, logout } = useAuth();
+
+      return (
+        <div className="container">
+          <h2>User Profile</h2>
+          <p>Welcome, {user.username}!</p>
+          <p>Role: {user.role}</p>
+          <button onClick={logout}>Logout</button>
+        </div>
+      );
+    };
+
+    // Counter Component
+    const Counter = () => {
+      const [count, setCount] = React.useState(0);
+      
+      return (
+        <div className="container">
+          <h2>Counter</h2>
+          <p>Count: {count}</p>
+          <button onClick={() => setCount(count + 1)}>Increment</button>
+          <button className="reset" onClick={() => setCount(0)}>Reset</button>
+        </div>
+      );
+    };
+
+    // Main App Component
+    const App = () => {
+      const { user } = useAuth();
+
+      return (
+        <div>
+          <h1>Simple React App with Hooks</h1>
+          <p>This is a simplified React app that uses hooks and context.</p>
+          
+          {user ? <UserProfile /> : <LoginForm />}
+          
+          <Counter />
+          
+          <a href="/" className="nav-link">Back to Home</a>
+        </div>
+      );
+    };
+
+    // Wrap the App in AuthProvider
+    const AppWithAuth = () => (
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    );
+
+    // Render the App
+    try {
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<AppWithAuth />);
+      console.log("React app rendered successfully");
+    } catch (error) {
+      document.getElementById('root').innerHTML = `
+        <div class="container" style="border-color: #f44336;">
+          <h2>Error Rendering React App</h2>
+          <pre style="color: #f44336; background: #ffebee; padding: 10px; border-radius: 4px;">${error.message}\n${error.stack}</pre>
+          <a href="/" class="nav-link">Back to Home</a>
+        </div>
+      `;
+      console.error("Error rendering React app:", error);
+    }
+  </script>
+</body>
+</html>

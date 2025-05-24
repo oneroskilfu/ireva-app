@@ -1,0 +1,45 @@
+2025-05-23T02:35:37.956694209Z 2:35:37 AM [vite] Pre-transform error: Failed to load url /src/main.tsx?v=hl1uCEvXhP-MeZnWqIC2u (resolved id: /src/main.tsx?v=hl1uCEvXhP-MeZnWqIC2u). Does the file exist?
+2025-05-23T02:35:49.224712052Z Error creating test users: TypeError: Cannot read properties of undefined (reading 'select')
+2025-05-23T02:35:49.441786576Z Database initialization error: TypeError: Cannot read properties of undefined (reading 'select')
+2025-05-23T02:35:49.458588392Z [2025-05-23 02:35:49] [ERROR]: Unhandled Promise Rejection
+2025-05-23T02:35:49.458622523Z     "name": "Error",
+2025-05-23T02:35:49.458627244Z     "stack": "Error: DATABASE_URL must be set. Did you forget to provision a database?\n    at file:///opt/render/project/src/dist/index.js:1000:17\n    at initializeDb (file:///opt/render/project/src/dist/index.js:1067:9)\n    at Proxy.select (file:///opt/render/project/src/dist/index.js:1073:9)\n    at DatabaseStorage.initializeDatabase (file:///opt/render/project/src/dist/index.js:1350:38)\n    at new DatabaseStorage (file:///opt/render/project/src/dist/index.js:1297:12)\n    at file:///opt/render/project/src/dist/index.js:1446:15\n    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)"
+2025-05-23T02:35:49.459125511Z [2025-05-23 02:35:49] [ERROR]: Unhandled Promise Rejection
+2025-05-23T02:35:49.459154673Z     "name": "Error",
+2025-05-23T02:35:49.459156723Z     "stack": "Error: DATABASE_URL must be set. Did you forget to provision a database?\n    at file:///opt/render/project/src/dist/index.js:1000:17\n    at initializeDb (file:///opt/render/project/src/dist/index.js:1067:9)\n    at Proxy.select (file:///opt/render/project/src/dist/index.js:1073:9)\n    at DatabaseStorage.initializeDatabase (file:///opt/render/project/src/dist/index.js:1350:38)\n    at new DatabaseStorage (file:///opt/render/project/src/dist/index.js:1297:12)\n    at file:///opt/render/project/src/dist/index.js:1446:15\n    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)"
+2025-05-23T02:35:49.468738391Z Redis client error: AggregateError [ECONNREFUSED]: 
+2025-05-23T02:35:49.468761053Z   [errors]: [
+2025-05-23T02:35:49.468763302Z     Error: connect ECONNREFUSED ::1:6379
+2025-05-23T02:35:49.468765753Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:49.468783684Z     Error: connect ECONNREFUSED 127.0.0.1:6379
+2025-05-23T02:35:49.468785954Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:49.549424068Z Error initializing database: Error: DATABASE_URL must be set. Did you forget to provision a database?
+2025-05-23T02:35:49.557146624Z Redis client error: AggregateError [ECONNREFUSED]: 
+2025-05-23T02:35:49.557169355Z   [errors]: [
+2025-05-23T02:35:49.557171675Z     Error: connect ECONNREFUSED ::1:6379
+2025-05-23T02:35:49.557173835Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:49.557191456Z     Error: connect ECONNREFUSED 127.0.0.1:6379
+2025-05-23T02:35:49.557193526Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:50.326080703Z Redis client error: AggregateError [ECONNREFUSED]: 
+2025-05-23T02:35:50.326100864Z   [errors]: [
+2025-05-23T02:35:50.326102684Z     Error: connect ECONNREFUSED ::1:6379
+2025-05-23T02:35:50.326104424Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:50.326119305Z     Error: connect ECONNREFUSED 127.0.0.1:6379
+2025-05-23T02:35:50.326121035Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:51.327815853Z Redis client error: AggregateError [ECONNREFUSED]: 
+2025-05-23T02:35:51.327843894Z   [errors]: [
+2025-05-23T02:35:51.327846274Z     Error: connect ECONNREFUSED ::1:6379
+2025-05-23T02:35:51.327848784Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:51.327866795Z     Error: connect ECONNREFUSED 127.0.0.1:6379
+2025-05-23T02:35:51.327868975Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:52.830406657Z Redis client error: AggregateError [ECONNREFUSED]: 
+2025-05-23T02:35:52.830427608Z   [errors]: [
+2025-05-23T02:35:52.830431098Z     Error: connect ECONNREFUSED ::1:6379
+2025-05-23T02:35:52.830434849Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:52.83045351Z     Error: connect ECONNREFUSED 127.0.0.1:6379
+2025-05-23T02:35:52.8304557Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:52.830683952Z   [errors]: [
+2025-05-23T02:35:52.830705884Z     Error: connect ECONNREFUSED ::1:6379
+2025-05-23T02:35:52.830709544Z         at createConnectionError (node:net:1675:14)
+2025-05-23T02:35:52.830744136Z     Error: connect ECONNREFUSED 127.0.0.1:6379
+2025-05-23T02:35:52.830746286Z         at createConnectionError (node:net:1675:14)

@@ -1,0 +1,37 @@
+# Alternative Dockerfile for Frontend-only deployment with Nginx
+# Use this for separate frontend deployments
+
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with cache optimization
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/app/node_modules/.cache \
+    npm install --omit=dev
+
+# Copy source code and shared utilities
+COPY . .
+COPY ../shared/ ./shared/
+
+# Build the React application
+RUN --mount=type=cache,target=/app/node_modules/.cache \
+    npm run build
+
+# Production stage with Nginx
+FROM nginx:alpine
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration for SPA routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

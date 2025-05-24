@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pure JavaScript Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .container {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #counter-display {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    #todo-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    #todo-list li {
+      padding: 10px;
+      background-color: #f5f5f5;
+      margin-bottom: 5px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .remove-btn {
+      background-color: #f44336;
+      font-size: 12px;
+      padding: 5px 10px;
+    }
+    .nav-link {
+      display: inline-block;
+      margin-top: 20px;
+      color: #2196F3;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pure JavaScript Test</h1>
+  <p>This page uses only plain JavaScript - no React, no frameworks.</p>
+
+  <div class="container">
+    <h2>Counter Example</h2>
+    <div id="counter-display">0</div>
+    <div>
+      <button id="increment-btn">Increment</button>
+      <button id="decrement-btn">Decrement</button>
+      <button id="reset-btn">Reset</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>Todo List Example</h2>
+    <div>
+      <input type="text" id="todo-input" placeholder="Add a new task">
+      <button id="add-todo-btn">Add</button>
+    </div>
+    <ul id="todo-list"></ul>
+  </div>
+
+  <a href="/" class="nav-link">Back to Home</a>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log("Pure JavaScript test loaded successfully - No React involved.");
+      
+      // Counter functionality
+      let count = 0;
+      const counterDisplay = document.getElementById('counter-display');
+      const incrementBtn = document.getElementById('increment-btn');
+      const decrementBtn = document.getElementById('decrement-btn');
+      const resetBtn = document.getElementById('reset-btn');
+
+      function updateCounter() {
+        counterDisplay.textContent = count;
+      }
+
+      incrementBtn.addEventListener('click', () => {
+        count++;
+        updateCounter();
+      });
+
+      decrementBtn.addEventListener('click', () => {
+        count--;
+        updateCounter();
+      });
+
+      resetBtn.addEventListener('click', () => {
+        count = 0;
+        updateCounter();
+      });
+
+      // Todo list functionality
+      const todoInput = document.getElementById('todo-input');
+      const addTodoBtn = document.getElementById('add-todo-btn');
+      const todoList = document.getElementById('todo-list');
+      
+      function addTodo() {
+        const text = todoInput.value.trim();
+        if (text !== '') {
+          const li = document.createElement('li');
+          
+          const todoText = document.createElement('span');
+          todoText.textContent = text;
+          li.appendChild(todoText);
+          
+          const removeBtn = document.createElement('button');
+          removeBtn.textContent = 'Remove';
+          removeBtn.className = 'remove-btn';
+          removeBtn.addEventListener('click', () => {
+            li.remove();
+          });
+          
+          li.appendChild(removeBtn);
+          todoList.appendChild(li);
+          
+          todoInput.value = '';
+          todoInput.focus();
+        }
+      }
+
+      addTodoBtn.addEventListener('click', addTodo);
+      
+      todoInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addTodo();
+        }
+      });
+      
+      // Add timestamp to verify the page is executing JavaScript
+      const timestampDiv = document.createElement('div');
+      timestampDiv.className = 'container';
+      timestampDiv.innerHTML = `
+        <h3>Page Load Information</h3>
+        <p>Page loaded at: ${new Date().toLocaleString()}</p>
+        <p>User agent: ${navigator.userAgent}</p>
+      `;
+      document.body.appendChild(timestampDiv);
+    });
+  </script>
+</body>
+</html>

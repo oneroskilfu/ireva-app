@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Investor Dashboard</title>
+  <style>
+    :root {
+      --primary-color: #3a7bd5;
+      --primary-dark: #2d62aa;
+      --primary-light: #6fa3e8;
+      --accent-color: #f9a825;
+      --accent-dark: #f57f17;
+      --text-color: #333;
+      --light-text: #fafafa;
+      --background: #f9f9f9;
+      --card-bg: #fff;
+      --error-color: #d32f2f;
+      --success-color: #388e3c;
+      --warning-color: #f57c00;
+      --info-color: #0288d1;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --sidebar-width: 250px;
+      --header-height: 64px;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: var(--background);
+      color: var(--text-color);
+      min-height: 100vh;
+    }
+    
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+      color: var(--light-text);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+      margin-right: 12px;
+    }
+    
+    .sidebar-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .sidebar-menu {
+      padding: 20px 0;
+    }
+    
+    .menu-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 20px;
+      opacity: 0.7;
+    }
+    
+    .menu-item {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      position: relative;
+    }
+    
+    .menu-item:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .menu-item.active {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .menu-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      background-color: var(--accent-color);
+    }
+    
+    .menu-item-icon {
+      margin-right: 12px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Main content */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      transition: margin 0.3s ease;
+    }
+    
+    .topbar {
+      height: var(--header-height);
+      background-color: var(--card-bg);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+    }
+    
+    .topbar-left {
+      display: flex;
+      align-items: center;
+    }
+    
+    .menu-toggle {
+      display: none;
+      cursor: pointer;
+      margin-right: 16px;
+    }
+    
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .topbar-right {
+      display: flex;
+      align-items: center;
+    }
+    
+    .user-menu {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .user-menu:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--primary-light);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      margin-right: 12px;
+    }
+    
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .user-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .user-role {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    /* Dashboard content */
+    .dashboard-content {
+      padding: 24px;
+    }
+    
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+    
+    .welcome-banner h2 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      position: relative;
+    }
+    
+    .welcome-banner p {
+      opacity: 0.8;
+      font-size: 14px;
+      max-width: 600px;
+      position: relative;
+    }
+    
+    .action-buttons {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      position: relative;
+    }
+    
+    .action-button {
+      padding: 10px 20px;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .action-button:hover {
+      background-color: var(--accent-dark);
+    }
+    
+    .action-button.secondary {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .action-button.secondary:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Portfolio summary */
+    .portfolio-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .summary-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      padding: 24px;
+    }
+    
+    .summary-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .summary-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #555;
+    }
+    
+    .summary-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+    }
+    
+    .icon-investment {
+      background-color: var(--primary-color);
+    }
+    
+    .icon-returns {
+      background-color: var(--success-color);
+    }
+    
+    .icon-balance {
+      background-color: var(--info-color);
+    }
+    
+    .summary-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .summary-subtitle {
+      font-size: 12px;
+      color: #777;
+    }
+    
+    /* Current investments */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .investments-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    .property-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .property-image {
+      height: 160px;
+      background-color: #ccc;
+      background-size: cover;
+      background-position: center;
+    }
+    
+    .property-content {
+      padding: 16px;
+    }
+    
+    .property-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .property-location {
+      font-size: 12px;
+      color: #777;
+      margin-bottom: 12px;
+    }
+    
+    .property-stats {
+      display: flex;
+      margin-bottom: 12px;
+    }
+    
+    .property-stat {
+      flex: 1;
+      padding: 0 8px;
+      border-right: 1px solid #eee;
+    }
+    
+    .property-stat:first-child {
+      padding-left: 0;
+    }
+    
+    .property-stat:last-child {
+      border-right: none;
+    }
+    
+    .stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #777;
+      margin-bottom: 4px;
+    }
+    
+    .stat-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background-color: #eee;
+      border-radius: 3px;
+      margin-bottom: 8px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      background-color: var(--primary-color);
+    }
+    
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #777;
+    }
+    
+    .property-actions {
+      display: flex;
+      margin-top: 12px;
+    }
+    
+    .property-action {
+      flex: 1;
+      padding: 8px 0;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--primary-color);
+      transition: background-color 0.2s;
+    }
+    
+    .property-action:hover {
+      background-color: rgba(58, 123, 213, 0.05);
+    }
+    
+    /* Recent transactions */
+    .transactions-table {
+      width: 100%;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    
+    .transactions-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .transactions-table th {
+      text-align: left;
+      padding: 16px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .transactions-table td {
+      padding: 16px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    
+    .transactions-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .transaction-type {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .type-deposit {
+      background-color: rgba(56, 142, 60, 0.1);
+      color: var(--success-color);
+    }
+    
+    .type-withdrawal {
+      background-color: rgba(211, 47, 47, 0.1);
+      color: var(--error-color);
+    }
+    
+    .type-dividend {
+      background-color: rgba(2, 136, 209, 0.1);
+      color: var(--info-color);
+    }
+    
+    .type-investment {
+      background-color: rgba(245, 124, 0, 0.1);
+      color: var(--warning-color);
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 992px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
+      
+      .portfolio-summary {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .user-info {
+        display: none;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      .investments-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .dashboard-content {
+        padding: 16px;
+      }
+      
+      .welcome-banner {
+        padding: 20px;
+      }
+      
+      .welcome-banner h2 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">i</div>
+        <h1>iREVA Investor</h1>
+      </div>
+      
+      <nav class="sidebar-menu">
+        <div class="menu-label">General</div>
+        <div class="menu-item active">
+          <div class="menu-item-icon">📊</div>
+          <span>Dashboard</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">📈</div>
+          <span>Portfolio</span>
+        </div>
+        
+        <div class="menu-label">Investments</div>
+        <div class="menu-item">
+          <div class="menu-item-icon">🏢</div>
+          <span>Browse Properties</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">⭐</div>
+          <span>Watchlist</span>
+        </div>
+        
+        <div class="menu-label">Financial</div>
+        <div class="menu-item">
+          <div class="menu-item-icon">💼</div>
+          <span>Wallet</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">📝</div>
+          <span>Transactions</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">📃</div>
+          <span>Documents</span>
+        </div>
+        
+        <div class="menu-label">Account</div>
+        <div class="menu-item">
+          <div class="menu-item-icon">👤</div>
+          <span>Profile</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">⚙️</div>
+          <span>Settings</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">🔔</div>
+          <span>Notifications</span>
+        </div>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="menu-toggle" id="menu-toggle">☰</div>
+          <h2 class="page-title">Dashboard</h2>
+        </div>
+        
+        <div class="topbar-right">
+          <div class="user-menu" id="user-menu">
+            <div class="user-avatar">T</div>
+            <div class="user-info">
+              <div class="user-name">Test Investor</div>
+              <div class="user-role">Investor</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <div class="dashboard-content">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+          <h2>Welcome back, Test Investor!</h2>
+          <p>Your portfolio is performing well with a 8.2% average ROI across all investments. Check out our new property listings that match your investment profile.</p>
+          <div class="action-buttons">
+            <button class="action-button">Explore New Properties</button>
+            <button class="action-button secondary">View Portfolio Performance</button>
+          </div>
+        </div>
+        
+        <!-- Portfolio Summary -->
+        <div class="portfolio-summary">
+          <div class="summary-card">
+            <div class="summary-card-header">
+              <div class="summary-card-title">Total Investment</div>
+              <div class="summary-card-icon icon-investment">💰</div>
+            </div>
+            <div class="summary-value">$125,000</div>
+            <div class="summary-subtitle">Across 5 properties</div>
+          </div>
+          
+          <div class="summary-card">
+            <div class="summary-card-header">
+              <div class="summary-card-title">Total Returns</div>
+              <div class="summary-card-icon icon-returns">📈</div>
+            </div>
+            <div class="summary-value">$10,250</div>
+            <div class="summary-subtitle">8.2% average ROI</div>
+          </div>
+          
+          <div class="summary-card">
+            <div class="summary-card-header">
+              <div class="summary-card-title">Wallet Balance</div>
+              <div class="summary-card-icon icon-balance">💵</div>
+            </div>
+            <div class="summary-value">$15,750</div>
+            <div class="summary-subtitle">Available for investment</div>
+          </div>
+        </div>
+        
+        <!-- Current Investments -->
+        <div class="section-header">
+          <h3 class="section-title">Current Investments</h3>
+          <button class="action-button">View All Investments</button>
+        </div>
+        
+        <div class="investments-container">
+          <div class="property-card">
+            <div class="property-image" style="background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8Y29tbWVyY2lhbCUyMHJlYWwlMjBlc3RhdGV8ZW58MHx8MHx8&auto=format&fit=crop&w=600&q=60')"></div>
+            <div class="property-content">
+              <h4 class="property-name">Skyline Apartments</h4>
+              <div class="property-location">Manhattan, New York</div>
+              
+              <div class="property-stats">
+                <div class="property-stat">
+                  <div class="stat-label">Investment</div>
+                  <div class="stat-value">$50,000</div>
+                </div>
+                <div class="property-stat">
+                  <div class="stat-label">ROI</div>
+                  <div class="stat-value">9.4%</div>
+                </div>
+                <div class="property-stat">
+                  <div class="stat-label">Term</div>
+                  <div class="stat-value">36 mo</div>
+                </div>
+              </div>
+              
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 75%"></div>
+              </div>
+              <div class="progress-text">
+                <span>Project completion</span>
+                <span>75%</span>
+              </div>
+              
+              <div class="property-actions">
+                <div class="property-action">View Details</div>
+                <div class="property-action">Performance</div>
+                <div class="property-action">Documents</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="property-card">
+            <div class="property-image" style="background-image: url('https://images.unsplash.com/photo-1577415124269-fc1140a69e91?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8b2ZmaWNlJTIwYnVpbGRpbmd8ZW58MHx8MHx8&auto=format&fit=crop&w=600&q=60')"></div>
+            <div class="property-content">
+              <h4 class="property-name">Downtown Office Tower</h4>
+              <div class="property-location">Chicago, Illinois</div>
+              
+              <div class="property-stats">
+                <div class="property-stat">
+                  <div class="stat-label">Investment</div>
+                  <div class="stat-value">$25,000</div>
+                </div>
+                <div class="property-stat">
+                  <div class="stat-label">ROI</div>
+                  <div class="stat-value">7.8%</div>
+                </div>
+                <div class="property-stat">
+                  <div class="stat-label">Term</div>
+                  <div class="stat-value">48 mo</div>
+                </div>
+              </div>
+              
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 100%"></div>
+              </div>
+              <div class="progress-text">
+                <span>Project completion</span>
+                <span>100%</span>
+              </div>
+              
+              <div class="property-actions">
+                <div class="property-action">View Details</div>
+                <div class="property-action">Performance</div>
+                <div class="property-action">Documents</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="property-card">
+            <div class="property-image" style="background-image: url('https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8bHV4dXJ5JTIwaG91c2V8ZW58MHx8MHx8&auto=format&fit=crop&w=600&q=60')"></div>
+            <div class="property-content">
+              <h4 class="property-name">Coastal Villa Resort</h4>
+              <div class="property-location">Miami, Florida</div>
+              
+              <div class="property-stats">
+                <div class="property-stat">
+                  <div class="stat-label">Investment</div>
+                  <div class="stat-value">$35,000</div>
+                </div>
+                <div class="property-stat">
+                  <div class="stat-label">ROI</div>
+                  <div class="stat-value">10.2%</div>
+                </div>
+                <div class="property-stat">
+                  <div class="stat-label">Term</div>
+                  <div class="stat-value">24 mo</div>
+                </div>
+              </div>
+              
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 45%"></div>
+              </div>
+              <div class="progress-text">
+                <span>Project completion</span>
+                <span>45%</span>
+              </div>
+              
+              <div class="property-actions">
+                <div class="property-action">View Details</div>
+                <div class="property-action">Performance</div>
+                <div class="property-action">Documents</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent Transactions -->
+        <div class="section-header">
+          <h3 class="section-title">Recent Transactions</h3>
+          <button class="action-button">View All Transactions</button>
+        </div>
+        
+        <div class="transactions-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>May 20, 2025</td>
+                <td>Deposit to Wallet</td>
+                <td><span class="transaction-type type-deposit">Deposit</span></td>
+                <td>+$10,000.00</td>
+                <td>Completed</td>
+              </tr>
+              <tr>
+                <td>May 19, 2025</td>
+                <td>Coastal Villa Resort Dividend</td>
+                <td><span class="transaction-type type-dividend">Dividend</span></td>
+                <td>+$890.00</td>
+                <td>Completed</td>
+              </tr>
+              <tr>
+                <td>May 15, 2025</td>
+                <td>Investment in Skyline Apartments</td>
+                <td><span class="transaction-type type-investment">Investment</span></td>
+                <td>-$25,000.00</td>
+                <td>Completed</td>
+              </tr>
+              <tr>
+                <td>May 10, 2025</td>
+                <td>Downtown Office Tower Dividend</td>
+                <td><span class="transaction-type type-dividend">Dividend</span></td>
+                <td>+$520.00</td>
+                <td>Completed</td>
+              </tr>
+              <tr>
+                <td>May 5, 2025</td>
+                <td>Withdrawal to Bank Account</td>
+                <td><span class="transaction-type type-withdrawal">Withdrawal</span></td>
+                <td>-$5,000.00</td>
+                <td>Completed</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Mobile menu toggle
+      const menuToggle = document.getElementById('menu-toggle');
+      const sidebar = document.getElementById('sidebar');
+      
+      menuToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+      });
+      
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener('click', function(event) {
+        if (window.innerWidth <= 992 && 
+            !sidebar.contains(event.target) && 
+            event.target !== menuToggle) {
+          sidebar.classList.remove('open');
+        }
+      });
+      
+      // User menu (logout)
+      const userMenu = document.getElementById('user-menu');
+      userMenu.addEventListener('click', function() {
+        // Mock logout functionality
+        if (confirm('Are you sure you want to log out?')) {
+          // Send logout request to the server
+          fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'same-origin'
+          })
+          .then(response => {
+            if (response.ok) {
+              // Redirect to login page
+              window.location.href = '/auth';
+            }
+          })
+          .catch(error => {
+            console.error('Logout failed:', error);
+          });
+        }
+      });
+      
+      // Menu items (mock navigation)
+      const menuItems = document.querySelectorAll('.menu-item');
+      menuItems.forEach(item => {
+        item.addEventListener('click', function() {
+          // Remove active class from all menu items
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          
+          // Add active class to clicked item
+          this.classList.add('active');
+          
+          // Update page title
+          const pageName = this.querySelector('span').textContent;
+          document.querySelector('.page-title').textContent = pageName;
+          
+          // Close sidebar on mobile
+          if (window.innerWidth <= 992) {
+            sidebar.classList.remove('open');
+          }
+        });
+      });
+      
+      // Action buttons (view all, etc.) - Mock functionality
+      const actionButtons = document.querySelectorAll('.action-button');
+      actionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const action = this.textContent.trim();
+          alert(`Action: ${action}`);
+        });
+      });
+      
+      // Property actions
+      const propertyActions = document.querySelectorAll('.property-action');
+      propertyActions.forEach(action => {
+        action.addEventListener('click', function() {
+          const property = this.closest('.property-card').querySelector('.property-name').textContent;
+          const actionType = this.textContent.trim();
+          alert(`Property: ${property}, Action: ${actionType}`);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

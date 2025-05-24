@@ -1,0 +1,36 @@
+# Final Refined Dockerfile for iREVA Frontend
+# Optimized for production deployment
+
+# Build stage
+FROM node:18-alpine AS builder
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY client/package*.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
+
+# Copy source code and build
+COPY client/ .
+COPY shared/ ./shared/
+RUN --mount=type=cache,target=/app/node_modules/.cache \
+    npm run build
+
+# Production stage
+FROM nginx:alpine
+
+# Copy built application
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration for SPA routing
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

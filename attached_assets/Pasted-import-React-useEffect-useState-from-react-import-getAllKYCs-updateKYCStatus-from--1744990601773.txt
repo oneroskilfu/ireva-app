@@ -1,0 +1,76 @@
+import React, { useEffect, useState } from 'react';
+import { getAllKYCs, updateKYCStatus } from '../services/kycService';
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography, Select, MenuItem
+} from '@mui/material';
+
+const AdminKYCManager = () => {
+  const [kycList, setKycList] = useState([]);
+
+  useEffect(() => {
+    fetchKYCs();
+  }, []);
+
+  const fetchKYCs = async () => {
+    try {
+      const data = await getAllKYCs();
+      setKycList(data);
+    } catch (error) {
+      console.error('Error fetching KYC:', error);
+    }
+  };
+
+  const handleStatusChange = async (kycId, newStatus) => {
+    try {
+      await updateKYCStatus(kycId, newStatus);
+      fetchKYCs(); // refresh
+    } catch (error) {
+      console.error('Failed to update status', error);
+    }
+  };
+
+  return (
+    <div style={{ padding: '2rem' }}>
+      <Typography variant="h5" gutterBottom>
+        KYC Management
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Full Name</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>ID Document</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {kycList.map((kyc) => (
+              <TableRow key={kyc._id}>
+                <TableCell>{kyc.fullName}</TableCell>
+                <TableCell>{kyc.email}</TableCell>
+                <TableCell>{kyc.status}</TableCell>
+                <TableCell>
+                  <a href={kyc.documentUrl} target="_blank" rel="noopener noreferrer">View</a>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={kyc.status}
+                    onChange={(e) => handleStatusChange(kyc._id, e.target.value)}
+                  >
+                    <MenuItem value="Pending">Pending</MenuItem>
+                    <MenuItem value="Approved">Approve</MenuItem>
+                    <MenuItem value="Rejected">Reject</MenuItem>
+                  </Select>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </div>
+  );
+};
+
+export default AdminKYCManager;

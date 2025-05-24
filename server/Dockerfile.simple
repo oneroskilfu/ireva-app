@@ -1,0 +1,32 @@
+# Simple Backend Dockerfile for iREVA Platform
+# Minimal version for quick deployments
+
+# Build stage
+FROM node:18-alpine AS builder
+WORKDIR /app
+
+# Copy package files
+COPY server/package*.json ./
+RUN npm install
+
+# Copy source and shared utilities
+COPY server/ .
+COPY shared/ ./shared/
+
+# Build if needed
+RUN npm run build 2>/dev/null || echo "No build script found"
+
+# Production stage
+FROM node:18-alpine
+WORKDIR /app
+
+# Copy everything from builder
+COPY --from=builder /app .
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Expose port and start
+EXPOSE 3000
+CMD ["npm", "run", "start"]

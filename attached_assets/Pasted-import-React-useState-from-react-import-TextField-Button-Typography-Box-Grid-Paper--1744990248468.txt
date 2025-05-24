@@ -1,0 +1,93 @@
+import React, { useState } from 'react';
+import {
+  TextField, Button, Typography, Box, Grid, Paper,
+  CircularProgress, Alert
+} from '@mui/material';
+import axios from 'axios';
+
+const KYCForm = () => {
+  const [form, setForm] = useState({
+    fullName: '',
+    address: '',
+    idNumber: '',
+    selfie: null,
+    idDoc: null,
+  });
+
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const { name } = e.target;
+    const file = e.target.files[0];
+    setForm(prev => ({ ...prev, [name]: file }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    setSuccess(false);
+
+    const formData = new FormData();
+    for (const key in form) formData.append(key, form[key]);
+
+    try {
+      const token = localStorage.getItem('token'); // JWT
+      await axios.post('/api/kyc/submit', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setSuccess(true);
+    } catch (err) {
+      setError('Submission failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Paper elevation={3} sx={{ p: 4 }}>
+      <Typography variant="h5" gutterBottom>Investor KYC Verification</Typography>
+      <Box component="form" onSubmit={handleSubmit}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField label="Full Name" name="fullName" fullWidth required onChange={handleChange} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField label="Address" name="address" fullWidth required onChange={handleChange} />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField label="ID Number (NIN/BVN/Passport)" name="idNumber" fullWidth required onChange={handleChange} />
+          </Grid>
+          <Grid item xs={12}>
+            <label>Upload ID Document:</label>
+            <input type="file" name="idDoc" required accept="image/*,application/pdf" onChange={handleFileChange} />
+          </Grid>
+          <Grid item xs={12}>
+            <label>Upload Selfie:</label>
+            <input type="file" name="selfie" required accept="image/*" onChange={handleFileChange} />
+          </Grid>
+          <Grid item xs={12}>
+            <Button type="submit" variant="contained" disabled={submitting}>
+              {submitting ? <CircularProgress size={20} /> : 'Submit KYC'}
+            </Button>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {success && <Alert severity="success" sx={{ mt: 2 }}>KYC submitted successfully!</Alert>}
+      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+    </Paper>
+  );
+};
+
+export default KYCForm;

@@ -1,0 +1,75 @@
+// src/pages/PrivacyPolicy.jsx
+import React from 'react';
+import { Container, Typography, Button, Box } from '@mui/material';
+
+const PrivacyPolicy = () => {
+  return (
+    <Container maxWidth="md" sx={{ py: 8 }}>
+      <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Typography variant="h3" component="h1" gutterBottom>
+          Privacy Policy
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="secondary" 
+          href="/pdfs/privacy-policy.pdf" 
+          download
+        >
+          Download PDF
+        </Button>
+      </Box>
+
+      <Typography variant="body1" paragraph>
+        Welcome to iREVA! This Privacy Policy explains how we collect, use, and protect your information when you use our platform.
+      </Typography>
+
+      <Typography variant="h5" component="h2" sx={{ mt: 4 }}>
+        1. Information We Collect
+      </Typography>
+      <Typography variant="body1" paragraph>
+        We collect personal information you provide during registration, KYC verification, investment activities, and while communicating with us. This may include your name, contact details, identification documents, financial information, and wallet addresses (for crypto investments).
+      </Typography>
+
+      <Typography variant="h5" component="h2" sx={{ mt: 4 }}>
+        2. How We Use Your Information
+      </Typography>
+      <Typography variant="body1" paragraph>
+        We use your information to process investments, manage your account, ensure platform security, comply with legal requirements, and improve our services. We do not sell or rent your personal data to third parties.
+      </Typography>
+
+      <Typography variant="h5" component="h2" sx={{ mt: 4 }}>
+        3. Information Sharing
+      </Typography>
+      <Typography variant="body1" paragraph>
+        We may share your information with trusted service providers, regulatory authorities, or as required by law. For crypto transactions, anonymized wallet transaction data may be recorded on the blockchain.
+      </Typography>
+
+      <Typography variant="h5" component="h2" sx={{ mt: 4 }}>
+        4. Data Protection
+      </Typography>
+      <Typography variant="body1" paragraph>
+        We implement industry-standard security measures to protect your data, including encryption, secure cloud storage, and strict access controls. Your information is stored securely and only accessed by authorized personnel.
+      </Typography>
+
+      <Typography variant="h5" component="h2" sx={{ mt: 4 }}>
+        5. Your Rights
+      </Typography>
+      <Typography variant="body1" paragraph>
+        You have the right to access, correct, delete, or restrict the use of your personal data. You can manage your data preferences through your iREVA account settings or by contacting our support team.
+      </Typography>
+
+      <Typography variant="h5" component="h2" sx={{ mt: 4 }}>
+        6. Changes to This Policy
+      </Typography>
+      <Typography variant="body1" paragraph>
+        We may update this Privacy Policy periodically to reflect changes in our practices. You will be notified of any significant changes via email or through the platform.
+      </Typography>
+
+      <Typography variant="body1" sx={{ mt: 6 }}>
+        Effective Date: April 28, 2025
+      </Typography>
+    </Container>
+  );
+};
+
+export default PrivacyPolicy;

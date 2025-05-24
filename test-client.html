@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Platform Test Client</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #2a52be;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+    }
+    .card {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #2a52be;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #1c3f94;
+    }
+    pre {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .response {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>iREVA Platform Test Client</h1>
+  
+  <div class="card">
+    <h2>Server Health Check</h2>
+    <button id="healthCheck">Check Server Health</button>
+    <div id="healthResponse" class="response"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Authentication</h2>
+    <form id="loginForm">
+      <label for="email">Email:</label>
+      <input type="email" id="email" value="admin@ireva.com" required>
+      
+      <label for="password">Password:</label>
+      <input type="password" id="password" value="admin123" required>
+      
+      <div style="margin-top: 15px;">
+        <button type="submit">Login</button>
+      </div>
+    </form>
+    <div id="loginResponse" class="response"></div>
+  </div>
+  
+  <div class="card">
+    <h2>Admin Dashboard Stats</h2>
+    <button id="getStats">Get Dashboard Stats</button>
+    <div id="statsResponse" class="response"></div>
+  </div>
+  
+  <script>
+    // Base URL for API
+    const API_BASE = 'http://localhost:5000/api';
+    let authToken = null;
+    
+    // Helper to format JSON responses
+    function formatResponse(response) {
+      return JSON.stringify(response, null, 2);
+    }
+    
+    // Health check
+    document.getElementById('healthCheck').addEventListener('click', async () => {
+      try {
+        const response = await fetch(`${API_BASE}/health`);
+        const data = await response.json();
+        document.getElementById('healthResponse').innerHTML = 
+          `<pre>${formatResponse(data)}</pre>`;
+      } catch (error) {
+        document.getElementById('healthResponse').innerHTML = 
+          `<pre style="color: red;">Error: ${error.message}</pre>`;
+      }
+    });
+    
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch(`${API_BASE}/debug/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        document.getElementById('loginResponse').innerHTML = 
+          `<pre>${formatResponse(data)}</pre>`;
+        
+        if (data.token) {
+          authToken = data.token;
+          alert('Login successful! Token stored for subsequent requests.');
+        }
+      } catch (error) {
+        document.getElementById('loginResponse').innerHTML = 
+          `<pre style="color: red;">Error: ${error.message}</pre>`;
+      }
+    });
+    
+    // Get dashboard stats
+    document.getElementById('getStats').addEventListener('click', async () => {
+      if (!authToken) {
+        document.getElementById('statsResponse').innerHTML = 
+          `<pre style="color: red;">Please login first to get an authentication token</pre>`;
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE}/admin/dashboard/stats`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        const data = await response.json();
+        document.getElementById('statsResponse').innerHTML = 
+          `<pre>${formatResponse(data)}</pre>`;
+      } catch (error) {
+        document.getElementById('statsResponse').innerHTML = 
+          `<pre style="color: red;">Error: ${error.message}</pre>`;
+      }
+    });
+  </script>
+</body>
+</html>

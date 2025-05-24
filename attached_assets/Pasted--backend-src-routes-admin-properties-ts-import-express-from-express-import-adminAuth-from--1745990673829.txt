@@ -1,0 +1,93 @@
+// backend/src/routes/admin/properties.ts
+import express from 'express';
+import { adminAuth } from '../middleware/auth';
+import { Property, Milestone } from '../interfaces';
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage() });
+const router = express.Router();
+
+// Mock data
+let properties: Property[] = [];
+let currentId = 1;
+
+router.get('/', adminAuth, (req, res) => {
+  res.json(properties.filter(p => p.status !== 'archived'));
+});
+
+router.get('/:id', adminAuth, (req, res) => {
+  const property = properties.find(p => p.id === req.params.id);
+  res.json(property || { error: 'Not found' });
+});
+
+router.post('/', adminAuth, upload.array('images'), (req, res) => {
+  const newProperty: Property = {
+    id: `prop_${currentId++}`,
+    title: req.body.title,
+    description: req.body.description,
+    location: JSON.parse(req.body.location),
+    images: [], // Store URLs after cloud upload
+    fundingGoal: Number(req.body.fundingGoal),
+    currentFunding: 0,
+    backers: 0,
+    status: 'active',
+    investmentTenor: Number(req.body.investmentTenor),
+    roiPercentage: Number(req.body.roiPercentage),
+    documents: [],
+    milestones: [],
+    createdAt: new Date()
+  };
+  properties.push(newProperty);
+  res.status(201).json(newProperty);
+});
+
+router.put('/:id', adminAuth, (req, res) => {
+  const index = properties.findIndex(p => p.id === req.params.id);
+  if (index === -1) return res.status(404).send('Not found');
+  
+  properties[index] = { ...properties[index], ...req.body };
+  res.json(properties[index]);
+});
+
+router.post('/:id/archive', adminAuth, (req, res) => {
+  const property = properties.find(p => p.id === req.params.id);
+  if (!property) return res.status(404).send('Not found');
+  property.status = 'archived';
+  res.json(property);
+});
+
+router.post('/:id/documents', adminAuth, upload.single('document'), (req, res) => {
+  const property = properties.find(p => p.id === req.params.id);
+  if (!property) return res.status(404).send('Not found');
+  
+  // In production: Upload to cloud storage and get URL
+  property.documents.push(req.file!.originalname);
+  res.json(property);
+});
+
+router.post('/:id/milestones', adminAuth, (req, res) => {
+  const property = properties.find(p => p.id === req.params.id);
+  if (!property) return res.status(404).send('Not found');
+  
+  const newMilestone: Milestone = {
+    id: `mile_${property.milestones.length + 1}`,
+    ...req.body,
+    progress: 0,
+    status: 'planned'
+  };
+  property.milestones.push(newMilestone);
+  res.json(newMilestone);
+});
+
+router.patch('/:id/milestones/:mileId', adminAuth, (req, res) => {
+  const property = properties.find(p => p.id === req.params.id);
+  if (!property) return res.status(404).send('Not found');
+  
+  const milestone = property.milestones.find(m => m.id === req.params.mileId);
+  if (!milestone) return res.status(404).send('Milestone not found');
+  
+  Object.assign(milestone, req.body);
+  res.json(milestone);
+});
+
+export default router;

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>iREVA Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #0066cc; }
+        form { margin: 20px 0; max-width: 400px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; }
+        button { background-color: #0066cc; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+        .test-accounts { margin-top: 20px; padding: 15px; background: #f5f5f5; border: 1px solid #ddd; }
+        .status { padding: 10px; background: #e6f7ff; border-left: 4px solid #0066cc; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>iREVA Platform Login</h1>
+    
+    <div class="status">
+        Server is running and ready for login. Database connected in 718ms.
+    </div>
+    
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" required>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" required>
+        
+        <button type="submit">Login</button>
+    </form>
+    
+    <div class="test-accounts">
+        <h3>Test Accounts</h3>
+        <p><strong>Admin User:</strong> username: admin, password: adminpassword</p>
+        <p><strong>Test User:</strong> username: testuser, password: password</p>
+    </div>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    alert('Login failed: ' + (response.status === 401 ? 'Invalid credentials' : 'Server error'));
+                    return;
+                }
+                
+                const user = await response.json();
+                alert(`Login successful! Welcome, ${user.username}! (Role: ${user.role})`);
+                
+                // Redirect based on role
+                if (user.role === 'admin' || user.role === 'super_admin') {
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    window.location.href = '/investor/dashboard';
+                }
+                
+            } catch (error) {
+                alert('Error: ' + (error.message || 'Unknown error'));
+            }
+        });
+    </script>
+</body>
+</html>

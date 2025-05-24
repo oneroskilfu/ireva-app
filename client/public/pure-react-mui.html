@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pure React + Material UI</title>
+  
+  <!-- Roboto font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  
+  <!-- Material Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  
+  <!-- Load React and React DOM -->
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  
+  <!-- Load Material UI -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@emotion/react@11.11.1/dist/emotion-react.umd.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@mui/material@5.14.18/umd/material-ui.production.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    // Destructure components from Material UI
+    const {
+      Button,
+      Container,
+      Typography, 
+      Box,
+      Card,
+      CardContent,
+      CardActions,
+      Grid,
+      Paper,
+      ThemeProvider,
+      CssBaseline,
+      createTheme
+    } = MaterialUI;
+    
+    // Create a simple theme
+    const theme = createTheme({
+      palette: {
+        primary: {
+          main: '#4F46E5',
+        },
+        secondary: {
+          main: '#10B981',
+        },
+      },
+    });
+    
+    // Create a simple React component
+    const App = () => {
+      return (
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Container maxWidth="md" sx={{ my: 4 }}>
+            <Typography variant="h3" component="h1" align="center" gutterBottom>
+              Pure React + Material UI
+            </Typography>
+            
+            <Typography variant="subtitle1" align="center" paragraph>
+              This page uses React and Material UI loaded directly from CDN
+            </Typography>
+            
+            <Box sx={{ my: 4 }}>
+              <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+                <Typography variant="h5" gutterBottom>
+                  Isolated Implementation
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  This is a completely isolated implementation of React and Material UI
+                  without any bundlers or complex configurations. It helps us verify the 
+                  basic functionality of Material UI components in a minimal setup.
+                </Typography>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
+                  <Button variant="contained" color="primary">Primary Button</Button>
+                  <Button variant="contained" color="secondary">Secondary Button</Button>
+                  <Button variant="outlined" color="primary">Outlined Button</Button>
+                </Box>
+              </Paper>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Material UI Card
+                      </Typography>
+                      <Typography variant="body2">
+                        Cards contain content and actions about a single subject.
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      <Button size="small">Learn More</Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        React 18.2.0
+                      </Typography>
+                      <Typography variant="body2">
+                        We're using React 18.2.0 in this example, which is the most
+                        widely tested version with Material UI.
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      <Button size="small">Learn More</Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Material UI 5.14.18
+                      </Typography>
+                      <Typography variant="body2">
+                        We're using Material UI version 5.14.18 with Emotion
+                        for styling.
+                      </Typography>
+                    </CardContent>
+                    <CardActions>
+                      <Button size="small">Learn More</Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              </Grid>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Button variant="contained" color="primary" component="a" href="/">
+                  Back to Home
+                </Button>
+              </Box>
+            </Box>
+          </Container>
+        </ThemeProvider>
+      );
+    };
+    
+    // Render the React component using createRoot (React 18)
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

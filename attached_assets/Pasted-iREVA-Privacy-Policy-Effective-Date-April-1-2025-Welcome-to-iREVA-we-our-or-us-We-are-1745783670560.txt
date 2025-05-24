@@ -1,0 +1,122 @@
+iREVA Privacy Policy
+
+Effective Date: April 1, 2025
+
+Welcome to iREVA (“we”, “our”, or “us”).
+We are committed to protecting your personal information and your right to privacy.
+This Privacy Policy describes how we collect, use, disclose, and safeguard your information when you visit or use our platform, including any services, products, or features offered through iREVA.
+
+Please read this policy carefully. If you do not agree with the terms, please do not use our platform.
+
+⸻
+
+1. Information We Collect
+
+We collect information that you voluntarily provide to us when you:
+	•	Register for an account
+	•	Complete KYC/identity verification
+	•	Invest in a project
+	•	Request withdrawals
+	•	Subscribe to newsletters
+	•	Contact customer support
+
+This information may include:
+	•	Full name, address, phone number, and email address
+	•	Government-issued ID and documents for verification
+	•	Wallet addresses for crypto transactions
+	•	Investment history and transaction details
+	•	Communication preferences
+
+We may also automatically collect:
+	•	Device and usage data (IP address, browser type, device ID)
+	•	Cookies and tracking technologies for platform optimization
+
+⸻
+
+2. How We Use Your Information
+
+We use your information to:
+	•	Create and manage your account
+	•	Process investments, withdrawals, and payouts
+	•	Verify your identity to comply with regulatory requirements
+	•	Communicate updates, confirmations, and marketing materials
+	•	Improve platform features, security, and user experience
+	•	Enforce our Terms of Service and policies
+
+We do not sell or rent your personal information to third parties.
+
+⸻
+
+3. How We Share Your Information
+
+We only share your data with:
+	•	Identity verification service providers (for KYC/AML compliance)
+	•	Payment processors (for fiat and crypto transactions)
+	•	Hosting and IT service providers (for platform operation)
+	•	Legal authorities if required by law (e.g., anti-fraud, tax reporting)
+
+All partners are contractually required to safeguard your data.
+
+⸻
+
+4. Crypto Transactions and Blockchain Data
+
+Please note:
+	•	Cryptocurrency transactions are recorded on public blockchains.
+	•	Blockchain data may be accessible globally and immutable.
+	•	By investing with crypto, you acknowledge and accept the transparency nature of blockchain technology.
+
+We will only request blockchain addresses or crypto wallet data necessary for your investments or withdrawals.
+
+⸻
+
+5. Data Retention
+
+We retain your information:
+	•	As long as your account remains active
+	•	For as long as necessary to fulfill legal and regulatory obligations
+	•	Or until you request deletion (subject to compliance restrictions)
+
+⸻
+
+6. Your Privacy Rights
+
+You have the right to:
+	•	Access and request a copy of your data
+	•	Correct inaccuracies in your profile
+	•	Request deletion of your account (where permissible)
+	•	Withdraw consent to marketing communications
+
+To exercise your rights, contact us at: [Insert Support Email]
+
+⸻
+
+7. Data Security
+
+We implement administrative, technical, and physical security measures to protect your data.
+However, no method of transmission over the internet is 100% secure.
+We encourage users to maintain strong passwords and monitor account activities.
+
+⸻
+
+8. Third-Party Links
+
+Our platform may contain links to third-party websites or services.
+We are not responsible for the privacy practices of those external sites.
+
+⸻
+
+9. Changes to This Policy
+
+We may update this Privacy Policy from time to time.
+We will notify you of any material changes through the platform or by email.
+
+⸻
+
+10. Contact Us
+
+If you have any questions about this Privacy Policy, please contact us:
+
+iREVA Support Team
+Email: ireva.investments@gmail.com
+

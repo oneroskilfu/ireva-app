@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA Admin Dashboard</title>
+  <style>
+    :root {
+      --primary-color: #3a7bd5;
+      --primary-dark: #2d62aa;
+      --primary-light: #6fa3e8;
+      --accent-color: #f9a825;
+      --text-color: #333;
+      --light-text: #fafafa;
+      --background: #f9f9f9;
+      --card-bg: #fff;
+      --error-color: #d32f2f;
+      --success-color: #388e3c;
+      --warning-color: #f57c00;
+      --info-color: #0288d1;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --sidebar-width: 250px;
+      --header-height: 64px;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: var(--background);
+      color: var(--text-color);
+      min-height: 100vh;
+    }
+    
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+      color: var(--light-text);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+      margin-right: 12px;
+    }
+    
+    .sidebar-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .sidebar-menu {
+      padding: 20px 0;
+    }
+    
+    .menu-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 20px;
+      opacity: 0.7;
+    }
+    
+    .menu-item {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      position: relative;
+    }
+    
+    .menu-item:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .menu-item.active {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .menu-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      background-color: var(--accent-color);
+    }
+    
+    .menu-item-icon {
+      margin-right: 12px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Main content */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      transition: margin 0.3s ease;
+    }
+    
+    .topbar {
+      height: var(--header-height);
+      background-color: var(--card-bg);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+    }
+    
+    .topbar-left {
+      display: flex;
+      align-items: center;
+    }
+    
+    .menu-toggle {
+      display: none;
+      cursor: pointer;
+      margin-right: 16px;
+    }
+    
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .topbar-right {
+      display: flex;
+      align-items: center;
+    }
+    
+    .user-menu {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .user-menu:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: var(--primary-light);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      margin-right: 12px;
+    }
+    
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .user-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .user-role {
+      font-size: 12px;
+      color: #666;
+    }
+    
+    /* Dashboard content */
+    .dashboard-content {
+      padding: 24px;
+    }
+    
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .stat-card {
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--card-shadow);
+    }
+    
+    .stat-title {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+    }
+    
+    .trend-up {
+      color: var(--success-color);
+    }
+    
+    .trend-down {
+      color: var(--error-color);
+    }
+    
+    .data-section {
+      margin-bottom: 32px;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .action-button {
+      padding: 8px 16px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .action-button:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .data-table {
+      width: 100%;
+      background-color: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+    }
+    
+    .data-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .data-table th {
+      text-align: left;
+      padding: 16px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .status-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .status-approved {
+      background-color: rgba(56, 142, 60, 0.1);
+      color: var(--success-color);
+    }
+    
+    .status-pending {
+      background-color: rgba(245, 124, 0, 0.1);
+      color: var(--warning-color);
+    }
+    
+    .status-rejected {
+      background-color: rgba(211, 47, 47, 0.1);
+      color: var(--error-color);
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 992px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
+      
+      .stats-container {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .user-info {
+        display: none;
+      }
+      
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .dashboard-content {
+        padding: 16px;
+      }
+      
+      .data-table {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">i</div>
+        <h1>iREVA Admin</h1>
+      </div>
+      
+      <nav class="sidebar-menu">
+        <div class="menu-label">Dashboard</div>
+        <div class="menu-item active">
+          <div class="menu-item-icon">📊</div>
+          <span>Overview</span>
+        </div>
+        
+        <div class="menu-label">User Management</div>
+        <div class="menu-item">
+          <div class="menu-item-icon">👥</div>
+          <span>Users</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">🔍</div>
+          <span>KYC Verification</span>
+        </div>
+        
+        <div class="menu-label">Properties</div>
+        <div class="menu-item">
+          <div class="menu-item-icon">🏢</div>
+          <span>All Properties</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">➕</div>
+          <span>Add Property</span>
+        </div>
+        
+        <div class="menu-label">Investments</div>
+        <div class="menu-item">
+          <div class="menu-item-icon">💰</div>
+          <span>Investments</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">💸</div>
+          <span>Payouts</span>
+        </div>
+        
+        <div class="menu-label">Settings</div>
+        <div class="menu-item">
+          <div class="menu-item-icon">⚙️</div>
+          <span>Platform Settings</span>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-icon">🔒</div>
+          <span>Security</span>
+        </div>
+      </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="menu-toggle" id="menu-toggle">☰</div>
+          <h2 class="page-title">Dashboard</h2>
+        </div>
+        
+        <div class="topbar-right">
+          <div class="user-menu" id="user-menu">
+            <div class="user-avatar">A</div>
+            <div class="user-info">
+              <div class="user-name">Admin User</div>
+              <div class="user-role">Administrator</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <div class="dashboard-content">
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+          <div class="stat-card">
+            <div class="stat-title">Total Investments</div>
+            <div class="stat-value">$8.2M</div>
+            <div class="stat-trend trend-up">↑ 12.5% from last month</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-title">Active Investors</div>
+            <div class="stat-value">1,254</div>
+            <div class="stat-trend trend-up">↑ 8.3% from last month</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-title">Properties Listed</div>
+            <div class="stat-value">86</div>
+            <div class="stat-trend trend-up">↑ 3 new this month</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-title">Pending KYC</div>
+            <div class="stat-value">37</div>
+            <div class="stat-trend trend-down">↓ 15% from last month</div>
+          </div>
+        </div>
+        
+        <!-- Recent Investments -->
+        <div class="data-section">
+          <div class="section-header">
+            <h3 class="section-title">Recent Investments</h3>
+            <button class="action-button">View All</button>
+          </div>
+          
+          <div class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Investor</th>
+                  <th>Property</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Sarah Johnson</td>
+                  <td>Skyline Apartments</td>
+                  <td>$25,000</td>
+                  <td>May 18, 2025</td>
+                  <td><span class="status-pill status-approved">Approved</span></td>
+                </tr>
+                <tr>
+                  <td>Michael Smith</td>
+                  <td>Harbor View Condos</td>
+                  <td>$50,000</td>
+                  <td>May 17, 2025</td>
+                  <td><span class="status-pill status-approved">Approved</span></td>
+                </tr>
+                <tr>
+                  <td>Jessica Williams</td>
+                  <td>Riverfront Commercial</td>
+                  <td>$100,000</td>
+                  <td>May 16, 2025</td>
+                  <td><span class="status-pill status-pending">Pending</span></td>
+                </tr>
+                <tr>
+                  <td>Robert Brown</td>
+                  <td>Mountain Retreat Resort</td>
+                  <td>$75,000</td>
+                  <td>May 15, 2025</td>
+                  <td><span class="status-pill status-approved">Approved</span></td>
+                </tr>
+                <tr>
+                  <td>Emma Davis</td>
+                  <td>Downtown Office Tower</td>
+                  <td>$125,000</td>
+                  <td>May 14, 2025</td>
+                  <td><span class="status-pill status-rejected">Rejected</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Pending KYC Verifications -->
+        <div class="data-section">
+          <div class="section-header">
+            <h3 class="section-title">Pending KYC Verifications</h3>
+            <button class="action-button">Process All</button>
+          </div>
+          
+          <div class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Submitted</th>
+                  <th>Document Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>John Doe</td>
+                  <td>john.doe@example.com</td>
+                  <td>May 19, 2025</td>
+                  <td>Passport</td>
+                  <td><button class="action-button">Review</button></td>
+                </tr>
+                <tr>
+                  <td>Jane Smith</td>
+                  <td>jane.smith@example.com</td>
+                  <td>May 18, 2025</td>
+                  <td>Driver's License</td>
+                  <td><button class="action-button">Review</button></td>
+                </tr>
+                <tr>
+                  <td>David Johnson</td>
+                  <td>david.johnson@example.com</td>
+                  <td>May 18, 2025</td>
+                  <td>ID Card</td>
+                  <td><button class="action-button">Review</button></td>
+                </tr>
+                <tr>
+                  <td>Emily Brown</td>
+                  <td>emily.brown@example.com</td>
+                  <td>May 17, 2025</td>
+                  <td>Passport</td>
+                  <td><button class="action-button">Review</button></td>
+                </tr>
+                <tr>
+                  <td>Michael Wilson</td>
+                  <td>michael.wilson@example.com</td>
+                  <td>May 17, 2025</td>
+                  <td>Driver's License</td>
+                  <td><button class="action-button">Review</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Mobile menu toggle
+      const menuToggle = document.getElementById('menu-toggle');
+      const sidebar = document.getElementById('sidebar');
+      
+      menuToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+      });
+      
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener('click', function(event) {
+        if (window.innerWidth <= 992 && 
+            !sidebar.contains(event.target) && 
+            event.target !== menuToggle) {
+          sidebar.classList.remove('open');
+        }
+      });
+      
+      // User info
+      const userMenu = document.getElementById('user-menu');
+      userMenu.addEventListener('click', function() {
+        // Mock logout functionality
+        if (confirm('Are you sure you want to log out?')) {
+          // Send logout request to the server
+          fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'same-origin'
+          })
+          .then(response => {
+            if (response.ok) {
+              // Redirect to login page
+              window.location.href = '/auth';
+            }
+          })
+          .catch(error => {
+            console.error('Logout failed:', error);
+          });
+        }
+      });
+      
+      // Menu items
+      const menuItems = document.querySelectorAll('.menu-item');
+      menuItems.forEach(item => {
+        item.addEventListener('click', function() {
+          // Remove active class from all menu items
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          
+          // Add active class to clicked item
+          this.classList.add('active');
+          
+          // Close sidebar on mobile after navigation
+          if (window.innerWidth <= 992) {
+            sidebar.classList.remove('open');
+          }
+          
+          // Mock navigation (would normally update content or redirect)
+          const pageName = this.querySelector('span').textContent;
+          document.querySelector('.page-title').textContent = pageName;
+        });
+      });
+    });
+  </script>
+</body>
+</html>

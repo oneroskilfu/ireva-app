@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Debug Page</h1>
+  <p>This page is for debugging purposes only.</p>
+  
+  <h2>Console Errors</h2>
+  <div id="consoleOutput">Loading console errors...</div>
+  
+  <h2>React Version</h2>
+  <pre id="reactVersion">Checking React version...</pre>
+  
+  <h2>Package Versions</h2>
+  <pre id="packageVersions">Loading package versions...</pre>
+  
+  <a href="/" class="button">Back to Home</a>
+  
+  <script>
+    // Capture console errors
+    const originalConsoleError = console.error;
+    const errors = [];
+    
+    console.error = function(...args) {
+      errors.push(args.join(' '));
+      originalConsoleError.apply(console, args);
+    };
+    
+    // Display captured errors
+    window.onload = function() {
+      setTimeout(() => {
+        document.getElementById('consoleOutput').innerHTML = 
+          errors.length > 0 
+            ? '<pre>' + errors.join('\n\n') + '</pre>' 
+            : '<p>No console errors detected.</p>';
+      }, 1000);
+      
+      // Try to detect React version
+      if (window.React) {
+        document.getElementById('reactVersion').textContent = 
+          `React version: ${window.React.version}`;
+      } else {
+        document.getElementById('reactVersion').textContent = 
+          'React not found in window object.';
+      }
+      
+      // We can't access package.json directly, so this is just a placeholder
+      document.getElementById('packageVersions').textContent = 
+        'Cannot access package versions directly from browser.';
+    };
+  </script>
+</body>
+</html>

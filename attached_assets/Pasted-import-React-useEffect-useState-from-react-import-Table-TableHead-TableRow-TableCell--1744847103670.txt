@@ -1,0 +1,106 @@
+import React, { useEffect, useState } from 'react';
+import { Table, TableHead, TableRow, TableCell, TableBody, Button, TextField, Dialog, DialogTitle, DialogContent } from '@mui/material';
+import { toast } from 'react-toastify';
+
+const ProjectListAdmin = () => {
+  const [projects, setProjects] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [editData, setEditData] = useState({ title: '', location: '', price: '', description: '' });
+  const [editingId, setEditingId] = useState(null);
+
+  const fetchProjects = () => {
+    fetch('/api/projects', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+      .then(res => res.json())
+      .then(setProjects);
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const handleSubmit = async () => {
+    const method = editingId ? 'PUT' : 'POST';
+    const url = editingId ? `/api/projects/${editingId}` : '/api/projects';
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(editData)
+    });
+
+    if (res.ok) {
+      toast.success(editingId ? 'Project updated' : 'Project created');
+      fetchProjects();
+      setOpen(false);
+      setEditData({ title: '', location: '', price: '', description: '' });
+      setEditingId(null);
+    } else {
+      toast.error('Failed to save');
+    }
+  };
+
+  const handleEdit = (project) => {
+    setEditData(project);
+    setEditingId(project._id);
+    setOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    const res = await fetch(`/api/projects/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    if (res.ok) {
+      toast.success('Project deleted');
+      fetchProjects();
+    }
+  };
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)} variant="contained" color="primary">Add Project</Button>
+      <Table sx={{ mt: 2 }}>
+        <TableHead>
+          <TableRow>
+            <TableCell>Title</TableCell>
+            <TableCell>Location</TableCell>
+            <TableCell>Price</TableCell>
+            <TableCell>Description</TableCell>
+            <TableCell>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {projects.map(p => (
+            <TableRow key={p._id}>
+              <TableCell>{p.title}</TableCell>
+              <TableCell>{p.location}</TableCell>
+              <TableCell>{p.price}</TableCell>
+              <TableCell>{p.description}</TableCell>
+              <TableCell>
+                <Button size="small" onClick={() => handleEdit(p)}>Edit</Button>
+                <Button size="small" color="error" onClick={() => handleDelete(p._id)}>Delete</Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>{editingId ? 'Edit Project' : 'Add Project'}</DialogTitle>
+        <DialogContent>
+          <TextField fullWidth margin="dense" label="Title" name="title" value={editData.title} onChange={e => setEditData({ ...editData, title: e.target.value })} />
+          <TextField fullWidth margin="dense" label="Location" name="location" value={editData.location} onChange={e => setEditData({ ...editData, location: e.target.value })} />
+          <TextField fullWidth margin="dense" label="Price" name="price" value={editData.price} onChange={e => setEditData({ ...editData, price: e.target.value })} />
+          <TextField fullWidth margin="dense" label="Description" name="description" value={editData.description} onChange={e => setEditData({ ...editData, description: e.target.value })} />
+          <Button onClick={handleSubmit} variant="contained" fullWidth>{editingId ? 'Update' : 'Create'}</Button>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default ProjectListAdmin;

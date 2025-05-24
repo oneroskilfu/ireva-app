@@ -1,0 +1,69 @@
+Wallet Integration & Transaction History
+**Backend Implementation:**
+```typescript
+// backend/src/routes/admin/users.ts
+router.get('/:id/transactions', adminAuth, async (req, res) => {
+  try {
+    const transactions = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, req.params.id))
+      .orderBy(desc(transactions.createdAt));
+
+    res.json(transactions);
+  } catch (error) {
+    handleServerError(res, error, 'Failed to fetch transactions');
+  }
+});
+```
+
+**Frontend Implementation:**
+```tsx
+// client/src/components/UserManagement/UserWalletInfo.tsx
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+
+const columns: GridColDef[] = [
+  { field: 'createdAt', headerName: 'Date', width: 150 },
+  { field: 'type', headerName: 'Type', width: 100 },
+  { field: 'amount', headerName: 'Amount', width: 120 },
+  { field: 'status', headerName: 'Status', width: 120 },
+  { field: 'description', headerName: 'Description', flex: 1 },
+];
+
+export const UserWalletInfo = ({ user }) => {
+  const { data: transactions } = useQuery({
+    queryKey: ['userTransactions', user.id],
+    queryFn: () => apiClient.get(`/api/admin/users/${user.id}/transactions`)
+  });
+
+  return (
+    <div className="space-y-4">
+      <Typography variant="h6">Wallet Information</Typography>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Paper className="p-4">
+          <Typography variant="subtitle2">Total Balance</Typography>
+          <Typography variant="h5">${user.wallet?.balance}</Typography>
+        </Paper>
+        
+        <Paper className="p-4">
+          <Typography variant="subtitle2">Pending Transactions</Typography>
+          <Typography variant="h5">
+            {transactions?.filter(t => t.status === 'pending').length || 0}
+          </Typography>
+        </Paper>
+      </div>
+
+      <DataGrid
+        rows={transactions || []}
+        columns={columns}
+        autoHeight
+        pageSizeOptions={[5, 10, 25]}
+        initialState={{
+          pagination: { paginationModel: { pageSize: 10 } }
+        }}
+      />
+    </div>
+  );
+};
+```
