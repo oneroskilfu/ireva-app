@@ -11,7 +11,7 @@ COPY client/package*.json ./client/
 COPY package*.json ./
 
 # Install dependencies
-RUN cd client && npm ci --only=production
+RUN cd client && npm install --omit=dev
 
 # Copy frontend source and shared utilities
 COPY client/ ./client/
@@ -33,7 +33,7 @@ COPY server/package*.json ./server/
 COPY package*.json ./
 
 # Install dependencies
-RUN cd server && npm ci --only=production
+RUN cd server && npm install --omit=dev
 
 # Copy backend source and shared utilities
 COPY server/ ./server/
@@ -66,7 +66,7 @@ COPY --chown=ireva:nodejs package*.json ./
 COPY --chown=ireva:nodejs .env.production ./
 
 # Install only production dependencies at root level
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy server dependencies
 COPY --from=backend-builder --chown=ireva:nodejs /app/server/node_modules ./server/node_modules
