@@ -1,58 +1,37 @@
-# Docker Compose for iREVA Platform Local Development
-# This mirrors your current Replit setup for easy local development
-
-version: '3.8'
+version: "3.9"
 
 services:
   backend:
-    build: ./apps/server
-    container_name: ireva-backend
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    env_file: .env
     ports:
-      - '8080:8080'
-    env_file:
-      - .env
+      - "8080:8080"
     depends_on:
-      - postgres
+      - db
       - redis
-    networks:
-      - ireva-net
-
 
   frontend:
-    build: ./apps/client
-    container_name: ireva-frontend
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
     ports:
-      - '3000:80'
-    env_file:
-      - .env
-    depends_on:
-      - backend
-    networks:
-      - ireva-net
+      - "3000:80"
 
-  postgres:
+  db:
     image: postgres:15
-    container_name: ireva-db
     restart: always
-    environment:
-      POSTGRES_DB: ireva
-      POSTGRES_USER: ireva_user
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - ireva-net
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ireva_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_db_password}
+      POSTGRES_DB: ireva
 
   redis:
     image: redis:7
-    container_name: ireva-redis
     restart: always
-    networks:
-      - ireva-net
-
-networks:
-  ireva-net:
-    driver: bridge
 
 volumes:
-  pgdata:
+  db_data:
