@@ -16,10 +16,9 @@ RUN --mount=type=cache,target=/root/.npm \
     cd client && npm install --omit=dev
 
 # Copy frontend source and shared utilities
-COPY client/ ./client/
-COPY shared/ ./shared/
+COPY . .
 
-# Copy frontend-specific environment configuration
+# Copy frontend-specific environment configuration  
 COPY .env.frontend .env.production ./
 
 # Build frontend for production with build cache
@@ -41,8 +40,7 @@ RUN --mount=type=cache,target=/root/.npm \
     cd server && npm install --omit=dev
 
 # Copy backend source and shared utilities
-COPY server/ ./server/
-COPY shared/ ./shared/
+COPY . .
 
 # Copy backend-specific environment configuration
 COPY .env.backend .env.production ./
