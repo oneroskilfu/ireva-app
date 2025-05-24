@@ -6,47 +6,49 @@ FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Copy frontend package files
-COPY client/package*.json ./client/
-COPY package*.json ./
+# Copy frontend package files explicitly
+COPY client/package*.json ./
+COPY package*.json ./package.json
 
 # Create cache mount for faster builds
 RUN --mount=type=cache,target=/root/.npm \
-    --mount=type=cache,target=/app/client/node_modules/.cache \
-    cd client && npm install --omit=dev
+    --mount=type=cache,target=/app/node_modules/.cache \
+    npm install --omit=dev
 
-# Copy frontend source and shared utilities
-COPY . .
+# Copy frontend source and shared utilities  
+COPY client/ .
+COPY shared/ ./shared/
 
 # Copy frontend-specific environment configuration  
 COPY .env.frontend .env.production ./
 
 # Build frontend for production with build cache
-RUN --mount=type=cache,target=/app/client/node_modules/.cache \
-    cd client && npm run build
+RUN --mount=type=cache,target=/app/node_modules/.cache \
+    npm run build
 
 # Stage 2: Build Backend
 FROM node:18-alpine AS backend-builder
 
 WORKDIR /app
 
-# Copy backend package files
-COPY server/package*.json ./server/
-COPY package*.json ./
+# Copy backend package files explicitly
+COPY server/package*.json ./
+COPY package*.json ./package.json
 
 # Create cache mount for faster builds
 RUN --mount=type=cache,target=/root/.npm \
-    --mount=type=cache,target=/app/server/node_modules/.cache \
-    cd server && npm install --omit=dev
+    --mount=type=cache,target=/app/node_modules/.cache \
+    npm install --omit=dev
 
 # Copy backend source and shared utilities
-COPY . .
+COPY server/ .
+COPY shared/ ./shared/
 
 # Copy backend-specific environment configuration
 COPY .env.backend .env.production ./
 
 # Build backend if needed
-RUN cd server && npm run build 2>/dev/null || echo "No build script found"
+RUN npm run build 2>/dev/null || echo "No build script found"
 
 # Stage 3: Production Runtime
 FROM node:18-alpine AS production

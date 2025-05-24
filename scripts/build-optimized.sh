@@ -16,6 +16,7 @@ docker build \
   --tag ireva-platform:latest \
   --tag ireva-platform:$(date +%Y%m%d-%H%M%S) \
   --progress=plain \
+  --file Dockerfile \
   .
 
 echo "🧪 Testing the optimized build..."
