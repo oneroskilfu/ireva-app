@@ -63,6 +63,8 @@ WORKDIR /app
 
 # Copy built applications (using correct Vite output path)
 COPY --from=frontend-builder --chown=ireva:nodejs /app/dist/public ./public
+# Copy nginx configuration for SPA routing
+COPY --from=frontend-builder --chown=ireva:nodejs /app/client/nginx.conf ./nginx.conf
 COPY --from=backend-builder --chown=ireva:nodejs /app/server ./server
 COPY --from=backend-builder --chown=ireva:nodejs /app/shared ./shared
 COPY --chown=ireva:nodejs package*.json ./
