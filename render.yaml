@@ -4,8 +4,8 @@ services:
     env: docker
     repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
-    dockerContext: ./apps/client
-    dockerfilePath: ./apps/client/Dockerfile
+    dockerContext: ./client
+    dockerfilePath: ./client/Dockerfile.production
     branch: main
     plan: free
     envVars:
@@ -17,8 +17,8 @@ services:
     env: docker
     repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
-    dockerContext: ./apps/server
-    dockerfilePath: ./apps/server/Dockerfile
+    dockerContext: ./server
+    dockerfilePath: ./server/Dockerfile
     branch: main
     plan: free
     envVars:
