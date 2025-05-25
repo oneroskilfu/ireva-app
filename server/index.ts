@@ -7,7 +7,7 @@ import { initializeDb } from "./db";
 import { initializeAuth } from "./auth";
 import { setupVite } from "./vite";
 
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Create express app with essential middleware
 const app = express();
@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
 const server = createServer(app);
 
 // Bind port immediately for Replit detection
-server.listen(PORT, '0.0.0.0', async () => {
+server.listen(PORT, async () => {
   console.log(`🚀 iREVA Server running on port ${PORT}`);
   
   try {
@@ -51,7 +51,7 @@ server.listen(PORT, '0.0.0.0', async () => {
     
     // In production, serve static files; in development, use Vite
     if (process.env.NODE_ENV === 'production') {
-      const { serveStatic } = await import('./vite');
+      const { serveStatic } = await import('./static-serve');
       serveStatic(app);
     } else {
       await setupVite(app, server);
