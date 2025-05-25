@@ -10,8 +10,8 @@ RUN npm install
 COPY server/ ./server/
 COPY shared/ ./shared/
 
-# Build the application to resolve TypeScript paths
-RUN npm run build
+# Build only the backend part
+RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 # Start the built application
 CMD ["npm", "run", "start"]
