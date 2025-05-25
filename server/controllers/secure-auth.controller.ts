@@ -7,6 +7,59 @@ import { signAccessToken, signRefreshToken } from '../utils/jwt';
 import { hashPassword, verifyPassword } from '../middleware/secure-auth';
 import { RefreshTokenService } from '../services/refresh-token.service';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     LoginRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: "investor@example.com"
+ *           description: "User's email address"
+ *         password:
+ *           type: string
+ *           format: password
+ *           example: "SecurePassword123!"
+ *           description: "User's password"
+ *     
+ *     RegisterRequest:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - password
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "Adebayo Johnson"
+ *           description: "Full name of the user"
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: "adebayo@example.com"
+ *           description: "User's email address"
+ *         password:
+ *           type: string
+ *           format: password
+ *           example: "SecurePassword123!"
+ *           description: "User's password (min 8 characters)"
+ *         phone:
+ *           type: string
+ *           example: "+234 801 234 5678"
+ *           description: "User's phone number"
+ *         role:
+ *           type: string
+ *           enum: ["investor", "manager"]
+ *           example: "investor"
+ *           description: "User role in the platform"
+ */
+
 // Input validation schemas
 const LoginSchema = z.object({
   email: z.string().email('Invalid email format'),
@@ -21,6 +74,46 @@ const RegisterSchema = z.object({
   role: z.enum(['investor', 'admin', 'manager']).default('investor')
 });
 
+/**
+ * @swagger
+ * /api/secure-auth/login:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: User login
+ *     description: Authenticate user and return access/refresh tokens for Nigerian real estate investors
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Invalid input or validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function login(req: Request, res: Response) {
   try {
     const validatedData = LoginSchema.parse(req.body);

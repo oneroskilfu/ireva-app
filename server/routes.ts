@@ -27,6 +27,7 @@ import healthRoutes from './routes/health-routes';
 import jobQueueRoutes from './routes/job-queue-routes';
 import { devToolsRouter } from './routes/dev-tools';
 import refreshTokenRoutes from './routes/refresh-token.routes';
+import swaggerRoutes from './routes/swagger.routes';
 
 export function registerRoutes(app: Express) {
   // Set up request ID middleware
