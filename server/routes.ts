@@ -94,6 +94,9 @@ export async function registerRoutes(app: Express) {
   // Swagger API documentation
   app.use('/api', swaggerRoutes);
   
+  // Email verification routes
+  app.use('/api', emailVerificationRoutes);
+  
   // Add route to verify Redis is working
   app.get('/redis-test', (req, res) => {
     if (req.session) {
