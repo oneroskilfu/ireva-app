@@ -4,10 +4,13 @@ services:
     env: docker
     repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
-    dockerContext: ./client
-    dockerfilePath: ./client/Dockerfile
+    dockerContext: .
+    dockerfilePath: client/Dockerfile
     branch: main
     plan: free
+    buildFilter:
+      paths:
+        - client/**
     envVars:
       - key: VITE_API_URL
         value: https://ireva-backend.onrender.com/api
@@ -17,10 +20,15 @@ services:
     env: docker
     repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
-    dockerContext: ./
-    dockerfilePath: ./server/Dockerfile
+    dockerContext: .
+    dockerfilePath: server/Dockerfile
     branch: main
     plan: free
+    buildFilter:
+      paths:
+        - server/**
+        - shared/**
+        - esbuild.config.js
     envVars:
       - key: DATABASE_URL
         value: postgresql://ireva_db_user:fCTmNyo2YqM8iWDPEDKf6cq75LxuRAad@dpg-d0p5pomuk2gs739ana70-a/ireva_db
