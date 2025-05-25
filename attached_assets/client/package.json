@@ -1,0 +1,1 @@
+{ "name": "client", "scripts": { "build": "vite build" }, "dependencies": {}, "devDependencies": {} }
