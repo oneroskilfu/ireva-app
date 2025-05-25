@@ -1,0 +1,22 @@
+ npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+#10 8.220 npm warn deprecated npmlog@5.0.1: This package is no longer supported.
+#10 8.662 npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+#10 8.688 npm warn deprecated lodash.get@4.4.2: This package is deprecated. Use the optional chaining (?.) operator instead.
+#10 9.361 npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+#10 9.366 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#10 10.07 npm warn deprecated gauge@3.0.2: This package is no longer supported.
+#10 11.43 npm warn deprecated are-we-there-yet@2.0.0: This package is no longer supported.
+#10 14.85 npm warn deprecated popper.js@1.16.1: You can find the new Popper v2 at @popperjs/core, this package is dedicated to the legacy v1
+#10 16.03 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+#10 16.09 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+#10 16.94 npm warn deprecated glob@7.1.7: Glob versions prior to v9 are no longer supported
+#10 16.98 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#10 17.38 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#10 17.41 npm warn deprecated glob@5.0.15: Glob versions prior to v9 are no longer supported
+#10 17.45 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#10 17.75 npm warn deprecated glob@8.1.0: Glob versions prior to v9 are no longer supported
+#10 18.06 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#10 18.12 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#10 18.32 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#10 19.60 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#10 20.31 npm warn deprecated axios@0.18.1: Critical security vulnerability fixed in v0.21.1.
