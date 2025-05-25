@@ -46,6 +46,19 @@ export const users = pgTable('users', {
   }>()
 });
 
+// Refresh tokens table for secure token management
+export const refreshTokens = pgTable('refresh_tokens', {
+  id: serial('id').primaryKey(),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  isRevoked: boolean('is_revoked').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  revokedAt: timestamp('revoked_at'),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent')
+});
+
 // Properties table
 export const properties = pgTable('properties', {
   id: serial('id').primaryKey(),

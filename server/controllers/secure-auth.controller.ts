@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { db } from '../db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
-import { signToken } from '../utils/jwt';
+import { signAccessToken, signRefreshToken } from '../utils/jwt';
 import { hashPassword, verifyPassword } from '../middleware/secure-auth';
+import { RefreshTokenService } from '../services/refresh-token.service';
 
 // Input validation schemas
 const LoginSchema = z.object({
@@ -64,18 +65,26 @@ export async function login(req: Request, res: Response) {
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
 
-    // Generate JWT token
-    const token = signToken({
+    // Generate access and refresh tokens
+    const tokenPayload = {
       userId: user.id,
       email: user.email,
       role: user.role
-    });
+    };
+
+    const accessToken = signAccessToken(tokenPayload);
+    const refreshToken = await RefreshTokenService.createRefreshToken(
+      user.id,
+      req.ip,
+      req.get('User-Agent')
+    );
 
     res.json({
       success: true,
       message: 'Login successful',
       data: {
-        token,
+        accessToken,
+        refreshToken,
         user: {
           id: user.id,
           name: user.name,
@@ -144,12 +153,19 @@ export async function register(req: Request, res: Response) {
 
     const newUser = newUserResult[0];
 
-    // Generate JWT token
-    const token = signToken({
+    // Generate access and refresh tokens
+    const tokenPayload = {
       userId: newUser.id,
       email: newUser.email,
       role: newUser.role
-    });
+    };
+
+    const accessToken = signAccessToken(tokenPayload);
+    const refreshToken = await RefreshTokenService.createRefreshToken(
+      newUser.id,
+      req.ip,
+      req.get('User-Agent')
+    );
 
     res.status(201).json({
       success: true,
