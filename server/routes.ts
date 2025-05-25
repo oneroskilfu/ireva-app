@@ -77,6 +77,10 @@ export function registerRoutes(app: Express) {
   app.use('/api/jobs', jobQueueRoutes);
   app.use('/api/dev-tools', devToolsRouter);
   
+  // Secure JWT-based authentication routes
+  const secureAuthRoutes = require('./routes/secure-auth.routes').default;
+  app.use('/api/secure-auth', secureAuthRoutes);
+  
   // Add route to verify Redis is working
   app.get('/redis-test', (req, res) => {
     if (req.session) {

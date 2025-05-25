@@ -5,11 +5,11 @@ import { db } from '../db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 
-// Extend Express Request to include user
+// Extend Express Request to include JWT user data
 declare global {
   namespace Express {
     interface Request {
-      user?: JWTPayload;
+      jwtUser?: JWTPayload;
     }
   }
 }
@@ -51,7 +51,7 @@ export async function secureAuthMiddleware(req: Request, res: Response, next: Ne
       });
     }
 
-    req.user = payload;
+    req.jwtUser = payload;
     next();
     
   } catch (error) {
@@ -73,14 +73,14 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 
 export function requireRole(roles: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
+    if (!req.jwtUser) {
       return res.status(401).json({ 
         success: false,
         message: 'Authentication required' 
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req.jwtUser.role)) {
       return res.status(403).json({ 
         success: false,
         message: 'Insufficient permissions' 

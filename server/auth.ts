@@ -16,8 +16,8 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
-// Hash a password using crypto's scrypt function for security
-async function hashPassword(password: string) {
+// Enhanced password hashing with bcrypt fallback support
+export async function hashPassword(password: string) {
   // Fix for existing SHA-256 hashed test passwords in storage.ts
   if (password.length === 64 && /^[0-9a-f]+$/.test(password)) {
     // This is already a SHA-256 hash (used by the test users in storage)

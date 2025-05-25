@@ -186,7 +186,7 @@ export async function register(req: Request, res: Response) {
 
 export async function getProfile(req: Request, res: Response) {
   try {
-    if (!req.user) {
+    if (!req.jwtUser) {
       return res.status(401).json({
         success: false,
         message: 'User not authenticated'
@@ -209,7 +209,7 @@ export async function getProfile(req: Request, res: Response) {
         lastLoginAt: users.lastLoginAt
       })
       .from(users)
-      .where(eq(users.id, req.user.userId))
+      .where(eq(users.id, req.jwtUser.userId))
       .limit(1);
 
     if (userResult.length === 0) {
