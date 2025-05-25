@@ -12,8 +12,5 @@ COPY shared/ ./shared/
 # Install tsx globally for TypeScript execution
 RUN npm install -g tsx
 
-# Build backend (creates dist/index.js)
-RUN npm run build
-
-# Start application
-CMD ["npm", "run", "start"]
+# For production, we'll run the TypeScript directly since the build creates dist in root
+CMD ["tsx", "server/index.ts"]
