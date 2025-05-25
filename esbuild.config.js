@@ -14,6 +14,7 @@ build({
   format: 'esm',
   sourcemap: true,
   plugins: [nodeExternalsPlugin()],
+  external: ['../vite.config'],
   define: {
     'process.env.NODE_ENV': '"production"',
   },
