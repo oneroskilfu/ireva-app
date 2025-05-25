@@ -7,6 +7,8 @@ import { initializeDb } from "./db";
 import { initializeAuth } from "./auth";
 import { setupVite } from "./vite";
 
+// Enhanced email system with fallback support - Production Ready
+
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Create express app with essential middleware
