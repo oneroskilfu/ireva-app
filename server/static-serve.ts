@@ -14,7 +14,11 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 
   // SPA fallback - serve index.html for all non-API routes
-  app.get("*", (_req, res) => {
+  app.get("*", (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
