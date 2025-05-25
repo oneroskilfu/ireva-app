@@ -17,7 +17,8 @@ build({
   external: [
     '../vite.config',
     '../vite.config.ts',
-    '../vite.config.js'
+    '../vite.config.js',
+    'vite'
   ],
   loader: {
     '.ts': 'ts',
