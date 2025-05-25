@@ -6,13 +6,13 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files and install dependencies
-COPY server/package*.json ./
+COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm install --omit=dev
 
 # Copy source code and shared utilities
-COPY server/ .
-COPY shared/ ./shared/
+COPY . .
+COPY ../shared/ ./shared/
 
 # Build backend if needed
 RUN npm run build 2>/dev/null || echo "No build script found"
