@@ -7,14 +7,12 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY ../package*.json ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm install
+RUN npm install
 
 # Copy source code and build
 COPY . .
 COPY ../shared/ ./shared/
-RUN --mount=type=cache,target=/app/node_modules/.cache \
-    npm run build
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine
