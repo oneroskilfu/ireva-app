@@ -11,6 +11,7 @@ services:
     buildFilter:
       paths:
         - client/**
+        - client/nginx.conf
     envVars:
       - key: VITE_API_URL
         value: https://ireva-backend.onrender.com/api
