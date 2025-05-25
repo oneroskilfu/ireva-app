@@ -14,6 +14,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Immediate health check for port detection
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', platform: 'iREVA' });
+});
+
 const server = createServer(app);
 
 // Bind port immediately for Replit detection
