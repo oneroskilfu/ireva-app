@@ -1,18 +1,25 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# Copy package files and install dependencies
 COPY package*.json ./
-COPY tsconfig.json ./
+COPY tsconfig.* ./
 COPY esbuild.config.js ./
+COPY server ./server
+COPY shared ./shared
+
 RUN npm install
-
-# Copy source code and shared utilities
-COPY server/ ./server/
-COPY shared/ ./shared/
-
-# Build the backend using esbuild configuration
 RUN node esbuild.config.js
 
-# Start the built application
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --omit=dev
+
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 5000
+
 CMD ["node", "dist/index.js"]
