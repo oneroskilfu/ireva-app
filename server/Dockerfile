@@ -9,8 +9,11 @@ RUN npm install
 COPY server/ ./server/
 COPY shared/ ./shared/
 
-# Build backend if needed
-RUN npm run build 2>/dev/null || echo "No build script found"
+# Install tsx globally for TypeScript execution
+RUN npm install -g tsx
+
+# Build backend (creates dist/index.js)
+RUN npm run build
 
 # Start application
 CMD ["npm", "run", "start"]
