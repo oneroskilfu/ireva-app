@@ -14,8 +14,23 @@ build({
   format: 'esm',
   sourcemap: true,
   plugins: [nodeExternalsPlugin()],
-  external: ['../vite.config'],
+  external: [
+    '../vite.config',
+    '../vite.config.ts',
+    '../vite.config.js'
+  ],
+  loader: {
+    '.ts': 'ts',
+    '.js': 'js'
+  },
+  resolveExtensions: ['.ts', '.js', '.mjs'],
   define: {
     'process.env.NODE_ENV': '"production"',
   },
-}).catch(() => process.exit(1));
+  logLevel: 'error',
+  minify: false,
+  treeShaking: true
+}).catch((err) => {
+  console.error('Build failed:', err);
+  process.exit(1);
+});
