@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Loads .env before anything else
 import express from "express";
 import cors from "cors";
 import { createServer } from "http";
