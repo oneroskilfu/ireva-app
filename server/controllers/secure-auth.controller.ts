@@ -171,7 +171,8 @@ export async function register(req: Request, res: Response) {
       success: true,
       message: 'Registration successful',
       data: {
-        token,
+        accessToken,
+        refreshToken,
         user: {
           id: newUser.id,
           name: newUser.name,

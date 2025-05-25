@@ -26,6 +26,7 @@ import invitationRoutes from './routes/invitation-routes';
 import healthRoutes from './routes/health-routes';
 import jobQueueRoutes from './routes/job-queue-routes';
 import { devToolsRouter } from './routes/dev-tools';
+import refreshTokenRoutes from './routes/refresh-token.routes';
 
 export function registerRoutes(app: Express) {
   // Set up request ID middleware
@@ -78,8 +79,12 @@ export function registerRoutes(app: Express) {
   app.use('/api/dev-tools', devToolsRouter);
   
   // Secure JWT-based authentication routes
-  const secureAuthRoutes = require('./routes/secure-auth.routes').default;
-  app.use('/api/secure-auth', secureAuthRoutes);
+  import('./routes/secure-auth.routes').then(module => {
+    app.use('/api/secure-auth', module.default);
+  }).catch(console.error);
+  
+  // Refresh token routes
+  app.use('/api', refreshTokenRoutes);
   
   // Add route to verify Redis is working
   app.get('/redis-test', (req, res) => {
