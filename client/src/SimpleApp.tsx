@@ -1,12 +1,12 @@
 // Ultra-simple App that bypasses all the complex dependencies
 import React from 'react';
 import { Route, Switch } from 'wouter';
-import StaticHome from './pages/StaticHome';
+import FastHome from './FastHome';
 
 function SimpleApp() {
   return (
     <Switch>
-      <Route path="/" component={StaticHome} />
+      <Route path="/" component={FastHome} />
       <Route path="/signup">
         <div style={{ 
           minHeight: '100vh', 

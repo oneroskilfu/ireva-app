@@ -7,13 +7,19 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          mui: ['@mui/material', '@mui/icons-material'],
-          radix: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu']
+          vendor: ['react', 'react-dom', 'wouter']
         }
+      },
+      external: (id) => {
+        // Exclude heavy MUI packages that aren't being used in FastHome
+        if (id.includes('@mui/') || id.includes('@radix-ui/')) {
+          return false; // Don't externalize, but optimize chunk splitting
+        }
+        return false;
       }
     }
   },
