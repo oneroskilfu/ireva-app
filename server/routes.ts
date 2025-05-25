@@ -29,7 +29,7 @@ import { devToolsRouter } from './routes/dev-tools';
 import refreshTokenRoutes from './routes/refresh-token.routes';
 import swaggerRoutes from './routes/swagger.routes';
 
-export function registerRoutes(app: Express) {
+export async function registerRoutes(app: Express) {
   // Set up request ID middleware
   app.use((req: Request, res: Response, next: NextFunction) => {
     req.id = req.headers['x-request-id'] as string || uuidv4();
@@ -80,12 +80,18 @@ export function registerRoutes(app: Express) {
   app.use('/api/dev-tools', devToolsRouter);
   
   // Secure JWT-based authentication routes
-  import('./routes/secure-auth.routes').then(module => {
-    app.use('/api/secure-auth', module.default);
-  }).catch(console.error);
+  try {
+    const secureAuthModule = await import('./routes/secure-auth.routes');
+    app.use('/api/secure-auth', secureAuthModule.default);
+  } catch (error) {
+    console.error('Failed to load secure auth routes:', error);
+  }
   
   // Refresh token routes
   app.use('/api', refreshTokenRoutes);
+  
+  // Swagger API documentation
+  app.use('/api', swaggerRoutes);
   
   // Add route to verify Redis is working
   app.get('/redis-test', (req, res) => {

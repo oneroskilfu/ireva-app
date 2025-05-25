@@ -47,7 +47,7 @@ server.listen(PORT, async () => {
     // Initialize services
     initializeAuth(app);
     await initializeDb();
-    registerRoutes(app);
+    await registerRoutes(app);
     
     // In production, serve static files; in development, use Vite
     if (process.env.NODE_ENV === 'production') {
