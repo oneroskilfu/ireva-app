@@ -10,8 +10,8 @@ RUN npm install
 COPY server/ ./server/
 COPY shared/ ./shared/
 
-# Build only the backend part
-RUN npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+# Install tsx globally for TypeScript execution
+RUN npm install -g tsx
 
-# Start the built application
-CMD ["npm", "run", "start"]
+# Start application directly with tsx (no build needed)
+CMD ["tsx", "server/index.ts"]
