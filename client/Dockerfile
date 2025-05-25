@@ -1,27 +1,17 @@
-# Build stage
+# --- Build Stage ---
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY ../package*.json ./
+COPY client/package*.json ./
 RUN npm install
 
-# Copy source code and build
-COPY . .
-COPY ../shared/ ./shared/
+COPY client .
 RUN npm run build
 
-# Production stage
+# --- Production Stage ---
 FROM nginx:alpine
-
-# Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy nginx configuration for SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80
 EXPOSE 80
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
