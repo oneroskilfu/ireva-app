@@ -14,11 +14,10 @@ async function sendEmail(params: any): Promise<boolean> {
   }
 
   try {
-    const { MailService } = await import('@sendgrid/mail');
-    const mailService = new MailService();
-    mailService.setApiKey(apiKey);
+    const sgMail = await import('@sendgrid/mail');
+    sgMail.default.setApiKey(apiKey);
 
-    await mailService.send({
+    await sgMail.default.send({
       to: params.to,
       from: params.from,
       subject: params.subject,
