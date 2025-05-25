@@ -59,6 +59,18 @@ export const refreshTokens = pgTable('refresh_tokens', {
   userAgent: text('user_agent')
 });
 
+// Email verification tokens table
+export const emailVerificationTokens = pgTable('email_verification_tokens', {
+  id: serial('id').primaryKey(),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  isUsed: boolean('is_used').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  usedAt: timestamp('used_at')
+});
+
 // Properties table
 export const properties = pgTable('properties', {
   id: serial('id').primaryKey(),

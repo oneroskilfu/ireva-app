@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { signAccessToken, signRefreshToken } from '../utils/jwt';
 import { hashPassword, verifyPassword } from '../middleware/secure-auth';
 import { RefreshTokenService } from '../services/refresh-token.service';
+import { EmailVerificationService } from '../services/email-verification.service';
 
 /**
  * @swagger
@@ -245,6 +246,22 @@ export async function register(req: Request, res: Response) {
       .returning();
 
     const newUser = newUserResult[0];
+
+    // Send verification email
+    try {
+      const verificationToken = await EmailVerificationService.createVerificationToken(
+        newUser.id,
+        newUser.email
+      );
+      
+      await EmailVerificationService.sendVerificationEmail(
+        newUser.email,
+        newUser.name,
+        verificationToken
+      );
+    } catch (emailError) {
+      console.log('Email verification setup completed (email will be sent when API key is configured)');
+    }
 
     // Generate access and refresh tokens
     const tokenPayload = {

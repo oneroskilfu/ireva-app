@@ -28,6 +28,7 @@ import jobQueueRoutes from './routes/job-queue-routes';
 import { devToolsRouter } from './routes/dev-tools';
 import refreshTokenRoutes from './routes/refresh-token.routes';
 import swaggerRoutes from './routes/swagger.routes';
+import emailVerificationRoutes from './routes/email-verification.routes';
 
 export async function registerRoutes(app: Express) {
   // Set up request ID middleware
