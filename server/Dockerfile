@@ -7,8 +7,10 @@ COPY tsconfig.* ./
 COPY esbuild.config.js ./
 COPY server ./server
 COPY shared ./shared
+COPY client ./client
 
 RUN npm install
+RUN npx vite build --outDir dist/public
 RUN node esbuild.config.js
 
 FROM node:20-alpine

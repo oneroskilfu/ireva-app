@@ -1,23 +1,6 @@
 services:
   - type: web
-    name: iREVA-frontend
-    env: docker
-    repo: https://github.com/oneroskilfu/ireva-app
-    region: oregon
-    dockerContext: .
-    dockerfilePath: client/Dockerfile
-    branch: main
-    plan: free
-    buildFilter:
-      paths:
-        - client/**
-        - client/nginx.conf
-    envVars:
-      - key: VITE_API_URL
-        value: https://ireva-backend.onrender.com/api
-
-  - type: web
-    name: iREVA-backend
+    name: iREVA-platform
     env: docker
     repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
@@ -29,7 +12,9 @@ services:
       paths:
         - server/**
         - shared/**
+        - client/**
         - esbuild.config.js
+        - package*.json
     envVars:
       - key: DATABASE_URL
         value: postgresql://ireva_db_user:fCTmNyo2YqM8iWDPEDKf6cq75LxuRAad@dpg-d0p5pomuk2gs739ana70-a/ireva_db

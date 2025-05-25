@@ -48,7 +48,14 @@ server.listen(PORT, '0.0.0.0', async () => {
     initializeAuth(app);
     await initializeDb();
     registerRoutes(app);
-    await setupVite(app, server);
+    
+    // In production, serve static files; in development, use Vite
+    if (process.env.NODE_ENV === 'production') {
+      const { serveStatic } = await import('./vite');
+      serveStatic(app);
+    } else {
+      await setupVite(app, server);
+    }
     
     console.log('✅ iREVA Platform Ready - Nigerian Real Estate Investment Platform Online!');
   } catch (error) {
