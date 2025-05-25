@@ -5,7 +5,7 @@ services:
     repo: https://github.com/oneroskilfu/ireva-app
     region: oregon
     dockerContext: ./client
-    dockerfilePath: ./client/Dockerfile.production
+    dockerfilePath: ./client/Dockerfile
     branch: main
     plan: free
     envVars:
