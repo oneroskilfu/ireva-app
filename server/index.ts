@@ -14,9 +14,27 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Immediate health check for port detection
+// Essential health endpoints for service verification
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', platform: 'iREVA' });
+  res.status(200).json({ 
+    status: 'healthy',
+    platform: 'iREVA - Nigerian Real Estate Investment Platform',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'iREVA Platform API',
+    status: 'running',
+    endpoints: ['/api/health', '/health']
+  });
 });
 
 const server = createServer(app);
