@@ -1,11 +1,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import TestHome from "./TestHome";
+import BrandedHome from "./BrandedHome";
 
-// Direct TestHome component with beautiful Nigerian real estate design
+// Official iREVA branded homepage with complete brand guidelines
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <TestHome />
+    <BrandedHome />
   </React.StrictMode>
 );
