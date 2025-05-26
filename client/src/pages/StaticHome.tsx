@@ -3,7 +3,18 @@ import React from 'react';
 
 const StaticHome: React.FC = () => {
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif', backgroundColor: '#008751' }}>
+    <div style={{ minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
+      {/* TESTING: Bright green banner to confirm new design loads */}
+      <div style={{
+        background: '#00ff00',
+        color: '#000',
+        textAlign: 'center',
+        padding: '10px',
+        fontSize: '1.5rem',
+        fontWeight: 'bold'
+      }}>
+        ✅ NEW NIGERIAN REAL ESTATE DESIGN LOADED SUCCESSFULLY!
+      </div>
       {/* World-Class Hero Section */}
       <section style={{
         background: 'linear-gradient(135deg, rgba(16, 42, 79, 0.95) 0%, rgba(25, 35, 64, 0.9) 100%), url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1920 1080\'%3E%3Cpath fill=\'%23008751\' d=\'M0,0 L1920,0 L1920,720 Q960,650 0,720 Z\'/%3E%3C/svg%3E")',
