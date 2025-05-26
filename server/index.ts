@@ -31,13 +31,7 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    message: 'iREVA Platform API',
-    status: 'running',
-    endpoints: ['/api/health', '/health']
-  });
-});
+// Root route will be handled by React app via static serving
 
 const server = createServer(app);
 
