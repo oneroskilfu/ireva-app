@@ -15,18 +15,21 @@ RUN npm run build
 # ---- Build backend ----
 FROM node:20-alpine AS backend
 WORKDIR /app
-COPY package*.json ./
+COPY server/package*.json ./server/
 COPY tsconfig.* ./
 COPY esbuild.config.js ./
 COPY server ./server
 COPY shared ./shared
+
+# Install only backend dependencies
+WORKDIR /app/server
 RUN npm install
-RUN node esbuild.config.js
+RUN npm run build
 
 # ---- Final runtime ----
 FROM node:20-alpine
 WORKDIR /app
-COPY package*.json ./
+COPY server/package*.json ./
 RUN npm install --omit=dev
 COPY --from=backend /app/dist ./dist
 COPY --from=frontend /app/client/dist ./dist/public
