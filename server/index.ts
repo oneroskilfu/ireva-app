@@ -42,7 +42,7 @@ app.get('/', (req, res) => {
 const server = createServer(app);
 
 // Bind port immediately for Replit detection
-server.listen(PORT, async () => {
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 iREVA Server running on port ${PORT}`);
   
   try {
@@ -65,6 +65,7 @@ server.listen(PORT, async () => {
     console.log('✅ iREVA Platform Ready - Nigerian Real Estate Investment Platform Online!');
   } catch (error) {
     console.error('Initialization error:', error);
+    // Don't exit on initialization errors, keep the server running
   }
 });
 

@@ -321,12 +321,23 @@ const dbProxy = new Proxy(emptyDb as any, {
         return target[prop as keyof typeof target];
       }
       
+      // Check for required database environment variables
+      if (!process.env.DATABASE_URL && (!process.env.PGHOST || !process.env.PGDATABASE)) {
+        console.error('ERROR: Missing database configuration. Please check DATABASE_URL or PG* environment variables');
+        return target[prop as keyof typeof target];
+      }
+      
       // Otherwise initialize and try to return the real prop
-      initializeDb();
+      try {
+        initializeDb();
+      } catch (err) {
+        console.error('Database initialization failed:', err);
+        return target[prop as keyof typeof target];
+      }
     }
     return db ? db[prop as keyof typeof db] : target[prop as keyof typeof target];
   }
 });
 
-// Export proxies that will initialize on first access if needed
-export { poolProxy as pool, dbProxy as db };
+// Export the initialization function and proxies
+export { initializeDb, poolProxy as pool, dbProxy as db };
