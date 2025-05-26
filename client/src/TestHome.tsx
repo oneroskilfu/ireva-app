@@ -4,11 +4,11 @@ const TestHome: React.FC = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #ec4899 100%)',
+      background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1d4ed8 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: 'Inter, system-ui, sans-serif'
+      fontFamily: 'Exo 2, Inter, system-ui, sans-serif'
     }}>
       {/* Navigation */}
       <nav style={{
@@ -28,7 +28,7 @@ const TestHome: React.FC = () => {
           <div style={{
             width: '40px',
             height: '40px',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)',
+            background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
             borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
@@ -45,7 +45,7 @@ const TestHome: React.FC = () => {
         <a 
           href="/auth" 
           style={{
-            background: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 100%)',
+            background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
             color: '#fff',
             padding: '10px 24px',
             borderRadius: '25px',
