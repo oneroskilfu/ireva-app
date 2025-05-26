@@ -5,7 +5,7 @@ import { createServer } from "http";
 import { registerRoutes } from "./routes";
 import { initializeDb } from "./db";
 import { initializeAuth } from "./auth";
-import { setupVite } from "./vite";
+// Conditional Vite import for development only
 
 // Enhanced email system with fallback support - Production Ready
 
@@ -56,6 +56,8 @@ server.listen(PORT, async () => {
       const { serveStatic } = await import('./static-serve');
       serveStatic(app);
     } else {
+      // Only import and use Vite in development
+      const { setupVite } = await import('./vite');
       await setupVite(app, server);
     }
     
