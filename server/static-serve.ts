@@ -7,7 +7,12 @@ const __dirname = path.dirname(__filename);
 
 export function serveStatic(app: express.Application) {
   // Serve static files from the built frontend
-  const staticPath = path.join(__dirname, 'public');
+  // In production: /app/dist/public, in development: relative to __dirname
+  const staticPath = process.env.NODE_ENV === 'production' 
+    ? path.join(process.cwd(), 'dist/public')
+    : path.join(__dirname, '../client/dist');
+  
+  console.log(`Serving static files from: ${staticPath}`);
   app.use(express.static(staticPath));
   
   // Handle SPA routing - serve index.html for all non-API routes
