@@ -1,11 +1,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import FastHome from "./FastHome";
+import StaticHome from "./pages/StaticHome";
 
-// Direct FastHome component to minimize dependencies
+// Direct StaticHome component with beautiful Nigerian real estate design
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <FastHome />
+    <StaticHome />
   </React.StrictMode>
 );
