@@ -5,7 +5,8 @@ COPY package*.json ./
 COPY client ./client
 COPY shared ./shared
 RUN npm install
-RUN npx vite build --outDir client/dist
+WORKDIR /app/client
+RUN npm run build
 
 # ---- Build backend ----
 FROM node:20-alpine AS backend
