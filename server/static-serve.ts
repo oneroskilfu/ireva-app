@@ -13,7 +13,16 @@ export function serveStatic(app: express.Application) {
     : path.join(__dirname, '../client/dist');
   
   console.log(`Serving static files from: ${staticPath}`);
-  app.use(express.static(staticPath));
+  app.use(express.static(staticPath, {
+    setHeaders: (res, path) => {
+      // Force reload of HTML files to show new design
+      if (path.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  }));
   
   // Handle SPA routing - serve index.html for all non-API routes
   app.get('*', (req, res) => {
