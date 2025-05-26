@@ -5,7 +5,11 @@ COPY package*.json ./
 COPY client ./client
 COPY shared ./shared
 RUN npm install
+
+# Install client dependencies separately
 WORKDIR /app/client
+COPY client/package*.json ./
+RUN npm install
 RUN npm run build
 
 # ---- Build backend ----
