@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Material Design</title>
+  
+  <!-- Material Design Lite (MDL) CSS -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+  
+  <!-- Roboto font - Material Design's recommended typeface -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+  
+  <style>
+    /* 
+     * Material Design Typography System
+     * Following Material Design typography scale and weights
+     */
+    :root {
+      /* Base spacing unit (8px grid) */
+      --base-spacing: 0.5rem;
+      
+      /* Primary and accent colors (Material Indigo and Pink) */
+      --primary-color: #3f51b5;
+      --primary-color-dark: #303f9f;
+      --primary-color-light: #c5cae9;
+      --accent-color: #ff4081;
+      --accent-color-dark: #f50057;
+      --accent-color-light: #ff80ab;
+      
+      /* Text colors */
+      --primary-text: rgba(0, 0, 0, 0.87);
+      --secondary-text: rgba(0, 0, 0, 0.54);
+      --disabled-text: rgba(0, 0, 0, 0.38);
+      
+      /* Surface colors */
+      --background: #fafafa;
+      --surface: #ffffff;
+      --divider: rgba(0, 0, 0, 0.12);
+      
+      /* Material elevation shadows */
+      --shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      --shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+      --shadow-3: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+      
+      /* Border radius */
+      --border-radius: 4px;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--primary-text);
+      background-color: var(--background);
+    }
+    
+    /* Material Design 8px baseline grid */
+    .page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: calc(var(--base-spacing) * 4); /* 2rem = 32px */
+    }
+    
+    /* Typography scale */
+    .md-display-4 {
+      font-size: 7rem;      /* 112px */
+      font-weight: 300;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+    }
+    
+    .md-display-3 {
+      font-size: 3.5rem;    /* 56px */
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    
+    .md-display-2 {
+      font-size: 2.8rem;    /* 45px */
+      font-weight: 400;
+      line-height: 1.2;
+    }
+    
+    .md-display-1 {
+      font-size: 2.125rem;  /* 34px */
+      font-weight: 400;
+      line-height: 1.2;
+    }
+    
+    .md-headline {
+      font-size: 1.5rem;    /* 24px */
+      font-weight: 400;
+      line-height: 1.4;
+    }
+    
+    .md-title {
+      font-size: 1.25rem;   /* 20px */
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+    }
+    
+    .md-subheading {
+      font-size: 1rem;      /* 16px */
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+    }
+    
+    .md-body-1 {
+      font-size: 0.875rem;  /* 14px */
+      font-weight: 400;
+      line-height: 1.6;
+    }
+    
+    .md-body-2 {
+      font-size: 0.875rem;  /* 14px */
+      font-weight: 500;
+      line-height: 1.6;
+    }
+    
+    .md-caption {
+      font-size: 0.75rem;   /* 12px */
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      line-height: 1.6;
+    }
+    
+    /* Material Design Grid System */
+    .md-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-gap: calc(var(--base-spacing) * 2); /* 16px */
+      padding: calc(var(--base-spacing) * 2) 0;
+    }
+    
+    /* Responsive grid spans */
+    .md-col-12 { grid-column: span 12; }
+    .md-col-11 { grid-column: span 11; }
+    .md-col-10 { grid-column: span 10; }
+    .md-col-9 { grid-column: span 9; }
+    .md-col-8 { grid-column: span 8; }
+    .md-col-7 { grid-column: span 7; }
+    .md-col-6 { grid-column: span 6; }
+    .md-col-5 { grid-column: span 5; }
+    .md-col-4 { grid-column: span 4; }
+    .md-col-3 { grid-column: span 3; }
+    .md-col-2 { grid-column: span 2; }
+    .md-col-1 { grid-column: span 1; }
+    
+    /* Responsive breakpoints */
+    @media (max-width: 839px) {
+      .md-tablet-col-12 { grid-column: span 12; }
+      .md-tablet-col-6 { grid-column: span 6; }
+      .md-tablet-col-4 { grid-column: span 4; }
+    }
+    
+    @media (max-width: 479px) {
+      .md-mobile-col-12 { grid-column: span 12; }
+      .md-mobile-col-6 { grid-column: span 6; }
+    }
+    
+    /* Material Design Spacing */
+    .md-spacing--small { margin: calc(var(--base-spacing) * 1); /* 8px */ }
+    .md-spacing        { margin: calc(var(--base-spacing) * 2); /* 16px */ }
+    .md-spacing--large { margin: calc(var(--base-spacing) * 3); /* 24px */ }
+    
+    .md-padding--small { padding: calc(var(--base-spacing) * 1); /* 8px */ }
+    .md-padding        { padding: calc(var(--base-spacing) * 2); /* 16px */ }
+    .md-padding--large { padding: calc(var(--base-spacing) * 3); /* 24px */ }
+    
+    .md-mt { margin-top: calc(var(--base-spacing) * 2); }
+    .md-mb { margin-bottom: calc(var(--base-spacing) * 2); }
+    .md-my { margin: calc(var(--base-spacing) * 2) 0; }
+    .md-mx { margin: 0 calc(var(--base-spacing) * 2); }
+    
+    .md-pt { padding-top: calc(var(--base-spacing) * 2); }
+    .md-pb { padding-bottom: calc(var(--base-spacing) * 2); }
+    .md-py { padding: calc(var(--base-spacing) * 2) 0; }
+    .md-px { padding: 0 calc(var(--base-spacing) * 2); }
+    
+    /* Material Design Cards with proper elevation */
+    .md-card {
+      background-color: var(--surface);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-1);
+      transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+    
+    .md-card:hover {
+      box-shadow: var(--shadow-2);
+    }
+    
+    .md-card__header {
+      padding: calc(var(--base-spacing) * 2);
+      border-bottom: 1px solid var(--divider);
+    }
+    
+    .md-card__media {
+      height: 0;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      background-size: cover;
+      background-position: center;
+    }
+    
+    .md-card__content {
+      padding: calc(var(--base-spacing) * 2);
+    }
+    
+    .md-card__actions {
+      padding: calc(var(--base-spacing));
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    /* Material Design buttons with proper spacing and shape */
+    .md-button {
+      display: inline-block;
+      padding: 0 calc(var(--base-spacing) * 2);
+      height: 36px;
+      min-width: 64px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      line-height: 36px;
+      border-radius: var(--border-radius);
+      text-align: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      outline: none;
+    }
+    
+    .md-button--contained {
+      background-color: var(--primary-color);
+      color: white;
+      box-shadow: var(--shadow-1);
+    }
+    
+    .md-button--contained:hover {
+      background-color: var(--primary-color-dark);
+      box-shadow: var(--shadow-2);
+    }
+    
+    .md-button--outlined {
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      background-color: transparent;
+    }
+    
+    .md-button--outlined:hover {
+      background-color: rgba(63, 81, 181, 0.08);
+    }
+    
+    .md-button--text {
+      color: var(--primary-color);
+      background-color: transparent;
+      padding: 0 calc(var(--base-spacing));
+      min-width: auto;
+    }
+    
+    .md-button--text:hover {
+      background-color: rgba(63, 81, 181, 0.08);
+    }
+    
+    .md-button--accent {
+      background-color: var(--accent-color);
+    }
+    
+    .md-button--accent:hover {
+      background-color: var(--accent-color-dark);
+    }
+    
+    /* Material Design form elements */
+    .md-input {
+      position: relative;
+      margin-bottom: calc(var(--base-spacing) * 3);
+    }
+    
+    .md-input__field {
+      width: 100%;
+      padding: calc(var(--base-spacing) * 1.5) 0 calc(var(--base-spacing) * 0.5) 0;
+      border: none;
+      border-bottom: 1px solid var(--divider);
+      background-color: transparent;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .md-input__field:focus {
+      border-bottom: 2px solid var(--primary-color);
+      margin-bottom: -1px;
+    }
+    
+    .md-input__label {
+      position: absolute;
+      top: calc(var(--base-spacing) * 1.5);
+      left: 0;
+      color: var(--secondary-text);
+      font-size: 1rem;
+      transition: all 0.2s;
+      pointer-events: none;
+    }
+    
+    .md-input__field:focus + .md-input__label,
+    .md-input__field:not(:placeholder-shown) + .md-input__label {
+      top: 0;
+      font-size: 0.75rem;
+      color: var(--primary-color);
+    }
+    
+    /* Center content helper */
+    .md-center {
+      text-align: center;
+    }
+    
+    /* Header and footer styling */
+    .md-header {
+      text-align: center;
+      padding: calc(var(--base-spacing) * 8) 0 calc(var(--base-spacing) * 4);
+    }
+    
+    .md-footer {
+      text-align: center;
+      margin-top: calc(var(--base-spacing) * 6);
+      padding: calc(var(--base-spacing) * 4) 0;
+      color: var(--secondary-text);
+    }
+    
+    /* Responsive card container */
+    .md-card-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-gap: calc(var(--base-spacing) * 3);
+      margin: calc(var(--base-spacing) * 4) 0;
+    }
+    
+    /* Button container for proper spacing */
+    .md-button-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--base-spacing) * 1);
+      margin: calc(var(--base-spacing) * 4) 0;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    <!-- Material Design Lite Header -->
+    <header class="mdl-layout__header">
+      <div class="mdl-layout__header-row">
+        <span class="mdl-layout-title">iREVA</span>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation mdl-layout--large-screen-only">
+          <a class="mdl-navigation__link" href="/">Home</a>
+          <a class="mdl-navigation__link" href="/properties">Properties</a>
+          <a class="mdl-navigation__link" href="/about">About</a>
+          <a class="mdl-navigation__link" href="/contact">Contact</a>
+        </nav>
+      </div>
+    </header>
+    
+    <!-- Mobile Navigation Drawer -->
+    <div class="mdl-layout__drawer">
+      <span class="mdl-layout-title">iREVA</span>
+      <nav class="mdl-navigation">
+        <a class="mdl-navigation__link" href="/">Home</a>
+        <a class="mdl-navigation__link" href="/properties">Properties</a>
+        <a class="mdl-navigation__link" href="/about">About</a>
+        <a class="mdl-navigation__link" href="/contact">Contact</a>
+      </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <main class="mdl-layout__content">
+      <div class="page-container">
+        <!-- Header Section with Material Design Typography -->
+        <div class="md-header">
+          <h1 class="md-display-2 md-mb">Enhanced Material Design</h1>
+          <p class="md-headline md-mb">Following Material Design principles for typography, spacing, and components</p>
+        </div>
+        
+        <!-- Buttons with proper Material Design styling -->
+        <div class="md-button-container">
+          <button class="md-button md-button--contained">
+            Primary Button
+          </button>
+          <button class="md-button md-button--contained md-button--accent">
+            Accent Button
+          </button>
+          <button class="md-button md-button--outlined">
+            Outlined Button
+          </button>
+          <button class="md-button md-button--text">
+            Text Button
+          </button>
+        </div>
+        
+        <!-- Material Design Grid Layout -->
+        <div class="md-grid md-my">
+          <div class="md-col-12">
+            <h2 class="md-title">Material Design Grid System</h2>
+            <p class="md-body-1">The grid below demonstrates responsive layouts using Material Design's 12-column grid system.</p>
+          </div>
+          
+          <div class="md-col-4 md-tablet-col-6 md-mobile-col-12 md-card md-padding">
+            <p class="md-body-2">4-Column Card</p>
+            <p class="md-body-1">This card takes 4 columns on desktop, 6 on tablet, and 12 on mobile.</p>
+          </div>
+          
+          <div class="md-col-4 md-tablet-col-6 md-mobile-col-12 md-card md-padding">
+            <p class="md-body-2">4-Column Card</p>
+            <p class="md-body-1">This card takes 4 columns on desktop, 6 on tablet, and 12 on mobile.</p>
+          </div>
+          
+          <div class="md-col-4 md-tablet-col-12 md-mobile-col-12 md-card md-padding">
+            <p class="md-body-2">4-Column Card</p>
+            <p class="md-body-1">This card takes 4 columns on desktop, 12 on tablet, and 12 on mobile.</p>
+          </div>
+        </div>
+        
+        <!-- Material Design Cards with proper elevation -->
+        <h2 class="md-headline md-center md-my">Material Design Cards</h2>
+        
+        <div class="md-card-container">
+          <div class="md-card">
+            <div class="md-card__header">
+              <h3 class="md-title">Material Typography</h3>
+            </div>
+            <div class="md-card__content">
+              <p class="md-body-1">Material Design typography uses the Roboto font family and follows a specific type scale with appropriate weights and spacing.</p>
+              <p class="md-body-2">This card demonstrates proper use of font sizes, weights, and spacing according to Material Design guidelines.</p>
+            </div>
+            <div class="md-card__actions">
+              <button class="md-button md-button--text">Learn More</button>
+            </div>
+          </div>
+          
+          <div class="md-card">
+            <div class="md-card__header">
+              <h3 class="md-title">Material Spacing</h3>
+            </div>
+            <div class="md-card__content">
+              <p class="md-body-1">Material Design uses an 8dp square baseline grid for component dimensions, spacing, and touch targets.</p>
+              <p class="md-body-2">All spacing in this document follows the 8dp grid (0.5rem), with measurements being multiples of this base unit.</p>
+            </div>
+            <div class="md-card__actions">
+              <button class="md-button md-button--text">Learn More</button>
+            </div>
+          </div>
+          
+          <div class="md-card">
+            <div class="md-card__header">
+              <h3 class="md-title">Material Elevation</h3>
+            </div>
+            <div class="md-card__content">
+              <p class="md-body-1">Material Design uses shadows to convey elevation. Elements closer to the user cast larger, softer shadows.</p>
+              <p class="md-body-2">These cards demonstrate proper shadow elevation and hover states according to Material Design specifications.</p>
+            </div>
+            <div class="md-card__actions">
+              <button class="md-button md-button--text">Learn More</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Material Design Form Inputs -->
+        <h2 class="md-headline md-center md-my">Material Design Inputs</h2>
+        
+        <div class="md-grid">
+          <div class="md-col-6 md-tablet-col-12 md-mobile-col-12">
+            <div class="md-input">
+              <input type="text" id="name" class="md-input__field" placeholder=" ">
+              <label for="name" class="md-input__label">Full Name</label>
+            </div>
+          </div>
+          <div class="md-col-6 md-tablet-col-12 md-mobile-col-12">
+            <div class="md-input">
+              <input type="email" id="email" class="md-input__field" placeholder=" ">
+              <label for="email" class="md-input__label">Email Address</label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Back to Home Button -->
+        <div class="md-center md-my">
+          <a href="/" class="md-button md-button--contained">
+            Back to Home
+          </a>
+        </div>
+        
+        <!-- Footer with proper spacing -->
+        <div class="md-footer">
+          <p class="md-caption">iREVA © 2025 - All rights reserved</p>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Material Design Lite JavaScript -->
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+</body>
+</html>

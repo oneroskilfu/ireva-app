@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material UI via CDN</title>
+  
+  <!-- Roboto font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  
+  <!-- Material Icons -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  
+  <!-- React and ReactDOM from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  
+  <!-- Material UI from CDN -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@mui/material@5.14.18/umd/material-ui.production.min.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { 
+      Button, 
+      Container, 
+      Typography, 
+      Box, 
+      AppBar, 
+      Toolbar, 
+      Card, 
+      CardContent, 
+      CardActions, 
+      Grid 
+    } = MaterialUI;
+    
+    const App = () => {
+      return (
+        <Container maxWidth="lg">
+          <Box sx={{ my: 4 }}>
+            <Typography variant="h3" component="h1" gutterBottom align="center">
+              Material UI via CDN
+            </Typography>
+            
+            <Typography variant="subtitle1" gutterBottom align="center">
+              This page loads Material UI directly from CDN, with no build tools
+            </Typography>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>
+              <Button variant="contained" color="primary">
+                Primary Button
+              </Button>
+              <Button variant="contained" color="secondary">
+                Secondary Button
+              </Button>
+              <Button variant="outlined" color="primary">
+                Outlined Button
+              </Button>
+            </Box>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h5" component="div" gutterBottom>
+                      Simple Card 1
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      This card is rendered using Material UI components loaded via CDN.
+                      No build tools or bundlers are involved.
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <Button size="small">Learn More</Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h5" component="div" gutterBottom>
+                      Simple Card 2
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Loading Material UI via CDN bypasses any issues that might be 
+                      related to bundling or configuration.
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <Button size="small">Learn More</Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h5" component="div" gutterBottom>
+                      Simple Card 3
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      This approach lets us verify if Material UI works correctly in our 
+                      environment without any React integration complications.
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <Button size="small">Learn More</Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            </Grid>
+            
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <Button variant="contained" color="primary" href="/">
+                Back to Home
+              </Button>
+            </Box>
+          </Box>
+        </Container>
+      );
+    };
+    
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

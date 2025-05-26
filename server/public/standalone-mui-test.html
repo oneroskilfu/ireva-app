@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standalone Material UI Test</title>
+  
+  <!-- Roboto font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+  
+  <!-- Load React -->
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  
+  <!-- Load Emotion (required for MUI) -->
+  <script crossorigin src="https://unpkg.com/@emotion/react@11.11.0/dist/emotion-react.umd.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
+  
+  <!-- Load Material UI v5 -->
+  <script crossorigin src="https://unpkg.com/@mui/material@5.14.18/umd/material-ui.production.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    // Destructure Material UI components
+    const {
+      ThemeProvider,
+      createTheme,
+      CssBaseline,
+      Container,
+      Typography,
+      Button,
+      Paper,
+      Box,
+      Grid,
+      Card,
+      CardContent,
+      CardActions
+    } = MaterialUI;
+    
+    // Create simple theme
+    const theme = createTheme({
+      palette: {
+        primary: {
+          main: '#1976d2',
+        },
+        secondary: {
+          main: '#dc004e',
+        },
+      },
+    });
+    
+    // Simple Material UI Application
+    function App() {
+      return (
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Container maxWidth="md" sx={{ mt: 4 }}>
+            <Paper elevation={3} sx={{ p: 4 }}>
+              <Typography variant="h4" component="h1" gutterBottom>
+                Standalone Material UI Test
+              </Typography>
+              
+              <Typography variant="body1" paragraph>
+                This is a standalone HTML page with React and Material UI loaded from CDN.
+                It's completely isolated from the main application to verify Material UI works properly.
+              </Typography>
+              
+              <Box sx={{ my: 4 }}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="h6">Basic Card</Typography>
+                        <Typography variant="body2">This is a simple Material UI card component.</Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Button size="small">Action</Button>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="h6">Primary Card</Typography>
+                        <Typography variant="body2">This card has primary actions.</Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Button size="small" color="primary">Primary Action</Button>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={4}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="h6">Secondary Card</Typography>
+                        <Typography variant="body2">This card has secondary actions.</Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Button size="small" color="secondary">Secondary Action</Button>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Box>
+              
+              <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'center' }}>
+                <Button variant="contained" color="primary">Primary Button</Button>
+                <Button variant="contained" color="secondary">Secondary Button</Button>
+                <Button variant="outlined" color="primary">Outlined Button</Button>
+              </Box>
+              
+              <Box sx={{ textAlign: 'center', mt: 4 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  component="a"
+                  href="/"
+                >
+                  Back to Main Application
+                </Button>
+              </Box>
+            </Paper>
+          </Container>
+        </ThemeProvider>
+      );
+    }
+    
+    // Render using React 18 createRoot API
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

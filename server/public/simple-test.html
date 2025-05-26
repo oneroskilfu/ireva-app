@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .container {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      background-color: #f9f9f9;
+    }
+    .button {
+      display: inline-block;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      text-decoration: none;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hello, World!</h1>
+  <p>This is a simple HTML page without React.</p>
+  
+  <div class="container">
+    <h2>Basic HTML Test</h2>
+    <p>This page contains no JavaScript frameworks, no React, and no Material-UI.</p>
+    <p>If this page renders correctly but the React pages don't, then the issue is with the React setup.</p>
+  </div>
+  
+  <a href="/" class="button">Back to Home</a>
+  
+  <script>
+    // Basic JavaScript test
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Page loaded successfully!');
+      
+      // Add a timestamp to verify the page is executing JavaScript
+      const timestampDiv = document.createElement('div');
+      timestampDiv.className = 'container';
+      timestampDiv.innerHTML = `
+        <h3>JavaScript Test</h3>
+        <p>Current time: ${new Date().toLocaleString()}</p>
+      `;
+      document.body.appendChild(timestampDiv);
+    });
+  </script>
+</body>
+</html>

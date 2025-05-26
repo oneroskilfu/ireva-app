@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iREVA - Simplified Themed Version</title>
+  <!-- Import Material UI -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #F9FAFB;
+    }
+    
+    .app-bar {
+      background-color: #4F46E5;
+      color: white;
+      display: flex;
+      padding: 0 24px;
+      min-height: 64px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .app-bar-left {
+      display: flex;
+      align-items: center;
+    }
+    
+    .app-bar-right {
+      display: flex;
+      align-items: center;
+    }
+    
+    .app-bar-brand {
+      font-weight: bold;
+      font-size: 1.5rem;
+      margin-right: 24px;
+    }
+    
+    .app-bar-nav {
+      display: flex;
+    }
+    
+    .app-bar-button {
+      color: inherit;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      margin: 0 4px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    
+    .app-bar-button:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .outlined-button {
+      border: 1px solid white;
+    }
+    
+    .contained-button {
+      background-color: #10B981;
+      color: white;
+    }
+    
+    .contained-button:hover {
+      background-color: #059669;
+    }
+    
+    .hero-section {
+      background: linear-gradient(135deg, #4F46E5 0%, #3730A3 100%);
+      color: white;
+      padding: 64px 0;
+      border-radius: 8px;
+      margin-bottom: 48px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      margin: -12px;
+    }
+    
+    .grid-item {
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    
+    .grid-item-md-7 {
+      width: 58.333%;
+    }
+    
+    .grid-item-md-5 {
+      width: 41.666%;
+    }
+    
+    .grid-item-md-3 {
+      width: 25%;
+    }
+    
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    
+    .subtitle {
+      font-size: 1.25rem;
+      font-weight: normal;
+      margin-bottom: 32px;
+    }
+    
+    .button-primary {
+      background: #4F46E5;
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+      margin-right: 16px;
+    }
+    
+    .button-primary:hover {
+      background: #3730A3;
+      transform: translateY(-2px);
+    }
+    
+    .button-secondary {
+      background: transparent;
+      color: white;
+      border: 1px solid white;
+      padding: 12px 32px;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+    
+    .button-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .card:hover {
+      box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+      transform: translateY(-4px);
+    }
+    
+    .card-media {
+      height: 140px;
+      background-color: #e0e0e0;
+      background-position: center;
+      background-size: cover;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+    
+    .card-content {
+      padding: 16px;
+      flex-grow: 1;
+    }
+    
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .card-location {
+      font-size: 0.875rem;
+      color: #4B5563;
+      margin-bottom: 8px;
+    }
+    
+    .card-price {
+      font-size: 1.25rem;
+      color: #4F46E5;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .card-roi {
+      font-size: 0.875rem;
+      color: #10B981;
+      margin-bottom: 16px;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .mt-6 {
+      margin-top: 48px;
+    }
+    
+    .mt-10 {
+      margin-top: 80px;
+    }
+    
+    .mb-6 {
+      margin-bottom: 48px;
+    }
+    
+    .offer-card {
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      padding: 24px;
+    }
+    
+    .offer-title {
+      color: #3730A3;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .offer-property {
+      color: #111827;
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+    
+    .offer-roi {
+      color: #10B981;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .offer-units {
+      color: #4B5563;
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+    }
+    
+    .feature-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      padding: 24px;
+      text-align: center;
+      height: 100%;
+    }
+    
+    .feature-title {
+      color: #4F46E5;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .feature-description {
+      color: #111827;
+      font-size: 1rem;
+    }
+    
+    .footer {
+      background: white;
+      padding: 32px 0;
+      margin-top: 64px;
+      border-top: 1px solid #E5E7EB;
+    }
+    
+    .footer-text {
+      color: #4B5563;
+      font-size: 0.875rem;
+      text-align: center;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .grid-item-md-7, .grid-item-md-5, .grid-item-md-3 {
+        width: 100%;
+      }
+      
+      .app-bar {
+        flex-direction: column;
+        padding: 12px;
+      }
+      
+      .app-bar-right, .app-bar-nav {
+        margin-top: 12px;
+      }
+      
+      .button-primary, .button-secondary {
+        padding: 8px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-bar">
+    <div class="app-bar-left">
+      <div class="app-bar-brand">iREVA</div>
+      <nav class="app-bar-nav">
+        <button class="app-bar-button">Home</button>
+        <button class="app-bar-button">Properties</button>
+        <button class="app-bar-button">Invest</button>
+        <button class="app-bar-button">About</button>
+      </nav>
+    </div>
+    <div class="app-bar-right">
+      <button class="app-bar-button outlined-button">Log In</button>
+      <button class="app-bar-button contained-button">Sign Up</button>
+    </div>
+  </header>
+  
+  <main>
+    <div class="container">
+      <div class="hero-section">
+        <div class="grid">
+          <div class="grid-item grid-item-md-7">
+            <h1 class="section-title">Invest in Premium Nigerian Real Estate</h1>
+            <h2 class="subtitle">Access high-return property investments with as little as ₦50,000</h2>
+            <button class="button-primary">Start Investing</button>
+            <button class="button-secondary">Learn More</button>
+          </div>
+          <div class="grid-item grid-item-md-5">
+            <div class="offer-card">
+              <h3 class="offer-title">Latest Investment Opportunity</h3>
+              <p class="offer-property">Victoria Island Luxury Apartments</p>
+              <p class="offer-roi">18.5% Expected Annual ROI</p>
+              <p class="offer-units">50 units remaining out of 100</p>
+              <button class="button-primary" style="width: 100%;">View Details</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <h2 class="section-title text-center mb-6">Featured Properties</h2>
+      
+      <div class="grid">
+        <div class="grid-item grid-item-md-3">
+          <div class="card">
+            <div class="card-media" style="background-image: url('https://via.placeholder.com/300x140?text=Property+Image')"></div>
+            <div class="card-content">
+              <h3 class="card-title">Lekki Phase 1 Apartments</h3>
+              <p class="card-location">Lekki, Lagos</p>
+              <p class="card-price">₦25,000,000</p>
+              <p class="card-roi">15.2% Expected ROI</p>
+              <button class="button-primary" style="width: 100%;">Invest Now</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid-item grid-item-md-3">
+          <div class="card">
+            <div class="card-media" style="background-image: url('https://via.placeholder.com/300x140?text=Property+Image')"></div>
+            <div class="card-content">
+              <h3 class="card-title">Ikoyi Executive Homes</h3>
+              <p class="card-location">Ikoyi, Lagos</p>
+              <p class="card-price">₦75,000,000</p>
+              <p class="card-roi">18.7% Expected ROI</p>
+              <button class="button-primary" style="width: 100%;">Invest Now</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid-item grid-item-md-3">
+          <div class="card">
+            <div class="card-media" style="background-image: url('https://via.placeholder.com/300x140?text=Property+Image')"></div>
+            <div class="card-content">
+              <h3 class="card-title">Abuja City Centre Complex</h3>
+              <p class="card-location">Central District, Abuja</p>
+              <p class="card-price">₦45,000,000</p>
+              <p class="card-roi">14.8% Expected ROI</p>
+              <button class="button-primary" style="width: 100%;">Invest Now</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid-item grid-item-md-3">
+          <div class="card">
+            <div class="card-media" style="background-image: url('https://via.placeholder.com/300x140?text=Property+Image')"></div>
+            <div class="card-content">
+              <h3 class="card-title">Port Harcourt Waterfront Villas</h3>
+              <p class="card-location">Port Harcourt</p>
+              <p class="card-price">₦35,000,000</p>
+              <p class="card-roi">16.5% Expected ROI</p>
+              <button class="button-primary" style="width: 100%;">Invest Now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-center mt-6">
+        <button class="button-primary">View All Properties</button>
+      </div>
+      
+      <div class="mt-10 mb-6">
+        <h2 class="section-title text-center">Why Invest with iREVA?</h2>
+        
+        <div class="grid mt-6">
+          <div class="grid-item grid-item-md-3">
+            <div class="feature-card">
+              <h3 class="feature-title">Vetted Properties</h3>
+              <p class="feature-description">All properties undergo strict due diligence and legal verification</p>
+            </div>
+          </div>
+          <div class="grid-item grid-item-md-3">
+            <div class="feature-card">
+              <h3 class="feature-title">Start Small</h3>
+              <p class="feature-description">Begin with as little as ₦50,000 and build your portfolio gradually</p>
+            </div>
+          </div>
+          <div class="grid-item grid-item-md-3">
+            <div class="feature-card">
+              <h3 class="feature-title">Secured Investments</h3>
+              <p class="feature-description">Smart contracts and escrow services protect your investments</p>
+            </div>
+          </div>
+          <div class="grid-item grid-item-md-3">
+            <div class="feature-card">
+              <h3 class="feature-title">Regular Returns</h3>
+              <p class="feature-description">Track performance and receive ROI payments directly to your wallet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="footer">
+    <div class="container">
+      <p class="footer-text">© 2025 iREVA. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

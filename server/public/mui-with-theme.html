@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material-UI With ThemeProvider</title>
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@mui/material@5.14.17/umd/material-ui.development.js"></script>
+  <script src="https://unpkg.com/@emotion/react@11.11.1/dist/emotion-react.umd.min.js"></script>
+  <script src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { 
+      Button, 
+      ThemeProvider, 
+      createTheme 
+    } = MaterialUI;
+
+    const theme = createTheme({
+      palette: {
+        primary: {
+          main: '#1976d2',
+        },
+      },
+    });
+
+    const App = () => {
+      return (
+        <ThemeProvider theme={theme}>
+          <Button variant="contained" color="primary">
+            Hello, World!
+          </Button>
+        </ThemeProvider>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
