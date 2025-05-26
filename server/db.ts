@@ -339,5 +339,5 @@ const dbProxy = new Proxy(emptyDb as any, {
   }
 });
 
-// Export the initialization function and proxies
-export { initializeDb, poolProxy as pool, dbProxy as db };
+// Export the proxies (initializeDb is already exported above)
+export { poolProxy as pool, dbProxy as db };
