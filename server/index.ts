@@ -56,9 +56,10 @@ server.listen(PORT, async () => {
       const { serveStatic } = await import('./static-serve');
       serveStatic(app);
     } else {
-      // Only import and use Vite in development
-      const { setupVite } = await import('./vite');
-      await setupVite(app, server);
+      // Development mode - serve files directly (no Vite complexity in production)
+      console.log('Development mode - serving static files');
+      const { serveStatic } = await import('./static-serve');
+      serveStatic(app);
     }
     
     console.log('✅ iREVA Platform Ready - Nigerian Real Estate Investment Platform Online!');

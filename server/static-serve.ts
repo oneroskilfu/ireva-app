@@ -1,24 +1,23 @@
-import express, { type Express } from "express";
-import path from "path";
-import fs from "fs";
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  if (!fs.existsSync(distPath)) {
-    console.warn(`Build directory not found: ${distPath}, serving without static files`);
-    return;
-  }
-
-  // Serve static files
-  app.use(express.static(distPath));
-
-  // SPA fallback - serve index.html for all non-API routes
-  app.get("*", (req, res, next) => {
+export function serveStatic(app: express.Application) {
+  // Serve static files from the built frontend
+  const staticPath = path.join(__dirname, 'public');
+  app.use(express.static(staticPath));
+  
+  // Handle SPA routing - serve index.html for all non-API routes
+  app.get('*', (req, res) => {
     // Skip API routes
     if (req.path.startsWith('/api/')) {
-      return next();
+      return res.status(404).json({ error: 'API endpoint not found' });
     }
-    res.sendFile(path.resolve(distPath, "index.html"));
+    
+    // Serve index.html for all other routes (SPA routing)
+    res.sendFile(path.join(staticPath, 'index.html'));
   });
 }
