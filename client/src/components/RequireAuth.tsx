@@ -114,7 +114,7 @@ export default function RequireAuth({ children, role }: RequireAuthProps) {
             </button>
             
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => window.history.back()}
               style={{
                 padding: '12px 24px',
                 background: '#f8fafc',

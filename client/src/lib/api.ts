@@ -1,197 +1,129 @@
-// API Client for iREVA Platform
-// Handles authentication, property data, and secure API communication
+// API client for iREVA platform authentication and data
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-
-interface LoginCredentials {
+interface User {
+  id: string;
   email: string;
-  password: string;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
   firstName: string;
   lastName: string;
-  role?: 'investor' | 'admin';
+  role: 'investor' | 'admin';
 }
 
-interface AuthResponse {
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: 'investor' | 'admin';
-  };
-}
-
-interface Property {
-  id: string;
-  title: string;
-  location: string;
-  price: number;
-  expectedReturn: number;
-  description: string;
-  images: string[];
-  status: 'available' | 'funded' | 'completed';
-  fundingProgress: number;
-  minimumInvestment: number;
+  user: User;
 }
 
 class APIClient {
   private baseURL: string;
+  private token: string | null;
 
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = '/api'; // Using relative URL for same-origin requests
+    this.token = localStorage.getItem('auth_token');
   }
 
-  // Get stored JWT token
-  private getToken(): string | null {
-    return localStorage.getItem('iREVA_token');
-  }
-
-  // Store JWT token
-  private setToken(token: string): void {
-    localStorage.setItem('iREVA_token', token);
-  }
-
-  // Remove JWT token
-  private removeToken(): void {
-    localStorage.removeItem('iREVA_token');
-    localStorage.removeItem('iREVA_user');
-  }
-
-  // Store user data
-  private setUser(user: any): void {
-    localStorage.setItem('iREVA_user', JSON.stringify(user));
-  }
-
-  // Get stored user data
-  getUser(): any {
-    const userData = localStorage.getItem('iREVA_user');
-    return userData ? JSON.parse(userData) : null;
-  }
-
-  // Create request headers with authentication
-  private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
+  // Set authorization header if token exists
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    const token = this.getToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
     }
 
     return headers;
   }
 
-  // Generic API request method
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  // Generic request method
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    const config: RequestInit = {
-      headers: this.getHeaders(),
+    
+    const response = await fetch(url, {
       ...options,
-    };
+      headers: {
+        ...this.getHeaders(),
+        ...options.headers,
+      },
+    });
 
-    try {
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          // Token expired or invalid
-          this.logout();
-          throw new Error('Session expired. Please login again.');
-        }
-        
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`API request failed: ${endpoint}`, error);
-      throw error;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Network error' }));
+      throw new Error(errorData.message || `HTTP ${response.status}`);
     }
+
+    return response.json();
   }
 
-  // Authentication Methods
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/login', {
+  // Authentication methods
+  async login(credentials: LoginRequest): Promise<LoginResponse> {
+    const response = await this.request<LoginResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
 
     // Store token and user data
-    this.setToken(response.token);
-    this.setUser(response.user);
+    this.token = response.token;
+    localStorage.setItem('auth_token', response.token);
+    localStorage.setItem('user_data', JSON.stringify(response.user));
 
     return response;
   }
 
-  async register(userData: RegisterData): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/register', {
+  async register(userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role?: 'investor' | 'admin';
+  }): Promise<LoginResponse> {
+    const response = await this.request<LoginResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
 
     // Store token and user data
-    this.setToken(response.token);
-    this.setUser(response.user);
+    this.token = response.token;
+    localStorage.setItem('auth_token', response.token);
+    localStorage.setItem('user_data', JSON.stringify(response.user));
 
     return response;
   }
 
+  async getUserProfile(): Promise<User> {
+    return this.request<User>('/auth/profile');
+  }
+
+  // Utility methods
   logout(): void {
-    this.removeToken();
-    // Redirect to home page
-    window.location.href = '/';
+    this.token = null;
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
   }
 
-  // Check if user is authenticated
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return !!this.token;
   }
 
-  // Property Methods
-  async getProperties(): Promise<Property[]> {
-    return this.request<Property[]>('/properties');
+  getUser(): User | null {
+    const userData = localStorage.getItem('user_data');
+    return userData ? JSON.parse(userData) : null;
   }
 
-  async getProperty(id: string): Promise<Property> {
-    return this.request<Property>(`/properties/${id}`);
+  // Properties methods
+  async getProperties(): Promise<any[]> {
+    return this.request<any[]>('/properties');
   }
 
-  // Investment Methods
-  async invest(propertyId: string, amount: number): Promise<any> {
-    return this.request('/investments', {
-      method: 'POST',
-      body: JSON.stringify({ propertyId, amount }),
-    });
-  }
-
-  async getUserInvestments(): Promise<any[]> {
-    return this.request<any[]>('/investments/my-investments');
-  }
-
-  // Profile Methods
-  async getUserProfile(): Promise<any> {
-    return this.request('/auth/profile');
-  }
-
-  async updateProfile(data: any): Promise<any> {
-    return this.request('/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async getProperty(id: string): Promise<any> {
+    return this.request<any>(`/properties/${id}`);
   }
 }
 
 // Export singleton instance
 export const apiClient = new APIClient();
-export default apiClient;

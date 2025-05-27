@@ -15,7 +15,7 @@ import path from 'path';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import { v4 as uuidv4 } from 'uuid';
-import { setupAuth } from './auth';
+// Remove auth import for now - using simplified setup
 import { sessionMiddleware, trackUserActivity } from './session';
 import { cacheMiddleware } from './middleware/cache';
 import requestLogger from './middleware/request-logger';
@@ -66,8 +66,7 @@ export async function registerRoutes(app: Express) {
   // Set up API cache middleware for GET requests (5 minute TTL)
   app.use('/api', cacheMiddleware({ ttl: 300, keyPrefix: 'api:cache' }));
   
-  // Set up authentication
-  setupAuth(app);
+  // Authentication setup will be added later
   
   // Set up static file serving for uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
