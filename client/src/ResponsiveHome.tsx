@@ -310,10 +310,12 @@ const ResponsiveHome: React.FC = () => {
                 margin: '0 auto clamp(16px, 4vw, 24px)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 'clamp(20px, 4vw, 24px)'
+                justifyContent: 'center'
               }}>
-                💰
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M16 8L12 16l-4-4"/>
+                </svg>
               </div>
               <h3 style={{
                 fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
@@ -350,10 +352,12 @@ const ResponsiveHome: React.FC = () => {
                 margin: '0 auto clamp(16px, 4vw, 24px)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 'clamp(20px, 4vw, 24px)'
+                justifyContent: 'center'
               }}>
-                🔒
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
               </div>
               <h3 style={{
                 fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
@@ -390,10 +394,12 @@ const ResponsiveHome: React.FC = () => {
                 margin: '0 auto clamp(16px, 4vw, 24px)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 'clamp(20px, 4vw, 24px)'
+                justifyContent: 'center'
               }}>
-                📊
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+                  <circle cx="18" cy="8" r="2"/>
+                </svg>
               </div>
               <h3 style={{
                 fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
@@ -453,10 +459,48 @@ const ResponsiveHome: React.FC = () => {
             margin: '0 auto'
           }}>
             {[
-              { num: '1', title: 'Select Property', desc: 'Browse verified properties in Lagos, Abuja, and Port Harcourt with detailed ROI projections', color: '#1F6FEB' },
-              { num: '2', title: 'Invest Securely', desc: 'Complete KYC verification and invest your desired amount with bank-grade security', color: '#00B894' },
-              { num: '3', title: 'Track Progress', desc: 'Monitor your investment performance and property appreciation through your dashboard', color: '#1F6FEB' },
-              { num: '4', title: 'Earn Returns', desc: 'Receive quarterly dividends and benefit from property appreciation over time', color: '#00B894' }
+              { 
+                num: '1', 
+                title: 'Select Property', 
+                desc: 'Browse verified properties in Lagos, Abuja, and Port Harcourt with detailed ROI projections', 
+                color: '#1F6FEB',
+                icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9,22 9,12 15,12 15,22"/>
+                </svg>
+              },
+              { 
+                num: '2', 
+                title: 'Invest Securely', 
+                desc: 'Complete KYC verification and invest your desired amount with bank-grade security', 
+                color: '#00B894',
+                icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+              },
+              { 
+                num: '3', 
+                title: 'Track Progress', 
+                desc: 'Monitor your investment performance and property appreciation through your dashboard', 
+                color: '#1F6FEB',
+                icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              },
+              { 
+                num: '4', 
+                title: 'Earn Returns', 
+                desc: 'Receive quarterly dividends and benefit from property appreciation over time', 
+                color: '#00B894',
+                icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="1" x2="12" y2="23"/>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+              }
             ].map((step, index) => (
               <div key={index} style={{ textAlign: 'center' }}>
                 <div style={{
@@ -468,12 +512,9 @@ const ResponsiveHome: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontSize: 'clamp(1.2rem, 3vw, 2rem)',
-                  fontWeight: '700',
-                  fontFamily: 'Inter, sans-serif'
+                  color: '#FFFFFF'
                 }}>
-                  {step.num}
+                  {step.icon}
                 </div>
                 <h3 style={{
                   fontSize: 'clamp(1rem, 2.5vw, 1.3rem)',
@@ -693,7 +734,11 @@ const ResponsiveHome: React.FC = () => {
           }}>
             {[
               { 
-                icon: '🏢', 
+                icon: <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>, 
                 title: 'Victoria Island Luxury Apartments', 
                 location: 'Lagos • 24 Units • Premium Location',
                 value: '₦850M',
@@ -704,7 +749,11 @@ const ResponsiveHome: React.FC = () => {
                 note: '✅ Project completed • Generating rental income'
               },
               { 
-                icon: '🏘️', 
+                icon: <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9,22 9,12 15,12 15,22"/>
+                  <circle cx="12" cy="7" r="1"/>
+                </svg>, 
                 title: 'Abuja Smart City Residences', 
                 location: 'Abuja • 48 Units • Smart Home Technology',
                 value: '₦1.2B',
@@ -715,7 +764,14 @@ const ResponsiveHome: React.FC = () => {
                 note: '🚧 Under construction • ₦180M remaining'
               },
               { 
-                icon: '🏪', 
+                icon: <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                  <path d="M7.5 4.21l4.5 2.6 4.5-2.6"/>
+                  <path d="M7.5 19.79V14.6L3 12"/>
+                  <path d="M21 12l-4.5 2.6v5.19"/>
+                  <path d="M3.27 6.96L12 12.01l8.73-5.05"/>
+                  <path d="M12 22.08V12"/>
+                </svg>, 
                 title: 'Port Harcourt Commercial Plaza', 
                 location: 'Port Harcourt • Mixed Use • High Traffic Area',
                 value: '₦650M',
@@ -873,19 +929,29 @@ const ResponsiveHome: React.FC = () => {
           }}>
             {[
               {
-                icon: '🛡️',
+                icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <path d="M9 12l2 2 4-4"/>
+                </svg>,
                 title: 'Regulatory Compliance',
                 desc: 'Fully licensed and regulated by Nigerian Securities and Exchange Commission (SEC) and Corporate Affairs Commission (CAC).',
                 badge: 'SEC Licensed'
               },
               {
-                icon: '🔐',
+                icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>,
                 title: 'KYC & AML Protection',
                 desc: 'Comprehensive Know Your Customer and Anti-Money Laundering procedures protect all investors and transactions.',
                 badge: 'Bank-Grade Security'
               },
               {
-                icon: '🏦',
+                icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                  <line x1="2" y1="20" x2="22" y2="20"/>
+                  <line x1="12" y1="17" x2="12" y2="20"/>
+                </svg>,
                 title: 'Secure Fund Management',
                 desc: 'All investor funds are held in segregated accounts with top-tier Nigerian banks and protected by insurance coverage.',
                 badge: 'Insured Deposits'
@@ -906,8 +972,7 @@ const ResponsiveHome: React.FC = () => {
                   margin: '0 auto clamp(16px, 4vw, 24px)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 'clamp(20px, 4vw, 24px)'
+                  justifyContent: 'center'
                 }}>
                   {feature.icon}
                 </div>
