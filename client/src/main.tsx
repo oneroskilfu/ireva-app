@@ -2,12 +2,14 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { Route, Switch } from 'wouter';
 import "./index.css";
+import { AuthProvider } from "./context/AuthContext";
+import RequireAuth from "./components/RequireAuth";
 import HomePage from "./pages/HomePage";
 import RegisterPage from "./pages/RegisterPage";
-import LoginPage from "./pages/LoginPage";
+import EnhancedLoginPage from "./pages/EnhancedLoginPage";
 import PropertyListPage from "./pages/PropertyListPage";
 
-// Create simple dashboard placeholder for seamless user experience
+// Create secure dashboard placeholders with role-based protection
 const DashboardPlaceholder = ({ role }: { role: string }) => (
   <div style={{
     minHeight: '100vh',
@@ -38,7 +40,7 @@ const DashboardPlaceholder = ({ role }: { role: string }) => (
         color: '#fff',
         fontSize: '2rem'
       }}>
-        ✓
+        🎯
       </div>
       <h1 style={{
         fontSize: '2.5rem',
@@ -46,7 +48,7 @@ const DashboardPlaceholder = ({ role }: { role: string }) => (
         color: '#0A192F',
         marginBottom: '20px'
       }}>
-        Welcome to iREVA!
+        {role} Dashboard
       </h1>
       <p style={{
         fontSize: '1.2rem',
@@ -54,16 +56,16 @@ const DashboardPlaceholder = ({ role }: { role: string }) => (
         marginBottom: '30px',
         lineHeight: '1.6'
       }}>
-        Login successful! Your {role} dashboard is being prepared with all your investment data and portfolio information.
+        Welcome to your secure {role.toLowerCase()} portal. Your dashboard is ready with real-time investment data and portfolio analytics.
       </p>
       <div style={{
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        background: 'linear-gradient(135deg, #1F6FEB 10%, #00B894 90%)',
         padding: '20px',
         borderRadius: '12px',
-        color: '#1F6FEB',
+        color: '#fff',
         fontWeight: '600'
       }}>
-        Dashboard loading... Please wait while we fetch your data.
+        🔒 Authenticated & Protected
       </div>
     </div>
   </div>
@@ -72,16 +74,32 @@ const DashboardPlaceholder = ({ role }: { role: string }) => (
 const AdminDashboard = () => <DashboardPlaceholder role="Admin" />;
 const InvestorDashboard = () => <DashboardPlaceholder role="Investor" />;
 
-// iREVA application with seamless dashboard connection
+// Secure iREVA application with authentication and role-based protection
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Switch>
-      <Route path="/login" component={LoginPage} />
-      <Route path="/register" component={RegisterPage} />
-      <Route path="/properties" component={PropertyListPage} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/investor/dashboard" component={InvestorDashboard} />
-      <Route path="/" component={HomePage} />
-    </Switch>
+    <AuthProvider>
+      <Switch>
+        <Route path="/login" component={EnhancedLoginPage} />
+        <Route path="/register" component={RegisterPage} />
+        <Route path="/properties" component={PropertyListPage} />
+        
+        {/* Protected Admin Routes */}
+        <Route path="/admin/dashboard">
+          <RequireAuth role="admin">
+            <AdminDashboard />
+          </RequireAuth>
+        </Route>
+        
+        {/* Protected Investor Routes */}
+        <Route path="/investor/dashboard">
+          <RequireAuth role="investor">
+            <InvestorDashboard />
+          </RequireAuth>
+        </Route>
+        
+        {/* Public Routes */}
+        <Route path="/" component={HomePage} />
+      </Switch>
+    </AuthProvider>
   </React.StrictMode>
 );
