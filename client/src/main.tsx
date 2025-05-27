@@ -1,11 +1,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import BrandedHome from "./BrandedHome";
+import ResponsiveHome from "./ResponsiveHome";
 
-// Official iREVA branded homepage with complete brand guidelines
+// Responsive iREVA homepage with no overlapping sections and proper footer
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrandedHome />
+    <ResponsiveHome />
   </React.StrictMode>
 );
