@@ -13,7 +13,7 @@ import AuthPage from './pages/auth/auth-page';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Homepage
-import StaticHome from './pages/StaticHome';
+import ResponsiveHome from './ResponsiveHome';
 import RegisterPage from './pages/RegisterPage';
 
 // Investor Pages
@@ -100,7 +100,7 @@ function App() {
           />
           
           {/* Homepage Route */}
-          <Route path="/" component={StaticHome} />
+          <Route path="/" component={ResponsiveHome} />
           
           {/* 404 - Not Found */}
           <Route component={NotFound} />
