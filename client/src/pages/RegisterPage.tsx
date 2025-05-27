@@ -371,7 +371,7 @@ const RegisterPage: React.FC = () => {
             fontFamily: 'Inter, sans-serif'
           }}>
             Already have an account?{' '}
-            <Link href="/auth" style={{
+            <Link href="/login" style={{
               color: '#1F6FEB',
               textDecoration: 'none',
               fontWeight: '600'
