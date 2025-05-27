@@ -14,6 +14,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Homepage
 import StaticHome from './pages/StaticHome';
+import RegisterPage from './pages/RegisterPage';
 
 // Investor Pages
 import InvestorDashboard from './pages/investor/Dashboard';
@@ -46,6 +47,7 @@ function App() {
           {/* Auth Routes */}
           <Route path="/auth" component={AuthPage} />
           <Route path="/signup" component={AuthPage} />
+          <Route path="/register" component={RegisterPage} />
           
           {/* Investor Routes */}
           <ProtectedRoute 

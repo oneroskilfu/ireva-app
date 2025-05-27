@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'wouter';
 
 const ResponsiveHome: React.FC = () => {
   return (
@@ -67,8 +68,8 @@ const ResponsiveHome: React.FC = () => {
           >
             Login
           </a>
-          <a 
-            href="/auth" 
+          <Link 
+            to="/register"
             style={{
               background: '#1F6FEB',
               color: '#FFFFFF',
@@ -80,13 +81,14 @@ const ResponsiveHome: React.FC = () => {
               fontSize: '0.9rem',
               transition: 'background-color 0.2s ease',
               border: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'inline-block'
             }}
             onMouseOver={(e) => e.currentTarget.style.background = '#155CC2'}
             onMouseOut={(e) => e.currentTarget.style.background = '#1F6FEB'}
           >
             Get Started
-          </a>
+          </Link>
         </div>
       </nav>
 
@@ -151,8 +153,8 @@ const ResponsiveHome: React.FC = () => {
             flexWrap: 'wrap',
             marginBottom: '40px'
           }}>
-            <a 
-              href="/auth" 
+            <Link 
+              to="/register"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -173,7 +175,7 @@ const ResponsiveHome: React.FC = () => {
               onMouseOut={(e) => e.currentTarget.style.background = '#00B894'}
             >
               Start Investing Today →
-            </a>
+            </Link>
 
             <a 
               href="#properties" 
