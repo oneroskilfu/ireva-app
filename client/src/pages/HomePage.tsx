@@ -1,138 +1,493 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'wouter';
+import { Menu, X } from 'lucide-react';
 
 const HomePage: React.FC = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
-    <div style={{ fontFamily: 'Inter, system-ui, sans-serif', color: '#0A192F', minHeight: '100vh' }}>
+    <div className="font-inter text-midnight-navy min-h-screen">
       {/* Navigation */}
-      <nav style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(20px)',
-        padding: '12px 16px',
-        zIndex: 1000,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid rgba(229, 234, 240, 0.5)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            background: 'linear-gradient(135deg, #1F6FEB 0%, #00B894 100%)',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: '1rem'
-          }}>
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontWeight: '400' }}>i</span>
+      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3 z-50 border-b border-gray-200/50">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-electric-blue to-emerald-500 rounded-lg flex items-center justify-center">
+              <span className="font-mono text-white font-normal text-sm sm:text-base">i</span>
+            </div>
+            <div className="flex items-center">
+              <span className="font-mono font-normal text-lg sm:text-xl text-midnight-navy">i</span>
+              <span className="font-outfit font-light text-lg sm:text-xl text-midnight-navy tracking-wide">REVA</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ 
-              fontFamily: 'IBM Plex Mono, monospace', 
-              fontWeight: '400', 
-              fontSize: '1.25rem',
-              color: '#0A192F'
-            }}>i</span>
-            <span style={{ 
-              fontFamily: 'Outfit, sans-serif', 
-              fontWeight: '300', 
-              fontSize: '1.25rem',
-              color: '#0A192F',
-              letterSpacing: '0.5px'
-            }}>REVA</span>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/properties" className="text-gray-600 hover:text-electric-blue transition-colors font-medium">
+              Properties
+            </Link>
+            <Link href="/how-it-works" className="text-gray-600 hover:text-electric-blue transition-colors font-medium">
+              How It Works
+            </Link>
+            <Link href="/about" className="text-gray-600 hover:text-electric-blue transition-colors font-medium">
+              About
+            </Link>
+            <Link href="/contact" className="text-gray-600 hover:text-electric-blue transition-colors font-medium">
+              Contact
+            </Link>
           </div>
-        </div>
-        
-        <div style={{ 
-          display: 'flex', 
-          gap: 'clamp(16px, 3vw, 32px)', 
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-          <Link href="/properties" style={{ 
-            color: '#64748b', 
-            textDecoration: 'none', 
-            fontWeight: '500',
-            fontSize: '0.95rem'
-          }}>Properties</Link>
-          <a href="#how-it-works" style={{ 
-            color: '#64748b', 
-            textDecoration: 'none', 
-            fontWeight: '500',
-            fontSize: '0.95rem'
-          }}>How it Works</a>
-          <a href="#about" style={{ 
-            color: '#64748b', 
-            textDecoration: 'none', 
-            fontWeight: '500',
-            fontSize: '0.95rem'
-          }}>About</a>
-          <Link 
-            href="/login"
-            style={{
-              color: '#64748b', 
-              textDecoration: 'none', 
-              fontWeight: '500',
-              fontSize: '0.95rem'
-            }}
+
+          {/* Desktop CTA Buttons */}
+          <div className="hidden md:flex items-center gap-3">
+            <Link 
+              href="/login" 
+              className="px-4 py-2 text-electric-blue hover:text-electric-blue/80 transition-colors font-medium"
+            >
+              Sign In
+            </Link>
+            <Link 
+              href="/register" 
+              className="px-6 py-2 bg-electric-blue text-white rounded-lg hover:bg-electric-blue/90 transition-colors font-medium"
+            >
+              Get Started
+            </Link>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2 text-gray-600 hover:text-electric-blue transition-colors"
           >
-            Login
-          </Link>
-          <Link 
-            href="/register"
-            style={{
-              background: 'linear-gradient(135deg, #1F6FEB 0%, #00B894 100%)',
-              color: '#fff',
-              padding: '10px 20px',
-              borderRadius: '25px',
-              textDecoration: 'none',
-              fontWeight: '600',
-              fontSize: '0.9rem',
-              transition: 'all 0.3s ease',
-              display: 'inline-block'
-            }}
-          >
-            Get Started
-          </Link>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg">
+            <div className="px-4 py-6 space-y-4">
+              <Link 
+                href="/properties" 
+                className="block py-2 text-gray-600 hover:text-electric-blue transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Properties
+              </Link>
+              <Link 
+                href="/how-it-works" 
+                className="block py-2 text-gray-600 hover:text-electric-blue transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                How It Works
+              </Link>
+              <Link 
+                href="/about" 
+                className="block py-2 text-gray-600 hover:text-electric-blue transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link 
+                href="/contact" 
+                className="block py-2 text-gray-600 hover:text-electric-blue transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </Link>
+              <div className="pt-4 border-t border-gray-200 space-y-3">
+                <Link 
+                  href="/login" 
+                  className="block w-full py-3 text-center text-electric-blue hover:text-electric-blue/80 transition-colors font-medium border border-electric-blue rounded-lg"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="block w-full py-3 text-center bg-electric-blue text-white rounded-lg hover:bg-electric-blue/90 transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* Hero Section */}
-      <section style={{
-        paddingTop: '80px',
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #fafafa 0%, #f1f5f9 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Background Pattern */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-opacity='0.03'%3E%3Cpolygon fill='%231F6FEB' points='50 0 60 40 100 50 60 60 50 100 40 60 0 50 40 40'/%3E%3C/g%3E%3C/svg%3E")`,
-          opacity: 0.4
-        }} />
+        {/* Hero Section */}
+        <section className="pt-20 min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 flex items-center relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-30">
+            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+              <defs>
+                <pattern id="hero-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <polygon fill="#1F6FEB" fillOpacity="0.03" points="50 0 60 40 100 50 60 60 50 100 40 60 0 50 40 40"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#hero-pattern)"/>
+            </svg>
+          </div>
 
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 20px',
-          display: 'grid',
-          gridTemplateColumns: window.innerWidth >= 768 ? '1fr 1fr' : '1fr',
-          gap: '60px',
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Hero Content */}
+              <div className="text-center lg:text-left">
+                <div className="mb-6">
+                  <span className="inline-flex items-center gap-2 px-4 py-2 bg-electric-blue/10 text-electric-blue rounded-full text-sm font-medium">
+                    <span className="w-2 h-2 bg-electric-blue rounded-full animate-pulse"></span>
+                    Trusted by 10,000+ Nigerian Investors
+                  </span>
+                </div>
+                
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-midnight-navy mb-6 leading-tight">
+                  Invest in Nigerian 
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-blue to-emerald-500">
+                    {" "}Real Estate
+                  </span>
+                  <br className="hidden sm:block" />
+                  from ₦100,000
+                </h1>
+                
+                <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
+                  Join thousands of Nigerians building wealth through fractional real estate investments. 
+                  Start with as little as ₦100,000 and earn passive income from premium properties.
+                </p>
+
+                {/* Mobile-Optimized CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <Link 
+                    href="/register" 
+                    className="w-full sm:w-auto px-8 py-4 bg-electric-blue text-white rounded-xl hover:bg-electric-blue/90 transition-all font-semibold text-lg shadow-lg hover:shadow-xl"
+                  >
+                    Start Investing Today
+                  </Link>
+                  <Link 
+                    href="/properties" 
+                    className="w-full sm:w-auto px-8 py-4 border-2 border-electric-blue text-electric-blue rounded-xl hover:bg-electric-blue/5 transition-all font-semibold text-lg"
+                  >
+                    View Properties
+                  </Link>
+                </div>
+
+                {/* Trust Indicators */}
+                <div className="mt-8 pt-8 border-t border-gray-200">
+                  <div className="flex flex-wrap justify-center lg:justify-start items-center gap-6 text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 bg-green-500 rounded-full"></span>
+                      SEC Registered
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 bg-green-500 rounded-full"></span>
+                      Bank-Level Security
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 bg-green-500 rounded-full"></span>
+                      12-15% Annual Returns
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hero Image/Visual */}
+              <div className="relative mt-8 lg:mt-0">
+                <div className="relative bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md mx-auto lg:max-w-none">
+                  {/* Investment Dashboard Preview */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-midnight-navy mb-4">Your Portfolio</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-midnight-navy">Lagos Premium Apartments</p>
+                          <p className="text-sm text-gray-500">Investment: ₦500,000</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">+14.2%</p>
+                          <p className="text-xs text-gray-500">Annual Return</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-midnight-navy">Abuja Commercial Plaza</p>
+                          <p className="text-sm text-gray-500">Investment: ₦750,000</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-green-600">+12.8%</p>
+                          <p className="text-xs text-gray-500">Annual Return</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Total Portfolio Value</span>
+                      <span className="text-2xl font-bold text-midnight-navy">₦1,420,500</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-gray-600">Monthly Returns</span>
+                      <span className="text-lg font-semibold text-green-600">+₦18,750</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Elements */}
+                <div className="absolute -top-4 -right-4 w-16 h-16 bg-electric-blue/20 rounded-full animate-bounce hidden lg:block"></div>
+                <div className="absolute -bottom-4 -left-4 w-12 h-12 bg-emerald-500/20 rounded-full animate-pulse hidden lg:block"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-16 lg:py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-midnight-navy mb-4">
+                Why Nigerian Investors Choose iREVA
+              </h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Access premium real estate investments with complete transparency, security, and flexibility.
+              </p>
+            </div>
+
+            {/* Mobile-Optimized Feature Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-electric-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-electric-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-midnight-navy mb-3">Bank-Level Security</h3>
+                <p className="text-gray-600">Your investments are protected with enterprise-grade security and regulatory compliance.</p>
+              </div>
+
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-electric-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-electric-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-midnight-navy mb-3">Proven Returns</h3>
+                <p className="text-gray-600">Average 12-15% annual returns from carefully vetted Nigerian real estate properties.</p>
+              </div>
+
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-electric-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-electric-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-midnight-navy mb-3">Low Minimum</h3>
+                <p className="text-gray-600">Start investing from just ₦100,000 and diversify across multiple properties.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Properties Section */}
+        <section className="py-16 lg:py-24 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-midnight-navy mb-4">
+                Featured Investment Opportunities
+              </h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Handpicked properties in prime Nigerian locations offering exceptional returns.
+              </p>
+            </div>
+
+            {/* Mobile-Responsive Property Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {/* Property Card 1 */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="h-48 bg-gradient-to-br from-electric-blue/20 to-emerald-500/20 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-gray-500 font-medium">Lagos Premium Property</span>
+                  </div>
+                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    14.2% ROI
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-midnight-navy mb-2">Lagos Premium Apartments</h3>
+                  <p className="text-gray-600 mb-4">Modern residential complex in Victoria Island with guaranteed rental income.</p>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-gray-500">Minimum Investment</span>
+                    <span className="font-semibold text-midnight-navy">₦500,000</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-sm text-gray-500">Total Value</span>
+                    <span className="font-semibold text-midnight-navy">₦2.5B</span>
+                  </div>
+                  <Link 
+                    href="/properties/1" 
+                    className="w-full block text-center py-3 bg-electric-blue text-white rounded-lg hover:bg-electric-blue/90 transition-colors font-medium"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+
+              {/* Property Card 2 */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="h-48 bg-gradient-to-br from-purple-500/20 to-blue-500/20 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-gray-500 font-medium">Abuja Commercial Hub</span>
+                  </div>
+                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    12.8% ROI
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-midnight-navy mb-2">Abuja Commercial Plaza</h3>
+                  <p className="text-gray-600 mb-4">Prime commercial space in Wuse II with multinational tenants.</p>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-gray-500">Minimum Investment</span>
+                    <span className="font-semibold text-midnight-navy">₦750,000</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-sm text-gray-500">Total Value</span>
+                    <span className="font-semibold text-midnight-navy">₦3.2B</span>
+                  </div>
+                  <Link 
+                    href="/properties/2" 
+                    className="w-full block text-center py-3 bg-electric-blue text-white rounded-lg hover:bg-electric-blue/90 transition-colors font-medium"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+
+              {/* Property Card 3 */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="h-48 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-gray-500 font-medium">Port Harcourt Estate</span>
+                  </div>
+                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    15.1% ROI
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-semibold text-midnight-navy mb-2">Port Harcourt Luxury Estate</h3>
+                  <p className="text-gray-600 mb-4">High-end residential development with oil industry professionals.</p>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-gray-500">Minimum Investment</span>
+                    <span className="font-semibold text-midnight-navy">₦400,000</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-sm text-gray-500">Total Value</span>
+                    <span className="font-semibold text-midnight-navy">₦1.8B</span>
+                  </div>
+                  <Link 
+                    href="/properties/3" 
+                    className="w-full block text-center py-3 bg-electric-blue text-white rounded-lg hover:bg-electric-blue/90 transition-colors font-medium"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center mt-12">
+              <Link 
+                href="/properties" 
+                className="inline-flex items-center gap-2 px-8 py-4 border-2 border-electric-blue text-electric-blue rounded-xl hover:bg-electric-blue/5 transition-all font-semibold text-lg"
+              >
+                View All Properties
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Mobile-Optimized Footer */}
+        <footer className="bg-midnight-navy text-white py-12 lg:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {/* Company Info */}
+              <div className="col-span-1 md:col-span-2 lg:col-span-1">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-electric-blue to-emerald-500 rounded-lg flex items-center justify-center">
+                    <span className="font-mono text-white font-normal">i</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-mono font-normal text-xl text-white">i</span>
+                    <span className="font-outfit font-light text-xl text-white tracking-wide">REVA</span>
+                  </div>
+                </div>
+                <p className="text-gray-300 mb-6">
+                  Democratizing real estate investment for all Nigerians through innovative technology and transparent processes.
+                </p>
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                    <span className="text-sm font-bold">f</span>
+                  </div>
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                    <span className="text-sm font-bold">t</span>
+                  </div>
+                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
+                    <span className="text-sm font-bold">in</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Links */}
+              <div>
+                <h4 className="font-semibold mb-6">Platform</h4>
+                <div className="space-y-3">
+                  <Link href="/properties" className="block text-gray-300 hover:text-white transition-colors">Properties</Link>
+                  <Link href="/how-it-works" className="block text-gray-300 hover:text-white transition-colors">How It Works</Link>
+                  <Link href="/returns" className="block text-gray-300 hover:text-white transition-colors">Returns</Link>
+                  <Link href="/security" className="block text-gray-300 hover:text-white transition-colors">Security</Link>
+                </div>
+              </div>
+
+              {/* Support */}
+              <div>
+                <h4 className="font-semibold mb-6">Support</h4>
+                <div className="space-y-3">
+                  <Link href="/help" className="block text-gray-300 hover:text-white transition-colors">Help Center</Link>
+                  <Link href="/contact" className="block text-gray-300 hover:text-white transition-colors">Contact Us</Link>
+                  <Link href="/faq" className="block text-gray-300 hover:text-white transition-colors">FAQ</Link>
+                  <Link href="/blog" className="block text-gray-300 hover:text-white transition-colors">Blog</Link>
+                </div>
+              </div>
+
+              {/* Legal */}
+              <div>
+                <h4 className="font-semibold mb-6">Legal</h4>
+                <div className="space-y-3">
+                  <Link href="/privacy" className="block text-gray-300 hover:text-white transition-colors">Privacy Policy</Link>
+                  <Link href="/terms" className="block text-gray-300 hover:text-white transition-colors">Terms of Service</Link>
+                  <Link href="/compliance" className="block text-gray-300 hover:text-white transition-colors">Compliance</Link>
+                  <Link href="/risk" className="block text-gray-300 hover:text-white transition-colors">Risk Disclosure</Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-700 mt-12 pt-8">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <p className="text-gray-300 text-sm text-center md:text-left">
+                  © 2024 iREVA. All rights reserved. Licensed by the Securities and Exchange Commission (SEC) Nigeria.
+                </p>
+                <div className="flex items-center gap-4 text-sm text-gray-300">
+                  <span>🇳🇬 Made in Nigeria</span>
+                  <span>•</span>
+                  <span>SEC Registered</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </div>
+  );
+};
           alignItems: 'center',
           position: 'relative',
           zIndex: 2
