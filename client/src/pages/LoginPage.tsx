@@ -24,7 +24,7 @@ const LoginPage: React.FC = () => {
         role: email.includes('admin') ? 'admin' : 'investor'
       };
 
-      // Role-based redirection
+      // Role-based redirection to actual dashboards
       if (mockUser.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (mockUser.role === 'investor') {

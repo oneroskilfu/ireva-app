@@ -1713,7 +1713,8 @@ const HomePage: React.FC = () => {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '60px',
-            marginBottom: '60px'
+            marginBottom: '60px',
+            alignItems: 'start'
           }}>
             {/* Brand Column */}
             <div>
@@ -1852,18 +1853,24 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Support Column */}
-            <div>
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <h4 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '20px', color: '#fff' }}>Support</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px', flex: 1 }}>
                 <a href="#help" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '1rem', transition: 'color 0.3s ease' }}>Help Center</a>
                 <a href="#faq" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '1rem', transition: 'color 0.3s ease' }}>FAQ</a>
                 <a href="#contact" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '1rem', transition: 'color 0.3s ease' }}>Contact Us</a>
                 <a href="#security" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '1rem', transition: 'color 0.3s ease' }}>Security</a>
                 <a href="#api-docs" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '1rem', transition: 'color 0.3s ease' }}>API Documentation</a>
               </div>
-              <div>
-                <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '8px' }}>Customer Support</div>
-                <div style={{ color: '#1F6FEB', fontWeight: '600', fontSize: '1rem' }}>support@ireva.ng</div>
+              <div style={{ 
+                padding: '20px',
+                background: 'rgba(31, 111, 235, 0.1)',
+                borderRadius: '12px',
+                border: '1px solid rgba(31, 111, 235, 0.2)',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '8px' }}>Customer Support</div>
+                <div style={{ color: '#1F6FEB', fontWeight: '600', fontSize: '1rem', marginBottom: '4px' }}>support@ireva.ng</div>
                 <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Available 24/7</div>
               </div>
             </div>
