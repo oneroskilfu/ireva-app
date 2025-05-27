@@ -57,12 +57,12 @@ const HomePage: React.FC = () => {
           alignItems: 'center',
           flexWrap: 'wrap'
         }}>
-          <a href="#properties" style={{ 
+          <Link href="/properties" style={{ 
             color: '#64748b', 
             textDecoration: 'none', 
             fontWeight: '500',
             fontSize: '0.95rem'
-          }}>Properties</a>
+          }}>Properties</Link>
           <a href="#how-it-works" style={{ 
             color: '#64748b', 
             textDecoration: 'none', 
@@ -75,6 +75,17 @@ const HomePage: React.FC = () => {
             fontWeight: '500',
             fontSize: '0.95rem'
           }}>About</a>
+          <Link 
+            href="/login"
+            style={{
+              color: '#64748b', 
+              textDecoration: 'none', 
+              fontWeight: '500',
+              fontSize: '0.95rem'
+            }}
+          >
+            Login
+          </Link>
           <Link 
             href="/register"
             style={{
@@ -206,8 +217,8 @@ const HomePage: React.FC = () => {
                 <span>→</span>
               </Link>
 
-              <a 
-                href="#properties" 
+              <Link 
+                href="/properties" 
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -224,7 +235,7 @@ const HomePage: React.FC = () => {
                 }}
               >
                 View Properties
-              </a>
+              </Link>
             </div>
 
             {/* Trust Indicators */}
@@ -1123,7 +1134,7 @@ const HomePage: React.FC = () => {
 
           <div style={{ textAlign: 'center' }}>
             <Link 
-              href="/register"
+              href="/properties"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
